@@ -1,0 +1,14 @@
+server:
+ port: 4989
+#mysql_setting
+spring:
+ datasource:
+   driver-class-name: com.mysql.cj.jdbc.Driver
+   url: jdbc:mysql://localhost:3306/
+   username: 
+   password: 
+#mybatis
+mybatis:
+  type-aliases-package: boot.sagu.*
+  mapper-locations:
+  - /mapper/**/*.xml
