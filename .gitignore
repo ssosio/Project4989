@@ -1,0 +1,26 @@
+# === Java(Spring Boot) ===
+/Spring4989/.gradle/
+/Spring4989/build/
+/Spring4989/bin/
+/Spring4989/out/
+!Spring4989/gradle/wrapper/gradle-wrapper.jar
+/Spring4989/*.iml
+/Spring4989/.idea/
+/Spring4989/*.log
+/Spring4989/.DS_Store
+
+# === Node.js(React, Vite) ===
+/Project4989/node_modules/
+/Project4989/dist/
+/Project4989/build/
+/Project4989/.env
+/Project4989/*.log
+/Project4989/.DS_Store
+
+# === VSCode ===
+.vscode/
+
+# === OS 공통 ===
+.DS_Store
+Thumbs.db
+.metadata/
