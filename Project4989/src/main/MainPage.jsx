@@ -1,11 +1,12 @@
+
 import React from 'react'
 
-const Footer = () => {
+const MainPage = () => {
   return (
     <div>
-      footer
+      섹
     </div>
   )
 }
 
-export default Footer
+export default MainPage
