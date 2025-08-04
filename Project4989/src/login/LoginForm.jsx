@@ -8,7 +8,7 @@ function LoginForm() {
   // useContext를 사용해 Root 컴포넌트의 handleLoginSuccess 함수를 가져옵니다.
   const { handleLoginSuccess } = useContext(AuthContext);
   const navi = useNavigate();
-  
+
   // 폼 입력값을 관리하는 state
   const [formData, setFormData] = useState({
     loginId: '',
@@ -35,24 +35,25 @@ function LoginForm() {
 
       // 토큰을 localStorage에 저장 (브라우저를 닫아도 유지됨)
       localStorage.setItem('jwtToken', token);
-      
+
       // 토큰을 디코딩하여 payload(사용자 정보)를 추출합니다.
       const decodedToken = jwtDecode(token);
       const userInfo = {
         loginId: decodedToken.sub,
+        memberId: decodedToken.memberId,
         nickname: decodedToken.nickname,
         profileImageUrl: decodedToken.profileImageUrl
       };
-      
+
       // 이후 모든 axios 요청 헤더에 자동으로 토큰을 포함시킴
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
+
       // Context에서 가져온 함수를 호출하여 Root의 상태를 업데이트합니다.
       handleLoginSuccess(userInfo);
 
       alert('로그인 성공!');
       navi('/'); // 로그인 성공 후 메인 페이지로 이동
-      
+
     } catch (error) {
       console.error('로그인 중 오류 발생:', error);
       alert('로그인 실패! 아이디 또는 비밀번호를 확인해주세요.');
@@ -65,11 +66,11 @@ function LoginForm() {
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>
           <label>아이디</label>
-          <input type="text" name="loginId" value={formData.loginId} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
+          <input type="text" name="loginId" value={formData.loginId} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
         </div>
         <div style={{ marginBottom: '15px' }}>
           <label>비밀번호</label>
-          <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
+          <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
         </div>
         <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           로그인

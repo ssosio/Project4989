@@ -13,12 +13,13 @@ const Root = () => {
   useEffect(() => {
     // localStorage에서 토큰을 가져옵니다.
     const token = localStorage.getItem('jwtToken');
-    
+
     // 토큰이 존재하면 디코딩하여 사용자 정보를 state에 저장합니다.
     if (token) {
       const decodedToken = jwtDecode(token);
       setUserInfo({
         loginId: decodedToken.sub,
+        memberId: decodedToken.memberId,
         nickname: decodedToken.nickname,
         profileImageUrl: decodedToken.profileImageUrl
       });
