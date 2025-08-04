@@ -15,10 +15,13 @@
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
     "@mui/styled-engine-sc": "^7.2.0",
+    "@stomp/stompjs": "^7.1.1",
     "axios": "^1.11.0",
+    "jwt-decode": "^4.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.1",
+    "sockjs-client": "^1.6.1",
     "styled-components": "^6.1.19"
   },
   "devDependencies": {
