@@ -24,7 +24,6 @@ const RouterMain = () => {
             <Route path='/auction' element={<AuctionMain/>}/>
             <Route path='/login' element={<LoginForm/>}/>
             <Route path='/signup' element={<SignupForm/>}/>
-            <Route path='/board/post' element={<Post/>}/>
         </Route>
 
         
