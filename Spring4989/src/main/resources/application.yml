@@ -13,6 +13,12 @@ mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
+#jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
   expiration: 3600000
+# CoolSMS
+coolsms:
+  api-key: 'NCSDJNFKIX6MFYPO'
+  api-secret: '2A3QAHAVIG8UZREZ3OW0AN7S3I8AHS3A'
+  sender-phone: '01095801813'
