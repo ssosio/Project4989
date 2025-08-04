@@ -6,9 +6,9 @@ import Chat from '../chat/chat'
 import Goods from '../board/Goods'
 import Cars from '../board/Cars'
 import Real_estate from '../board/Real_estate'
-import Auction from '../board/Auction'
 import LoginForm from '../login/LoginForm'
 import SignupForm from '../login/SignupForm'
+import AuctionMain from '../auction/auction_main/AuctionMain'
 
 const RouterMain = () => {
   return (
@@ -20,7 +20,7 @@ const RouterMain = () => {
             <Route path='/cars' element={<Cars/>}/>
             <Route path='/goods' element={<Goods/>}/>
             <Route path='/real-estate' element={<Real_estate/>}/>
-            <Route path='/auction' element={<Auction/>}/>
+            <Route path='/auction' element={<AuctionMain/>}/>
             <Route path='/login' element={<LoginForm/>}/>
             <Route path='/signup' element={<SignupForm/>}/>
         </Route>

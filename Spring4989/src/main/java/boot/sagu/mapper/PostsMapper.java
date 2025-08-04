@@ -6,5 +6,5 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface PostsMapper {
-    List<PostsDto> getAuctionPosts(); // 경매글 리스트용
+   
 }
