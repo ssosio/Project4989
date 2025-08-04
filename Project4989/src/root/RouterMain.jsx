@@ -3,6 +3,10 @@ import { Route, Routes } from 'react-router-dom'
 import MainLayout from '../layout/MainLayout'
 import MainPage from '../main/MainPage'
 import Chat from '../chat/chat'
+import Goods from '../board/Goods'
+import Cars from '../board/Cars'
+import Real_estate from '../board/Real_estate'
+import Auction from '../board/Auction'
 const RouterMain = () => {
   return (
     <div>
@@ -10,7 +14,10 @@ const RouterMain = () => {
         <Route element={<MainLayout/>} >
             <Route path='/' element={<MainPage/>}/>
             <Route path='/chat' element={<Chat/>}/>
-            
+            <Route path='/cars' element={<Cars/>}/>
+            <Route path='/goods' element={<Goods/>}/>
+            <Route path='/real-estate' element={<Real_estate/>}/>
+            <Route path='/auction' element={<Auction/>}/>
         </Route>
 
         
