@@ -19,30 +19,32 @@ const Post = () => {
                         <option value="share">나눔</option>
                     </select>
                 </td>
-                </tr>
-                <tr>
+            </tr>
+            <tr>
                 <td>
                     <label>제목
                     <input type="text" name='title' style={{width:'250px'}}/>
                     </label>
                 </td>
-                </tr>
-                <tr>
+            </tr>
+            <tr>
                 <td>
                     <label>가격
                     <input type="text" name='price' style={{width:'150px'}}/>
                     </label>
                 </td>
-                </tr>
-                
+            </tr>
             <tr>
                 <td colSpan='4'>
-                <textarea name="content" id="" style={{width:'400px',height:'150px'}}>
-
-                    </textarea>
-
+                    <textarea name="content" id="" style={{width:'400px',height:'150px'}}></textarea>
                 </td>
-                
+            </tr>
+            <tr>
+                <td>
+                    <label>사진
+                    <input type="file" name='photo' style={{width:'250px'}}/>
+                    </label>
+                </td>
             </tr>
             <tr>
                 <button type='button' style={{width:'130px', backgroundColor:'bisque',marginRight:'30px'}}>등록</button>
