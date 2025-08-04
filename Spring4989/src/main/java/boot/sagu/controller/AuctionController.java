@@ -9,16 +9,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import boot.sagu.dto.PostsDto;
+import boot.sagu.mapper.AuctionMapper;
 import boot.sagu.mapper.PostsMapper;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5176/")
 public class AuctionController {
 @Autowired
-PostsMapper postsmapper;
+AuctionMapper auctionmapper;
 @GetMapping("/auction")
 public List<PostsDto> getAuctionList() {
-	   return postsmapper.getAuctionPosts();
+	   return auctionmapper.getAuctionPosts();
 }
 
 }
