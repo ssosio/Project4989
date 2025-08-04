@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="boot.sagu.mapper.BoardMapper">
-<insert id="insert" parameterType="post">
-	insert into post(member_id,title,price,trade_type,status,auction_end_time,winner_id,view_count,created_at,updated_at,post_type)
+<mapper namespace="boot.sagu.mapper.PostsMapper">
+<insert id="insert" parameterType="posts">
+	insert into posts(member_id,title,price,trade_type,status,auction_end_time,winner_id,view_count,created_at,updated_at,post_type)
 	values(#{member_id},#{title},#{price},#{trade_type},#{status},#{auction_end_time},#{winner_id},#{view_count},now(),now(),#{post_type})
 </insert>
-<select id="selectAllpost" resultType="post">
-	select * from post where post_id=#{post_id}
+<select id="getAllPostData" resultType="posts">
+	select * from posts order by post_id
+</select>
+<select id="getPostData" resultType="posts" parameterType="int">
+	select * from posts where post_id=#{post_id}
 </select>
 </mapper>
