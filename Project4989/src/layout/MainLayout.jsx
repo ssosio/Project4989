@@ -1,12 +1,12 @@
 import React from 'react'
-import { Header } from '../layout/Header'
+import Header from '../layout/Header'
 import Footer from '../layout/Footer'
 import Menu from '../layout/Menu'
 import { Outlet } from 'react-router-dom'
 
 const MainLayout = () => {
   return (
-    <div style={{ 
+    <div style={{
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
@@ -15,7 +15,7 @@ const MainLayout = () => {
     }}>
       <Header />
       <Menu />
-      <main style={{ 
+      <main style={{
         flex: 1,
         width: '100%',
         maxWidth: '100%',

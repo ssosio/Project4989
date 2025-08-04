@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
-import ChatMain from '../chat/ChatMain';
+
+
 
 // --- Styled Components (디자인을 위한 코드) ---
 const TossSearch = styled('div')(({ theme }) => ({
@@ -47,6 +48,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 // --- Styled Components 끝 ---
 
 
+
 export const Header = () => {
   // useContext를 사용해 Root 컴포넌트의 userInfo와 handleLogout 함수를 가져옵니다.
   const { userInfo, handleLogout } = useContext(AuthContext);
@@ -68,12 +70,15 @@ export const Header = () => {
     <AppBar position="static" elevation={0} sx={{ background: '#fff', color: '#222', borderBottom: '1px solid #f0f2f5', height: '64px', width: '100%' }}>
       <Toolbar sx={{ height: '64px', minHeight: '64px', px: { xs: 2, sm: 4 }, width: '100%' }}>
         {/* 로고 */}
+
+
         <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navi('/')}>
           <img src="/4989로고.png" alt="4989 로고" style={{ height: '60px', width: 'auto', marginRight: '15px' }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#3182f6', letterSpacing: '-1px', fontSize: 24 }}>
-            사9팔9
+            중고러래 사9팔9!
           </Typography>
         </Box>
+
 
         {/* 검색바 */}
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
@@ -85,6 +90,7 @@ export const Header = () => {
 
         {/* 우측 아이콘 및 버튼 영역 (로그인 상태에 따라 분기) */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
           {userInfo ? (
             // 로그인 후 UI
             <>
@@ -98,11 +104,11 @@ export const Header = () => {
                   <NotificationsNoneRoundedIcon fontSize="medium" />
                 </Badge>
               </IconButton>
-              <Box 
-                onClick={handleMenu} 
+              <Box
+                onClick={handleMenu}
                 sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', ml: 1, p: 1, borderRadius: '8px', '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
               >
-                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }}/>
+                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }} />
                 <Typography sx={{ fontWeight: 'bold' }}>
                   {userInfo.nickname}님
                 </Typography>
@@ -128,6 +134,9 @@ export const Header = () => {
           )}
         </Box>
       </Toolbar>
+
+      {/* 채팅 드로어 */}
+      <ChatMain open={chatDrawerOpen} onClose={handleChatClose} />
     </AppBar>
   );
 };
