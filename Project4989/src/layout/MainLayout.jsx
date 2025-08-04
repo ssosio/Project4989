@@ -1,16 +1,30 @@
 import React from 'react'
-import { Header } from './header'
-import Footer from './footer'
+import { Header } from '../layout/Header'
+import Footer from '../layout/Footer'
+import Menu from '../layout/Menu'
 import { Outlet } from 'react-router-dom'
+
 const MainLayout = () => {
   return (
-    <div>
-        <Header/>
-        <main>
-            <Outlet/>
-        </main>
-
-        <Footer/>
+    <div style={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+      maxWidth: '100%'
+    }}>
+      <Header />
+      <Menu />
+      <main style={{ 
+        flex: 1,
+        width: '100%',
+        maxWidth: '100%',
+        minHeight: 'calc(100vh - 200px)',
+        padding: '20px 0'
+      }}>
+        <Outlet />
+      </main>
+      <Footer />
     </div>
   )
 }
