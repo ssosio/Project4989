@@ -1,6 +1,7 @@
 package boot.sagu.controller;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.PostsService;
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -37,20 +39,27 @@ public class PostsController {
 	
 	
 	@PostMapping("/upload")
-	public String fileUpload(@RequestParam("uploadFile") MultipartFile uploadFile) 
+	public String fileUpload(@RequestParam("uploadFile") MultipartFile uploadFile,HttpSession session) 
 	{
 		String fileName=uploadFile.getOriginalFilename();
 		
-		String path="";
+		String path=session.getServletContext().getRealPath("/save");
 		
 		File file=new File(path+"\\"+photoName);
 		
 		SimpleDateFormat sdf=new SimpleDateFormat("yyyyMMddHHmmss");
 		photoName=sdf.format(new Date())+uploadFile.getOriginalFilename();
+		System.out.println(photoName);
 		
-		
-		
-		
+		try {
+			uploadFile.transferTo(new File(path+"\\"+photoName));
+		} catch (IllegalStateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		return photoName;
 	}
