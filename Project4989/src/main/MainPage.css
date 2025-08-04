@@ -1,0 +1,277 @@
+.main-page {
+  padding: 40px 0;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 234px);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* 헤더 섹션 */
+.main-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.main-subtitle {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+/* 정렬 버튼 */
+.sort-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+}
+
+.sort-btn {
+  padding: 12px 24px;
+  border: 2px solid #3498db;
+  background-color: white;
+  color: #3498db;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sort-btn:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+.sort-btn.active {
+  background-color: #3498db;
+  color: white;
+}
+
+/* 경매 상품 컨테이너 */
+.auction-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.auction-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* 경매 카드 */
+.auction-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 350px;
+}
+
+.auction-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.auction-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.auction-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auction-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(231, 76, 60, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auction-info {
+  padding: 15px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.auction-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.auction-price {
+  margin-bottom: 6px;
+}
+
+.current-price {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e74c3c;
+}
+
+.auction-time {
+  margin-bottom: 10px;
+}
+
+.end-time {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.bid-button {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.bid-button:hover {
+  background-color: #2980b9;
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.page-btn {
+  padding: 10px 20px;
+  border: 2px solid #3498db;
+  background-color: white;
+  color: #3498db;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: #3498db;
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+  .auction-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .auction-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .main-page {
+    padding: 20px 0;
+  }
+  
+  .main-title {
+    font-size: 2rem;
+  }
+  
+  .sort-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .sort-btn {
+    width: 200px;
+  }
+  
+  .auction-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  
+  .auction-card {
+    height: 320px;
+  }
+  
+  .auction-image {
+    height: 180px;
+  }
+  
+  .auction-info {
+    padding: 12px;
+  }
+  
+  .container {
+    padding: 0 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-title {
+    font-size: 1.8rem;
+  }
+  
+  .auction-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .auction-card {
+    height: 300px;
+  }
+} 
