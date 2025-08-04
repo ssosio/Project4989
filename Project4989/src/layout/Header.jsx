@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
-
+import ChatMain from '../chat/ChatMain';
 
 
 // --- Styled Components (디자인을 위한 코드) ---
@@ -64,6 +64,9 @@ export const Header = () => {
   const handleChatClose = () => {
     setChatDrawerOpen(false);
   };
+  useEffect(() => {
+    console.log("Header received userInfo:", userInfo);
+  }, [userInfo]);
 
 
   return (
@@ -108,7 +111,7 @@ export const Header = () => {
                 onClick={handleMenu}
                 sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', ml: 1, p: 1, borderRadius: '8px', '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
               >
-                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }} />
+                <Avatar src={'http://localhost:4989/save'+userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }} />
                 <Typography sx={{ fontWeight: 'bold' }}>
                   {userInfo.nickname}님
                 </Typography>

@@ -3,6 +3,7 @@ package boot.sagu.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.MemberDto;
 import boot.sagu.mapper.MemberMapper;
@@ -15,9 +16,21 @@ public class MemberService implements MemberServiceInter {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    
+    @Autowired
+    private FileUploadService fileUploadService;
+    
     @Override
-    public void signup(MemberDto dto) {
+    public void signup(MemberDto dto, MultipartFile profileImageFile) {
+    	
+    	// 1. 프로필 이미지가 존재하면 업로드하고 URL을 받아옵니다.
+        if (profileImageFile != null && !profileImageFile.isEmpty()) {
+            String profileImageUrl = fileUploadService.uploadFile(profileImageFile);
+            // 2. 받아온 URL을 DTO에 설정합니다.
+            dto.setProfileImageUrl(profileImageUrl);
+        }
+        
+    	
         // 비밀번호를 암호화
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
         // 암호화된 비밀번호를 DTO에 다시 설정

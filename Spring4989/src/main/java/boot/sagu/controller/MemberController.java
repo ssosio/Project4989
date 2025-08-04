@@ -7,9 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.MemberDto;
@@ -33,8 +36,9 @@ public class MemberController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/signup")
-    public void signup(@RequestBody MemberDto dto) {
-        memberService.signup(dto);
+    public void signup(@ModelAttribute MemberDto dto,
+    		@RequestPart(value = "profileImageFile", required = false) MultipartFile profileImageFile) {
+        memberService.signup(dto,profileImageFile);
     }
     
     // 로그인 성공 시 JWT 토큰을 반환하도록 로직 변경
