@@ -48,6 +48,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 // --- Styled Components 끝 ---
 
 
+
 export const Header = () => {
   // useContext를 사용해 Root 컴포넌트의 userInfo와 handleLogout 함수를 가져옵니다.
   const { userInfo, handleLogout } = useContext(AuthContext);
@@ -89,6 +90,7 @@ export const Header = () => {
 
         {/* 우측 아이콘 및 버튼 영역 (로그인 상태에 따라 분기) */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+
           {userInfo ? (
             // 로그인 후 UI
             <>
@@ -102,11 +104,11 @@ export const Header = () => {
                   <NotificationsNoneRoundedIcon fontSize="medium" />
                 </Badge>
               </IconButton>
-              <Box 
-                onClick={handleMenu} 
+              <Box
+                onClick={handleMenu}
                 sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', ml: 1, p: 1, borderRadius: '8px', '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
               >
-                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }}/>
+                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }} />
                 <Typography sx={{ fontWeight: 'bold' }}>
                   {userInfo.nickname}님
                 </Typography>
@@ -132,6 +134,9 @@ export const Header = () => {
           )}
         </Box>
       </Toolbar>
+
+      {/* 채팅 드로어 */}
+      <ChatMain open={chatDrawerOpen} onClose={handleChatClose} />
     </AppBar>
   );
 };
