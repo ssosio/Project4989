@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge } from '@mui/material';
-import { styled  } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import ChatMain from '../chat/ChatMain';
 
 const TossSearch = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -42,6 +44,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 export const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -50,15 +53,23 @@ export const Header = () => {
     setAnchorEl(null);
   };
 
+  const handleChatClick = () => {
+    setChatDrawerOpen(true);
+  };
+
+  const handleChatClose = () => {
+    setChatDrawerOpen(false);
+  };
+
   return (
-    <AppBar position="static" elevation={0} sx={{ 
-      background: '#fff', 
-      color: '#222', 
+    <AppBar position="static" elevation={0} sx={{
+      background: '#fff',
+      color: '#222',
       borderBottom: '1px solid #f0f2f5',
       height: '64px',
       width: '100%'
     }}>
-      <Toolbar sx={{ 
+      <Toolbar sx={{
         height: '64px',
         minHeight: '64px',
         px: { xs: 2, sm: 4 },
@@ -66,17 +77,17 @@ export const Header = () => {
       }}>
         {/* 로고 */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <img 
-            src="/4989로고.png" 
-            alt="4989 로고" 
-            style={{ 
-              height: '60px', 
+          <img
+            src="/4989로고.png"
+            alt="4989 로고"
+            style={{
+              height: '60px',
               width: 'auto',
               marginRight: '15px'
-            }} 
+            }}
           />
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#3182f6', letterSpacing: '-1px', fontSize: 24 }}>
-            사9팔9  
+            사9팔9
           </Typography>
         </Box>
         {/* 검색바 */}
@@ -90,6 +101,11 @@ export const Header = () => {
         </Box>
         {/* 우측 아이콘 */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton color="inherit" sx={{ p: 1 }} onClick={handleChatClick}>
+            <Badge badgeContent={2} color="primary" sx={{ '& .MuiBadge-badge': { background: '#3182f6' } }}>
+              <ChatBubbleOutlineRoundedIcon />
+            </Badge>
+          </IconButton>
           <IconButton color="inherit" sx={{ p: 1 }}>
             <Badge badgeContent={2} color="primary" sx={{ '& .MuiBadge-badge': { background: '#3182f6' } }}>
               <NotificationsNoneRoundedIcon fontSize="medium" />
@@ -113,6 +129,9 @@ export const Header = () => {
           </Menu>
         </Box>
       </Toolbar>
+
+      {/* 채팅 드로어 */}
+      <ChatMain open={chatDrawerOpen} onClose={handleChatClose} />
     </AppBar>
   );
 };
