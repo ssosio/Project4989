@@ -7,7 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
-import ChatMain from '../chat/ChatMain';
+
+
 
 // --- Styled Components (디자인을 위한 코드) ---
 const TossSearch = styled('div')(({ theme }) => ({
@@ -69,12 +70,15 @@ export const Header = () => {
     <AppBar position="static" elevation={0} sx={{ background: '#fff', color: '#222', borderBottom: '1px solid #f0f2f5', height: '64px', width: '100%' }}>
       <Toolbar sx={{ height: '64px', minHeight: '64px', px: { xs: 2, sm: 4 }, width: '100%' }}>
         {/* 로고 */}
+
+
         <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navi('/')}>
           <img src="/4989로고.png" alt="4989 로고" style={{ height: '60px', width: 'auto', marginRight: '15px' }} />
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#3182f6', letterSpacing: '-1px', fontSize: 24 }}>
-            사9팔9
+            중고러래 사9팔9!
           </Typography>
         </Box>
+
 
         {/* 검색바 */}
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
