@@ -36,7 +36,7 @@ const Goods = () => {
   return (
     <div>
 
-      <button type='button' style={{width:'150px', backgroundColor:'beige'}}  onClick={()=>{
+      <button type='button' style={{width:'150px', backgroundColor:'beige',color:'#000'}}  onClick={()=>{
         navi("/board/post");
       }}>등록</button>
 

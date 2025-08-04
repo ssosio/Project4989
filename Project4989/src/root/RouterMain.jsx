@@ -9,6 +9,7 @@ import Auction from '../board/Auction'
 import LoginForm from '../login/LoginForm'
 import SignupForm from '../login/SignupForm'
 import KakaoMap from '../chat/KakaoMap'
+import Post from '../board/Post'
 
 const RouterMain = () => {
   return (
@@ -23,6 +24,7 @@ const RouterMain = () => {
           <Route path='/login' element={<LoginForm />} />
           <Route path='/signup' element={<SignupForm />} />
           <Route path='/map' element={<KakaoMap />} />
+          <Route path='/board/post' element={<Post/>}/>
         </Route>
 
 
