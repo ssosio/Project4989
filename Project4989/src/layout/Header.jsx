@@ -42,7 +42,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-export const Header = () => {
+const Header = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
 
@@ -136,4 +136,5 @@ export const Header = () => {
   );
 };
 
-export default Header
+export { Header };
+export default Header;
