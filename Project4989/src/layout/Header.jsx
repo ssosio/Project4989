@@ -4,6 +4,7 @@ import { styled  } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import { useNavigate } from 'react-router-dom';
 
 const TossSearch = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -50,6 +51,7 @@ export const Header = () => {
     setAnchorEl(null);
   };
 
+  const navi = useNavigate();
   return (
     <AppBar position="static" elevation={0} sx={{ 
       background: '#fff', 
@@ -65,6 +67,9 @@ export const Header = () => {
         width: '100%'
       }}>
         {/* 로고 */}
+        <label style={{cursor:'pointer'}} onClick={()=>{
+          navi("/");
+        }} >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <img 
             src="/4989로고.png" 
@@ -76,9 +81,10 @@ export const Header = () => {
             }} 
           />
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#3182f6', letterSpacing: '-1px', fontSize: 24 }}>
-            사9팔9  
+            중고거래 사9팔9!  
           </Typography>
         </Box>
+        </label>
         {/* 검색바 */}
         <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <TossSearch>
