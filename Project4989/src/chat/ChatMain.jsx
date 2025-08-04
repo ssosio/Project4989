@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Drawer,
@@ -16,6 +16,7 @@ import {
 import { styled } from '@mui/material/styles';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import CircleIcon from '@mui/icons-material/Circle';
+import DetailChat from './detailChat';
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
     '& .MuiDrawer-paper': {
@@ -41,10 +42,15 @@ const ChatItem = styled(ListItem)(({ theme }) => ({
     transition: 'background-color 0.2s',
     '&:hover': {
         backgroundColor: '#f8f9fa'
+    },
+    '&:active': {
+        backgroundColor: '#e3f0fd'
     }
 }));
 
 const ChatMain = ({ open, onClose }) => {
+    const [openChatRooms, setOpenChatRooms] = useState([]);
+
     // 임시 채팅방 데이터
     const chatRooms = [
         {
@@ -94,6 +100,20 @@ const ChatMain = ({ open, onClose }) => {
         }
     ];
 
+    const handleChatRoomClick = (room) => {
+        console.log('채팅방 클릭됨:', room);
+        // 이미 열린 채팅방인지 확인
+        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.id === room.id);
+        if (!isAlreadyOpen) {
+            setOpenChatRooms(prev => [...prev, room]);
+        }
+    };
+
+    const handleDetailChatClose = (roomId) => {
+        console.log('상세 채팅 닫기:', roomId);
+        setOpenChatRooms(prev => prev.filter(room => room.id !== roomId));
+    };
+
     return (
         <StyledDrawer
             anchor="right"
@@ -116,7 +136,7 @@ const ChatMain = ({ open, onClose }) => {
                 <List sx={{ p: 0 }}>
                     {chatRooms.map((room, index) => (
                         <React.Fragment key={room.id}>
-                            <ChatItem>
+                            <ChatItem onClick={() => handleChatRoomClick(room)}>
                                 <ListItemAvatar>
                                     <Box sx={{ position: 'relative' }}>
                                         <Avatar sx={{
@@ -192,6 +212,18 @@ const ChatMain = ({ open, onClose }) => {
                     ))}
                 </List>
             </Box>
+
+            {/* 상세 채팅 모달들 */}
+            {openChatRooms.map((room, index) => (
+                <DetailChat
+                    key={room.id}
+                    open={true}
+                    onClose={() => handleDetailChatClose(room.id)}
+                    chatRoom={room}
+                    zIndex={1000 + index}
+                    offset={index}
+                />
+            ))}
         </StyledDrawer>
     );
 };
