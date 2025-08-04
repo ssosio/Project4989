@@ -3,7 +3,15 @@ import React from 'react'
 const Goods = () => {
   return (
     <div>
-      중고물품 페이지
+      <table>
+        <tr>
+          <select name='category'>
+            <option value="used_items"></option>
+            <option value="cars"></option>
+            <option value="real_estates"></option>
+          </select>
+        </tr>
+      </table>
     </div>
   )
 }
