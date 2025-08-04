@@ -9,6 +9,7 @@ import Real_estate from '../board/Real_estate'
 import LoginForm from '../login/LoginForm'
 import SignupForm from '../login/SignupForm'
 import AuctionMain from '../auction/auction_main/AuctionMain'
+import Post from '../board/Post'
 
 const RouterMain = () => {
   return (
@@ -23,6 +24,7 @@ const RouterMain = () => {
             <Route path='/auction' element={<AuctionMain/>}/>
             <Route path='/login' element={<LoginForm/>}/>
             <Route path='/signup' element={<SignupForm/>}/>
+            <Route path='/board/post' element={<Post/>}/>
         </Route>
 
         
