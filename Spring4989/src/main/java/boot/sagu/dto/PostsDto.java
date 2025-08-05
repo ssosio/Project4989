@@ -11,7 +11,7 @@ import lombok.Data;
 @Alias("posts")
 public class PostsDto {
 
-    private long postId;        // post_id → postId
+    private int postId;         // post_id → postId
     private long memberId;      // member_id → memberId
     private String title;
     private String content;     // content 필드 추가
