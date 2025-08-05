@@ -111,7 +111,7 @@ export const Header = () => {
                 onClick={handleMenu}
                 sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', ml: 1, p: 1, borderRadius: '8px', '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' } }}
               >
-                <Avatar src={'http://localhost:4989/save'+userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }} />
+                <Avatar src={'http://localhost:4989'+userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ width: 32, height: 32, mr: 1 }} />
                 <Typography sx={{ fontWeight: 'bold' }}>
                   {userInfo.nickname}님
                 </Typography>

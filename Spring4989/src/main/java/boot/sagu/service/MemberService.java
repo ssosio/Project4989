@@ -44,4 +44,10 @@ public class MemberService implements MemberServiceInter {
 		// TODO Auto-generated method stub
 		return memberMapper.findByLoginId(loginId);
 	}
+
+	@Override
+	public boolean isLoginIdAvailable(String loginId) {
+		// TODO Auto-generated method stub
+		return memberMapper.countByLoginId(loginId) == 0;
+	}
 }
