@@ -138,7 +138,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                         created_at: receivedMessage.timestamp,
                         is_read: 0 // 새 메시지는 안읽은 상태
                     };
-
                     setMessages(prevMessages => [...prevMessages, convertedMessage]);
                 }
             });
@@ -268,6 +267,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
         }
     };
 
+    // 메시지 전송 함수
     const handleSendMessage = async () => {
         if (message.trim() && chatRoomId && userInfo?.memberId && stompClient) {
             try {
