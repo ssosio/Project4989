@@ -68,11 +68,14 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
     const [stompClient, setStompClient] = useState(null);
 
     const chatRoomId = chatRoom?.chat_room_id;
+    
+    // ⭐⭐ 여기 IP 주소를 서버가 실행되는 컴퓨터의 실제 IP 주소로 변경하세요.
+    // 예: 'http://192.168.10.136'
+    // 만약 `localhost`로 사용한다면, 이 코드는 서버 컴퓨터에서만 작동합니다.
+    const SERVER_IP = '192.168.10.136'; 
 
-    // 메시지 읽음 처리 함수
     const markMessagesAsRead = () => {
         if (stompClient && chatRoomId && userInfo?.memberId) {
-            // 상대방이 보낸 메시지 중 안읽은 것이 있는지 확인 (is_read === 0)
             const hasUnreadMessages = messages.some(msg =>
                 msg.sender_id !== userInfo.memberId && msg.is_read === 0
             );
@@ -94,10 +97,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
         }
     };
 
-    // WebSocket 연결
     const connectWebSocket = () => {
         const client = new Client({
-            brokerURL: 'ws://localhost:4989/ws',
+            // ⭐⭐ 수정된 부분: brokerURL에 SERVER_IP 변수 사용
+            brokerURL: `ws://${SERVER_IP}:4989/ws`,
             connectHeaders: {},
             debug: function (str) {
                 console.log(str);
@@ -110,16 +113,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
         client.onConnect = () => {
             setStompClient(client);
 
-            // 채팅방 구독
             client.subscribe(`/topic/chat/${chatRoomId}`, (message) => {
                 const receivedMessage = JSON.parse(message.body);
                 console.log('받은 WebSocket 메시지:', receivedMessage);
 
                 if (receivedMessage.type === 'READ_UPDATE') {
-                    // 읽음 상태 업데이트 (0 → 1)
                     setMessages(prevMessages =>
                         prevMessages.map(msg => {
-                            // 상대방이 보낸 메시지이고 아직 안읽은 상태(0)인 메시지들을 읽음 처리(1)
                             if (msg.sender_id !== userInfo?.memberId && msg.is_read === 0) {
                                 console.log('메시지 읽음 처리:', msg.message_id);
                                 return { ...msg, is_read: 1 };
@@ -128,17 +128,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                         })
                     );
                 } else {
-                    // 새 메시지는 안읽은 상태(0)로 추가
                     const convertedMessage = {
-                        message_id: Date.now(), // 임시 ID
+                        message_id: Date.now(),
                         chat_room_id: receivedMessage.chatRoomId,
                         sender_id: receivedMessage.senderId,
                         message_type: receivedMessage.messageType,
                         message_content: receivedMessage.messageContent,
                         created_at: receivedMessage.timestamp,
-                        is_read: 0 // 새 메시지는 안읽은 상태
+                        is_read: 0
                     };
-
                     setMessages(prevMessages => [...prevMessages, convertedMessage]);
                 }
             });
@@ -147,10 +145,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
         client.activate();
     };
 
-    // 개선된 연결 해제 함수
     const disconnectWebSocket = () => {
         if (stompClient) {
-            // 서버에 나가기 알림 전송
             const leaveMessage = {
                 type: 'LEAVE',
                 chatRoomId: chatRoomId,
@@ -163,41 +159,35 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                 body: JSON.stringify(leaveMessage)
             });
 
-            // 연결 종료
             stompClient.deactivate();
             setStompClient(null);
         }
     };
 
-    // 스크롤을 맨 아래로 이동시키는 함수
     const scrollToBottom = () => {
         if (messagesContainerRef.current) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
     };
 
-    // 메시지가 변경될 때마다 스크롤을 맨 아래로 이동
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    // 채팅방이 열릴 때마다 메시지 목록 가져오기 및 WebSocket 연결
     useEffect(() => {
         console.log('DetailChat useEffect 실행:', { open, chatRoomId, chatRoom });
         if (open && chatRoomId) {
             console.log('메시지 가져오기 조건 만족, chatRoomId:', chatRoomId);
             fetchMessages(chatRoomId);
-            // WebSocket이 이미 연결되어 있지 않은 경우에만 연결
+            
             if (!stompClient) {
                 connectWebSocket();
             }
 
-            // 채팅방 진입 시 읽음 처리 (1초 후)
             setTimeout(() => {
                 markMessagesAsRead();
             }, 1000);
 
-            // 스크롤이 맨 아래에 있을 때 자동 읽음 처리
             const handleScroll = () => {
                 if (messagesContainerRef.current) {
                     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
@@ -207,7 +197,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                 }
             };
 
-            // 스크롤 이벤트 리스너 추가
             if (messagesContainerRef.current) {
                 messagesContainerRef.current.addEventListener('scroll', handleScroll);
             }
@@ -216,13 +205,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
             disconnectWebSocket();
         }
 
-        // 컴포넌트 언마운트 시 WebSocket 연결 해제
         return () => {
             disconnectWebSocket();
         };
     }, [open, chatRoomId]);
 
-    // chatRoom이 유효하지 않은 경우 처리
     if (!chatRoom) {
         console.warn('DetailChat: chatRoom이 유효하지 않습니다.');
         return null;
@@ -231,14 +218,17 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
     const fetchMessages = async (roomId) => {
         setLoading(true);
         console.log('메시지 가져오기 시작, roomId:', roomId);
-        console.log('요청 URL:', `http://localhost:4989/listMessage?chat_room_id=${roomId}`);
+        
+        // ⭐⭐ 수정된 부분: API 요청 URL에 SERVER_IP 변수 사용
+        const url = `http://${SERVER_IP}:4989/listMessage?chat_room_id=${roomId}`;
+        console.log('요청 URL:', url);
 
         try {
-            const response = await axios.get(`http://localhost:4989/listMessage?chat_room_id=${roomId}`, {
+            const response = await axios.get(url, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                timeout: 5000 // 5초 타임아웃
+                timeout: 5000
             });
             console.log('API 응답 상태:', response.status);
             console.log('API 응답 헤더:', response.headers);
@@ -246,7 +236,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
             console.log('응답 데이터 타입:', typeof response.data);
             console.log('응답 데이터 길이:', Array.isArray(response.data) ? response.data.length : '배열이 아님');
 
-            // null 값들을 필터링하고 더 자세한 로그 추가
             const filteredMessages = Array.isArray(response.data)
                 ? response.data.filter(msg => {
                     console.log('메시지 객체:', msg);
@@ -284,17 +273,22 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                     destination: '/app/chat.sendMessage',
                     body: JSON.stringify(chatMessage)
                 });
+
+                const ownMessage = {
+                    message_id: Date.now(),
+                    chat_room_id: chatRoomId,
+                    sender_id: userInfo.memberId,
+                    message_type: 'text',
+                    message_content: message,
+                    created_at: new Date().toISOString(),
+                    is_read: 0
+                };
+                setMessages(prevMessages => [...prevMessages, ownMessage]);
+
                 setMessage('');
             } catch (error) {
                 console.error('메시지 전송 실패:', error);
             }
-        } else {
-            console.error('메시지 전송 실패: 필요한 정보가 부족합니다', {
-                message: message.trim(),
-                chatRoomId,
-                memberId: userInfo?.memberId,
-                stompClient: !!stompClient
-            });
         }
     };
 
@@ -343,12 +337,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
             </ChatHeader>
 
             <Box sx={{
-                height: 'calc(100% - 80px)', // 헤더 높이를 제외한 나머지 공간
+                height: 'calc(100% - 80px)',
                 display: 'flex',
                 flexDirection: 'column',
                 background: '#f8f9fa'
             }}>
-                {/* 메시지 영역 */}
                 <Box
                     ref={messagesContainerRef}
                     sx={{
@@ -357,7 +350,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                         p: 2,
                         display: 'flex',
                         flexDirection: 'column',
-                        minHeight: 0 // 스크롤이 제대로 작동하도록 설정
+                        minHeight: 0
                     }}
                 >
                     {loading ? (
@@ -365,12 +358,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                             <Typography>메시지를 불러오는 중...</Typography>
                         </Box>
                     ) : (messages || []).map((msg) => {
-                        // msg가 null이거나 undefined인 경우 건너뛰기
                         if (!msg) return null;
 
                         const isOwnMessage = msg?.sender_id === userInfo?.memberId || msg?.senderId === userInfo?.memberId;
 
-                        // 시간 포맷팅 함수
                         const formatTime = (dateString) => {
                             if (!dateString) return '';
                             const date = new Date(dateString);
@@ -395,7 +386,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                                     </Typography>
                                 </MessageBubble>
 
-                                {/* 시간과 조회 상태 */}
                                 <Box
                                     sx={{
                                         display: 'flex',
@@ -415,7 +405,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                                         {formatTime(msg?.created_at || msg?.timestamp)}
                                     </Typography>
 
-                                    {/* 내가 보낸 메시지일 때만 조회 상태 표시 */}
                                     {isOwnMessage && (
                                         <Box
                                             sx={{
@@ -427,12 +416,12 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                                             <Typography
                                                 variant="caption"
                                                 sx={{
-                                                    color: msg?.is_read === 1 ? '#3182f6' : '#ccc', // 파란색 (읽음) / 회색 (안읽음)
+                                                    color: msg?.is_read === 0 ? '#3182f6' : '#ccc',
                                                     fontSize: '10px',
-                                                    fontWeight: msg?.is_read === 1 ? 'bold' : 'normal'
+                                                    fontWeight: msg?.is_read === 0 ? 'bold' : 'normal'
                                                 }}
                                             >
-                                                {msg?.is_read === 1 ? '읽음' : '안읽음'}
+                                                {msg?.is_read === 0 ? '읽음' : '1'}
                                             </Typography>
                                         </Box>
                                     )}
@@ -444,11 +433,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
 
                 <Divider />
 
-                {/* 메시지 입력 영역 - 고정 높이 */}
                 <Box sx={{
                     p: 2,
                     background: '#fff',
-                    flexShrink: 0 // 입력 영역이 축소되지 않도록 설정
+                    flexShrink: 0
                 }}>
                     <TextField
                         fullWidth
@@ -488,4 +476,4 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
     );
 };
 
-export default DetailChat; 
+export default DetailChat;
