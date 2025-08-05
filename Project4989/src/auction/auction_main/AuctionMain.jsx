@@ -1,20 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import './auction.css';
 
 const AuctionMain = () => {
   const [auctionList, setAuctionList] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     axios.get("http://localhost:4989/auction")
       .then(res => {
-        console.log("📅 작성일:", res.data[0]?.createdAt);
-        console.log("⏰ 마감시간:", res.data[0]?.auctionEndTime);
         setAuctionList(res.data);
       })
       .catch(err => {
         console.error("❌ 에러 발생:", err);
       });
   }, []);
+
+  // 상세 페이지로 이동하는 함수
+  const handleRowClick = (postId) => {
+    navigate(`/auction/detail/${postId}`);
+  };
 
   // 날짜 포맷팅 함수
   const formatDate = (dateString) => {
@@ -51,9 +57,9 @@ const AuctionMain = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>📢 경매 리스트</h2>
-      <table border="1" cellPadding="10" style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <div className="auction-main-container">
+      <h2>경매 리스트</h2>
+      <table className="auction-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -71,7 +77,10 @@ const AuctionMain = () => {
         </thead>
         <tbody>
           {auctionList.map(post => (
-            <tr key={post.postId}>
+            <tr 
+              key={post.postId}
+              onClick={() => handleRowClick(post.postId)}
+            >
               <td>{formatText(post.postId)}</td>
               <td>{formatText(post.memberId)}</td>
               <td>{formatText(post.title)}</td>
