@@ -88,18 +88,124 @@ const Post = () => {
                     </select>
                     </label>
                 </td>
-                <td>
-                    <label>판매타입
-                    <select name="tradeType" id="" style={{width:'150px'}} value={tradeType} onChange={(e)=>{
-                        setTradeType(e.target.value);
-                    }}>
-                        <option value="SALE">판매</option>
-                        <option value="AUCTION">경매</option>
-                        <option value="SHARE">나눔</option>
-                    </select>
-                    </label>
-                </td>
-            </tr>
+                </tr>
+                {
+                    postType==='REAL_ESTATES'&&(
+                        <tr>
+                            <td>
+                                <label>매물종류
+                                    <select name='propertyType' style={{width:'150px'}}>
+                                        <option value="apt">아파트</option>
+                                        <option value="studio">오피스텔</option>
+                                        <option value="oneroom">원룸</option>
+                                        <option value="tworoom">투룸</option>
+                                    </select>
+                                </label>
+                            </td>
+                            <td>
+                                <label>면적
+                                <input type="text" name='area' style={{width:'80px'}}/>㎡
+                                </label>
+                            </td>
+                            <td>
+                                <label>방 개수
+                                <input type="text" name='rooms' style={{width:'50px'}}/>
+                                </label>
+                            </td>
+                            <td>
+                                <label>층
+                                <input type="text" name='floor' style={{width:'50px'}}/>
+                                </label>
+                            </td>
+                            <td>
+                                <label>거래유형
+                                    <select name='dealType'>
+                                        <option value="lease">전세</option>
+                                        <option value="rent">월세</option>
+                                        <option value="leaseAndrent">전월세</option>
+                                        <option value="buy">매매</option>
+                                    </select>
+                                </label>
+                            </td>
+                            <td>
+                                <label>위치
+                                <input type="text" name='location' style={{width:'50px'}}/>
+                                </label>
+                            </td>
+                        </tr>
+                    )
+                }
+                {
+                    postType==='CARS'&&(
+                        <tr>
+                            <td>
+                                <label>브랜드
+                                    <select name='brand' style={{width:'150px'}}>
+                                        <option value="kia">기아</option>
+                                        <option value="hyundai">현대</option>
+                                        <option value="benz">벤츠</option>
+                                        <option value="audi">아우디</option>
+                                        <option value="bmw">BMW</option>
+                                    </select>
+                                </label>
+                            </td>
+                            <td>
+                                <label>모델
+                                <input type="text" name='model' style={{width:'180px'}}/>
+                                </label>
+                            </td>
+                            <td>
+                                <label>연식
+                                <input type="text" name='year' style={{width:'80px'}}/>
+                                </label>
+                            </td>
+                            <td>
+                                <label>주행거리
+                                <input type="text" name='mileage' style={{width:'80px'}}/>km
+                                </label>
+                            </td>
+                            <td>
+                                <label>연료
+                                    <select name='fuelType'>
+                                        <option value="gasiline">휘발유</option>
+                                        <option value="diesel">경유</option>
+                                        <option value="electric">전기</option>
+                                    </select>
+                                </label>
+                            </td>
+                            <td>
+                                <label>변속기
+                                    <select name='transmission'>
+                                        <option value="auto">오토</option>
+                                        <option value="stick">수동</option>
+                                    </select>
+                                </label>
+                            </td>
+                            <td>
+                                <label>위치
+                                <input type="text" name='location' style={{width:'50px'}}/>
+                                </label>
+                            </td>
+                        </tr>
+                    )
+                }
+                {
+                    (postType==='ITEMS'||postType==='CARS') &&(
+                    <tr>
+                        <td>
+                            <label>판매타입
+                            <select name="tradeType" id="" style={{width:'150px'}} value={tradeType} onChange={(e)=>{
+                            setTradeType(e.target.value);
+                            }}>
+                                <option value="SALE">판매</option>
+                                <option value="AUCTION">경매</option>
+                                <option value="SHARE">나눔</option>
+                            </select>
+                            </label>
+                        </td>
+                    </tr>
+                    )
+                }
             <tr>
                 <td>
                     <label>제목
