@@ -11,6 +11,7 @@ import SignupForm from '../login/SignupForm'
 import Post from '../board/Post'
 import AuctionMain from '../auction/auction_main/AuctionMain'
 import AuctionDetail from '../auction/auction_main/AuctionDetail'
+import Chat from '../chat/ChatMain'
 
 const RouterMain = () => {
   return (
