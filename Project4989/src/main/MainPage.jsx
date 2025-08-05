@@ -150,21 +150,21 @@ const MainPage = () => {
           <div className="auction-grid">
             {currentItems.map((item) => (
               <div key={item.id} className="auction-card">
-                <div className="auction-image">
+                <div className="main-auction-image">
                   <img src={item.image} alt={item.title} />
-                  <div className="auction-badge">
+                  <div className="main-auction-badge">
                     <span className="bidders-count">{item.bidders}명</span>
                   </div>
                 </div>
                 <div className="auction-info">
                   <h3 className="auction-title">{item.title}</h3>
                   <div className="auction-price">
-                    <span className="current-price">₩{item.currentPrice.toLocaleString()}</span>
+                    <span className="main-current-price">₩{item.currentPrice.toLocaleString()}</span>
                   </div>
                   <div className="auction-time">
                     <span className="end-time">종료: {item.endTime}</span>
                   </div>
-                  <button className="bid-button">입찰하기</button>
+                  <button className="main-bid-button">입찰하기</button>
                 </div>
               </div>
             ))}
