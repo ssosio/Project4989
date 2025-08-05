@@ -16,7 +16,7 @@ mybatis:
 #jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
-  expiration: 3600000
+  expiration: 21600000
 # CoolSMS
 coolsms:
   api-key: 'NCSDJNFKIX6MFYPO'
