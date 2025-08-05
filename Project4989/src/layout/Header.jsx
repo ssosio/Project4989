@@ -8,11 +8,7 @@ import { AuthContext } from '../context/AuthContext';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import ChatMain from '../chat/ChatMain';
-<<<<<<< HEAD
-=======
 import './Header.css';
->>>>>>> a1c9c47165a063768abdf08de2933c21de3fc2e0
-
 
 // --- Styled Components (디자인을 위한 코드) ---
 const TossSearch = styled('div')(({ theme }) => ({
@@ -80,10 +76,10 @@ export const Header = () => {
 
 
   return (
-    <AppBar position="static" elevation={0} sx={{ 
-      background: '#FFFFFF', 
-      color: '#2E5BBA', 
-      height: '80px', 
+    <AppBar position="static" elevation={0} sx={{
+      background: '#FFFFFF',
+      color: '#2E5BBA',
+      height: '80px',
       width: '100%',
       fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
       backdropFilter: 'blur(10px)',
@@ -93,9 +89,9 @@ export const Header = () => {
         {/* 로고 */}
 
 
-        <Box className="header-logo-container" sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <Box className="header-logo-container" sx={{
+          display: 'flex',
+          alignItems: 'center',
           cursor: 'pointer',
           padding: '8px 12px',
           borderRadius: '12px',
@@ -108,17 +104,17 @@ export const Header = () => {
             boxShadow: '0 4px 15px rgba(74, 144, 226, 0.15)'
           }
         }} onClick={() => navi('/')}>
-          <img src="/4989로고.png" alt="4989 로고" className="header-logo-img" style={{ 
-            height: '48px', 
-            width: 'auto', 
+          <img src="/4989로고.png" alt="4989 로고" className="header-logo-img" style={{
+            height: '48px',
+            width: 'auto',
             marginRight: '16px',
             borderRadius: '8px',
             objectFit: 'contain'
           }} />
-                    <Typography variant="h6"  sx={{ 
-            fontWeight: 800, 
+          <Typography variant="h6" sx={{
+            fontWeight: 800,
             color: '#4A90E2',
-            letterSpacing: '-0.8px', 
+            letterSpacing: '-0.8px',
             fontSize: 25,
             fontFamily: "'Gugi', sans-serif",
           }} style={{ fontFamily: "'Gugi', sans-serif" }}>
@@ -128,9 +124,9 @@ export const Header = () => {
 
 
         {/* 검색바 */}
-        <Box sx={{ 
-          flex: 1, 
-          display: 'flex', 
+        <Box sx={{
+          flex: 1,
+          display: 'flex',
           justifyContent: 'center',
           maxWidth: '600px',
           margin: '0 auto'
@@ -147,65 +143,65 @@ export const Header = () => {
           {userInfo ? (
             // 로그인 후 UI
             <>
-              <IconButton color="inherit" sx={{ 
-                p: 1.5, 
+              <IconButton color="inherit" sx={{
+                p: 1.5,
                 color: '#5B9BD5',
                 borderRadius: '12px',
                 margin: '0 4px',
                 transition: 'all 0.3s ease',
-                '&:hover': { 
+                '&:hover': {
                   backgroundColor: 'rgba(74, 144, 226, 0.1)',
                   color: '#4A90E2',
                   transform: 'translateY(-2px)',
                   boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
                 }
               }} onClick={handleChatClick}>
-                <Badge badgeContent={2} color="primary" sx={{ 
-                  '& .MuiBadge-badge': { 
+                <Badge badgeContent={2} color="primary" sx={{
+                  '& .MuiBadge-badge': {
                     background: '#4A90E2',
                     fontSize: '10px',
                     fontWeight: '600'
-                  } 
+                  }
                 }}>
                   <ChatBubbleOutlineRoundedIcon />
                 </Badge>
               </IconButton>
-              <IconButton color="inherit" sx={{ 
-                p: 1.5, 
+              <IconButton color="inherit" sx={{
+                p: 1.5,
                 color: '#5B9BD5',
                 borderRadius: '12px',
                 margin: '0 4px',
                 transition: 'all 0.3s ease',
-                '&:hover': { 
+                '&:hover': {
                   backgroundColor: 'rgba(74, 144, 226, 0.1)',
                   color: '#4A90E2',
                   transform: 'translateY(-2px)',
                   boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
                 }
               }}>
-                <Badge badgeContent={2} color="primary" sx={{ 
-                  '& .MuiBadge-badge': { 
+                <Badge badgeContent={2} color="primary" sx={{
+                  '& .MuiBadge-badge': {
                     background: '#4A90E2',
                     fontSize: '10px',
                     fontWeight: '600'
-                  } 
+                  }
                 }}>
                   <NotificationsNoneRoundedIcon fontSize="medium" />
                 </Badge>
               </IconButton>
               <Box
                 onClick={handleMenu}
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  cursor: 'pointer', 
-                  ml: 2, 
-                  p: '8px 16px', 
-                  borderRadius: '16px', 
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  ml: 2,
+                  p: '8px 16px',
+                  borderRadius: '16px',
                   background: 'rgba(74, 144, 226, 0.08)',
                   border: '1px solid rgba(74, 144, 226, 0.15)',
                   transition: 'all 0.3s ease',
-                  '&:hover': { 
+                  '&:hover': {
                     backgroundColor: 'rgba(74, 144, 226, 0.15)',
                     transform: 'translateY(-1px)',
                     boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
@@ -213,14 +209,14 @@ export const Header = () => {
                   fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif'
                 }}
               >
-                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{ 
-                  width: 36, 
-                  height: 36, 
+                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{
+                  width: 36,
+                  height: 36,
                   mr: 1.5,
                   border: '2px solid rgba(74, 144, 226, 0.25)',
                   boxShadow: '0 2px 8px rgba(74, 144, 226, 0.15)'
                 }} />
-                <Typography sx={{ 
+                <Typography sx={{
                   fontWeight: 600,
                   color: '#2E3C2E',
                   fontSize: 14,
@@ -244,9 +240,9 @@ export const Header = () => {
           ) : (
             // 로그인 전 UI
             <>
-              <button 
-                type='button' 
-                className='header-login-btn' 
+              <button
+                type='button'
+                className='header-login-btn'
                 onClick={() => navi('/login')}
                 style={{
                   background: 'transparent',
@@ -278,9 +274,9 @@ export const Header = () => {
               >
                 로그인
               </button>
-              <button 
-                type='button' 
-                className='header-signup-btn' 
+              <button
+                type='button'
+                className='header-signup-btn'
                 onClick={() => navi('/signup')}
                 style={{
                   background: '#4A90E2',

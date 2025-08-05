@@ -9,7 +9,7 @@ spring:
    password: project49898949
 #mybatis
 mybatis:
-  type-aliases-package: boot.sagu.*
+  type-aliases-package: boot.sagu.dto
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
