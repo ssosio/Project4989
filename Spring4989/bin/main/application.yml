@@ -9,10 +9,18 @@ spring:
    password: project49898949
 #mybatis
 mybatis:
-  type-aliases-package: boot.sagu.*
+  type-aliases-package: boot.sagu.dto
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    call-setters-on-nulls: true
+
+logging:
+  level:
+    boot.sagu.mapper: DEBUG
+    boot.sagu.service: DEBUG
+    boot.sagu.controller: DEBUG
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
   expiration: 3600000
