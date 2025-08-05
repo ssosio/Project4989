@@ -9,6 +9,7 @@
             post_id,
             member_id,
             title,
+            content,
             price,
             trade_type,
             status,
@@ -16,10 +17,71 @@
             winner_id,
             view_count,
             created_at,
-            updated_at
+            updated_at,
+            post_type
         FROM posts
         WHERE trade_type = 'AUCTION'
         ORDER BY created_at DESC
+    </select>
+    
+    <!-- 경매글 상세 조회 -->
+    <select id="getAuctionDetail" parameterType="long" resultType="boot.sagu.dto.PostsDto">
+        SELECT 
+            post_id,
+            member_id,
+            title,
+            content,
+            price,
+            trade_type,
+            status,
+            auction_end_time,
+            winner_id,
+            view_count,
+            created_at,
+            updated_at,
+            post_type
+        FROM posts
+        WHERE post_id = #{postId} AND trade_type = 'AUCTION'
+        LIMIT 1
+    </select>
+
+    <!-- 입찰 정보 저장 -->
+    <insert id="insertBid" parameterType="boot.sagu.dto.AuctionDto">
+        INSERT INTO auction_bids (
+            post_id,
+            bidder_id,
+            bid_amount,
+            bid_time
+        ) VALUES (
+            #{postId},
+            #{bidderId},
+            #{bidAmount},
+            NOW()
+        )
+    </insert>
+
+    <!-- 최고가 조회 -->
+    <select id="getHighestBid" parameterType="long" resultType="boot.sagu.dto.AuctionDto">
+        SELECT 
+            bid_id,
+            post_id,
+            bidder_id,
+            bid_amount,
+            bid_time
+        FROM auction_bids
+        WHERE post_id = #{postId}
+        ORDER BY bid_amount DESC
+        LIMIT 1
+    </select>
+
+    <!-- 작성자 닉네임 조회 -->
+    <select id="getMemberNickname" parameterType="long" resultType="boot.sagu.dto.MemberDto">
+        SELECT 
+            member_id,
+            nickname
+        FROM members
+        WHERE member_id = #{memberId}
+        LIMIT 1
     </select>
 
 </mapper>
