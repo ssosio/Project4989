@@ -20,7 +20,7 @@ const MainLayout = () => {
         width: '100%',
         maxWidth: '100%',
         minHeight: 'calc(100vh - 200px)',
-        padding: '20px 0'
+        padding: '0'
       }}>
         <Outlet />
       </main>
