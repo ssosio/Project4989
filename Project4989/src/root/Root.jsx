@@ -11,7 +11,6 @@ const Root = () => {
 
   // 컴포넌트가 처음 렌더링될 때(새로고침 등) 한 번만 실행되는 자동 로그인 로직
   useEffect(() => {
-    // localStorage에서 토큰을 가져옵니다.
     const token = localStorage.getItem('jwtToken');
 
     // 토큰이 존재하면 디코딩하여 사용자 정보를 state에 저장합니다.

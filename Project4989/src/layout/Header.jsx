@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
@@ -71,6 +71,9 @@ export const Header = () => {
   const handleChatClose = () => {
     setChatDrawerOpen(false);
   };
+  useEffect(() => {
+    console.log("Header received userInfo:", userInfo);
+  }, [userInfo]);
 
 
   return (
