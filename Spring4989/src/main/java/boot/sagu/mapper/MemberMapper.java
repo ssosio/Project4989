@@ -7,4 +7,5 @@ import boot.sagu.dto.MemberDto;
 public interface MemberMapper {
     public void signup(MemberDto dto);
     public MemberDto findByLoginId(String loginId);
+    public int countByLoginId(String loginId);
 }

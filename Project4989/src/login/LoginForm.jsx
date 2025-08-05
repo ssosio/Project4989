@@ -38,6 +38,8 @@ function LoginForm() {
 
       // 토큰을 디코딩하여 payload(사용자 정보)를 추출합니다.
       const decodedToken = jwtDecode(token);
+      console.log("Decoded Token Payload:", decodedToken);
+      
       const userInfo = {
         loginId: decodedToken.sub,
         memberId: decodedToken.memberId,

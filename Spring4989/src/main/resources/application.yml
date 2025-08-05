@@ -13,14 +13,12 @@ mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    call-setters-on-nulls: true
-
-logging:
-  level:
-    boot.sagu.mapper: DEBUG
-    boot.sagu.service: DEBUG
-    boot.sagu.controller: DEBUG
+#jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
-  expiration: 3600000
+  expiration: 21600000
+# CoolSMS
+coolsms:
+  api-key: 'NCSDJNFKIX6MFYPO'
+  api-secret: '2A3QAHAVIG8UZREZ3OW0AN7S3I8AHS3A'
+  sender-phone: '01095801813'
