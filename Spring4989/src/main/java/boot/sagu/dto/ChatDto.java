@@ -1,8 +1,8 @@
 package boot.sagu.dto;
 
-import org.apache.ibatis.type.Alias;
+import java.sql.Timestamp;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import org.apache.ibatis.type.Alias;
 
 import lombok.Data;
 
@@ -11,13 +11,12 @@ import lombok.Data;
 public class ChatDto {
 
 	private int chat_room_id;
-	private String product_type;
 	private int product_id;
 	private int seller_id;
 	private int buyer_id;
+	private Timestamp created_at;
+	private Timestamp last_message_at;
+	private String opponent_nickname;
 	
-	@JsonFormat(pattern = "yyyyMMddHHmmss")
-	private int created_at;
-	@JsonFormat(pattern = "yyyyMMddHHmmss")
-	private int last_message_at;
+	
 }

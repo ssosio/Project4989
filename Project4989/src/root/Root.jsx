@@ -12,27 +12,18 @@ const Root = () => {
   // 컴포넌트가 처음 렌더링될 때(새로고침 등) 한 번만 실행되는 자동 로그인 로직
   useEffect(() => {
     const token = localStorage.getItem('jwtToken');
-    
+
+    // 토큰이 존재하면 디코딩하여 사용자 정보를 state에 저장합니다.
     if (token) {
       const decodedToken = jwtDecode(token);
-
-      // 토큰의 만료 시간(exp)과 현재 시간을 비교합니다.
-      // exp는 초 단위이므로 밀리초로 변환하기 위해 1000을 곱합니다.
-      if (decodedToken.exp * 1000 < Date.now()) {
-        // 토큰이 만료되었으면 localStorage에서 삭제하고 로그아웃 처리합니다.
-        localStorage.removeItem('jwtToken');
-        setUserInfo(null);
-        alert("로그인 시간이 만료되었습니다");
-      } else {
-        // 토큰이 유효하면 사용자 정보를 state에 저장합니다.
-        setUserInfo({
-          loginId: decodedToken.sub,
-          nickname: decodedToken.nickname,
-          profileImageUrl: decodedToken.profileImageUrl
-        });
-        // 새로고침 후에도 모든 axios 요청 헤더에 토큰을 포함시킵니다.
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      }
+      setUserInfo({
+        loginId: decodedToken.sub,
+        memberId: decodedToken.memberId,
+        nickname: decodedToken.nickname,
+        profileImageUrl: decodedToken.profileImageUrl
+      });
+      // 새로고침 후에도 모든 axios 요청 헤더에 토큰을 포함시킵니다.
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
   }, []); // []를 비워두면 최초 1회만 실행됩니다.
 

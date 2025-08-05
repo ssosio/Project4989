@@ -8,7 +8,7 @@ const Menu = () => {
       <ul className="menu-list">
         <li className="menu-item">
           <Link to="/goods" className="menu-link">
-            물품거래
+            중고거래
           </Link>
         </li>
         <li className="menu-item">

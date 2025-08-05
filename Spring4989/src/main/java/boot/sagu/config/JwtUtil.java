@@ -56,6 +56,7 @@ public class JwtUtil {
         Map<String, Object> claims = new java.util.HashMap<>();
         claims.put("nickname", member.getNickname());
         claims.put("loginid", member.getLoginId());
+        claims.put("memberId", member.getMemberId());
         claims.put("profileImageUrl", member.getProfileImageUrl());
         // 필요하다면 다른 정보도 추가 가능
         // claims.put("role", member.getRole()); 
@@ -71,6 +72,11 @@ public class JwtUtil {
     //토큰에서 닉네임을 추출하는 헬퍼 메서드
     public String extractNickname(String token) {
         return extractClaim(token, claims -> claims.get("nickname", String.class));
+    }
+
+    //토큰에서 memberId를 추출하는 헬퍼 메서드
+    public Integer extractMemberId(String token) {
+        return extractClaim(token, claims -> claims.get("memberId", Integer.class));
     }
 
     // 토큰 유효성 검증
