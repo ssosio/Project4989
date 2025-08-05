@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="boot.sagu.mapper.MemberMapper">
+	<insert id="signup" parameterType="member">
+		INSERT INTO members (
+            login_id, 
+            password, 
+            nickname, 
+            email,
+            phone_number,
+            profile_image_url
+        ) VALUES (
+            #{loginId}, 
+            #{password}, 
+            #{nickname}, 
+            #{email},
+            #{phoneNumber},
+            #{profileImageUrl}
+        )
+	</insert>
+	<select id="findByLoginId" parameterType="String" resultType="member">
+	    SELECT * FROM members WHERE login_id = #{loginId}
+	</select>
+	
+</mapper>
