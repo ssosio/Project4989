@@ -4,49 +4,51 @@ import { useNavigate } from 'react-router-dom';
 
 const Post = () => {
 
-    const [photo,setPhoto]=useState('');
+    const [uploadFiles,setUploadFiles]=useState([]);
     const [postType,setPostType]=useState('');
     const [tradeType,setTradeType]=useState('');
     const [title,setTitle]=useState('');
     const [price,setPrice]=useState('');
     const [content,setContent]=useState('');
+    const [photoPreview,setPhotoPreview]=useState([]);
 
     const navi=useNavigate();
 
-    let uploadUrl="http://localhost:4989/post/upload";
-    let insertUrl="http://localhost:4989/post/insert";
-    let photoUrl="http://localhost:4989/save";
+    // let uploadUrl="http://localhost:4989/post/upload";
+    // let insertUrl="http://localhost:4989/post/insert";
+    //let photoUrl="http://localhost:4989/save";
 
-    const uploadImage=(e)=>{
+    const handleFileChag=(e)=>{
+        const files=Array.from(e.target.files);
 
-        const uploadFile=e.target.files;
-        const imageFiles=new FormData();
-
-        Array.from(uploadFile).forEach(file=>{
-            imageFiles.append("uploadFile",file);
-        });
-
-        axios({
-
-            method:'post',
-            url:uploadUrl,
-            data:imageFiles,
-            headers:{'Content-Type':'multipart/form-data'}
-
-        }).then(res=>{
-            setPhoto(res.data);
-        }).catch(err=>{
-            alert(err);
-        });
-
+        setUploadFiles(files);
+        setPhotoPreview(files.map(file=>URL.createObjectURL(file)));
     }
+
 
     const postInsert=()=>{
-        axios.post(insertUrl,{postType,tradeType,title,price,content,photo})
-        .then(()=>{
+        const formData=new FormData();
+
+        formData.append("title",title);
+        formData.append("postType",postType);
+        formData.append("tradeType",tradeType);
+        formData.append("content",content);
+        formData.append("price",price);
+
+        uploadFiles.forEach(file=>{
+            formData.append("uploadFiles",file);
+        });
+
+        axios.post("http://localhost:4989/post/insert",formData,{
+            headers:{'Content-Type':'multipart/form-data'}
+        }).then(()=>{
+            alert("성공");
             navi("/goods");
+        }).catch(err=>{
+            alert("에러"+err);
         })
     }
+
 
 
   return (
@@ -54,21 +56,21 @@ const Post = () => {
         <table>
             <tr>
                 <td>
-                    <select name="post_type" id="" style={{width:'150px'}} value={postType} onChange={(e)=>{
+                    <select name="postType" id="" style={{width:'150px'}} value={postType} onChange={(e)=>{
                         setPostType(e.target.value);
                     }}>
-                        <option value="used_items">중고물품</option>
-                        <option value="cars">자동차</option>
-                        <option value="real_estates">부동산</option>
+                        <option value="ITEMS">중고물품</option>
+                        <option value="CARS">자동차</option>
+                        <option value="REAL_ESTATES">부동산</option>
                     </select>
                 </td>
                 <td>
-                    <select name="trade_type" id="" style={{width:'150px'}} value={tradeType} onChange={(e)=>{
+                    <select name="tradeType" id="" style={{width:'150px'}} value={tradeType} onChange={(e)=>{
                         setTradeType(e.target.value);
                     }}>
-                        <option value="sale">판매</option>
-                        <option value="auction">경매</option>
-                        <option value="share">나눔</option>
+                        <option value="SALE">판매</option>
+                        <option value="AUCTION">경매</option>
+                        <option value="SHARE">나눔</option>
                     </select>
                 </td>
             </tr>
@@ -100,8 +102,15 @@ const Post = () => {
             <tr>
                 <td>
                     <label>사진
-                    <input type="file" name='photo' style={{width:'250px'}} multiple onChange={uploadImage}/>
+                    <input type="file" name='uploadfiles' style={{width:'250px'}} multiple onChange={handleFileChag}/>
                     </label>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    {photoPreview.map((url,idx)=>(
+                        <img src={url} alt="" key={idx} width="200" />
+                    ))}
                 </td>
             </tr>
             <tr>
