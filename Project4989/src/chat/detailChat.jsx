@@ -61,43 +61,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
 
     console.log('DetailChat props:', { open, chatRoom });
 
+    // chatRoom이 유효하지 않은 경우 처리
+    if (!chatRoom) {
+        console.warn('DetailChat: chatRoom이 유효하지 않습니다.');
+        return null;
+    }
+
     // 임시 메시지 데이터
     const messages = [
-        {
-            id: 1,
-            text: "안녕하세요! 아이폰 14 Pro 구매하고 싶은데요",
-            time: "14:30",
-            isOwn: false,
-            sender: "구매자"
-        },
-        {
-            id: 2,
-            text: "안녕하세요! 네, 아이폰 14 Pro 팝니다. 어떤 색상 원하시나요?",
-            time: "14:32",
-            isOwn: true,
-            sender: "판매자"
-        },
-        {
-            id: 3,
-            text: "딥퍼플 색상 있나요?",
-            time: "14:33",
-            isOwn: false,
-            sender: "구매자"
-        },
-        {
-            id: 4,
-            text: "네, 딥퍼플 색상 있습니다! 256GB 모델인데 가격은 120만원입니다.",
-            time: "14:35",
-            isOwn: true,
-            sender: "판매자"
-        },
-        {
-            id: 5,
-            text: "배터리 상태는 어떤가요?",
-            time: "14:36",
-            isOwn: false,
-            sender: "구매자"
-        }
+
     ];
 
     const handleSendMessage = () => {
@@ -116,11 +88,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
     };
 
     console.log('DetailChat 렌더링:', { open, chatRoom });
-
-    if (!chatRoom) {
-        console.log('chatRoom이 없음');
-        return null;
-    }
 
     return (
         <StyledDialog

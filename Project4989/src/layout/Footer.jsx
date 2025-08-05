@@ -1,34 +1,94 @@
 import React from 'react';
 import { Box, Typography, Link, Container } from '@mui/material';
+import './Footer.css';
 
 export const Footer = () => {
   return (
     <Box component="footer" sx={{ 
-      background: '#fff', 
-      borderTop: '1px solid #f0f2f5', 
+      background: 'linear-gradient(135deg, #FFFFFF 0%, #E3F2FD 100%)', 
+      borderTop: '1px solid rgba(74, 144, 226, 0.2)', 
       py: 4, 
-      mt: 8,
-      height: '120px',
+      mt: 0,
+      height: 'auto',
       width: '100%',
-      minHeight: '120px'
+      minHeight: '120px',
+      fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <Container maxWidth="md" sx={{ textAlign: 'center' }}>
-        <Typography variant="body2" color="#7b858e" sx={{ mb: 1 }}>
-          © 2024 Toss마켓. All rights reserved.
+      <Box sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent 0%, rgba(74, 144, 226, 0.1) 50%, transparent 100%)'
+      }} />
+      <Container maxWidth="md" sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <Typography variant="body2" color="#5B9BD5" sx={{ 
+          mb: 1.5,
+          fontSize: 14,
+          fontWeight: 500,
+          fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif'
+        }}>
+          © 2025 중고거래 4989. All rights reserved.
         </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
-          <Link href="#" underline="hover" color="#7b858e" fontSize={14}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: 3, 
+          mb: 2,
+          flexWrap: 'wrap'
+        }}>
+          <Link href="#" underline="hover" color="#5B9BD5" fontSize={13} sx={{
+            fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
+            fontWeight: 500,
+            transition: 'all 0.3s ease',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            '&:hover': { 
+              color: '#4A90E2',
+              backgroundColor: 'rgba(74, 144, 226, 0.05)',
+              transform: 'translateY(-1px)'
+            }
+          }}>
             이용약관
           </Link>
-          <Link href="#" underline="hover" color="#7b858e" fontSize={14}>
+          <Link href="#" underline="hover" color="#5B9BD5" fontSize={13} sx={{
+            fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
+            fontWeight: 500,
+            transition: 'all 0.3s ease',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            '&:hover': { 
+              color: '#4A90E2',
+              backgroundColor: 'rgba(74, 144, 226, 0.05)',
+              transform: 'translateY(-1px)'
+            }
+          }}>
             개인정보처리방침
           </Link>
-          <Link href="#" underline="hover" color="#7b858e" fontSize={14}>
+          <Link href="#" underline="hover" color="#5B9BD5" fontSize={13} sx={{
+            fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
+            fontWeight: 500,
+            transition: 'all 0.3s ease',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            '&:hover': { 
+              color: '#4A90E2',
+              backgroundColor: 'rgba(74, 144, 226, 0.05)',
+              transform: 'translateY(-1px)'
+            }
+          }}>
             고객센터
           </Link>
         </Box>
-        <Typography variant="caption" color="#b0b8c1">
-          (주)토스마켓 | 사업자등록번호 123-45-67890 | 서울특별시 강남구 테헤란로 123
+        <Typography variant="caption" color="#94A3B8" sx={{
+          fontSize: 12,
+          fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
+          lineHeight: 1.5
+        }}>
+          (주)중고거래4989 | 사업자등록번호 123-45-67890 | 서울특별시 강남구 테헤란로 123
         </Typography>
       </Container>
     </Box>

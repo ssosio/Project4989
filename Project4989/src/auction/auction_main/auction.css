@@ -179,7 +179,7 @@
   color: #e74c3c;
   font-weight: 700; /* 더 굵게 */
   margin-top: -100px; /* 위로 이동 */
-  margin-left: 30px; /* 오른쪽으로 이동 */
+  margin-left: 40px; /* 오른쪽으로 이동 */
   /* X축 조정: margin-left 값 변경 */
   /* Y축 조정: margin-top 값 변경 */
   /* 예시: margin-left: 10px; margin-top: 5px; */
