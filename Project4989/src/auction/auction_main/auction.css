@@ -1,0 +1,676 @@
+/* AuctionMain 스타일 */
+.auction-main-container {
+  padding: 20px;
+}
+
+.auction-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.auction-table th,
+.auction-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.auction-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.auction-table tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auction-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* AuctionDetail 스타일 - 깔끔한 중고 사이트 스타일 */
+.auction-detail-container {
+  padding: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* 오른쪽 - 경매 인터페이스 */
+.product-image-section {
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px;
+  height: fit-content;
+  position: relative;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  gap: 20px;
+}
+
+/* 타이머 오버레이 */
+.timer-section-overlay {
+  background: #ffffff;
+  color: #191f28;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid #e5e8eb;
+}
+
+.timer-section-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0064ff, #3182f6);
+  border-radius: 16px 16px 0 0;
+}
+
+.timer-section-overlay .timer-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+  color: #8b95a1;
+  letter-spacing: -0.3px;
+}
+
+.timer-section-overlay .timer-display {
+  font-size: 24px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  color: #191f28;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.5px;
+}
+
+/* 현재 최고가 섹션 */
+.current-price-section {
+  color: #191f28;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid #e5e8eb;
+}
+
+/* 경매 이미지 컨테이너 */
+.auction-image-container {
+  position: relative;
+  width: 100%;
+  min-height: 400px; /* 최소 높이 증가 */
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 10px;
+  /* 이미지 크기에 따라 자동으로 높이 조정 */
+}
+
+.auction-image {
+  width: 120%; /* 너비를 100%에서 120%로 증가 */
+  height: auto; /* 자동 높이 설정 */
+  object-fit: contain;
+  border-radius: 8px;
+  margin-left: -150px; /* 더 왼쪽으로 이동 */
+  /* 이미지가 더 크게 표시됨 */
+}
+
+/* 경매 이미지 위 텍스트 오버레이 */
+.auction-text-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #2c3e50;
+  font-weight: bold;
+  font-size: 16px; /* 텍스트 크기 증가 */
+  line-height: 1.2;
+  /* 이미지 크기에 따라 텍스트도 자동으로 조정됨 */
+  /* X축 조정: left 값 변경 */
+  /* Y축 조정: top 값 변경 */
+  /* 예시: left: 60%; top: 40%; */
+}
+
+.auction-text-overlay .price-label {
+  margin-bottom: 6px; /* 간격 증가 */
+  font-size: 18px; /* 라벨 텍스트 크기 증가 */
+  /* X축 조정: margin-left 값 변경 */
+  /* Y축 조정: margin-top 값 변경 */
+  /* 예시: margin-left: -20px; margin-top: -10px; */
+}
+
+.auction-text-overlay .price-amount {
+  font-size: 20px; /* 가격 텍스트 크기 증가 */
+  color: #e74c3c;
+  font-weight: 700; /* 더 굵게 */
+  margin-top: -100px; /* 위로 이동 */
+  margin-left: 40px; /* 오른쪽으로 이동 */
+  /* X축 조정: margin-left 값 변경 */
+  /* Y축 조정: margin-top 값 변경 */
+  /* 예시: margin-left: 10px; margin-top: 5px; */
+}
+
+.current-price-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 16px 16px 0 0;
+}
+
+.current-price-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+  color: #8b95a1;
+  letter-spacing: -0.3px;
+}
+
+.current-price-amount {
+  font-size: 20px;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+  color: #191f28;
+  letter-spacing: -0.5px;
+}
+
+
+
+/* 상품 이미지 컨테이너 */
+.product-image-container {
+  margin-bottom: 25px;
+}
+
+.product-image-container .image-placeholder {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #bdc3c7;
+  color: #7f8c8d;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.product-image-container .image-placeholder:hover {
+  border-color: #3498db;
+  color: #3498db;
+  background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+}
+
+/* 상품 설명 */
+.product-content {
+  margin-bottom: 25px;
+}
+
+.content-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 15px 0;
+}
+
+.content-text {
+  color: #34495e;
+  line-height: 1.8;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* 왼쪽 - 상품 정보 */
+.product-info-section {
+  padding: 40px;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  height: fit-content;
+}
+
+
+
+/* 상품 설명과 이미지를 한 박스 안에 세로로 배치 */
+.product-description-image-section {
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.product-description-image-section .product-content {
+  margin-bottom: 20px;
+}
+
+.product-description-image-section .product-content:last-child {
+  margin-bottom: 0;
+}
+
+.product-description-image-section .product-image-container {
+  margin-bottom: 0;
+}
+
+.product-header {
+  margin-bottom: 20px;
+}
+
+.product-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+}
+
+.product-meta-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 15px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 15px;
+  
+}
+
+.meta-row:last-child {
+  margin-bottom: 0;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.meta-item.author-date {
+  flex: 2;
+  gap: 20px;
+}
+
+.meta-item.author-date .meta-label,
+.meta-item.author-date .meta-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-item > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-label {
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  min-width: auto;
+}
+
+.meta-value {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.eye-icon {
+  
+  font-size: 14px;
+}
+
+
+
+
+
+
+
+.price-amount-small {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e74c3c;
+  margin-bottom: 15px;
+}
+
+
+
+/* 금액 버튼들 */
+.bid-amount-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.amount-btn {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 60px;
+}
+
+.amount-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+}
+
+.amount-btn:active {
+  transform: translateY(0);
+}
+
+/* 입찰 입력 섹션 */
+.bid-input-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.bid-amount-input {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  text-align: center;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.bid-amount-input:focus {
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+.bid-amount-input::placeholder {
+  color: #8b95a1;
+  font-weight: 500;
+}
+
+.bid-button-small {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.bid-button-small:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.bid-button-small:active {
+  transform: translateY(0);
+}
+
+.bid-message {
+  margin-top: 15px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+}
+
+.bid-message.error {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.bid-message.success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.highest-bid-info {
+  margin-top: 15px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  border: none;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.highest-bid-info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ffd700, #ffed4e);
+  border-radius: 12px 12px 0 0;
+}
+
+.highest-bid-info small {
+  display: block;
+  color: white;
+  font-size: 13px;
+  margin: 4px 0;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.highest-bid-info small:first-child {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #ffd700;
+}
+
+.back-button-simple {
+  background: #ecf0f1;
+  color: #7f8c8d;
+  border: 1px solid #bdc3c7;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  margin-top: auto;
+}
+
+.back-button-simple:hover {
+  background: #d5dbdb;
+  color: #2c3e50;
+  border-color: #95a5a6;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-onsale {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.status-sold {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.status-reserved {
+  background-color: #f39c12;
+  color: white;
+}
+
+.loading-container {
+  padding: 60px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  margin: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.error-container {
+  padding: 60px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  margin: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+  .detail-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .product-image-section {
+    order: 1;
+  }
+  
+  .product-info-section {
+    order: 2;
+  }
+  
+  .product-title {
+    font-size: 1.8rem;
+  }
+  
+  .price-amount {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-info-section {
+    padding: 25px;
+  }
+  
+  .product-image-section {
+    padding: 25px;
+  }
+  
+  .image-placeholder {
+    height: 350px;
+  }
+  
+  .product-title {
+    font-size: 1.6rem;
+  }
+  
+  .price-amount {
+    font-size: 2rem;
+  }
+  
+  .timer-display,
+  .bid-price {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-title {
+    font-size: 1.4rem;
+  }
+  
+  .price-amount {
+    font-size: 1.8rem;
+  }
+  
+  .timer-display,
+  .bid-price {
+    font-size: 1.3rem;
+  }
+  
+  .image-placeholder {
+    height: 250px;
+  }
+} 
