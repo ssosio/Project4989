@@ -8,7 +8,10 @@ import { AuthContext } from '../context/AuthContext';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import ChatMain from '../chat/ChatMain';
+<<<<<<< HEAD
+=======
 import './Header.css';
+>>>>>>> a1c9c47165a063768abdf08de2933c21de3fc2e0
 
 
 // --- Styled Components (디자인을 위한 코드) ---
