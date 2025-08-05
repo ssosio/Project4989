@@ -74,4 +74,14 @@
         LIMIT 1
     </select>
 
+    <!-- 작성자 닉네임 조회 -->
+    <select id="getMemberNickname" parameterType="long" resultType="boot.sagu.dto.MemberDto">
+        SELECT 
+            member_id,
+            nickname
+        FROM members
+        WHERE member_id = #{memberId}
+        LIMIT 1
+    </select>
+
 </mapper>

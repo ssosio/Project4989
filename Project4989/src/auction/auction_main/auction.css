@@ -42,22 +42,26 @@
 .detail-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
+  gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
+  padding: 20px;
 }
 
-/* 왼쪽 - 상품 이미지 */
+/* 오른쪽 - 경매 인터페이스 */
 .product-image-section {
   background-color: #f8f9fa;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 40px;
-  height: 100%;
+  height: fit-content;
   position: relative;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  gap: 20px;
 }
 
 /* 타이머 오버레이 */
@@ -68,15 +72,11 @@
   padding: 24px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  margin-bottom: 25px;
   position: relative;
   overflow: hidden;
   width: 100%;
   max-width: 450px;
-  /* Y축 위치 조절 가능 - 이 값을 변경해서 타이머 위치 조정 */
-  transform: translateY(-200px);
   border: 1px solid #e5e8eb;
-  margin-top: -100px; /* 이 값을 조절해서 타이머 박스 높이 조정 */
 }
 
 .timer-section-overlay::before {
@@ -114,7 +114,6 @@
 
 /* 현재 최고가 섹션 */
 .current-price-section {
-  background: #ffffff;
   color: #191f28;
   border-radius: 16px;
   padding: 24px;
@@ -125,9 +124,65 @@
   overflow: hidden;
   width: 100%;
   max-width: 450px;
-  transform: translateY(-200px);
   border: 1px solid #e5e8eb;
-  margin-top: 29px; /* 이 값을 조절해서 현재 최고가 박스 높이 조정 */
+}
+
+/* 경매 이미지 컨테이너 */
+.auction-image-container {
+  position: relative;
+  width: 100%;
+  min-height: 400px; /* 최소 높이 증가 */
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 10px;
+  /* 이미지 크기에 따라 자동으로 높이 조정 */
+}
+
+.auction-image {
+  width: 120%; /* 너비를 100%에서 120%로 증가 */
+  height: auto; /* 자동 높이 설정 */
+  object-fit: contain;
+  border-radius: 8px;
+  margin-left: -150px; /* 더 왼쪽으로 이동 */
+  /* 이미지가 더 크게 표시됨 */
+}
+
+/* 경매 이미지 위 텍스트 오버레이 */
+.auction-text-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #2c3e50;
+  font-weight: bold;
+  font-size: 16px; /* 텍스트 크기 증가 */
+  line-height: 1.2;
+  /* 이미지 크기에 따라 텍스트도 자동으로 조정됨 */
+  /* X축 조정: left 값 변경 */
+  /* Y축 조정: top 값 변경 */
+  /* 예시: left: 60%; top: 40%; */
+}
+
+.auction-text-overlay .price-label {
+  margin-bottom: 6px; /* 간격 증가 */
+  font-size: 18px; /* 라벨 텍스트 크기 증가 */
+  /* X축 조정: margin-left 값 변경 */
+  /* Y축 조정: margin-top 값 변경 */
+  /* 예시: margin-left: -20px; margin-top: -10px; */
+}
+
+.auction-text-overlay .price-amount {
+  font-size: 20px; /* 가격 텍스트 크기 증가 */
+  color: #e74c3c;
+  font-weight: 700; /* 더 굵게 */
+  margin-top: -100px; /* 위로 이동 */
+  margin-left: 30px; /* 오른쪽으로 이동 */
+  /* X축 조정: margin-left 값 변경 */
+  /* Y축 조정: margin-top 값 변경 */
+  /* 예시: margin-left: 10px; margin-top: 5px; */
 }
 
 .current-price-section::before {
@@ -159,6 +214,8 @@
   color: #191f28;
   letter-spacing: -0.5px;
 }
+
+
 
 /* 상품 이미지 컨테이너 */
 .product-image-container {
@@ -212,6 +269,9 @@
   display: flex;
   flex-direction: column;
   gap: 25px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  height: fit-content;
 }
 
 
@@ -431,20 +491,57 @@
   color: #495057;
 }
 
+.bid-message.error {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.bid-message.success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
 .highest-bid-info {
-  margin-top: 10px;
-  padding: 8px 12px;
-  background-color: #e8f4fd;
-  border-radius: 6px;
-  border: 1px solid #bee5eb;
+  margin-top: 15px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  border: none;
   text-align: center;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.highest-bid-info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ffd700, #ffed4e);
+  border-radius: 12px 12px 0 0;
 }
 
 .highest-bid-info small {
   display: block;
-  color: #495057;
-  font-size: 12px;
-  margin: 2px 0;
+  color: white;
+  font-size: 13px;
+  margin: 4px 0;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.highest-bid-info small:first-child {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #ffd700;
 }
 
 .back-button-simple {

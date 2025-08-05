@@ -12,6 +12,8 @@ const AuctionDetail = () => {
   const [timeRemaining, setTimeRemaining] = useState('');
   const [bidAmount, setBidAmount] = useState(0);
   const [bidMessage, setBidMessage] = useState('');
+  const [bidMessageType, setBidMessageType] = useState('');
+  const [authorNickname, setAuthorNickname] = useState('');
 
   useEffect(() => {
     // postId를 사용해서 상세 정보를 가져오는 API 호출
@@ -35,6 +37,20 @@ const AuctionDetail = () => {
         setHighestBid(null);
       });
   }, [postId]);
+
+  // 작성자 닉네임 가져오기
+  useEffect(() => {
+    if (auctionDetail?.memberId) {
+      axios.get(`http://localhost:4989/auction/member/${auctionDetail.memberId}`)
+        .then(res => {
+          setAuthorNickname(res.data.nickname);
+        })
+        .catch(err => {
+          console.error("작성자 닉네임 조회 실패:", err);
+          setAuthorNickname(`ID: ${auctionDetail.memberId}`);
+        });
+    }
+  }, [auctionDetail?.memberId]);
 
   // 실시간 타이머 업데이트
   useEffect(() => {
@@ -120,6 +136,8 @@ const AuctionDetail = () => {
   const handleBidSubmit = async () => {
     if (!bidAmount || bidAmount <= 0) {
       setBidMessage('유효한 입찰 금액을 입력해주세요.');
+      setBidMessageType('error');
+      
       return;
     }
 
@@ -136,8 +154,9 @@ const AuctionDetail = () => {
       const response = await axios.post('http://localhost:4989/auction/bid', bidData);
       setBidMessage(response.data);
       
-      // 성공 시 입찰 금액 초기화
+      // 메시지 타입 설정
       if (response.data.includes('성공')) {
+        setBidMessageType('success');
         setBidAmount(0);
         // 경매 정보 새로고침
         const refreshResponse = await axios.get(`http://localhost:4989/auction/detail/${postId}`);
@@ -146,10 +165,15 @@ const AuctionDetail = () => {
         // 최고가 정보 새로고침
         const highestBidResponse = await axios.get(`http://localhost:4989/auction/highest-bid/${postId}`);
         setHighestBid(highestBidResponse.data);
+      } else if (response.data.includes('낮습니다')) {
+        setBidMessageType('error');
+      } else {
+        setBidMessageType('error');
       }
     } catch (error) {
       console.error('입찰 실패:', error);
       setBidMessage('입찰에 실패했습니다. 다시 시도해주세요.');
+      setBidMessageType('error');
     }
   };
 
@@ -208,7 +232,7 @@ const AuctionDetail = () => {
                 <div className="meta-item author-date">
                   <div>
                     <span className="meta-label">작성자</span>
-                    <span className="meta-value">ID: {auctionDetail.memberId}</span>
+                    <span className="meta-value">{authorNickname || `ID: ${auctionDetail.memberId}`}</span>
                   </div>
                   <div>
                     <span className="meta-label">작성일</span>
@@ -284,10 +308,21 @@ const AuctionDetail = () => {
           
           {/* 현재 최고가 섹션 */}
           <div className="current-price-section">
-            <div className="current-price-title">
-              {highestBid ? '현재 최고가' : '시작가'}
+            <div className="auction-image-container">
+              <img 
+                src="/auction.png" 
+                alt="경매 이미지" 
+                className="auction-image"
+              />
+              <div className="auction-text-overlay">
+                <div className="price-label">
+                  {highestBid ? '현재 최고가' : '시작가'}
+                </div>
+                <div className="price-amount">
+                  {formatPrice(getCurrentPrice())}
+                </div>
+              </div>
             </div>
-            <div className="current-price-amount">{formatPrice(getCurrentPrice())}</div>
             
             {highestBid && (
               <div className="highest-bid-info">
@@ -310,7 +345,7 @@ const AuctionDetail = () => {
               <input
                 type="text"
                 className="bid-amount-input"
-                value={bidAmount > 0 ? bidAmount.toLocaleString() : (getCurrentPrice() + 1000).toLocaleString()}
+                                 value={bidAmount > 0 ? bidAmount.toLocaleString() : getCurrentPrice().toLocaleString()}
                 onChange={handleBidAmountChange}
                 placeholder="입찰 금액"
               />
@@ -321,7 +356,7 @@ const AuctionDetail = () => {
             
             {/* 입찰 메시지 표시 */}
             {bidMessage && (
-              <div className="bid-message">
+              <div className={`bid-message ${bidMessageType}`}>
                 {bidMessage}
               </div>
             )}
