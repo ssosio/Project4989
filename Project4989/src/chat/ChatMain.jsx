@@ -111,8 +111,10 @@ const ChatMain = ({ open, onClose }) => {
 
     const handleChatRoomClick = (room) => {
         console.log('채팅방 클릭됨:', room);
+        console.log('chat_room_id:', room.chat_room_id); // 이 값이 DetailChat으로 전달됨
+
         // 이미 열린 채팅방인지 확인
-        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.id === room.id);
+        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.chat_room_id === room.chat_room_id);
         if (!isAlreadyOpen) {
             setOpenChatRooms(prev => [...prev, room]);
         }
@@ -120,7 +122,7 @@ const ChatMain = ({ open, onClose }) => {
 
     const handleDetailChatClose = (roomId) => {
         console.log('상세 채팅 닫기:', roomId);
-        setOpenChatRooms(prev => prev.filter(room => room.id !== roomId));
+        setOpenChatRooms(prev => prev.filter(room => room.chat_room_id !== roomId));
     };
 
     return (
@@ -248,7 +250,7 @@ const ChatMain = ({ open, onClose }) => {
                     <DetailChat
                         key={room.chat_rood_id || room.id || index}
                         open={true}
-                        onClose={() => handleDetailChatClose(room.chat_rood_id || room.id)}
+                        onClose={() => handleDetailChatClose(room.chat_room_id || room.id)}
                         chatRoom={room}
                         zIndex={1000 + index}
                         offset={index}
