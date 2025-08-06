@@ -2,7 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="boot.sagu.mapper.PostsMapperInter">
 <insert id="insertPost" parameterType="posts" useGeneratedKeys="true" keyProperty="postId">
-	insert into posts(member_id,title,price,trade_type,created_at,post_type,content) values(#{memberId},#{title},#{price},#{tradeType},now(),#{postType},#{content})
+	INSERT INTO posts(member_id,title,price,trade_type,auction_end_time,created_at,post_type,content) 
+VALUES(#{memberId},#{title},#{price},#{tradeType},#{auctionEndTime},CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'),#{postType},#{content})
 </insert>
 <select id="getAllPostData" resultType="posts">
 	SELECT p.*, 

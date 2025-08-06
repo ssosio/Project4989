@@ -12,8 +12,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import boot.sagu.dto.CarDto;
+import boot.sagu.dto.CategoryDto;
+import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
+import boot.sagu.dto.RealEstateDto;
+import boot.sagu.mapper.CarMapperInter;
+import boot.sagu.mapper.CategoryMapperInter;
+import boot.sagu.mapper.EstateMapperInter;
+import boot.sagu.mapper.ItemMapperInter;
 import boot.sagu.mapper.PhotoMapperInter;
 import boot.sagu.mapper.PostsMapperInter;
 import jakarta.servlet.http.HttpSession;
@@ -26,6 +34,18 @@ public class PostsService implements PostsServiceInter{
 
 	@Autowired
 	private PhotoMapperInter photoMapper;
+	
+	@Autowired
+	private CarMapperInter carMapper;
+	
+	@Autowired
+	private EstateMapperInter estateMapper;
+	
+	@Autowired
+	private ItemMapperInter itemMapper;
+	
+	@Autowired
+	private CategoryMapperInter categoryMapper;
 	
 	@Override
 	public void insertPost(PostsDto pdto) {
@@ -56,7 +76,7 @@ public class PostsService implements PostsServiceInter{
 
 	@Override
 	@Transactional
-	public void insertPostWithPhoto(PostsDto pdto, List<MultipartFile> uploadFiles,HttpSession session) {
+	public void insertPostWithPhoto(PostsDto pdto, List<MultipartFile> uploadFiles,HttpSession session,CarDto cdto,RealEstateDto rdto,ItemDto idto) {
 		// TODO Auto-generated method stub
 		
 		System.out.println("=== 디버깅 정보 ===");
@@ -114,6 +134,20 @@ public class PostsService implements PostsServiceInter{
 		}
 		photoMapper.insertPhoto(photoList);
 		
+		if("CARS".equals(pdto.getPostType())&& cdto!=null) {
+			cdto.setPostId(pdto.getPostId());
+			carMapper.insertCar(cdto);
+			System.out.println("자동차정보");
+		}
+		
+		if("REAL_ESTATES".equals(pdto.getPostType())&& rdto!=null) {
+			rdto.setPostId(pdto.getPostId());
+			estateMapper.insertEstate(rdto);
+			System.out.println("부동산정보");
+		}
+		
 	}
+
+
 	
 }
