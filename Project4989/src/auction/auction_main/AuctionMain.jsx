@@ -15,15 +15,15 @@ const AuctionMain = () => {
 
   const fetchAuctionList = async () => {
     try {
-      const response = await axios.get('http://localhost:4989/auction');
+      const response = await axios.get('http://192.168.10.136:4989/auction');
       setAuctionList(response.data);
-      
+
       // 낙찰자 닉네임 가져오기
       const nicknames = {};
       for (const auction of response.data) {
         if (auction.winnerId) {
           try {
-            const nicknameResponse = await axios.get(`http://localhost:4989/auction/member/${auction.winnerId}`);
+            const nicknameResponse = await axios.get(`http://192.168.10.136:4989/auction/member/${auction.winnerId}`);
             nicknames[auction.postId] = nicknameResponse.data.nickname;
           } catch (err) {
             console.error(`낙찰자 닉네임 조회 실패 (ID: ${auction.winnerId}):`, err);
@@ -32,7 +32,7 @@ const AuctionMain = () => {
         }
       }
       setWinnerNicknames(nicknames);
-      
+
       setLoading(false);
     } catch (error) {
       console.error('경매 목록 조회 실패:', error);
@@ -50,7 +50,7 @@ const AuctionMain = () => {
     if (!dateString || dateString === 'null' || dateString === '') {
       return '-';
     }
-    
+
     try {
       const date = new Date(dateString);
       // 1970년 1월 1일이거나 유효하지 않은 날짜인 경우
@@ -111,7 +111,7 @@ const AuctionMain = () => {
         </thead>
         <tbody>
           {auctionList.map(post => (
-            <tr 
+            <tr
               key={post.postId}
               onClick={() => handleRowClick(post.postId)}
             >
