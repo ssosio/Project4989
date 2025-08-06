@@ -12,22 +12,24 @@ import Post from '../board/Post'
 import AuctionMain from '../auction/auction_main/AuctionMain'
 import AuctionDetail from '../auction/auction_main/AuctionDetail'
 import Chat from '../chat/ChatMain'
+import Map from '../chat/KakaoMap'
 
 const RouterMain = () => {
   return (
     <div>
       <Routes>
-        <Route element={<MainLayout/>} >
-            <Route path='/' element={<MainPage/>}/>
-            <Route path='/chat' element={<Chat/>}/>
-            <Route path='/cars' element={<Cars/>}/>
-            <Route path='/goods' element={<Goods/>}/>
-            <Route path='/real-estate' element={<Real_estate/>}/>
-            <Route path='/auction' element={<AuctionMain/>}/>
-            <Route path='/auction/detail/:postId' element={<AuctionDetail/>}/>
-            <Route path='/login' element={<LoginForm/>}/>
-            <Route path='/signup' element={<SignupForm/>}/>
-        <Route path='/board/post' element={<Post/>}/>
+        <Route element={<MainLayout />} >
+          <Route path='/' element={<MainPage />} />
+          <Route path='/chat' element={<Chat />} />
+          <Route path='/cars' element={<Cars />} />
+          <Route path='/goods' element={<Goods />} />
+          <Route path='/real-estate' element={<Real_estate />} />
+          <Route path='/auction' element={<AuctionMain />} />
+          <Route path='/auction/detail/:postId' element={<AuctionDetail />} />
+          <Route path='/login' element={<LoginForm />} />
+          <Route path='/signup' element={<SignupForm />} />
+          <Route path='/board/post' element={<Post />} />
+          <Route path='/board/post' element={<Post />} />
         </Route>
       </Routes>
     </div>
