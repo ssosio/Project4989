@@ -8,8 +8,8 @@ import lombok.Data;
 @Alias("photo")
 public class PhotoDto {
 
-	private int photoId;
-	private int postId;
+	private Long photoId;
+	private Long postId;
 	private String photoUrl;
 	private int isMain;
 	

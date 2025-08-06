@@ -339,38 +339,38 @@
   .main-page {
     padding: 20px 0;
   }
-  
+
   .main-title {
     font-size: 2rem;
   }
-  
+
   .sort-buttons {
     flex-direction: column;
     align-items: center;
     gap: 10px;
   }
-  
+
   .sort-btn {
     width: 200px;
   }
-  
+
   .auction-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 15px;
   }
-  
+
   .auction-card {
     height: 320px;
   }
-  
+
   .auction-image {
     height: 180px;
   }
-  
+
   .auction-info {
     padding: 12px;
   }
-  
+
   .container {
     padding: 0 15px;
   }
@@ -380,12 +380,12 @@
   .main-title {
     font-size: 1.8rem;
   }
-  
+
   .auction-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .auction-card {
     height: 300px;
   }
-} 
+}
