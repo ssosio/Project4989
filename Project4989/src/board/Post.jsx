@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 const Post = () => {
@@ -31,10 +31,32 @@ const Post = () => {
     const [transmission,setTransmission]=useState('');
 
     //아이템(카테고리)
-    // const [parents, setParents] = useState([]);
-    // const [children, setChildren] = useState([]);
-    // const [selectedParent, setSelectedParent] = useState('');
-    // const [selectedChild, setSelectedChild] = useState('');
+    const [parents, setParents] = useState([]);
+    const [children, setChildren] = useState([]);
+    const [selectedParent, setSelectedParent] = useState('');
+    const [selectedChild, setSelectedChild] = useState('');
+
+    useEffect(()=>{
+        axios.get("http://localhost:4989/category/parent")
+        .then(res=> setParents(res.data))
+        .catch(err=> console.log(err));
+    },[]);
+
+    const handleParentChange=(e)=>{
+        const parentId=e.target.value;
+        setSelectedParent(parentId);
+        setSelectedChild('');
+        axios.get(`http://localhost:4989/category/child?parent=${parentId}`)
+        .then(res=>setChildren(res.data))
+        .catch(err=>console.log(err));
+    }
+
+    const handleChildChange=(e)=>{
+        const childId=e.target.value;
+        setSelectedChild(childId);
+    };
+
+    
 
     const navi=useNavigate();
 
@@ -131,6 +153,7 @@ const Post = () => {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
+
         axios.post("http://localhost:4989/post/insert",formData,{
             headers: headers
         }).then(()=>{
@@ -146,6 +169,7 @@ const Post = () => {
 
   return (
     <div>
+       
         <table>
             <tr>
                 <td>
@@ -310,19 +334,37 @@ const Post = () => {
                     </tr>
                     )
                 }
-                {/* {
+                {
                     postType==='ITEMS' &&(
                     <tr>
                         <td>
-                            <label>카테고리
-                                <input type="text" name='category' style={{width:'150px'}} value={category} onChange={(e)=>{
-                                        setCategory(e.target.value);
-                                    }}/>
+                            <label>대분류
+                                <select onChange={handleParentChange} value={selectedParent}>
+                                    <option value=""></option>
+                                    {
+                                        parents.map(p=>(
+                                            <option key={p.category_id} value={p.category_id}>{p.name}</option>
+                                        ))
+                                    }
+                                </select>
+                            </label>
+                        </td>
+                        <td>
+                            <label>소분류
+                                <select onChange={handleChildChange} value={selectedChild}>
+                                    <option value=""></option>
+                                    {
+                                        children.map(c=>{
+                                            <option key={c.category_id} value={c.category_id}>{c.name}</option>
+                                        })
+                                    }
+                                </select>
                             </label>
                         </td>
                     </tr>
+                    
                     )
-                } */}
+                } 
             <tr>
                 <td>
                     <label>제목
@@ -363,7 +405,7 @@ const Post = () => {
                 </td>
             </tr>
             <tr>
-                <button type='button' style={{width:'130px', backgroundColor:'bisque',marginRight:'30px'}} onClick={postInsert}>등록</button>
+                <button type='submit' style={{width:'130px', backgroundColor:'bisque',marginRight:'30px'}} onClick={postInsert}>등록</button>
                 <button type='button' style={{width:'130px', backgroundColor:'bisque'}} onClick={clickList}>목록</button>
             </tr>
         </table>

@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.CarDto;
+import boot.sagu.dto.CategoryDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
@@ -41,6 +42,7 @@ public class PostsController {
 	
 	@Autowired
 	private MemberServiceInter memberService;
+	
 	
 	
 	@GetMapping("/list")
@@ -88,5 +90,7 @@ public class PostsController {
 		
 		postService.insertPostWithPhoto(pdto, uploadFiles, session, cdto, rdto, idto);
 	}
+	
+	
 
 }
