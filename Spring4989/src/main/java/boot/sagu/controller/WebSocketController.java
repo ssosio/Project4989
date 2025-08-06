@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
 import boot.sagu.dto.WebSocketMessageDto;
 import boot.sagu.service.ChatMessageServiceInter;
@@ -25,16 +26,20 @@ public class WebSocketController {
     @MessageMapping("/chat.sendMessage")
     public WebSocketMessageDto sendMessage(@Payload WebSocketMessageDto webSocketMessage) {
         // 메시지를 데이터베이스에 저장
-        ChatMessageDto chatMessage = new ChatMessageDto();
-        chatMessage.setChat_room_id(webSocketMessage.getChatRoomId());
-        chatMessage.setSender_id(webSocketMessage.getSenderId());
-        chatMessage.setMessage_content(webSocketMessage.getMessageContent());
-        chatMessage.setMessage_type(webSocketMessage.getMessageType());
+    	 if ("text".equals(webSocketMessage.getMessageType())) {
+             // 메시지를 데이터베이스에 저장
+             ChatMessageDto chatMessage = new ChatMessageDto();
+             chatMessage.setChat_room_id(webSocketMessage.getChatRoomId());
+             chatMessage.setSender_id(webSocketMessage.getSenderId());
+             chatMessage.setMessage_content(webSocketMessage.getMessageContent());
+             chatMessage.setMessage_type(webSocketMessage.getMessageType());
+             chatMessage.setCreated_at(new Timestamp(System.currentTimeMillis()));
+             chatMessageService.insertMessage(chatMessage);
+         
+             // 텍스트 메시지를 특정 채팅방에 전송
+             messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), webSocketMessage);
+         }
         
-        chatMessageService.insertMessage(chatMessage);
-        
-        // 특정 채팅방에 메시지 전송
-        messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), webSocketMessage);
         
         return webSocketMessage;
     }

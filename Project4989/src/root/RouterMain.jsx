@@ -12,6 +12,7 @@ import Post from '../board/Post'
 import AuctionMain from '../auction/auction_main/AuctionMain'
 import AuctionDetail from '../auction/auction_main/AuctionDetail'
 import Chat from '../chat/ChatMain'
+import Map from '../chat/KakaoMap'
 
 const RouterMain = () => {
   return (
@@ -27,6 +28,7 @@ const RouterMain = () => {
           <Route path='/auction/detail/:postId' element={<AuctionDetail />} />
           <Route path='/login' element={<LoginForm />} />
           <Route path='/signup' element={<SignupForm />} />
+          <Route path='/board/post' element={<Post />} />
           <Route path='/board/post' element={<Post />} />
         </Route>
       </Routes>
