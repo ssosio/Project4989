@@ -17,6 +17,7 @@ public class ChatMessageDto {
 	private Long sender_id;
 	private String message_type;
 	private String message_content;
+	private String fileUrl; // 추가
 	private int is_read;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

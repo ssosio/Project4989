@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
+import boot.sagu.service.ChatFileUploadService;
 import boot.sagu.service.ChatMessageServiceInter;
 
 @RestController
@@ -19,6 +21,9 @@ public class ChatMessageController {
 
 	@Autowired
 	ChatMessageServiceInter chatMessageService;
+	
+	@Autowired
+	ChatFileUploadService chatFileUploadService;
 	
 	@PostMapping("/insertMessage")
 	public void insertMessage(@RequestBody ChatMessageDto dto)
@@ -45,6 +50,22 @@ public class ChatMessageController {
 			System.out.println("서비스 호출 완료");
 			System.out.println("조회 결과: " + result);
 			System.out.println("조회 결과 크기: " + (result != null ? result.size() : "null"));
+			
+			for (ChatMessageDto message : result) {
+			    if ("image".equals(message.getMessage_type())) {
+			        // chatfile 테이블에서 message_id로 파일 정보를 조회합니다.
+			        ChatFileDto fileInfo = chatFileUploadService.getChatFileByMessageId(message.getMessage_id());
+			        if (fileInfo != null) {
+			            // DB에 저장된 fileUrl로 message_content를 업데이트합니다.
+			            // 이제 프론트엔드에서는 message_content를 그대로 사용할 수 있습니다.
+			            message.setMessage_content(fileInfo.getFileUrl());
+			        } else {
+			        	// 파일 정보가 없을 경우, 에러 메시지를 표시하거나 기본값을 설정할 수 있습니다.
+			        	message.setMessage_content("이미지를 찾을 수 없습니다.");
+			        }
+			    }
+			}
+			
 			return result;
 		} catch (Exception e) {
 			System.out.println("=== 에러 발생 ===");

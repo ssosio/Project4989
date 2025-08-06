@@ -1,18 +1,23 @@
 package boot.sagu.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import boot.sagu.dto.ChatDto;
 import boot.sagu.mapper.ChatMapper;
+import boot.sagu.mapper.MemberMapper;
 
 @Service
 public class ChatService implements ChatServiceInter{
 
 	@Autowired
 	ChatMapper chatmapper;
+	
+	@Autowired
+	MemberMapper membermapper;
 
 	@Override
 	public List<ChatDto> getAllChat(String login_id) {
@@ -36,4 +41,12 @@ public class ChatService implements ChatServiceInter{
 		return result;
 	}
 	
+	public List<Map<String, Object>> getChatRoomsWithLastMessage(Long memberId) {
+	    return chatmapper.getChatRoomsWithLastMessage(memberId);
+	}
+	
+	public Map<String, Object> getOtherUserInChatRoom(Long chatRoomId, Long currentMemberId) {
+	    return chatmapper.getOtherUserInChatRoom(chatRoomId, currentMemberId);
+	}
+
 }
