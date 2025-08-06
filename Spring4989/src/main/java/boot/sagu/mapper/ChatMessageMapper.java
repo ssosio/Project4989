@@ -25,4 +25,7 @@ public interface ChatMessageMapper {
 	
 	// 테스트용: 특정 조건의 메시지만 업데이트
 	public int updateSpecificMessageAsRead(Long chatRoomId, Long readerId);
+	
+	// 파일 메시지 조회 (chatfile 테이블과 JOIN)
+	public List<Map<String, Object>> getMessagesWithFiles(Long chatRoomId);
 }

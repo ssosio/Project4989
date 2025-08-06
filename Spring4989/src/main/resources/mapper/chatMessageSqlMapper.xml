@@ -11,22 +11,38 @@
         <result property="is_read" column="is_read"/>
     </resultMap>
     
-    <insert id="insertMessage" parameterType="boot.sagu.dto.ChatMessageDto">
-		insert into chatmessage values(null,#{chat_room_id},#{sender_id},#{message_type},#{message_content},now(),1)
-	</insert>
+    <insert id="insertMessage" parameterType="boot.sagu.dto.ChatMessageDto" useGeneratedKeys="true" keyProperty="message_id">
+    INSERT INTO chatmessage (
+        chat_room_id,
+        sender_id,
+        message_content,
+        message_type,
+        created_at
+    ) VALUES (
+        #{chat_room_id},
+        #{sender_id},
+        #{message_content},
+        #{message_type},
+        #{created_at}
+    )
+</insert>
 	
     <select id="getAllMessages" parameterType="long" resultMap="ChatMessageResultMap">
-        select 
-            message_id,
-            chat_room_id,
-            sender_id,
-            message_type,
-            message_content,
-            created_at,
-            is_read
-        from chatmessage 
-        where chat_room_id=#{chat_room_id} 
-        order by created_at asc
+      SELECT
+        m.message_id,
+        m.chat_room_id,
+        m.sender_id,
+        m.message_type,
+        CASE
+            WHEN m.message_type = 'image' THEN f.file_url
+            ELSE m.message_content
+        END as message_content,
+        m.created_at,
+        m.is_read
+    FROM chatmessage m
+    LEFT JOIN chatfile f ON m.message_id = f.message_id
+    WHERE m.chat_room_id = #{chat_room_id}
+    ORDER BY m.created_at ASC
     </select>
     <update id="updateMessagesAsRead" parameterType="map">
             UPDATE chatmessage 

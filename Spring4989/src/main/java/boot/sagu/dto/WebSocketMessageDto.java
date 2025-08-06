@@ -11,5 +11,6 @@ public class WebSocketMessageDto {
     private Long senderId;
     private String messageContent;
     private String messageType;
+    private Long messageId;
     private Timestamp timestamp;
 } 
