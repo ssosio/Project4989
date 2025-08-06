@@ -7,6 +7,11 @@ spring:
    url: jdbc:mysql://project4989.c5200is4auzz.ap-northeast-2.rds.amazonaws.com:3306/sagupalgu
    username: admin4989
    password: project49898949
+servlet:
+  multipart:
+    max-file-size: 10MB
+    max-request-size: 10MB
+    enabled: true
 #mybatis
 mybatis:
   type-aliases-package: boot.sagu.dto
