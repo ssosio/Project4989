@@ -21,9 +21,12 @@ const AuctionDetail = () => {
   const [highestBidderNickname, setHighestBidderNickname] = useState(''); // 최고 입찰자 닉네임 추가
   const [stompClient, setStompClient] = useState(null); // 소켓 클라이언트
 
+  const SERVER_IP = '192.168.10.136';
+  const SERVER_PORT = '4989';
+
   useEffect(() => {
     // postId를 사용해서 상세 정보를 가져오는 API 호출
-    axios.get(`http://localhost:4989/auction/detail/${postId}`)
+    axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`)
       .then(res => {
         setAuctionDetail(res.data);
         setLoading(false);
@@ -34,7 +37,7 @@ const AuctionDetail = () => {
       });
 
     // 최고가 정보 가져오기
-    axios.get(`http://localhost:4989/auction/highest-bid/${postId}`)
+    axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`)
       .then(res => {
         setHighestBid(res.data);
       })
@@ -47,7 +50,7 @@ const AuctionDetail = () => {
   // 작성자 닉네임 가져오기
   useEffect(() => {
     if (auctionDetail?.memberId) {
-      axios.get(`http://localhost:4989/auction/member/${auctionDetail.memberId}`)
+      axios.get(`http://192.168.10.136:4989/auction/member/${auctionDetail.memberId}`)
         .then(res => {
           setAuthorNickname(res.data.nickname);
         })
@@ -61,7 +64,7 @@ const AuctionDetail = () => {
   // 낙찰자 닉네임 가져오기
   useEffect(() => {
     if (auctionDetail?.winnerId) {
-      axios.get(`http://localhost:4989/auction/member/${auctionDetail.winnerId}`)
+      axios.get(`http://192.168.10.136:4989/auction/member/${auctionDetail.winnerId}`)
         .then(res => {
           setWinnerNickname(res.data.nickname);
         })
@@ -77,7 +80,7 @@ const AuctionDetail = () => {
   // 최고 입찰자 닉네임 가져오기
   useEffect(() => {
     if (highestBid?.bidderId) {
-      axios.get(`http://localhost:4989/auction/member/${highestBid.bidderId}`)
+      axios.get(`http://192.168.10.136:4989/auction/member/${highestBid.bidderId}`)
         .then(res => {
           setHighestBidderNickname(res.data.nickname);
         })
@@ -101,17 +104,17 @@ const AuctionDetail = () => {
       const endTime = new Date(auctionDetail.auctionEndTime);
       const now = new Date();
       const diff = endTime - now;
-      
+
       if (diff <= 0) {
         setTimeRemaining('경매 종료');
         return;
       }
-      
+
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      
+
       if (days > 0) {
         setTimeRemaining(`${days}일 ${hours}시간 ${minutes}분 ${seconds}초`);
       } else if (hours > 0) {
@@ -125,10 +128,10 @@ const AuctionDetail = () => {
 
     // 초기 실행
     updateTimer();
-    
+
     // 1초마다 업데이트
     const timer = setInterval(updateTimer, 1000);
-    
+
     // 컴포넌트 언마운트 시 타이머 정리
     return () => clearInterval(timer);
   }, [auctionDetail?.auctionEndTime]);
@@ -156,14 +159,14 @@ const AuctionDetail = () => {
   // 소켓 연결
   useEffect(() => {
     const client = new Client({
-      brokerURL: 'ws://localhost:4989/ws',
+      brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
       onConnect: () => {
         // 경매 채널 구독
         client.subscribe(`/topic/auction/${postId}`, (message) => {
           const data = JSON.parse(message.body);
           handleSocketMessage(data);
         });
-        
+
         setStompClient(client);
       },
       onDisconnect: () => {
@@ -185,7 +188,7 @@ const AuctionDetail = () => {
 
   // 소켓 메시지 처리
   const handleSocketMessage = (data) => {
-    switch(data.type) {
+    switch (data.type) {
       case 'BID_UPDATE':
         // 실시간 입찰 정보 업데이트
         setHighestBid(data.bid);
@@ -194,24 +197,24 @@ const AuctionDetail = () => {
         }
         setBidMessage(`${data.bidder?.nickname || '누군가'}님이 입찰했습니다!`);
         setBidMessageType('info');
-        
+
         // 경매 정보도 업데이트 (필요시)
         if (data.auctionDetail) {
           setAuctionDetail(data.auctionDetail);
         }
         break;
-        
+
       case 'AUCTION_END':
         // 실시간 경매 종료
         setTimeRemaining('경매 종료');
-        setAuctionDetail(prev => ({...prev, status: 'SOLD', winnerId: data.winnerId}));
+        setAuctionDetail(prev => ({ ...prev, status: 'SOLD', winnerId: data.winnerId }));
         if (data.winner) {
           setWinnerNickname(data.winner.nickname || `ID: ${data.winner.id}`);
         }
         setBidMessage('경매가 종료되었습니다!');
         setBidMessageType('success');
         break;
-        
+
       default:
         break;
     }
@@ -222,7 +225,7 @@ const AuctionDetail = () => {
     if (!dateString || dateString === 'null' || dateString === '') {
       return '-';
     }
-    
+
     try {
       const date = new Date(dateString);
       if (date.getTime() === 0 || isNaN(date.getTime())) {
@@ -266,7 +269,7 @@ const AuctionDetail = () => {
     if (!bidAmount || bidAmount <= 0) {
       setBidMessage('유효한 입찰 금액을 입력해주세요.');
       setBidMessageType('error');
-      
+
       return;
     }
 
@@ -287,19 +290,19 @@ const AuctionDetail = () => {
     };
 
     try {
-      const response = await axios.post('http://localhost:4989/auction/bid', bidData);
+      const response = await axios.post('http://192.168.10.136:4989/auction/bid', bidData);
       setBidMessage(response.data);
-      
+
       // 메시지 타입 설정
       if (response.data.includes('성공')) {
         setBidMessageType('success');
         setBidAmount(0);
         // 경매 정보 새로고침
-        const refreshResponse = await axios.get(`http://localhost:4989/auction/detail/${postId}`);
+        const refreshResponse = await axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`);
         setAuctionDetail(refreshResponse.data);
-        
+
         // 최고가 정보 새로고침
-        const highestBidResponse = await axios.get(`http://localhost:4989/auction/highest-bid/${postId}`);
+        const highestBidResponse = await axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`);
         setHighestBid(highestBidResponse.data);
       } else if (response.data.includes('낮습니다')) {
         setBidMessageType('error');
@@ -318,42 +321,42 @@ const AuctionDetail = () => {
     // 버튼 비활성화 (중복 클릭 방지)
     setBidMessage('경매 종료 처리 중...');
     setBidMessageType('info');
-    
+
     try {
-      const response = await axios.post(`http://localhost:4989/auction/end/${postId}`);
+      const response = await axios.post(`http://192.168.10.136:4989/auction/end/${postId}`);
       setBidMessage(response.data);
       setBidMessageType('success');
-      
+
       // 경매 정보 새로고침
-      const refreshResponse = await axios.get(`http://localhost:4989/auction/detail/${postId}`);
+      const refreshResponse = await axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`);
       setAuctionDetail(refreshResponse.data);
-      
+
       // 최고가 정보 새로고침
-      const highestBidResponse = await axios.get(`http://localhost:4989/auction/highest-bid/${postId}`);
+      const highestBidResponse = await axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`);
       setHighestBid(highestBidResponse.data);
-      
+
       // 경매 종료 상태로 변경 (버튼 숨기기 위함)
       setTimeRemaining('경매 종료');
-      
+
       // 낙찰자 정보 설정 (있는 경우)
       if (highestBidResponse.data) {
         try {
-          const winnerResponse = await axios.get(`http://localhost:4989/auction/member/${highestBidResponse.data.bidderId}`);
+          const winnerResponse = await axios.get(`http://192.168.10.136:4989/auction/member/${highestBidResponse.data.bidderId}`);
           setWinnerNickname(winnerResponse.data.nickname || `ID: ${highestBidResponse.data.bidderId}`);
         } catch (memberError) {
           console.error('낙찰자 정보 조회 실패:', memberError);
           setWinnerNickname(`ID: ${highestBidResponse.data.bidderId}`);
         }
       }
-      
+
       // 강제 새로고침 (필요시)
       window.location.reload();
-      
+
     } catch (error) {
       console.error('경매 종료 실패:', error);
       console.error('에러 상세:', error.response?.data);
       console.error('에러 상태:', error.response?.status);
-      
+
       if (error.response?.data) {
         setBidMessage(error.response.data);
       } else {
@@ -411,7 +414,7 @@ const AuctionDetail = () => {
           {/* 제목과 메타 정보 */}
           <div className="product-header">
             <h1 className="product-title">{auctionDetail.title}</h1>
-            
+
             {/* 메타 정보 섹션 */}
             <div className="product-meta-section">
               <div className="meta-row">
@@ -426,7 +429,7 @@ const AuctionDetail = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="meta-row">
                 <div className="meta-item">
                   <div>
@@ -438,9 +441,9 @@ const AuctionDetail = () => {
                   <div>
                     <span className="meta-label">상태</span>
                     <span className={getStatusBadgeClass(auctionDetail.status)}>
-                      {auctionDetail.status === 'ON_SALE' ? '판매중' : 
-                       auctionDetail.status === 'SOLD' ? '판매완료' : 
-                       auctionDetail.status === 'RESERVED' ? '예약중' : auctionDetail.status}
+                      {auctionDetail.status === 'ON_SALE' ? '판매중' :
+                        auctionDetail.status === 'SOLD' ? '판매완료' :
+                          auctionDetail.status === 'RESERVED' ? '예약중' : auctionDetail.status}
                     </span>
                   </div>
                 </div>
@@ -456,10 +459,10 @@ const AuctionDetail = () => {
               </div>
             </div>
           </div>
-          
+
           {/* 상품 설명과 이미지를 한 박스 안에 */}
           <div className="product-description-image-section">
-                        {/* 상품 설명 */}
+            {/* 상품 설명 */}
             <div className="product-content">
               <h3 className="content-title">상품 설명</h3>
               <div className="price-amount-small">시작가: {formatPrice(auctionDetail.price)}</div>
@@ -467,7 +470,7 @@ const AuctionDetail = () => {
                 {auctionDetail.content || '상품 설명이 없습니다.'}
               </div>
             </div>
-            
+
             {/* 상품 이미지 */}
             <div className="product-image-container">
               <div className="image-placeholder">
@@ -475,8 +478,8 @@ const AuctionDetail = () => {
               </div>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/auction')}
             className="back-button-simple"
           >
@@ -494,87 +497,87 @@ const AuctionDetail = () => {
             </div>
             <div className="timer-display">{timeRemaining}</div>
           </div>
-          
+
           {/* 현재 최고가 섹션 */}
           <div className="current-price-section">
             {/* 경매 이미지 */}
             <div className="auction-image-wrapper">
-              <img 
-                src="/auction.png" 
-                alt="경매 이미지" 
+              <img
+                src="/auction.png"
+                alt="경매 이미지"
                 className="auction-image"
               />
             </div>
-            
-                                      {/* 현재 최고가/낙찰가 텍스트 - 독립적 관리 */}
-             <div className={`current-price-label ${!highestBid ? 'starting-price' : timeRemaining === '경매 종료' ? 'final-price' : ''}`}>
-               {!highestBid ? '시작가' : timeRemaining === '경매 종료' ? '낙찰가' : '현재 최고가'}
-             </div>
 
-             {/* 가격 텍스트 - 독립적 관리 */}
-             <div className={`current-price-value ${!highestBid ? 'starting-price-value' : timeRemaining === '경매 종료' ? 'final-price-value' : ''}`}>
-               {formatPrice(getCurrentPrice())}
-             </div>
-            
-                         {/* 현재 최고 입찰자 또는 낙찰자 정보 표시 - 고정 영역 */}
-             <div className="price-info-container">
-               {highestBid && timeRemaining !== '경매 종료' ? (
-                 <div className="highest-bid-info">
-                   <small>👑 현재 최고 입찰자: {highestBidderNickname || `ID ${highestBid.bidderId}`}</small>
-                   <small>입찰 시간: {formatDate(highestBid.bidTime)}</small>
-                 </div>
-               ) : timeRemaining === '경매 종료' && auctionDetail?.winnerId ? (
-                 <div className="winner-info">
-                   <small>🎉 낙찰자: {winnerNickname || `ID ${auctionDetail.winnerId}`}</small>
-                   <small>경매가 성공적으로 종료되었습니다!</small>
-                 </div>
-               ) : (
-                 <div className="empty-info-placeholder">
-                   경매 정보가 없습니다
-                 </div>
-               )}
-             </div>
-            
-             {/* 금액 버튼들 */}
-             <div className="bid-amount-buttons">
-               {timeRemaining !== '경매 종료' ? (
-                 <>
-                   <button className="amount-btn" onClick={() => handleAmountClick(100)}>+100</button>
-                   <button className="amount-btn" onClick={() => handleAmountClick(1000)}>+1,000</button>
-                   <button className="amount-btn" onClick={() => handleAmountClick(10000)}>+1만</button>
-                   <button className="amount-btn" onClick={() => handleAmountClick(100000)}>+10만</button>
-                   <button className="amount-btn" onClick={() => handleAmountClick(1000000)}>+100만</button>
-                 </>
-               ) : (
-                 <div style={{ color: '#8b7355', fontSize: '14px', fontStyle: 'italic' }}>
-                   경매가 종료되었습니다
-                 </div>
-               )}
-             </div>
-             
-             {/* 입찰 입력 및 버튼 */}
-             <div className="bid-input-section">
-               {timeRemaining !== '경매 종료' ? (
-                 <>
-                   <input
-                     type="text"
-                     className="bid-amount-input"
-                                      value={bidAmount > 0 ? bidAmount.toLocaleString() : getCurrentPrice().toLocaleString()}
-                     onChange={handleBidAmountChange}
-                     placeholder="입찰 금액"
-                   />
-                   <button className="bid-button-small" onClick={handleBidSubmit}>
-                     <img src="/pan.png" alt="팬" style={{ width: '16px', height: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
-                     입찰
-                   </button>
-                 </>
-               ) : (
-                 <div style={{ color: '#8b7355', fontSize: '14px', fontStyle: 'italic', textAlign: 'center', width: '100%' }}>
-                   입찰이 마감되었습니다
-                 </div>
-               )}
-             </div>
-            
+            {/* 현재 최고가/낙찰가 텍스트 - 독립적 관리 */}
+            <div className={`current-price-label ${!highestBid ? 'starting-price' : timeRemaining === '경매 종료' ? 'final-price' : ''}`}>
+              {!highestBid ? '시작가' : timeRemaining === '경매 종료' ? '낙찰가' : '현재 최고가'}
+            </div>
+
+            {/* 가격 텍스트 - 독립적 관리 */}
+            <div className={`current-price-value ${!highestBid ? 'starting-price-value' : timeRemaining === '경매 종료' ? 'final-price-value' : ''}`}>
+              {formatPrice(getCurrentPrice())}
+            </div>
+
+            {/* 현재 최고 입찰자 또는 낙찰자 정보 표시 - 고정 영역 */}
+            <div className="price-info-container">
+              {highestBid && timeRemaining !== '경매 종료' ? (
+                <div className="highest-bid-info">
+                  <small>👑 현재 최고 입찰자: {highestBidderNickname || `ID ${highestBid.bidderId}`}</small>
+                  <small>입찰 시간: {formatDate(highestBid.bidTime)}</small>
+                </div>
+              ) : timeRemaining === '경매 종료' && auctionDetail?.winnerId ? (
+                <div className="winner-info">
+                  <small>🎉 낙찰자: {winnerNickname || `ID ${auctionDetail.winnerId}`}</small>
+                  <small>경매가 성공적으로 종료되었습니다!</small>
+                </div>
+              ) : (
+                <div className="empty-info-placeholder">
+                  경매 정보가 없습니다
+                </div>
+              )}
+            </div>
+
+            {/* 금액 버튼들 */}
+            <div className="bid-amount-buttons">
+              {timeRemaining !== '경매 종료' ? (
+                <>
+                  <button className="amount-btn" onClick={() => handleAmountClick(100)}>+100</button>
+                  <button className="amount-btn" onClick={() => handleAmountClick(1000)}>+1,000</button>
+                  <button className="amount-btn" onClick={() => handleAmountClick(10000)}>+1만</button>
+                  <button className="amount-btn" onClick={() => handleAmountClick(100000)}>+10만</button>
+                  <button className="amount-btn" onClick={() => handleAmountClick(1000000)}>+100만</button>
+                </>
+              ) : (
+                <div style={{ color: '#8b7355', fontSize: '14px', fontStyle: 'italic' }}>
+                  경매가 종료되었습니다
+                </div>
+              )}
+            </div>
+
+            {/* 입찰 입력 및 버튼 */}
+            <div className="bid-input-section">
+              {timeRemaining !== '경매 종료' ? (
+                <>
+                  <input
+                    type="text"
+                    className="bid-amount-input"
+                    value={bidAmount > 0 ? bidAmount.toLocaleString() : getCurrentPrice().toLocaleString()}
+                    onChange={handleBidAmountChange}
+                    placeholder="입찰 금액"
+                  />
+                  <button className="bid-button-small" onClick={handleBidSubmit}>
+                    <img src="/pan.png" alt="팬" style={{ width: '16px', height: '16px', marginRight: '6px', verticalAlign: 'middle' }} />
+                    입찰
+                  </button>
+                </>
+              ) : (
+                <div style={{ color: '#8b7355', fontSize: '14px', fontStyle: 'italic', textAlign: 'center', width: '100%' }}>
+                  입찰이 마감되었습니다
+                </div>
+              )}
+            </div>
+
             {/* 토스트 메시지 영역 */}
             <div className="toast-message-area">
               {bidMessage && (
@@ -583,7 +586,7 @@ const AuctionDetail = () => {
                 </div>
               )}
             </div>
-            
+
             {/* 경매 종료 버튼 영역 (높이 고정) */}
             <div style={{ marginTop: '20px', textAlign: 'center', minHeight: '56px' }}>
               {(() => {
@@ -591,42 +594,42 @@ const AuctionDetail = () => {
                 const condition2 = auctionDetail?.status === 'ON_SALE';
                 const condition3 = parseInt(userInfo?.memberId) === parseInt(auctionDetail?.memberId);
                 const showButton = condition1 && condition2 && condition3;
-                
 
-                
+
+
                 return showButton;
               })() && (
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleEndAuction();
-                  }}
-                  style={{
-                    background: '#f8d7da',
-                    color: '#842029',
-                    border: '1px solid #f1aeb5',
-                    padding: '10px 20px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'all 0.3s ease',
-                    zIndex: 9999,
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = '#f5c2c7';
-                    e.target.style.borderColor = '#e899a1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = '#f8d7da';
-                    e.target.style.borderColor = '#f1aeb5';
-                  }}
-                >
-                  🔚 경매 종료
-                </button>
-              )}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleEndAuction();
+                    }}
+                    style={{
+                      background: '#f8d7da',
+                      color: '#842029',
+                      border: '1px solid #f1aeb5',
+                      padding: '10px 20px',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      transition: 'all 0.3s ease',
+                      zIndex: 9999,
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#f5c2c7';
+                      e.target.style.borderColor = '#e899a1';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = '#f8d7da';
+                      e.target.style.borderColor = '#f1aeb5';
+                    }}
+                  >
+                    🔚 경매 종료
+                  </button>
+                )}
             </div>
           </div>
         </div>
