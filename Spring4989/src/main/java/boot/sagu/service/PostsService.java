@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.CarDto;
-import boot.sagu.dto.CategoryDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
@@ -148,6 +147,6 @@ public class PostsService implements PostsServiceInter{
 		
 	}
 
-
+	
 	
 }

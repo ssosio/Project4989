@@ -17,6 +17,5 @@ public interface PostsServiceInter {
 	public PostsDto getPostData(int post_id);
 	public void insertPhoto(PhotoDto photoDto);
 	public void insertPostWithPhoto(PostsDto pdto,List<MultipartFile> uploadFile,HttpSession session,CarDto cdto,RealEstateDto rdto,ItemDto idto);
-
 	
 }
