@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.config.JwtUtil;
+import boot.sagu.dto.CarDto;
+import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
+import boot.sagu.dto.RealEstateDto;
 import boot.sagu.service.MemberServiceInter;
 import boot.sagu.service.PostsService;
 import jakarta.servlet.http.HttpSession;
@@ -57,6 +60,9 @@ public class PostsController {
 	
 	@PostMapping("/insert")
 	public void insertPostWithPhoto(@ModelAttribute PostsDto pdto,
+			@ModelAttribute CarDto cdto,
+			@ModelAttribute RealEstateDto rdto,
+			@ModelAttribute ItemDto idto,
 			@RequestParam("uploadFiles") List<MultipartFile> uploadFiles,
 			@RequestHeader(value = "Authorization", required = false) String authorization,
 		    HttpSession session)
@@ -80,7 +86,7 @@ public class PostsController {
 			System.out.println("Authorization 헤더가 없어서 기본 사용자 ID 설정: " + pdto.getMemberId());
 		}
 		
-		postService.insertPostWithPhoto(pdto, uploadFiles, session);
+		postService.insertPostWithPhoto(pdto, uploadFiles, session, cdto, rdto, idto);
 	}
 
 }
