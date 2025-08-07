@@ -58,6 +58,26 @@ const ChatMain = ({ open, onClose }) => {
     const [chatList, setChatList] = useState([]);
     const { userInfo } = useContext(AuthContext);
 
+    // 시간 포맷팅 함수
+    const formatTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInHours = (now - date) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+            return date.toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } else {
+            return date.toLocaleDateString('ko-KR', {
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+    };
+
     // 채팅방 목록 가져오기
     useEffect(() => {
         if (userInfo) {
@@ -68,24 +88,13 @@ const ChatMain = ({ open, onClose }) => {
     const fetchChatList = () => {
         console.log("현재 사용자 정보:", userInfo);
 
-        // JWT 토큰 디코딩하여 확인
-        const token = localStorage.getItem('jwtToken');
-        if (token) {
-            try {
-                const decodedToken = JSON.parse(atob(token.split('.')[1]));
-                console.log("JWT 토큰 내용:", decodedToken);
-            } catch (error) {
-                console.error("JWT 토큰 디코딩 실패:", error);
-            }
-        }
-
-        if (!userInfo || !userInfo.loginId) {
+        if (!userInfo || !userInfo.memberId) {
             console.log("사용자 정보가 없습니다.");
             setChatList([]);
             return;
         }
 
-        let url = `http://localhost:4989/chatlist?login_id=${userInfo.loginId}`;
+        let url = `http://localhost:4989/chat/rooms?memberId=${userInfo.memberId}`;
         console.log("API 호출 URL:", url);
 
         axios.get(url)
@@ -111,10 +120,9 @@ const ChatMain = ({ open, onClose }) => {
 
     const handleChatRoomClick = (room) => {
         console.log('채팅방 클릭됨:', room);
-        console.log('chat_room_id:', room.chat_room_id); // 이 값이 DetailChat으로 전달됨
+        console.log('chatRoomId:', room.chatRoomId);
 
-        // 이미 열린 채팅방인지 확인
-        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.chat_room_id === room.chat_room_id);
+        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.chatRoomId === room.chatRoomId);
         if (!isAlreadyOpen) {
             setOpenChatRooms(prev => [...prev, room]);
         }
@@ -164,7 +172,11 @@ const ChatMain = ({ open, onClose }) => {
                                                     bgcolor: '#e3f0fd',
                                                     fontSize: '20px'
                                                 }}>
-                                                    {room.opponent_nickname ? room.opponent_nickname.charAt(0) : 'U'}
+                                                    {room.otherUserProfileImage ? (
+                                                        <img src={room.otherUserProfileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        room.otherUserNickname?.charAt(0) || 'U'
+                                                    )}
                                                 </Avatar>
                                                 {room.isOnline && (
                                                     <CircleIcon
@@ -184,15 +196,16 @@ const ChatMain = ({ open, onClose }) => {
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
-                                                    {room.opponent_nickname || 'Unknown'}
+                                                    {room.otherUserNickname || 'Unknown'}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
-                                                    {room.last_message_at ? new Date(room.last_message_at).toLocaleString() : ''}
+                                                    {formatTime(room.lastMessageTime)}
                                                 </Typography>
                                             </Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <span
-                                                    style={{
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
                                                         color: '#666',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
@@ -201,8 +214,8 @@ const ChatMain = ({ open, onClose }) => {
                                                         fontSize: '14px'
                                                     }}
                                                 >
-                                                    상품 ID: {room.product_id}
-                                                </span>
+                                                    {room.lastMessage || '메시지가 없습니다'}
+                                                </Typography>
                                                 {room.unreadCount > 0 && (
                                                     <Chip
                                                         label={room.unreadCount}

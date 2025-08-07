@@ -74,6 +74,16 @@ function LoginForm() {
           <label>비밀번호</label>
           <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
         </div>
+
+        {/* 소셜로그인 */}
+        <button onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/kakao'}>
+            카카오로 로그인
+        </button>
+        <br />
+        <button onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/google'}>
+            구글로 로그인
+        </button>
+
         <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           로그인
         </button>

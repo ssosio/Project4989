@@ -25,5 +25,14 @@
 	<select id="countByLoginId" parameterType="String" resultType="int">
 		SELECT COUNT(*) FROM members WHERE login_id = #{loginId}
 	</select>
+	<select id="findByEmail" parameterType="String" resultType="boot.sagu.dto.MemberDto">
+    	SELECT * FROM members WHERE email = #{email}
+	</select>
+	
+	<!-- 소셜로그인 추가 -->
+	<insert id="insertSocialAccount" parameterType="boot.sagu.dto.SocialAccountDto">
+	    INSERT INTO social_accounts (member_id, provider, provider_id)
+	    VALUES (#{memberId}, #{provider}, #{providerId})
+	</insert>
 	
 </mapper>
