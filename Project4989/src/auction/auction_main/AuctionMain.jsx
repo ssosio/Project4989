@@ -15,7 +15,7 @@ const AuctionMain = () => {
 
   const fetchAuctionList = async () => {
     try {
-      const response = await axios.get('http://localhost:4989/auction');
+      const response = await axios.get('http://192.168.10.136:4989/auction');
       setAuctionList(response.data);
       
       // 낙찰자 닉네임 가져오기
@@ -23,7 +23,7 @@ const AuctionMain = () => {
       for (const auction of response.data) {
         if (auction.winnerId) {
           try {
-            const nicknameResponse = await axios.get(`http://localhost:4989/auction/member/${auction.winnerId}`);
+            const nicknameResponse = await axios.get(`http://192.168.10.136:4989/auction/member/${auction.winnerId}`);
             nicknames[auction.postId] = nicknameResponse.data.nickname;
           } catch (err) {
             console.error(`낙찰자 닉네임 조회 실패 (ID: ${auction.winnerId}):`, err);
