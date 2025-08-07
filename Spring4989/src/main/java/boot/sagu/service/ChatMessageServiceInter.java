@@ -6,7 +6,7 @@ import boot.sagu.dto.ChatMessageDto;
 
 public interface ChatMessageServiceInter {
 
-	public void insertMessage(ChatMessageDto dto);
+	public Long insertMessage(ChatMessageDto dto);
 	
 	public List<ChatMessageDto> getAllMessages(Long chat_room_id);
 	
@@ -15,4 +15,9 @@ public interface ChatMessageServiceInter {
 	
 	// 메시지 읽음 상태 초기화
 	public void resetMessageReadStatus(Long chatRoomId);
+	
+	public void insertSystemMessage(ChatMessageDto dto);
+	
+	public void deleteMessage(Long messageId);
+	
 }

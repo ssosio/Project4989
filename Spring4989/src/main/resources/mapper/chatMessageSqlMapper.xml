@@ -9,6 +9,7 @@
         <result property="message_content" column="message_content"/>
         <result property="created_at" column="created_at"/>
         <result property="is_read" column="is_read"/>
+        <result property="deleted_at" column="deleted_at"/>
     </resultMap>
     
     <insert id="insertMessage" parameterType="boot.sagu.dto.ChatMessageDto" useGeneratedKeys="true" keyProperty="message_id">
@@ -23,22 +24,20 @@
         #{sender_id},
         #{message_content},
         #{message_type},
-        #{created_at}
+        now()
     )
 </insert>
 	
-    <select id="getAllMessages" parameterType="long" resultMap="ChatMessageResultMap">
+    <select id="getAllMessages" parameterType="long" resultMap="ChatMessageResultMap" useCache="false">
       SELECT
-        m.message_id,
-        m.chat_room_id,
-        m.sender_id,
-        m.message_type,
-        CASE
-            WHEN m.message_type = 'image' THEN f.file_url
-            ELSE m.message_content
-        END as message_content,
-        m.created_at,
-        m.is_read
+      m.message_id,
+      m.chat_room_id,
+      m.sender_id,
+      m.message_type,
+      m.message_content,  -- 삭제된 메시지 처리 로직 제거
+      m.created_at,
+      m.is_read,
+      m.deleted_at  -- deleted_at 필드는 유지
     FROM chatmessage m
     LEFT JOIN chatfile f ON m.message_id = f.message_id
     WHERE m.chat_room_id = #{chat_room_id}
@@ -51,5 +50,18 @@
         AND sender_id != #{readerId} 
         AND is_read = 0
     </update>
+    
+    <insert id="insertSystemMessage" parameterType="boot.sagu.dto.ChatMessageDto">
+    INSERT INTO chatmessage (chat_room_id, sender_id, message_type, message_content, created_at)
+    VALUES (#{chat_room_id}, #{sender_id},'SYSTEM', #{message_content}, NOW())
+</insert>
+
+<update id="deleteMessage" parameterType="Long">
+	update chatmessage set deleted_at=now()	where message_id=#{message_id}
+</update>
+
+<select id="getChatRoomIdByMessageId" parameterType="Long" resultType="Long">
+	SELECT chat_room_id FROM chatmessage WHERE message_id = #{messageId}
+</select>
     
 </mapper>

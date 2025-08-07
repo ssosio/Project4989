@@ -1,13 +1,18 @@
 package boot.sagu.service;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import boot.sagu.dto.ChatDto;
+import boot.sagu.dto.ChatMessageDto;
 import boot.sagu.mapper.ChatMapper;
+import boot.sagu.mapper.ChatMessageMapper;
 import boot.sagu.mapper.MemberMapper;
 
 @Service
@@ -18,6 +23,9 @@ public class ChatService implements ChatServiceInter{
 	
 	@Autowired
 	MemberMapper membermapper;
+	
+	@Autowired
+	ChatMessageMapper chatmessagemapper;
 
 	@Override
 	public List<ChatDto> getAllChat(String login_id) {
@@ -48,5 +56,32 @@ public class ChatService implements ChatServiceInter{
 	public Map<String, Object> getOtherUserInChatRoom(Long chatRoomId, Long currentMemberId) {
 	    return chatmapper.getOtherUserInChatRoom(chatRoomId, currentMemberId);
 	}
+	
+	@Override
+	@Transactional
+    public void updateExit(Long chatRoomId, Long currentMemberId) { // ✨ 파라미터에서 buyer_id와 seller_id 제거
+        
+        // 1. chatRoomId를 통해 buyer_id와 seller_id 조회
+        Map<String, Object> chatRoomInfo = chatmapper.getChatRoomInfoById(chatRoomId); // ✨ 새로운 매퍼 메서드 호출
+        Long buyerId = (Long) chatRoomInfo.get("buyer_id");
+        Long sellerId = (Long) chatRoomInfo.get("seller_id");
+        
+        // 2. 채팅방 나가기 상태 업데이트
+        chatmapper.updateExitStatus(chatRoomId, currentMemberId, buyerId, sellerId);
 
+        String nickName = chatmapper.getMemberNickname(currentMemberId);
+        
+        // 3. 시스템 메시지 추가
+        ChatMessageDto systemMessage = new ChatMessageDto();
+        systemMessage.setChat_room_id(chatRoomId);
+        systemMessage.setSender_id(currentMemberId);
+        String messageContent = nickName + "님이 채팅방을 나갔습니다.";
+        systemMessage.setMessage_content(messageContent);
+        chatmessagemapper.insertSystemMessage(systemMessage);
+    }
+	
 }
+
+	
+
+
