@@ -4,7 +4,7 @@
 	<select id="getParentCategory" resultType="category">
 		SELECT category_id, name FROM categories WHERE parent_id IS NULL
 	</select>
-	<select id="getChildCategory" parameterType="int" resultType="Category">
+	<select id="getChildCategory" parameterType="int" resultType="category">
     	SELECT category_id, name FROM categories WHERE parent_id = #{parentId}
 	</select>
 </mapper>
