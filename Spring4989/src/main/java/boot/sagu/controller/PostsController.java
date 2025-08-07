@@ -65,7 +65,7 @@ public class PostsController {
 			@ModelAttribute CarDto cdto,
 			@ModelAttribute RealEstateDto rdto,
 			@ModelAttribute ItemDto idto,
-			@RequestParam("uploadFiles") List<MultipartFile> uploadFiles,
+			@RequestParam(value = "uploadFiles", required = false) List<MultipartFile> uploadFiles,
 			@RequestHeader(value = "Authorization", required = false) String authorization,
 		    HttpSession session)
 	{

@@ -102,6 +102,7 @@ public class PostsService implements PostsServiceInter{
 		
 		List<PhotoDto> photoList=new ArrayList<>();
 		
+		if (uploadFiles != null && !uploadFiles.isEmpty()) {
 		for(int i=0; i<uploadFiles.size(); i++) {
 			MultipartFile file = uploadFiles.get(i);
 			
@@ -127,6 +128,7 @@ public class PostsService implements PostsServiceInter{
 			
 		}
 		photoMapper.insertPhoto(photoList);
+		}
 		
 		if("CARS".equals(pdto.getPostType())&& cdto!=null) {
 			cdto.setPostId(pdto.getPostId());
