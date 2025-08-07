@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Post = () => {
 
+
     //공통
     const [uploadFiles,setUploadFiles]=useState([]);
     const [postType,setPostType]=useState('');
@@ -35,25 +36,40 @@ const Post = () => {
     const [children, setChildren] = useState([]);
     const [selectedParent, setSelectedParent] = useState('');
     const [selectedChild, setSelectedChild] = useState('');
+    const [conditions,setConditions]=useState('');
+    const [categoryId,setCategoryId]=useState('');
+
 
     useEffect(()=>{
-        axios.get("http://localhost:4989/category/parent")
+        axios.get("http://localhost:4989/category/category")
         .then(res=> setParents(res.data))
         .catch(err=> console.log(err));
     },[]);
 
-    const handleParentChange=(e)=>{
-        const parentId=e.target.value;
-        setSelectedParent(parentId);
-        setSelectedChild('');
-        axios.get(`http://localhost:4989/category/child?parent=${parentId}`)
-        .then(res=>setChildren(res.data))
-        .catch(err=>console.log(err));
-    }
+    const handleParentChange = (e) => {
+  const val = e.target.value;
+
+  if (!val || isNaN(Number(val))) {
+    console.warn("❌ 유효하지 않은 parentId:", val);
+    setSelectedParent('');
+    setChildren([]);
+    return;
+  }
+
+  const parentId = Number(val);
+  setSelectedParent(parentId);
+  setCategoryId(parentId);
+  console.log("✅ 선택된 parentId:", parentId);
+
+  axios.get(`http://localhost:4989/category/child?parentId=${parentId}`)
+    .then(res => setChildren(res.data))
+    .catch(err => console.error("❌ axios 에러:", err));
+};
+
 
     const handleChildChange=(e)=>{
-        const childId=e.target.value;
-        setSelectedChild(childId);
+        const parentId=Number(e.target.value);
+        setSelectedChild(parentId);
     };
 
     
@@ -113,9 +129,10 @@ const Post = () => {
         
 
         //아이템
-        // if(postType==='ITEMS'){
-        // formData.append("name",category);
-        // }
+        if(postType==='ITEMS'){
+            formData.append("categoryId",categoryId);
+            formData.append("conditions",conditions);
+         }
         
 
         // 디버깅을 위한 콘솔 로그 추가
@@ -134,7 +151,7 @@ const Post = () => {
         console.log("전송할 mileage:", mileage);
         console.log("전송할 fuelType:", fuelType);
         console.log("전송할 transmission:", transmission);
-        // console.log("전송할 category:", category);
+        console.log("전송할 condition:", conditions);
 
         
 
@@ -343,7 +360,7 @@ const Post = () => {
                                     <option value=""></option>
                                     {
                                         parents.map(p=>(
-                                            <option key={p.category_id} value={p.category_id}>{p.name}</option>
+                                            <option key={p.categoryId} value={p.categoryId}>{p.name}</option>
                                         ))
                                     }
                                 </select>
@@ -354,15 +371,27 @@ const Post = () => {
                                 <select onChange={handleChildChange} value={selectedChild}>
                                     <option value=""></option>
                                     {
-                                        children.map(c=>{
-                                            <option key={c.category_id} value={c.category_id}>{c.name}</option>
-                                        })
+                                        children.map(c=>(
+                                            <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
+                                        ))
                                     }
                                 </select>
                             </label>
                         </td>
+                         <td>
+                            <label>상태
+                                <select value={conditions} onChange={(e)=>{
+                                    setConditions(e.target.value);
+                                }}>
+                                    <option value="">선택해주세요</option>
+                                    <option value="best">상</option>
+                                    <option value="good">중</option>
+                                    <option value="bad">하</option>
+                                </select>
+                            </label>
+                        </td>
                     </tr>
-                    
+                   
                     )
                 } 
             <tr>

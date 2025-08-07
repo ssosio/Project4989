@@ -10,6 +10,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.CarDto;
@@ -57,12 +58,6 @@ public class PostsService implements PostsServiceInter{
 	public List<PostsDto> getAllPostData() {
 		// TODO Auto-generated method stub
 		return postMapper.getAllPostData();
-	}
-
-	@Override
-	public PostsDto getPostData(int post_id) {
-		// TODO Auto-generated method stub
-		return postMapper.getPostData(post_id);
 	}
 
 
@@ -145,8 +140,21 @@ public class PostsService implements PostsServiceInter{
 			System.out.println("부동산정보");
 		}
 		
+		if("ITEMS".equals(pdto.getPostType())&&idto!=null) {
+			idto.setPostId(pdto.getPostId());
+			itemMapper.insertItem(idto);
+			System.out.println("중고물품");
+		}
 	}
 
+	@Override
+	public PostsDto getPostData(@RequestParam("postId") Long postId) {
+		// TODO Auto-generated method stub
+		System.out.println("요청 postId: " + postId);
+		return postMapper.getPostData(postId);
+	}
+
+	
 	
 	
 }
