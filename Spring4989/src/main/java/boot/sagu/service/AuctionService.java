@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import boot.sagu.dto.AuctionDto;
+import boot.sagu.dto.AuctionGuaranteeDTO;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.mapper.AuctionMapper;
@@ -96,5 +97,26 @@ public class AuctionService implements AuctionServiceInter {
 		} catch (Exception socketError) {
 			System.err.println("자동 경매 종료 소켓 메시지 전송 실패: " + socketError.getMessage());
 		}
+	}
+
+	@Override
+	public int countAuctionGuaranteeByPostAndMember(long postId, long memberId) {
+		// TODO Auto-generated method stub
+		return auctionMapper.countAuctionGuaranteeByPostAndMember(postId, memberId);
+	}
+
+	@Override
+	public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto) {
+		auctionMapper.insertGuarantee(AuctionGuaranteeDto);
+	}
+
+	@Override
+	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(long postId, long winnerId) {
+		return auctionMapper.findNonWinnerGuarantees(postId, winnerId);
+	}
+
+	@Override
+	public void updateRefundStatus(long guaranteeId) {
+		auctionMapper.updateRefundStatus(guaranteeId);
 	}
 }

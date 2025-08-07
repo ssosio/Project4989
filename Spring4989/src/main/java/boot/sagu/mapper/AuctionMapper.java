@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
 import boot.sagu.dto.AuctionDto;
+import boot.sagu.dto.AuctionGuaranteeDTO;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 
@@ -22,4 +22,14 @@ public interface AuctionMapper {
 	public void updateWinnerId(@Param("postId") long postId, @Param("winnerId") long winnerId); // winner_id 업데이트
 	public void updateAuctionStatus(@Param("postId") long postId, @Param("status") String status); // 경매 상태 업데이트
 	public void updateAuctionStatusAndEndTime(@Param("postId") long postId, @Param("status") String status); // 수동 경매 종료 시 상태와 종료시간 업데이트
+	
+	//보증금 메서드
+	public int countAuctionGuaranteeByPostAndMember(@Param("postId")long postId,@Param("memberId")long memberId); //게시글에 보증금 납부했는지
+	public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); //보증금 납부
+	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기
+	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postID")long postId,@Param("winnerId")long winnerId);
+	//환불
+	public void updateRefundStatus(@Param("guaranteeID")long guaranteeId);
+	
+	
 }
