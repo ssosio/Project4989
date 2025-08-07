@@ -21,9 +21,12 @@ const AuctionDetail = () => {
   const [highestBidderNickname, setHighestBidderNickname] = useState(''); // 최고 입찰자 닉네임 추가
   const [stompClient, setStompClient] = useState(null); // 소켓 클라이언트
 
+  const SERVER_IP = '192.168.10.136';
+    const SERVER_PORT = '4989';
+  
   useEffect(() => {
     // postId를 사용해서 상세 정보를 가져오는 API 호출
-    axios.get(`http://localhost:4989/auction/detail/${postId}`)
+    axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`)
       .then(res => {
         setAuctionDetail(res.data);
         setLoading(false);
@@ -34,7 +37,7 @@ const AuctionDetail = () => {
       });
 
     // 최고가 정보 가져오기
-    axios.get(`http://localhost:4989/auction/highest-bid/${postId}`)
+    axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`)
       .then(res => {
         setHighestBid(res.data);
       })
@@ -47,7 +50,7 @@ const AuctionDetail = () => {
   // 작성자 닉네임 가져오기
   useEffect(() => {
     if (auctionDetail?.memberId) {
-      axios.get(`http://localhost:4989/auction/member/${auctionDetail.memberId}`)
+      axios.get(`http://192.168.10.136:4989/auction/member/${auctionDetail.memberId}`)
         .then(res => {
           setAuthorNickname(res.data.nickname);
         })
@@ -61,7 +64,7 @@ const AuctionDetail = () => {
   // 낙찰자 닉네임 가져오기
   useEffect(() => {
     if (auctionDetail?.winnerId) {
-      axios.get(`http://localhost:4989/auction/member/${auctionDetail.winnerId}`)
+      axios.get(`http://192.168.10.136:4989/auction/member/${auctionDetail.winnerId}`)
         .then(res => {
           setWinnerNickname(res.data.nickname);
         })
@@ -77,7 +80,7 @@ const AuctionDetail = () => {
   // 최고 입찰자 닉네임 가져오기
   useEffect(() => {
     if (highestBid?.bidderId) {
-      axios.get(`http://localhost:4989/auction/member/${highestBid.bidderId}`)
+      axios.get(`http://192.168.10.136:4989/auction/member/${highestBid.bidderId}`)
         .then(res => {
           setHighestBidderNickname(res.data.nickname);
         })
@@ -156,7 +159,7 @@ const AuctionDetail = () => {
   // 소켓 연결
   useEffect(() => {
     const client = new Client({
-      brokerURL: 'ws://localhost:4989/ws',
+      brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
       onConnect: () => {
         // 경매 채널 구독
         client.subscribe(`/topic/auction/${postId}`, (message) => {
@@ -287,7 +290,7 @@ const AuctionDetail = () => {
     };
 
     try {
-      const response = await axios.post('http://localhost:4989/auction/bid', bidData);
+      const response = await axios.post('http://192.168.10.136:4989/auction/bid', bidData);
       setBidMessage(response.data);
       
       // 메시지 타입 설정
@@ -295,11 +298,11 @@ const AuctionDetail = () => {
         setBidMessageType('success');
         setBidAmount(0);
         // 경매 정보 새로고침
-        const refreshResponse = await axios.get(`http://localhost:4989/auction/detail/${postId}`);
+        const refreshResponse = await axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`);
         setAuctionDetail(refreshResponse.data);
         
         // 최고가 정보 새로고침
-        const highestBidResponse = await axios.get(`http://localhost:4989/auction/highest-bid/${postId}`);
+        const highestBidResponse = await axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`);
         setHighestBid(highestBidResponse.data);
       } else if (response.data.includes('낮습니다')) {
         setBidMessageType('error');
@@ -320,16 +323,16 @@ const AuctionDetail = () => {
     setBidMessageType('info');
     
     try {
-      const response = await axios.post(`http://localhost:4989/auction/end/${postId}`);
+      const response = await axios.post(`http://192.168.10.136:4989/auction/end/${postId}`);
       setBidMessage(response.data);
       setBidMessageType('success');
       
       // 경매 정보 새로고침
-      const refreshResponse = await axios.get(`http://localhost:4989/auction/detail/${postId}`);
+      const refreshResponse = await axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`);
       setAuctionDetail(refreshResponse.data);
       
       // 최고가 정보 새로고침
-      const highestBidResponse = await axios.get(`http://localhost:4989/auction/highest-bid/${postId}`);
+      const highestBidResponse = await axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`);
       setHighestBid(highestBidResponse.data);
       
       // 경매 종료 상태로 변경 (버튼 숨기기 위함)
@@ -338,7 +341,7 @@ const AuctionDetail = () => {
       // 낙찰자 정보 설정 (있는 경우)
       if (highestBidResponse.data) {
         try {
-          const winnerResponse = await axios.get(`http://localhost:4989/auction/member/${highestBidResponse.data.bidderId}`);
+          const winnerResponse = await axios.get(`http://192.168.10.136:4989/auction/member/${highestBidResponse.data.bidderId}`);
           setWinnerNickname(winnerResponse.data.nickname || `ID: ${highestBidResponse.data.bidderId}`);
         } catch (memberError) {
           console.error('낙찰자 정보 조회 실패:', memberError);
