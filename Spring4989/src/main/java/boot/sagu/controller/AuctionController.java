@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import boot.sagu.dto.AuctionDto;
+import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.mapper.AuctionMapper;
@@ -26,6 +27,8 @@ AuctionMapper auctionmapper;
 
 @Autowired
 private SimpMessagingTemplate messagingTemplate;
+
+// 방 인원수 관리는 WebSocketController에서 처리됨
 
 @GetMapping("/auction")
 public List<PostsDto> getAuctionList() {
@@ -49,6 +52,65 @@ public AuctionDto getHighestBid(@PathVariable("postId") long postId) {
 @GetMapping("/auction/member/{memberId}")
 public MemberDto getMemberNickname(@PathVariable("memberId") long memberId) {
    return auctionmapper.getMemberNickname(memberId);
+}
+
+// 찜 상태 확인
+@GetMapping("/auction/favorite/check/{postId}/{memberId}")
+public Map<String, Object> checkFavoriteStatus(@PathVariable("postId") long postId, @PathVariable("memberId") long memberId) {
+   Map<String, Object> response = new HashMap<>();
+   try {
+       boolean isFavorite = auctionmapper.checkFavoriteStatus(postId, memberId);
+       response.put("isFavorite", isFavorite);
+       response.put("success", true);
+   } catch (Exception e) {
+       response.put("success", false);
+       response.put("message", "찜 상태 확인 실패: " + e.getMessage());
+   }
+   return response;
+}
+
+// 찜 추가/삭제 토글
+@PostMapping("/auction/favorite/toggle")
+public Map<String, Object> toggleFavorite(@RequestBody FavoritesDto favoritesDto) {
+   Map<String, Object> response = new HashMap<>();
+   try {
+       // 현재 찜 상태 확인
+       boolean isFavorite = auctionmapper.checkFavoriteStatus(favoritesDto.getPostId(), favoritesDto.getMemberId());
+       
+       if (isFavorite) {
+           // 찜 삭제
+           auctionmapper.deleteFavorite(favoritesDto.getPostId(), favoritesDto.getMemberId());
+           response.put("action", "removed");
+           response.put("message", "찜이 삭제되었습니다.");
+       } else {
+           // 찜 추가
+           auctionmapper.insertFavorite(favoritesDto);
+           response.put("action", "added");
+           response.put("message", "찜에 추가되었습니다.");
+       }
+       
+       response.put("success", true);
+       response.put("isFavorite", !isFavorite);
+   } catch (Exception e) {
+       response.put("success", false);
+       response.put("message", "찜 처리 실패: " + e.getMessage());
+   }
+   return response;
+}
+
+// 찜 개수 조회
+@GetMapping("/auction/favorite/count/{postId}")
+public Map<String, Object> getFavoriteCount(@PathVariable("postId") long postId) {
+   Map<String, Object> response = new HashMap<>();
+   try {
+       int favoriteCount = auctionmapper.getFavoriteCount(postId);
+       response.put("success", true);
+       response.put("favoriteCount", favoriteCount);
+   } catch (Exception e) {
+       response.put("success", false);
+       response.put("message", "찜 개수 조회 실패: " + e.getMessage());
+   }
+   return response;
 }
 
 @PostMapping("/auction/bid")
@@ -184,5 +246,7 @@ public String endAuction(@PathVariable("postId") long postId) {
        return "경매 종료 처리에 실패했습니다: " + e.getMessage();
    }
 }
+
+// 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 제거)
 
 }

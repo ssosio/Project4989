@@ -19,14 +19,18 @@ const AuctionDetail = () => {
   const [authorNickname, setAuthorNickname] = useState('');
   const [winnerNickname, setWinnerNickname] = useState(''); // 낙찰자 닉네임 추가
   const [highestBidderNickname, setHighestBidderNickname] = useState(''); // 최고 입찰자 닉네임 추가
-  const [stompClient, setStompClient] = useState(null); // 소켓 클라이언트
+  const [userCount, setUserCount] = useState(0); // 방 인원수
+  const [sessionId] = useState(() => Math.random().toString(36).substr(2, 9)); // 고유 세션 ID
+  const [isFavorite, setIsFavorite] = useState(false); // 찜 상태
+  const [favoriteLoading, setFavoriteLoading] = useState(false); // 찜 로딩 상태
+  const [favoriteCount, setFavoriteCount] = useState(0); // 찜 개수
 
-  const SERVER_IP = '192.168.10.136';
+  const SERVER_IP = '192.168.10.138';
     const SERVER_PORT = '4989';
   
   useEffect(() => {
     // postId를 사용해서 상세 정보를 가져오는 API 호출
-    axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`)
+    axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`)
       .then(res => {
         setAuctionDetail(res.data);
         setLoading(false);
@@ -37,7 +41,7 @@ const AuctionDetail = () => {
       });
 
     // 최고가 정보 가져오기
-    axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`)
+    axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`)
       .then(res => {
         setHighestBid(res.data);
       })
@@ -45,12 +49,14 @@ const AuctionDetail = () => {
         console.error("최고가 조회 실패:", err);
         setHighestBid(null);
       });
-  }, [postId]);
+
+    // 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 호출 제거)
+  }, [postId, sessionId, userInfo]);
 
   // 작성자 닉네임 가져오기
   useEffect(() => {
     if (auctionDetail?.memberId) {
-      axios.get(`http://192.168.10.136:4989/auction/member/${auctionDetail.memberId}`)
+      axios.get(`http://192.168.10.138:4989/auction/member/${auctionDetail.memberId}`)
         .then(res => {
           setAuthorNickname(res.data.nickname);
         })
@@ -64,7 +70,7 @@ const AuctionDetail = () => {
   // 낙찰자 닉네임 가져오기
   useEffect(() => {
     if (auctionDetail?.winnerId) {
-      axios.get(`http://192.168.10.136:4989/auction/member/${auctionDetail.winnerId}`)
+      axios.get(`http://192.168.10.138:4989/auction/member/${auctionDetail.winnerId}`)
         .then(res => {
           setWinnerNickname(res.data.nickname);
         })
@@ -80,7 +86,7 @@ const AuctionDetail = () => {
   // 최고 입찰자 닉네임 가져오기
   useEffect(() => {
     if (highestBid?.bidderId) {
-      axios.get(`http://192.168.10.136:4989/auction/member/${highestBid.bidderId}`)
+      axios.get(`http://192.168.10.138:4989/auction/member/${highestBid.bidderId}`)
         .then(res => {
           setHighestBidderNickname(res.data.nickname);
         })
@@ -161,19 +167,34 @@ const AuctionDetail = () => {
     const client = new Client({
       brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
       onConnect: () => {
+        
         // 경매 채널 구독
         client.subscribe(`/topic/auction/${postId}`, (message) => {
           const data = JSON.parse(message.body);
           handleSocketMessage(data);
         });
         
-        setStompClient(client);
+        // 소켓 연결 후 방 입장 메시지 전송
+        setTimeout(() => {
+          if (client.connected) {
+            client.publish({
+              destination: `/app/auction/room/join/${postId}`,
+              body: JSON.stringify({
+                sessionId: sessionId,
+                userId: String(userInfo?.memberId || 'anonymous'),
+                userNickname: userInfo?.nickname || `ID: ${userInfo?.memberId || 'anonymous'}`
+              })
+            });
+          }
+        }, 1000); // 1초 후 전송
       },
       onDisconnect: () => {
-        setStompClient(null);
+        console.log('WebSocket 연결 해제');
+        
       },
       onStompError: (error) => {
         console.error('경매 소켓 에러:', error);
+        
       }
     });
 
@@ -181,10 +202,19 @@ const AuctionDetail = () => {
 
     return () => {
       if (client.connected) {
-        client.deactivate();
+        // 방 퇴장 메시지 전송
+        client.publish({
+          destination: `/app/auction/room/leave/${postId}`,
+          body: JSON.stringify({
+            sessionId: sessionId
+          })
+        });
+        setTimeout(() => {
+          client.deactivate();
+        }, 500); // 0.5초 후 연결 해제
       }
     };
-  }, [postId]);
+  }, [postId, sessionId, userInfo]);
 
   // 소켓 메시지 처리
   const handleSocketMessage = (data) => {
@@ -213,6 +243,12 @@ const AuctionDetail = () => {
         }
         setBidMessage('경매가 종료되었습니다!');
         setBidMessageType('success');
+        break;
+        
+      case 'USER_COUNT_UPDATE':
+        // 실시간 방 인원수 업데이트
+        setUserCount(data.userCount);
+        console.log('방 인원수 업데이트:', data.userCount, '명');
         break;
         
       default:
@@ -248,13 +284,33 @@ const AuctionDetail = () => {
   // 금액 버튼 클릭 핸들러
   const handleAmountClick = (amount) => {
     const currentBidAmount = bidAmount > 0 ? bidAmount : getCurrentPrice();
-    setBidAmount(currentBidAmount + amount);
+    const newAmount = currentBidAmount + amount;
+    
+    // 최고가보다 낮은 금액이 되지 않도록 보장
+    const currentHighestBid = getCurrentPrice();
+    if (newAmount > currentHighestBid) {
+      setBidAmount(newAmount);
+      setBidMessage(''); // 경고 메시지 제거
+    } else {
+      setBidMessage(`⚠️ 최소 ${(currentHighestBid + 1).toLocaleString()}원 이상 입력해주세요.`);
+      setBidMessageType('warning');
+    }
   };
 
   // 직접 입력 핸들러
   const handleBidAmountChange = (e) => {
     const value = e.target.value.replace(/[^0-9]/g, ''); // 숫자만 허용
-    setBidAmount(value ? parseInt(value) : 0);
+    const numValue = value ? parseInt(value) : 0;
+    setBidAmount(numValue);
+    
+    // 최고가보다 낮은 금액 입력 시 실시간 경고 메시지
+    const currentHighestBid = getCurrentPrice();
+    if (numValue > 0 && numValue <= currentHighestBid) {
+      setBidMessage(`⚠️ 현재 최고가(${currentHighestBid.toLocaleString()}원)보다 높은 금액을 입력해주세요.`);
+      setBidMessageType('warning');
+    } else if (numValue > 0) {
+      setBidMessage(''); // 경고 메시지 제거
+    }
   };
 
   // 입찰 버튼 클릭 핸들러
@@ -266,15 +322,29 @@ const AuctionDetail = () => {
       return;
     }
 
-    if (!bidAmount || bidAmount <= 0) {
-      setBidMessage('유효한 입찰 금액을 입력해주세요.');
+    // 현재 로그인한 사용자 ID
+    const currentUserId = userInfo.memberId;
+
+    // 게시물 작성자가 자신의 경매에 입찰하는지 확인
+    if (auctionDetail && auctionDetail.memberId === currentUserId) {
+      setBidMessage('본인 경매에는 참여할 수 없습니다.');
       setBidMessageType('error');
-      
       return;
     }
 
-    // 현재 로그인한 사용자 ID
-    const currentUserId = userInfo.memberId;
+    if (!bidAmount || bidAmount <= 0) {
+      setBidMessage('유효한 입찰 금액을 입력해주세요.');
+      setBidMessageType('error');
+      return;
+    }
+
+    // 최고가보다 낮은 금액으로 입찰하는지 확인
+    const currentHighestBid = getCurrentPrice();
+    if (bidAmount <= currentHighestBid) {
+      setBidMessage(`입찰가가 현재 최고가(${currentHighestBid.toLocaleString()}원)보다 낮거나 같습니다.\n더 높은 금액을 입력해주세요.`);
+      setBidMessageType('error');
+      return;
+    }
 
     // 연속 입찰 방지: 현재 최고 입찰자와 같은 사람이면 입찰 불가
     if (highestBid && highestBid.bidderId === currentUserId) {
@@ -290,7 +360,7 @@ const AuctionDetail = () => {
     };
 
     try {
-      const response = await axios.post('http://192.168.10.136:4989/auction/bid', bidData);
+      const response = await axios.post('http://192.168.10.138:4989/auction/bid', bidData);
       setBidMessage(response.data);
       
       // 메시지 타입 설정
@@ -298,11 +368,11 @@ const AuctionDetail = () => {
         setBidMessageType('success');
         setBidAmount(0);
         // 경매 정보 새로고침
-        const refreshResponse = await axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`);
+        const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
         setAuctionDetail(refreshResponse.data);
         
         // 최고가 정보 새로고침
-        const highestBidResponse = await axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`);
+        const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
         setHighestBid(highestBidResponse.data);
       } else if (response.data.includes('낮습니다')) {
         setBidMessageType('error');
@@ -323,16 +393,16 @@ const AuctionDetail = () => {
     setBidMessageType('info');
     
     try {
-      const response = await axios.post(`http://192.168.10.136:4989/auction/end/${postId}`);
+      const response = await axios.post(`http://192.168.10.138:4989/auction/end/${postId}`);
       setBidMessage(response.data);
       setBidMessageType('success');
       
       // 경매 정보 새로고침
-      const refreshResponse = await axios.get(`http://192.168.10.136:4989/auction/detail/${postId}`);
+              const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
       setAuctionDetail(refreshResponse.data);
       
       // 최고가 정보 새로고침
-      const highestBidResponse = await axios.get(`http://192.168.10.136:4989/auction/highest-bid/${postId}`);
+              const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
       setHighestBid(highestBidResponse.data);
       
       // 경매 종료 상태로 변경 (버튼 숨기기 위함)
@@ -341,7 +411,7 @@ const AuctionDetail = () => {
       // 낙찰자 정보 설정 (있는 경우)
       if (highestBidResponse.data) {
         try {
-          const winnerResponse = await axios.get(`http://192.168.10.136:4989/auction/member/${highestBidResponse.data.bidderId}`);
+          const winnerResponse = await axios.get(`http://192.168.10.138:4989/auction/member/${highestBidResponse.data.bidderId}`);
           setWinnerNickname(winnerResponse.data.nickname || `ID: ${highestBidResponse.data.bidderId}`);
         } catch (memberError) {
           console.error('낙찰자 정보 조회 실패:', memberError);
@@ -388,6 +458,72 @@ const AuctionDetail = () => {
     return auctionDetail?.price || 0;
   };
 
+  // 찜 상태 확인
+  const checkFavoriteStatus = async () => {
+    if (!userInfo?.memberId) return;
+    
+    try {
+      const response = await axios.get(`http://192.168.10.138:4989/auction/favorite/check/${postId}/${userInfo.memberId}`);
+      if (response.data.success) {
+        setIsFavorite(response.data.isFavorite);
+      }
+    } catch (error) {
+      console.error('찜 상태 확인 실패:', error);
+    }
+  };
+
+  // 찜 토글
+  const toggleFavorite = async () => {
+    if (!userInfo?.memberId) {
+      return;
+    }
+    
+    if (favoriteLoading) return;
+    
+    setFavoriteLoading(true);
+    try {
+      const response = await axios.post('http://192.168.10.138:4989/auction/favorite/toggle', {
+        memberId: userInfo.memberId,
+        postId: parseInt(postId)
+      });
+      
+      if (response.data.success) {
+        setIsFavorite(response.data.isFavorite);
+        // 찜 개수 업데이트
+        getFavoriteCount();
+      }
+    } catch (error) {
+      console.error('찜 토글 실패:', error);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  // 찜 개수 조회
+  const getFavoriteCount = async () => {
+    if (!postId) return;
+
+    try {
+      const response = await axios.get(`http://192.168.10.138:4989/auction/favorite/count/${postId}`);
+      if (response.data.success) {
+        setFavoriteCount(response.data.favoriteCount || 0);
+      } else {
+        setFavoriteCount(0);
+      }
+    } catch (error) {
+      console.error('찜 개수 조회 실패:', error);
+      setFavoriteCount(0);
+    }
+  };
+
+  // 컴포넌트 마운트 시 찜 상태 확인
+  useEffect(() => {
+    if (userInfo?.memberId && postId) {
+      checkFavoriteStatus();
+      getFavoriteCount(); // 컴포넌트 마운트 시 찜 개수 조회
+    }
+  }, [userInfo?.memberId, postId]);
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -413,7 +549,21 @@ const AuctionDetail = () => {
         <div className="product-info-section">
           {/* 제목과 메타 정보 */}
           <div className="product-header">
-            <h1 className="product-title">{auctionDetail.title}</h1>
+            <div className="title-heart-container">
+              <h1 className="product-title">{auctionDetail.title}</h1>
+              <div className="heart-favorite-container">
+                {/* 찜 하트 버튼 */}
+                <button 
+                  onClick={toggleFavorite}
+                  disabled={favoriteLoading}
+                  className={`favorite-heart-btn ${isFavorite ? 'favorited' : ''}`}
+                  title={isFavorite ? '찜 해제' : '찜 추가'}
+                >
+                  {isFavorite ? '❤️' : '🤍'}
+                </button>
+                <span className="favorite-count-text">찜: {favoriteCount}개</span>
+              </div>
+            </div>
             
             {/* 메타 정보 섹션 */}
             <div className="product-meta-section">
@@ -487,8 +637,9 @@ const AuctionDetail = () => {
           </button>
         </div>
 
-        {/* 오른쪽 - 타이머와 현재 최고가만 */}
+                  {/* 오른쪽 - 타이머와 현재 최고가만 */}
         <div className="product-image-section">
+          
           {/* 타이머 섹션 */}
           <div className="timer-section-overlay">
             <div className="timer-title">
@@ -496,6 +647,18 @@ const AuctionDetail = () => {
               남은 시간 (경매 마감까지)
             </div>
             <div className="timer-display">{timeRemaining}</div>
+          </div>
+          
+          {/* 방 인원수 표시 */}
+          <div className="room-user-count-section">
+            <div className="user-count-title">
+              <span className="user-icon">👥</span>
+              현재 방 인원
+            </div>
+            <div className="user-count-display">
+              <span className="user-count-number">{userCount}</span>
+              <span className="user-count-unit">명</span>
+            </div>
           </div>
           
           {/* 현재 최고가 섹션 */}
@@ -639,3 +802,4 @@ const AuctionDetail = () => {
 };
 
 export default AuctionDetail;
+
