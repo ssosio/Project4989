@@ -20,7 +20,7 @@ public class CategoryController {
 	@Autowired
 	CategoryService categoryService;
 
-	@GetMapping("/parent")
+	@GetMapping("/category")
 	public List<CategoryDto> getParentCategory()
 	{
 		return categoryService.getParentCategory();

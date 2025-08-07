@@ -91,6 +91,10 @@ public class PostsController {
 		postService.insertPostWithPhoto(pdto, uploadFiles, session, cdto, rdto, idto);
 	}
 	
-	
+	@GetMapping("/detail")
+	public PostsDto getPostDetail(@RequestParam("postId") Long postId) {
+	    return postService.getPostData(postId);
+	}
+
 
 }

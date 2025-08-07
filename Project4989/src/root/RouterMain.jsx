@@ -13,6 +13,9 @@ import AuctionMain from '../auction/auction_main/AuctionMain'
 import AuctionDetail from '../auction/auction_main/AuctionDetail'
 import Chat from '../chat/ChatMain'
 import Map from '../chat/KakaoMap'
+import GoodsDetail from '../board/GoodsDetail'
+import CarDetail from '../board/CarDetail'
+import Real_estateDtail from '../board/Real_estateDtail'
 
 const RouterMain = () => {
   return (
@@ -30,6 +33,9 @@ const RouterMain = () => {
           <Route path='/signup' element={<SignupForm />} />
           <Route path='/board/post' element={<Post />} />
           <Route path='/board/post' element={<Post />} />
+          <Route path='/board/GoodsDetail' element={<GoodsDetail />} />
+          <Route path='/board/CarDetail' element={<CarDetail />} />
+          <Route path='/board/estateDetail' element={<Real_estateDtail />} />
         </Route>
       </Routes>
     </div>
