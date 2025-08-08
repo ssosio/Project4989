@@ -50,4 +50,22 @@ public class MemberService implements MemberServiceInter {
 		// TODO Auto-generated method stub
 		return memberMapper.countByLoginId(loginId) == 0;
 	}
+
+	@Override
+	public MemberDto findByEmailAndPhone(String email, String phoneNumber) {
+		return memberMapper.findByEmailAndPhone(email, phoneNumber);
+	}
+
+	@Override
+	public MemberDto findByLoginIdAndPhone(String loginId, String phoneNumber) {
+		return memberMapper.findByLoginIdAndPhone(loginId, phoneNumber);
+	}
+
+	@Override
+	public void updatePassword(String loginId, String newPassword) {
+		// 새 비밀번호를 암호화
+		String encodedPassword = passwordEncoder.encode(newPassword);
+		// 암호화된 비밀번호로 업데이트
+		memberMapper.updatePassword(loginId, encodedPassword);
+	}
 }
