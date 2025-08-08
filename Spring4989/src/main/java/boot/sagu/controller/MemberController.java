@@ -79,4 +79,78 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("isAvailable", false));
         }
     }
+    
+    // 아이디 찾기 - 이메일과 전화번호로 아이디 조회
+    @PostMapping("/find-id")
+    public ResponseEntity<?> findLoginId(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String phoneNumber = request.get("phoneNumber");
+            
+            if (email == null || phoneNumber == null) {
+                return ResponseEntity.badRequest().body("이메일과 전화번호를 모두 입력해주세요.");
+            }
+            
+            MemberDto member = memberService.findByEmailAndPhone(email, phoneNumber);
+            
+            if (member != null) {
+                // 아이디 마스킹 처리 (abc*** 형태)
+                String maskedLoginId = maskLoginId(member.getLoginId());
+                return ResponseEntity.ok(Map.of("loginId", maskedLoginId, "fullLoginId", member.getLoginId()));
+            } else {
+                return ResponseEntity.status(404).body("입력하신 정보와 일치하는 회원을 찾을 수 없습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("아이디 찾기 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    // 비밀번호 재설정을 위한 회원 확인
+    @PostMapping("/verify-for-password-reset")
+    public ResponseEntity<?> verifyForPasswordReset(@RequestBody Map<String, String> request) {
+        try {
+            String loginId = request.get("loginId");
+            String phoneNumber = request.get("phoneNumber");
+            
+            if (loginId == null || phoneNumber == null) {
+                return ResponseEntity.badRequest().body("아이디와 전화번호를 모두 입력해주세요.");
+            }
+            
+            MemberDto member = memberService.findByLoginIdAndPhone(loginId, phoneNumber);
+            
+            if (member != null) {
+                return ResponseEntity.ok(Map.of("message", "회원 정보가 확인되었습니다.", "memberId", member.getMemberId()));
+            } else {
+                return ResponseEntity.status(404).body("입력하신 정보와 일치하는 회원을 찾을 수 없습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("회원 확인 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    // 비밀번호 재설정
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        try {
+            String loginId = request.get("loginId");
+            String newPassword = request.get("newPassword");
+            
+            if (loginId == null || newPassword == null) {
+                return ResponseEntity.badRequest().body("아이디와 새 비밀번호를 모두 입력해주세요.");
+            }
+            
+            memberService.updatePassword(loginId, newPassword);
+            return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("비밀번호 변경 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    // 아이디 마스킹 처리 헬퍼 메서드
+    private String maskLoginId(String loginId) {
+        if (loginId == null || loginId.length() <= 3) {
+            return loginId;
+        }
+        return loginId.substring(0, 3) + "*".repeat(loginId.length() - 3);
+    }
 }

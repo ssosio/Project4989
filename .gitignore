@@ -20,6 +20,10 @@
 # === VSCode ===
 .vscode/
 
+# Secret files api key
+application-oauth.yml
+application-coolsms.yml
+
 # === OS 공통 ===
 .DS_Store
 Thumbs.db
