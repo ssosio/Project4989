@@ -39,7 +39,7 @@ const GoodsDetail = () => {
       <p>작성자: {post.memberId}</p>
       <p>가격: {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}</p>
       <p>작성일: {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
-      <p>거래유형: {post.tradeType}</p>
+      <p>거래유형: {post.tradeType === 1 ? '판매' : post.tradeType === 2 ? '경매' : '나눔'}</p>
       {post.mainPhotoUrl && (
         <img 
           src={photoUrl + post.mainPhotoUrl} 
@@ -47,7 +47,17 @@ const GoodsDetail = () => {
           style={{width:'300px'}}
         />
       )}
-      <p>상태: {goods.conditions}</p>
+      {
+        post.postType==='ITEMS' &&(
+          <p>상태: {goods.conditions === 'best' ? '상' : goods.conditions === 'good' ? '중' : '하'}</p>
+        )
+      }
+      {
+        post.postType==='ITEMS' &&(
+          <p>{goods.categoryId=== 1?'전자제품':goods.categoryId===2?'의류':'가구'}</p>
+        )
+      }
+      
       <div style={{width:'300px',border:'1px solid grey'}}>
         {post.content}
       </div>
