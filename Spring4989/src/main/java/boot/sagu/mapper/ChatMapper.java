@@ -28,4 +28,5 @@ public interface ChatMapper {
 	public Map<String, Object> getChatRoomInfoById(@Param("chatRoomId") Long chatRoomId);
 	
 	public String getMemberNickname(@Param("memberId") Long memberId);
+	
 }

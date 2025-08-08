@@ -63,5 +63,19 @@
 <select id="getChatRoomIdByMessageId" parameterType="Long" resultType="Long">
 	SELECT chat_room_id FROM chatmessage WHERE message_id = #{messageId}
 </select>
+
+    
+    <update id="updateAllMessagesDeletedAt" parameterType="long">
+        UPDATE chatmessage
+        SET deleted_at = now()
+        WHERE chat_room_id = #{chatRoomId}
+    </update>
+    
+    <delete id="deleteOldMessages" parameterType="int">
+    DELETE FROM chatmessage
+    WHERE deleted_at IS NOT NULL
+    AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
+</delete>
+
     
 </mapper>
