@@ -12,7 +12,7 @@ const Real_estate = () => {
       axios.get(url)
       .then(res=>{
   
-        console.log(res.data);
+        console.log("list test:"+res.data);
         setPostList(res.data);
   
       })

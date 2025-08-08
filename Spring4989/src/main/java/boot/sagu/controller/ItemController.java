@@ -11,7 +11,6 @@ import boot.sagu.dto.ItemDto;
 import boot.sagu.service.ItemService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/goods")
 public class ItemController {
 	

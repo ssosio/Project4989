@@ -12,7 +12,6 @@ import boot.sagu.dto.CarDto;
 import boot.sagu.service.CarService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/cars")
 public class CarController {
 	

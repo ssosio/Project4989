@@ -11,7 +11,6 @@ import boot.sagu.dto.RealEstateDto;
 import boot.sagu.service.EstateService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/estate")
 public class EstateController {
 	

@@ -13,7 +13,6 @@ import boot.sagu.dto.CategoryDto;
 import boot.sagu.service.CategoryService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/category")
 public class CategoryController {
 	
