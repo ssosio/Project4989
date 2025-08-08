@@ -15,6 +15,7 @@ import AuctionDetail from '../auction/auction_main/AuctionDetail'
 import Chat from '../chat/ChatMain'
 import Map from '../chat/KakaoMap'
 import GoodsDetail from '../board/GoodsDetail'
+import AuthCallback from '../login/AuthCallback'
 
 const RouterMain = ({ handleLoginSuccess }) => {
   return (
