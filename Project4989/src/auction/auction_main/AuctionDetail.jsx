@@ -516,6 +516,43 @@ const AuctionDetail = () => {
     }
   };
 
+  // 공유 기능 추가
+  const shareToSocial = () => {
+    const shareData = {
+      title: auctionDetail?.title || '경매 상품',
+      text: `현재 ${userCount}명이 입찰 중! 최고가: ${highestBid?.bidAmount || auctionDetail?.price || 0}원`,
+      url: `http://localhost:5173/auction/detail/${postId}`
+    };
+
+    if (navigator.share) {
+      // 모바일에서 네이티브 공유 메뉴
+      navigator.share(shareData)
+        .then(() => {
+          console.log('공유 성공!');
+        })
+        .catch((error) => {
+          console.log('공유 취소 또는 실패:', error);
+        });
+    } else {
+      // 데스크톱에서는 클립보드 복사
+      const shareText = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
+      navigator.clipboard.writeText(shareText)
+        .then(() => {
+          alert('링크가 클립보드에 복사되었습니다!');
+        })
+        .catch(() => {
+          // 클립보드 API가 지원되지 않는 경우
+          const textArea = document.createElement('textarea');
+          textArea.value = shareText;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          alert('링크가 클립보드에 복사되었습니다!');
+        });
+    }
+  };
+
   // 컴포넌트 마운트 시 찜 상태 확인
   useEffect(() => {
     if (userInfo?.memberId && postId) {
@@ -562,6 +599,25 @@ const AuctionDetail = () => {
                   {isFavorite ? '❤️' : '🤍'}
                 </button>
                 <span className="favorite-count-text">찜: {favoriteCount}개</span>
+                
+                {/* 공유 버튼 추가 */}
+                <button 
+                  onClick={shareToSocial}
+                  className="share-btn"
+                  title="경매 공유하기"
+                  style={{
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    marginLeft: '10px',
+                    fontSize: '14px'
+                  }}
+                >
+                  📤 공유하기
+                </button>
               </div>
             </div>
             
