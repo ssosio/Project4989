@@ -29,7 +29,7 @@ mybatis:
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
   expiration: 21600000
-
 portone:
   api-key: YOUR_REST_API_KEY
   api-secret: YOUR_REST_API_SECRET
+
