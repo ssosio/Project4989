@@ -4,4 +4,7 @@
 	<insert id="insertItem" parameterType="item">
 		insert into used_items(post_id,category_id,conditions,location) values(#{postId},#{categoryId},#{conditions},#{location})
 	</insert>
+	<select id="getOneItemData" resultType="item" parameterType="Long">
+		select * from used_items where post_id=#{postId}
+	</select>
 </mapper>
