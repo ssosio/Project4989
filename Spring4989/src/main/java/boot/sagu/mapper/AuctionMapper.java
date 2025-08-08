@@ -25,7 +25,8 @@ public interface AuctionMapper {
 	
 	//보증금 메서드
 	public int countAuctionGuaranteeByPostAndMember(@Param("postId")long postId,@Param("memberId")long memberId); //게시글에 보증금 납부했는지
-	public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); //보증금 납부
+	//보증금 납부
+	public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); 
 	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기
 	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postID")long postId,@Param("winnerId")long winnerId);
 	//환불

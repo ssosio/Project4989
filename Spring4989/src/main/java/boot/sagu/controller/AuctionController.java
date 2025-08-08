@@ -186,6 +186,6 @@ public String endAuction(@PathVariable("postId") long postId) {
 }
 
 
-	@PostMapping("/auction/bid")
-	public respon
+//	@PostMapping("/auction/bid")
+//	public	 
 }
