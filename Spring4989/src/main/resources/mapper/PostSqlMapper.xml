@@ -3,7 +3,11 @@
 <mapper namespace="boot.sagu.mapper.PostsMapperInter">
 <insert id="insertPost" parameterType="posts" useGeneratedKeys="true" keyProperty="postId">
 	INSERT INTO posts(member_id,title,price,trade_type,auction_end_time,created_at,post_type,content) 
-VALUES(#{memberId},#{title},#{price},#{tradeType},DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR),CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'),#{postType},#{content})
+VALUES(#{memberId},#{title},#{price},#{tradeType},
+		CASE
+        WHEN #{tradeType} = 'AUCTION'
+        THEN DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR)
+        ELSE NULL END, CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'),#{postType},#{content})
 </insert>
 <select id="getAllPostData" resultType="posts">
 	SELECT p.*, 
