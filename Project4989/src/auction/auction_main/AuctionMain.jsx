@@ -1,21 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './auction.css';
 
 const AuctionMain = () => {
   const [auctionList, setAuctionList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [winnerNicknames, setWinnerNicknames] = useState({}); // 낙찰자 닉네임 저장
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:4989/auction")
-      .then(res => {
-        setAuctionList(res.data);
-      })
-      .catch(err => {
-        console.error("❌ 에러 발생:", err);
-      });
+    fetchAuctionList();
   }, []);
+
+  const fetchAuctionList = async () => {
+    try {
+      const response = await axios.get('http://192.168.10.138:4989/auction');
+      setAuctionList(response.data);
+      
+      // 낙찰자 닉네임 가져오기
+      const nicknames = {};
+      for (const auction of response.data) {
+        if (auction.winnerId) {
+          try {
+            const nicknameResponse = await axios.get(`http://192.168.10.138:4989/auction/member/${auction.winnerId}`);
+            nicknames[auction.postId] = nicknameResponse.data.nickname;
+          } catch (err) {
+            console.error(`낙찰자 닉네임 조회 실패 (ID: ${auction.winnerId}):`, err);
+            nicknames[auction.postId] = `ID ${auction.winnerId}`;
+          }
+        }
+      }
+      setWinnerNicknames(nicknames);
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('경매 목록 조회 실패:', error);
+      setLoading(false);
+    }
+  };
 
   // 상세 페이지로 이동하는 함수
   const handleRowClick = (postId) => {
@@ -56,6 +79,17 @@ const AuctionMain = () => {
     return text;
   };
 
+  if (loading) {
+    return (
+      <div className="auction-main-container">
+        <h2>경매 리스트</h2>
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <h3>로딩 중...</h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="auction-main-container">
       <h2>경매 리스트</h2>
@@ -88,7 +122,17 @@ const AuctionMain = () => {
               <td>{formatText(post.tradeType)}</td>
               <td>{formatText(post.status)}</td>
               <td>{formatDate(post.auctionEndTime)}</td>
-              <td>{formatText(post.winnerId)}</td>
+              <td>
+                {post.winnerId ? (
+                  <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>
+                    🎉 {winnerNicknames[post.postId] || `ID ${post.winnerId}`}
+                  </span>
+                ) : (
+                  <span style={{ color: '#95a5a6', fontStyle: 'italic' }}>
+                    미정
+                  </span>
+                )}
+              </td>
               <td>{formatText(post.viewCount)}</td>
               <td>{formatDate(post.createdAt)}</td>
               <td>{formatDate(post.updatedAt)}</td>

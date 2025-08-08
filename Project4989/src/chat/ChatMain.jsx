@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
     Box,
     Drawer,
@@ -17,8 +17,11 @@ import { styled } from '@mui/material/styles';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import CircleIcon from '@mui/icons-material/Circle';
 import DetailChat from './detailChat';
+import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
 
-const StyledDrawer = styled(Drawer)(({ theme }) => ({
+
+const StyledDrawer = styled(Drawer)(() => ({
     '& .MuiDrawer-paper': {
         width: 320,
         boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.1)',
@@ -27,8 +30,8 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
     }
 }));
 
-const ChatHeader = styled(Box)(({ theme }) => ({
-    padding: theme.spacing(2, 3),
+const ChatHeader = styled(Box)(() => ({
+    padding: '16px 24px',
     borderBottom: '1px solid #f0f2f5',
     display: 'flex',
     alignItems: 'center',
@@ -36,8 +39,8 @@ const ChatHeader = styled(Box)(({ theme }) => ({
     background: '#fff'
 }));
 
-const ChatItem = styled(ListItem)(({ theme }) => ({
-    padding: theme.spacing(2, 3),
+const ChatItem = styled(ListItem)(() => ({
+    padding: '16px 24px',
     cursor: 'pointer',
     transition: 'background-color 0.2s',
     '&:hover': {
@@ -48,62 +51,78 @@ const ChatItem = styled(ListItem)(({ theme }) => ({
     }
 }));
 
+
+
 const ChatMain = ({ open, onClose }) => {
     const [openChatRooms, setOpenChatRooms] = useState([]);
+    const [chatList, setChatList] = useState([]);
+    const { userInfo } = useContext(AuthContext);
 
-    // 임시 채팅방 데이터
-    const chatRooms = [
-        {
-            id: 1,
-            name: "아이폰 14 Pro 팝니다",
-            lastMessage: "안녕하세요! 아이폰 14 Pro 구매하고 싶은데요",
-            time: "14:30",
-            unreadCount: 2,
-            isOnline: true,
-            avatar: "📱"
-        },
-        {
-            id: 2,
-            name: "맥북 에어 M2",
-            lastMessage: "가격 협의 가능할까요?",
-            time: "12:15",
-            unreadCount: 0,
-            isOnline: false,
-            avatar: "💻"
-        },
-        {
-            id: 3,
-            name: "나이키 운동화",
-            lastMessage: "사이즈 270 있나요?",
-            time: "09:45",
-            unreadCount: 1,
-            isOnline: true,
-            avatar: "👟"
-        },
-        {
-            id: 4,
-            name: "갤럭시 S23",
-            lastMessage: "배터리 상태는 어떤가요?",
-            time: "어제",
-            unreadCount: 0,
-            isOnline: false,
-            avatar: "📱"
-        },
-        {
-            id: 5,
-            name: "아디다스 트레이닝복",
-            lastMessage: "색상이 어떤 것들이 있나요?",
-            time: "어제",
-            unreadCount: 3,
-            isOnline: true,
-            avatar: "👕"
+    // 시간 포맷팅 함수
+    const formatTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInHours = (now - date) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+            return date.toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } else {
+            return date.toLocaleDateString('ko-KR', {
+                month: 'short',
+                day: 'numeric'
+            });
         }
-    ];
+    };
+
+    // 채팅방 목록 가져오기
+    useEffect(() => {
+        if (userInfo) {
+            fetchChatList();
+        }
+    }, [userInfo]);
+
+    const fetchChatList = () => {
+        console.log("현재 사용자 정보:", userInfo);
+
+        if (!userInfo || !userInfo.memberId) {
+            console.log("사용자 정보가 없습니다.");
+            setChatList([]);
+            return;
+        }
+
+        let url = `http://localhost:4989/chat/rooms?memberId=${userInfo.memberId}`;
+        console.log("API 호출 URL:", url);
+
+        axios.get(url)
+            .then(res => {
+                console.log("채팅방 목록 응답:", res.data);
+                console.log("응답 데이터 타입:", typeof res.data);
+                console.log("응답 데이터 길이:", Array.isArray(res.data) ? res.data.length : "배열이 아님");
+
+                // 데이터가 null이거나 undefined인 경우 빈 배열로 설정
+                if (res.data === null || res.data === undefined) {
+                    console.log("응답 데이터가 null입니다. 빈 배열로 설정합니다.");
+                    setChatList([]);
+                } else {
+                    setChatList(res.data);
+                }
+            })
+            .catch(error => {
+                console.error("채팅방 목록 가져오기 실패:", error);
+                console.error("에러 응답:", error.response?.data);
+                setChatList([]);
+            });
+    };
 
     const handleChatRoomClick = (room) => {
         console.log('채팅방 클릭됨:', room);
-        // 이미 열린 채팅방인지 확인
-        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.id === room.id);
+        console.log('chatRoomId:', room.chatRoomId);
+
+        const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.chatRoomId === room.chatRoomId);
         if (!isAlreadyOpen) {
             setOpenChatRooms(prev => [...prev, room]);
         }
@@ -111,7 +130,7 @@ const ChatMain = ({ open, onClose }) => {
 
     const handleDetailChatClose = (roomId) => {
         console.log('상세 채팅 닫기:', roomId);
-        setOpenChatRooms(prev => prev.filter(room => room.id !== roomId));
+        setOpenChatRooms(prev => prev.filter(room => room.chat_room_id !== roomId));
     };
 
     return (
@@ -134,96 +153,123 @@ const ChatMain = ({ open, onClose }) => {
 
             <Box sx={{ flex: 1, overflow: 'auto' }}>
                 <List sx={{ p: 0 }}>
-                    {chatRooms.map((room, index) => (
-                        <React.Fragment key={room.id}>
-                            <ChatItem onClick={() => handleChatRoomClick(room)}>
-                                <ListItemAvatar>
-                                    <Box sx={{ position: 'relative' }}>
-                                        <Avatar sx={{
-                                            width: 48,
-                                            height: 48,
-                                            bgcolor: '#e3f0fd',
-                                            fontSize: '20px'
-                                        }}>
-                                            {room.avatar}
-                                        </Avatar>
-                                        {room.isOnline && (
-                                            <CircleIcon
-                                                sx={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    right: 0,
-                                                    color: '#4caf50',
-                                                    fontSize: 16,
-                                                    background: '#fff',
-                                                    borderRadius: '50%'
-                                                }}
-                                            />
-                                        )}
-                                    </Box>
-                                </ListItemAvatar>
-                                <ListItemText
-                                    primary={
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
-                                                {room.name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
-                                                {room.time}
-                                            </Typography>
-                                        </Box>
-                                    }
-                                    secondary={
-                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    color: '#666',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                    maxWidth: 180
-                                                }}
-                                            >
-                                                {room.lastMessage}
-                                            </Typography>
-                                            {room.unreadCount > 0 && (
-                                                <Chip
-                                                    label={room.unreadCount}
-                                                    size="small"
+                    {chatList && Array.isArray(chatList) && chatList.length > 0 ? (
+                        chatList.map((room, index) => {
+                            // room 객체가 유효한지 확인
+                            if (!room) {
+                                console.warn("유효하지 않은 채팅방 데이터:", room);
+                                return null;
+                            }
+
+                            return (
+                                <React.Fragment key={room.chat_room_id || room.id || index}>
+                                    <ChatItem onClick={() => handleChatRoomClick(room)}>
+                                        <ListItemAvatar>
+                                            <Box sx={{ position: 'relative' }}>
+                                                <Avatar sx={{
+                                                    width: 48,
+                                                    height: 48,
+                                                    bgcolor: '#e3f0fd',
+                                                    fontSize: '20px'
+                                                }}>
+                                                    {room.otherUserProfileImage ? (
+                                                        <img src={room.otherUserProfileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        room.otherUserNickname?.charAt(0) || 'U'
+                                                    )}
+                                                </Avatar>
+                                                {room.isOnline && (
+                                                    <CircleIcon
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            bottom: 0,
+                                                            right: 0,
+                                                            color: '#4caf50',
+                                                            fontSize: 16,
+                                                            background: '#fff',
+                                                            borderRadius: '50%'
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        </ListItemAvatar>
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
+                                                    {room.otherUserNickname || 'Unknown'}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
+                                                    {formatTime(room.lastMessageTime)}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <Typography
+                                                    variant="body2"
                                                     sx={{
-                                                        height: 20,
-                                                        minWidth: 20,
-                                                        fontSize: '11px',
-                                                        fontWeight: 600,
-                                                        backgroundColor: '#3182f6',
-                                                        color: '#fff'
+                                                        color: '#666',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                        maxWidth: 180,
+                                                        fontSize: '14px'
                                                     }}
-                                                />
-                                            )}
+                                                >
+                                                    {room.lastMessage || '메시지가 없습니다'}
+                                                </Typography>
+                                                {room.unreadCount > 0 && (
+                                                    <Chip
+                                                        label={room.unreadCount}
+                                                        size="small"
+                                                        sx={{
+                                                            height: 20,
+                                                            minWidth: 20,
+                                                            fontSize: '11px',
+                                                            fontWeight: 600,
+                                                            backgroundColor: '#3182f6',
+                                                            color: '#fff'
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
                                         </Box>
-                                    }
-                                />
-                            </ChatItem>
-                            {index < chatRooms.length - 1 && (
-                                <Divider sx={{ mx: 3 }} />
-                            )}
-                        </React.Fragment>
-                    ))}
+                                    </ChatItem>
+                                    {index < chatList.length - 1 && (
+                                        <Divider sx={{ mx: 3 }} />
+                                    )}
+                                </React.Fragment>
+                            );
+                        })
+                    ) : (
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: 200,
+                            color: '#666'
+                        }}>
+                            <Typography variant="body2">
+                                채팅방이 없습니다.
+                            </Typography>
+                        </Box>
+                    )}
                 </List>
             </Box>
 
             {/* 상세 채팅 모달들 */}
-            {openChatRooms.map((room, index) => (
-                <DetailChat
-                    key={room.id}
-                    open={true}
-                    onClose={() => handleDetailChatClose(room.id)}
-                    chatRoom={room}
-                    zIndex={1000 + index}
-                    offset={index}
-                />
-            ))}
+            {openChatRooms && Array.isArray(openChatRooms) && openChatRooms.map((room, index) => {
+                if (!room) return null;
+
+                return (
+                    <DetailChat
+                        key={room.chat_rood_id || room.id || index}
+                        open={true}
+                        onClose={() => handleDetailChatClose(room.chat_room_id || room.id)}
+                        chatRoom={room}
+                        zIndex={1000 + index}
+                        offset={index}
+                    />
+                );
+            })}
         </StyledDrawer>
     );
 };
