@@ -1,10 +1,9 @@
-package boot.sagu.mapper;
+package boot.sagu.service;
 
 import org.springframework.web.bind.annotation.RequestParam;
 
 import boot.sagu.dto.RealEstateDto;
 
-public interface EstateMapperInter {
-	public void insertEstate(RealEstateDto rdto);
+public interface EstateServiceInter {
 	public RealEstateDto getOneEstateData(@RequestParam("postId") Long postId);
 }

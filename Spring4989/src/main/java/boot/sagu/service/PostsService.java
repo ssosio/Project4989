@@ -10,10 +10,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.CarDto;
-import boot.sagu.dto.CategoryDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
@@ -60,12 +60,6 @@ public class PostsService implements PostsServiceInter{
 		return postMapper.getAllPostData();
 	}
 
-	@Override
-	public PostsDto getPostData(int post_id) {
-		// TODO Auto-generated method stub
-		return postMapper.getPostData(post_id);
-	}
-
 
 
 	@Override
@@ -108,6 +102,7 @@ public class PostsService implements PostsServiceInter{
 		
 		List<PhotoDto> photoList=new ArrayList<>();
 		
+		if (uploadFiles != null && !uploadFiles.isEmpty()) {
 		for(int i=0; i<uploadFiles.size(); i++) {
 			MultipartFile file = uploadFiles.get(i);
 			
@@ -133,6 +128,7 @@ public class PostsService implements PostsServiceInter{
 			
 		}
 		photoMapper.insertPhoto(photoList);
+		}
 		
 		if("CARS".equals(pdto.getPostType())&& cdto!=null) {
 			cdto.setPostId(pdto.getPostId());
@@ -146,8 +142,21 @@ public class PostsService implements PostsServiceInter{
 			System.out.println("부동산정보");
 		}
 		
+		if("ITEMS".equals(pdto.getPostType())&&idto!=null) {
+			idto.setPostId(pdto.getPostId());
+			itemMapper.insertItem(idto);
+			System.out.println("중고물품");
+		}
 	}
 
+	@Override
+	public PostsDto getPostData(@RequestParam("postId") Long postId) {
+		// TODO Auto-generated method stub
+		System.out.println("요청 postId: " + postId);
+		return postMapper.getPostData(postId);
+	}
 
+	
+	
 	
 }

@@ -6,5 +6,10 @@
 		<foreach collection="list" item="photo" separator=",">
         (#{photo.postId},#{photo.photoUrl},#{photo.isMain})
     	</foreach>
-	</insert>
+</insert>
+<select id="getPhotosByPostId" parameterType="long" resultType="photo">
+    SELECT photo_id, post_id, photo_url, is_main
+    FROM post_photos
+    WHERE post_id = #{postId}
+</select>
 </mapper>
