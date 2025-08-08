@@ -100,9 +100,8 @@ public class AuctionService implements AuctionServiceInter {
 	}
 
 	@Override
-	public int countAuctionGuaranteeByPostAndMember(long postId, long memberId) {
-		// TODO Auto-generated method stub
-		return auctionMapper.countAuctionGuaranteeByPostAndMember(postId, memberId);
+	public boolean isGuaranteePaid(long postId, long memberId) {
+		return auctionMapper.countAuctionGuaranteeByPostAndMember(postId, memberId) > 0;
 	}
 
 	@Override
