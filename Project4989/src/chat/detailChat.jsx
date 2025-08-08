@@ -265,39 +265,22 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 return;
             }
 
-            const chatMessage = {
-                type: 'CHAT',
-                chat_room_id: chatRoomId,
-                sender_id: userInfo.memberId,
-                message_content: message,
-                message_type: 'text',
-            };
-
             // ✨ 비동기 함수로 변경하여 DB 저장 로직을 추가합니다.
             const sendMessageAsync = async () => {
                 try {
-                    // 1. DB에 메시지 저장 요청
-                    const response = await axios.post(`http://${SERVER_IP}:${SERVER_PORT}/insertMessage`, chatMessage);
-                    const createdMessageId = response.data; // 백엔드에서 반환된 message_id
-
-                    console.log('✅ DB에서 받은 createdMessageId:', createdMessageId); // 👈 ID 값 확인
-
-                    // 2. 웹소켓으로 전송할 완전한 메시지 객체 생성
-                    const fullNewMessage = {
-                        ...chatMessage,
-                        message_id: createdMessageId,
-                        created_at: new Date().toISOString(),
-                        is_read: 0,
-                        deleted_at: null
+                    // 1. 웹소켓으로 메시지 전송 (백엔드에서 DB 저장 처리)
+                    const webSocketMessage = {
+                        type: 'CHAT',
+                        chat_room_id: chatRoomId,
+                        sender_id: userInfo.memberId,
+                        message_content: message,
+                        message_type: 'text',
                     };
 
-                    // 3. 프론트엔드 상태를 즉시 업데이트
-                    setMessages(prevMessages => [...prevMessages, fullNewMessage]);
-
-                    // 4. 웹소켓으로 메시지 전송
+                    // 2. 웹소켓으로 메시지 전송
                     stompClient.publish({
-                        destination: `/app/chat.sendMessage/${chatRoomId}`,
-                        body: JSON.stringify(fullNewMessage),
+                        destination: '/app/chat.sendMessage',
+                        body: JSON.stringify(webSocketMessage),
                     });
 
                     setMessage(''); // 메시지 입력창 초기화
@@ -367,13 +350,9 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
                 // ✨ 백엔드에서 받은 메시지 데이터를 프론트엔드에서 한 번 더 가공합니다.
                 const processedMessages = rawMessages.map(msg => {
-                    // 1. 삭제된 메시지인 경우 먼저 처리
+                    // 1. 삭제된 메시지인 경우 - 백엔드에서 이미 처리되었으므로 그대로 사용
                     if (msg.deleted_at !== null && msg.deleted_at !== undefined) {
-                        return {
-                            ...msg,
-                            message_content: "삭제된 메시지입니다.",
-                            message_type: "deleted"
-                        };
+                        return msg; // 백엔드에서 이미 message_content와 message_type을 설정했으므로 그대로 사용
                     }
                     // 2. 이미지 메시지인 경우 처리
                     else if (msg.message_type === 'image' && msg.message_content && !msg.message_content.startsWith('http')) {
@@ -416,9 +395,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             client.subscribe(`/topic/chat/${chatRoomId}`, (incomingMessage) => {
                 const receivedMessage = JSON.parse(incomingMessage.body);
                 console.log('받은 WebSocket 메시지:', receivedMessage);
+                console.log('메시지 타입:', receivedMessage.type);
+                console.log('채팅방 ID:', receivedMessage.chatRoomId);
+                console.log('발신자 ID:', receivedMessage.senderId);
+                console.log('메시지 내용:', receivedMessage.messageContent);
+                console.log('메시지 타입:', receivedMessage.messageType);
 
                 // 텍스트 메시지 삭제 이벤트를 처리하는 로직 추가
                 if (receivedMessage.type === 'DELETE') {
+                    console.log('삭제 메시지 처리');
                     setMessages(prevMessages =>
                         prevMessages.map(msg =>
                             msg.message_id === receivedMessage.messageId
@@ -432,13 +417,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         )
                     );
                 } else if (receivedMessage.type === 'READ_UPDATE') {
+                    console.log('읽음 업데이트 처리');
                     setMessages(prevMessages =>
                         prevMessages.map(msg => ({
                             ...msg,
                             is_read: msg.is_read === 0 && receivedMessage.senderId === msg.sender_id ? 1 : msg.is_read,
                         }))
                     );
-                } else if (receivedMessage.chatRoomId === chatRoomId) {
+                } else if (receivedMessage.type === 'CHAT') {
+                    console.log('채팅 메시지 처리 시작');
                     const convertedMessage = {
                         message_id: receivedMessage.messageId,
                         chat_room_id: receivedMessage.chatRoomId,
@@ -448,13 +435,20 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         created_at: receivedMessage.timestamp,
                         is_read: 0
                     };
+                    console.log('변환된 메시지:', convertedMessage);
+
+                    // 이미지 메시지인 경우 백엔드에서 이미 절대 URL을 보내주므로 추가 처리 불필요
+                    // 백엔드에서 이미 SERVER_BASE_URL + fileUrl 형태로 절대 URL을 설정해줌
 
                     setMessages(prevMessages => {
                         const isDuplicate = prevMessages.some(
                             msg => msg.message_id && msg.message_id === convertedMessage.message_id
                         );
+                        console.log('중복 메시지 여부:', isDuplicate);
                         return isDuplicate ? prevMessages : [...prevMessages, convertedMessage];
                     });
+                } else {
+                    console.log('처리되지 않은 메시지 타입:', receivedMessage.type);
                 }
             });
 
@@ -589,8 +583,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         const isOwnMessage = msg?.sender_id === userInfo?.memberId;
                         const isDeletedMessage = msg.message_type === 'deleted'; // ✅ 삭제된 메시지인지 확인
 
+                        // 이미지 메시지인 경우 백엔드에서 이미 절대 URL을 보내주므로 추가 처리 불필요
                         let imageUrl = msg?.message_content;
                         if (msg?.message_type === 'image' && imageUrl && !imageUrl.startsWith('http')) {
+                            // 백엔드에서 이미 절대 URL을 보내주므로 이 조건문은 거의 실행되지 않을 것
                             imageUrl = `http://${SERVER_IP}:${SERVER_PORT}${imageUrl}`;
                         }
                         return (

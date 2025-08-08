@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="boot.sagu.mapper.PhotoMapperInter">
+	<insert id="insertPhoto" parameterType="List">
+		insert into post_photos(post_id,photo_url,is_main) values
+		<foreach collection="list" item="photo" separator=",">
+        (#{photo.postId},#{photo.photoUrl},#{photo.isMain})
+    	</foreach>
+</insert>
+<select id="getPhotosByPostId" parameterType="long" resultType="photo">
+    SELECT photo_id, post_id, photo_url, is_main
+    FROM post_photos
+    WHERE post_id = #{postId}
+</select>
+</mapper>

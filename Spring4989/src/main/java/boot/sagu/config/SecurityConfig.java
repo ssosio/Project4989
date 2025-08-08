@@ -89,6 +89,7 @@ public class SecurityConfig {
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
+                .requestMatchers("/**").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception

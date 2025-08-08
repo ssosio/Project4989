@@ -19,6 +19,6 @@ public class ChatFileDto {
     private Timestamp deleted_at;
     @JsonFormat(pattern = "yyyyMMddHHmmss")
     private Timestamp uploadAt;
-    
+    private Timestamp createdAt;
  
 }
