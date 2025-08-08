@@ -116,4 +116,8 @@
     SELECT nickname FROM members WHERE member_id = #{memberId}
 </select>
 
+<delete id="deleteEmptyChatRooms">
+    DELETE FROM chatroom
+    WHERE chat_room_id NOT IN (SELECT DISTINCT chat_room_id FROM chatmessage)
+</delete>
 </mapper>

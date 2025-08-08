@@ -34,4 +34,6 @@ public interface ChatMessageMapper {
 	public void deleteMessage(Long message_id);
 	
 	public Long getChatRoomIdByMessageId(Long messageId);
+	
+	public void updateAllMessagesDeletedAt(Long chatRoomId);
 }

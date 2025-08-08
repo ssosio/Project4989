@@ -4,7 +4,7 @@ server:
 spring:
  datasource:
    driver-class-name: com.mysql.cj.jdbc.Driver
-   url: jdbc:mysql://project4989.c5200is4auzz.ap-northeast-2.rds.amazonaws.com:3306/sagupalgu
+   url: jdbc:mysql://project4989.c5200is4auzz.ap-northeast-2.rds.amazonaws.com:3306/sagupalgu?serverTimezone=Asia/Seoul
    username: admin4989
    password: project49898949
 servlet:
