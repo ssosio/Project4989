@@ -8,13 +8,19 @@ import {
     Avatar,
     Divider,
     InputAdornment,
-    CircularProgress
+    CircularProgress,
+    Menu,
+    MenuItem
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
+import MoreVertIcon from '@mui/icons-material/MoreVert'; // 햄버거 메뉴 아이콘 추가
+import ExitToAppIcon from '@mui/icons-material/ExitToApp'; // 나가기 아이콘
+import FlagIcon from '@mui/icons-material/Flag'; // 신고 아이콘
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { Client } from '@stomp/stompjs';
@@ -59,7 +65,7 @@ const MessageBubble = styled(Box)(({ theme, isOwn }) => ({
     wordBreak: 'break-word'
 }));
 
-const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
+const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeaveChat }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -69,10 +75,112 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
     const [otherUserInfo, setOtherUserInfo] = useState(null);
     const [selectedImages, setSelectedImages] = useState([]);
     const fileInputRef = useRef(null);
+    const [anchorEl, setAnchorEl] = useState(null); // 메뉴 상태 관리
+    const [messageMenuAnchorEl, setMessageMenuAnchorEl] = useState(null);
+    const [selectedMessageId, setSelectedMessageId] = useState(null);
 
     const chatRoomId = chatRoom?.chatRoomId;
     const SERVER_IP = '192.168.10.136';
     const SERVER_PORT = '4989';
+
+    const handleMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
+
+    // ✅ 메시지 메뉴 열기 함수
+    const handleMessageMenuOpen = (event, messageId) => {
+        event.preventDefault(); // 기본 우클릭 메뉴 방지
+        setMessageMenuAnchorEl({ mouseX: event.clientX, mouseY: event.clientY });
+        setSelectedMessageId(messageId);
+    };
+
+    // ✅ 메시지 메뉴 닫기 함수
+    const handleMessageMenuClose = () => {
+        setMessageMenuAnchorEl(null);
+        setSelectedMessageId(null);
+    };
+
+    // ✅ 메시지 삭제 함수
+    const handleDeleteMessage = async () => {
+        handleMessageMenuClose();
+        console.log('--- 삭제 요청 직전 ---');
+        console.log('selectedMessageId:', selectedMessageId);
+        if (!selectedMessageId) return;
+
+        try {
+            const response = await axios.post(
+                `http://${SERVER_IP}:${SERVER_PORT}/chat/deleteMessage`,
+                {
+                    messageId: selectedMessageId,
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                }
+            );
+
+            if (response.status === 200) {
+                console.log('메시지 삭제 성공:', response.data);
+                // UI에서 메시지 삭제 (deleted_at이 추가되었다면 필터링으로 처리)
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) =>
+                        msg.message_id === selectedMessageId
+                            ? { ...msg, message_content: '삭제된 메시지입니다.', message_type: 'deleted' }
+                            : msg
+                    )
+                );
+            } else {
+                console.error('메시지 삭제 실패:', response.status);
+                alert('메시지 삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('메시지 삭제 API 호출 오류:', error);
+            alert('메시지 삭제 중 오류가 발생했습니다.');
+        }
+    };
+
+    // DetailChat.js 파일의 handleLeaveChat 함수
+    const handleLeaveChat = async () => {
+        console.log("채팅방 나가기 클릭됨");
+        handleMenuClose();
+        try {
+            // 1. axios.post로 변경하고, 요청 본문(body)에 chatRoomId와 currentMemberId를 담아 보냅니다.
+            const response = await axios.post(
+                `http://${SERVER_IP}:${SERVER_PORT}/chat/exit`,
+                {
+                    chatRoomId: chatRoomId, // DTO에 맞게 카멜케이스로 보냅니다.
+                    currentMemberId: userInfo.memberId
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+            if (response.status === 200) {
+                console.log('채팅방 나가기 성공:', response.data);
+                // 성공 시, 채팅방 UI 닫기
+                onClose();
+                if (onLeaveChat) {
+                    onLeaveChat(); // ChatMain의 목록 업데이트 함수 호출
+                }
+            } else {
+                console.error('채팅방 나가기 실패:', response.status);
+                alert('채팅방을 나가는 데 실패했습니다. 다시 시도해주세요.');
+            }
+        } catch (error) {
+            console.error('채팅방 나가기 API 호출 오류:', error);
+            alert('채팅방을 나가는 도중 오류가 발생했습니다. 다시 시도해주세요.');
+        }
+    };
+
+    const handleReportChat = () => {
+        // 여기에 채팅방 신고하기 로직을 구현합니다.
+        // 예: 신고 모달 띄우기, 백엔드 API 호출 등
+        console.log("채팅방 신고하기 클릭됨");
+        handleMenuClose();
+    };
 
     const markMessagesAsRead = () => {
         if (stompClient && stompClient.active && chatRoomId && userInfo?.memberId) {
@@ -124,18 +232,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
             return;
         }
 
-        // 이미지 업로드 시작 시, 로딩 상태를 표시할 수는 있지만
-        // 메시지 목록에 임시 메시지를 추가하는 코드는 절대 넣지 않아야 합니다.
-
         try {
-            // 이미지를 하나씩 업로드하는 루프
             for (const image of selectedImages) {
                 const formData = new FormData();
                 formData.append('file', image.file);
                 formData.append('chatRoomId', chatRoomId);
                 formData.append('senderId', userInfo.memberId);
 
-                // 서버에 이미지 업로드만 요청하고, 서버가 웹소켓 메시지를 보내도록 함
                 await axios.post(
                     `http://${SERVER_IP}:${SERVER_PORT}/chat/uploadImage`,
                     formData,
@@ -145,7 +248,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                 );
             }
 
-            // 업로드가 완료되면 미리보기 상태만 초기화
             setSelectedImages([]);
 
         } catch (error) {
@@ -157,27 +259,55 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
     const handleSendMessage = () => {
         if (selectedImages.length > 0) {
             sendAllImages();
-            // 이미지 전송 후 텍스트 필드도 비워야 하므로 여기에도 추가
-            setMessage('');
         } else if (message.trim()) {
             if (!stompClient || !stompClient.active) {
                 console.error("STOMP 클라이언트가 연결되지 않았습니다.");
                 return;
             }
+
             const chatMessage = {
                 type: 'CHAT',
-                chatRoomId: chatRoomId,
-                senderId: userInfo.memberId,
-                messageContent: message,
-                messageType: 'text',
-                timestamp: new Date().toISOString()
+                chat_room_id: chatRoomId,
+                sender_id: userInfo.memberId,
+                message_content: message,
+                message_type: 'text',
             };
-            stompClient.publish({
-                destination: '/app/chat.sendMessage',
-                body: JSON.stringify(chatMessage),
-            });
-            // 텍스트 메시지 전송 후 텍스트 필드를 비웁니다.
-            setMessage('');
+
+            // ✨ 비동기 함수로 변경하여 DB 저장 로직을 추가합니다.
+            const sendMessageAsync = async () => {
+                try {
+                    // 1. DB에 메시지 저장 요청
+                    const response = await axios.post(`http://${SERVER_IP}:${SERVER_PORT}/insertMessage`, chatMessage);
+                    const createdMessageId = response.data; // 백엔드에서 반환된 message_id
+
+                    console.log('✅ DB에서 받은 createdMessageId:', createdMessageId); // 👈 ID 값 확인
+
+                    // 2. 웹소켓으로 전송할 완전한 메시지 객체 생성
+                    const fullNewMessage = {
+                        ...chatMessage,
+                        message_id: createdMessageId,
+                        created_at: new Date().toISOString(),
+                        is_read: 0,
+                        deleted_at: null
+                    };
+
+                    // 3. 프론트엔드 상태를 즉시 업데이트
+                    setMessages(prevMessages => [...prevMessages, fullNewMessage]);
+
+                    // 4. 웹소켓으로 메시지 전송
+                    stompClient.publish({
+                        destination: `/app/chat.sendMessage/${chatRoomId}`,
+                        body: JSON.stringify(fullNewMessage),
+                    });
+
+                    setMessage(''); // 메시지 입력창 초기화
+
+                } catch (error) {
+                    console.error('텍스트 메시지 전송 실패:', error);
+                }
+            };
+
+            sendMessageAsync();
         }
     };
 
@@ -225,13 +355,40 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
             return;
         }
 
+        // DetailChat.jsx 파일
+
         const fetchChatData = async () => {
             setLoading(true);
             try {
                 const messageResponse = await axios.get(`http://${SERVER_IP}:${SERVER_PORT}/listMessage?chat_room_id=${chatRoomId}`);
                 const otherUserResponse = await axios.get(`http://${SERVER_IP}:${SERVER_PORT}/chat/otherUser?chat_room_id=${chatRoomId}&member_id=${userInfo.memberId}`);
-                const filteredMessages = Array.isArray(messageResponse.data) ? messageResponse.data.filter(msg => msg !== null && msg !== undefined) : [];
-                setMessages(filteredMessages);
+
+                const rawMessages = Array.isArray(messageResponse.data) ? messageResponse.data.filter(msg => msg !== null && msg !== undefined) : [];
+
+                // ✨ 백엔드에서 받은 메시지 데이터를 프론트엔드에서 한 번 더 가공합니다.
+                const processedMessages = rawMessages.map(msg => {
+                    // 1. 삭제된 메시지인 경우 먼저 처리
+                    if (msg.deleted_at !== null && msg.deleted_at !== undefined) {
+                        return {
+                            ...msg,
+                            message_content: "삭제된 메시지입니다.",
+                            message_type: "deleted"
+                        };
+                    }
+                    // 2. 이미지 메시지인 경우 처리
+                    else if (msg.message_type === 'image' && msg.message_content && !msg.message_content.startsWith('http')) {
+                        return {
+                            ...msg,
+                            message_content: `http://${SERVER_IP}:${SERVER_PORT}${msg.message_content}`
+                        };
+                    }
+                    // 3. 위의 조건에 해당하지 않는 모든 경우 (텍스트 메시지 포함)는 원본 메시지 그대로 반환
+                    else {
+                        return msg;
+                    }
+                });
+
+                setMessages(processedMessages);
                 setOtherUserInfo(otherUserResponse.data);
             } catch (error) {
                 console.error('채팅 데이터 로드 실패:', error);
@@ -251,6 +408,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
             heartbeatOutgoing: 4000,
         });
 
+
         client.onConnect = () => {
             console.log('WebSocket 연결 성공!');
             setStompClient(client);
@@ -259,7 +417,21 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                 const receivedMessage = JSON.parse(incomingMessage.body);
                 console.log('받은 WebSocket 메시지:', receivedMessage);
 
-                if (receivedMessage.type === 'READ_UPDATE') {
+                // 텍스트 메시지 삭제 이벤트를 처리하는 로직 추가
+                if (receivedMessage.type === 'DELETE') {
+                    setMessages(prevMessages =>
+                        prevMessages.map(msg =>
+                            msg.message_id === receivedMessage.messageId
+                                ? {
+                                    ...msg,
+                                    message_content: '삭제된 메시지입니다.',
+                                    message_type: 'deleted',
+                                    deleted_at: new Date().toISOString() // 삭제 시간도 상태에 추가
+                                }
+                                : msg
+                        )
+                    );
+                } else if (receivedMessage.type === 'READ_UPDATE') {
                     setMessages(prevMessages =>
                         prevMessages.map(msg => ({
                             ...msg,
@@ -268,13 +440,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                     );
                 } else if (receivedMessage.chatRoomId === chatRoomId) {
                     const convertedMessage = {
-                        message_id: receivedMessage.messageId, // 백엔드에서 받은 messageId 사용
+                        message_id: receivedMessage.messageId,
                         chat_room_id: receivedMessage.chatRoomId,
                         sender_id: receivedMessage.senderId,
                         message_type: receivedMessage.messageType,
                         message_content: receivedMessage.messageContent,
                         created_at: receivedMessage.timestamp,
-                        is_read: 0 // 새로 받은 메시지는 읽지 않은 상태로 초기화
+                        is_read: 0
                     };
 
                     setMessages(prevMessages => {
@@ -362,6 +534,30 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                         {otherUserInfo?.nickname || 'Unknown'}
                     </Typography>
                 </Box>
+                {/* 햄버거 메뉴 버튼 추가 */}
+                <IconButton
+                    aria-label="more"
+                    aria-controls="long-menu"
+                    aria-haspopup="true"
+                    onClick={handleMenuOpen}
+                >
+                    <MoreVertIcon />
+                </IconButton>
+                <Menu
+                    anchorEl={anchorEl}
+                    keepMounted
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                >
+                    <MenuItem onClick={handleLeaveChat}>
+                        <ExitToAppIcon sx={{ mr: 1 }} />
+                        채팅방 나가기
+                    </MenuItem>
+                    <MenuItem onClick={handleReportChat}>
+                        <FlagIcon sx={{ mr: 1 }} />
+                        신고하기
+                    </MenuItem>
+                </Menu>
                 <IconButton onClick={onClose} size="small">
                     <CloseRoundedIcon />
                 </IconButton>
@@ -391,11 +587,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                     ) : (messages || []).map((msg) => {
                         if (!msg) return null;
                         const isOwnMessage = msg?.sender_id === userInfo?.memberId;
+                        const isDeletedMessage = msg.message_type === 'deleted'; // ✅ 삭제된 메시지인지 확인
 
-                        // 이미지 URL을 조건에 따라 다르게 설정
                         let imageUrl = msg?.message_content;
                         if (msg?.message_type === 'image' && imageUrl && !imageUrl.startsWith('http')) {
-                            // DB에서 불러온 상대 경로일 경우에만 서버 URL을 추가
                             imageUrl = `http://${SERVER_IP}:${SERVER_PORT}${imageUrl}`;
                         }
                         return (
@@ -407,69 +602,90 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0 }) => {
                                     alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
                                     mb: 1
                                 }}
+                                // ✅ 우클릭 이벤트 추가
+                                onContextMenu={(e) => {
+                                    console.log('우클릭 이벤트 발생! messageId:', msg.message_id); //
+                                    handleMessageMenuOpen(e, msg.message_id);
+                                }}
                             >
                                 <MessageBubble isOwn={isOwnMessage}>
-                                    {msg?.message_type === 'image' ? (
+                                    {/* ✅ isDeletedMessage 상태에 따라 렌더링 내용 변경 */}
+                                    {isDeletedMessage ? (
+                                        <Typography variant="body2" sx={{ color: '#aaa', fontStyle: 'italic' }}>
+                                            {msg.message_content}
+                                        </Typography>
+                                    ) : msg.message_type === 'image' ? (
                                         <Box sx={{ maxWidth: '200px' }}>
                                             <img
-                                                src={imageUrl} // ⭐⭐ 백엔드에서 받은 완전한 URL을 그대로 사용
+                                                src={imageUrl}
                                                 alt="전송된 이미지"
-                                                style={{
-                                                    width: '100%',
-                                                    height: 'auto',
-                                                    borderRadius: '8px'
-                                                }}
+                                                style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
                                             />
                                         </Box>
                                     ) : (
                                         <Typography variant="body2">
-                                            {msg?.message_content || '메시지 내용 없음'}
+                                            {msg.message_content || '메시지 내용 없음'}
                                         </Typography>
                                     )}
                                 </MessageBubble>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
-                                        mt: 0.5
-                                    }}
-                                >
-                                    <Typography
-                                        variant="caption"
+                                {!isDeletedMessage && ( // ✅ 삭제된 메시지는 시간, 읽음 여부 표시하지 않음
+                                    <Box
                                         sx={{
-                                            color: '#666',
-                                            fontSize: '11px'
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            alignSelf: isOwnMessage ? 'flex-end' : 'flex-start',
+                                            mt: 0.5
                                         }}
                                     >
-                                        {formatTime(msg?.created_at)}
-                                    </Typography>
-                                    {isOwnMessage && (
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 0.2
-                                            }}
+                                        <Typography
+                                            variant="caption"
+                                            sx={{ color: '#666', fontSize: '11px' }}
                                         >
-                                            <Typography
-                                                variant="caption"
+                                            {formatTime(msg.created_at)}
+                                        </Typography>
+                                        {isOwnMessage && (
+                                            <Box
                                                 sx={{
-                                                    color: msg?.is_read === 1 ? '#3182f6' : '#ccc',
-                                                    fontSize: '10px',
-                                                    fontWeight: msg?.is_read === 1 ? 'bold' : 'normal'
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 0.2
                                                 }}
                                             >
-                                                {msg?.is_read === 1 ? '읽음' : '안읽음'}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </Box>
+                                                <Typography
+                                                    variant="caption"
+                                                    sx={{
+                                                        color: msg.is_read === 1 ? '#3182f6' : '#ccc',
+                                                        fontSize: '10px',
+                                                        fontWeight: msg.is_read === 1 ? 'bold' : 'normal'
+                                                    }}
+                                                >
+                                                    {msg.is_read === 1 ? '읽음' : '안읽음'}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
                             </Box>
                         );
                     })}
                 </Box>
+                {/* ✅ 메시지 삭제 메뉴 컴포넌트 추가 */}
+                <Menu
+                    open={messageMenuAnchorEl !== null}
+                    onClose={handleMessageMenuClose}
+                    anchorReference="anchorPosition"
+                    anchorPosition={
+                        messageMenuAnchorEl !== null
+                            ? { top: messageMenuAnchorEl.mouseY, left: messageMenuAnchorEl.mouseX }
+                            : undefined
+                    }
+                >
+                    <MenuItem onClick={handleDeleteMessage}>
+                        <DeleteIcon sx={{ mr: 1 }} />
+                        삭제
+                    </MenuItem>
+                </Menu>
 
                 <Divider />
 

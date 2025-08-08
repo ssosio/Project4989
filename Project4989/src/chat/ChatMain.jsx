@@ -133,6 +133,11 @@ const ChatMain = ({ open, onClose }) => {
         setOpenChatRooms(prev => prev.filter(room => room.chat_room_id !== roomId));
     };
 
+    const handleLeaveChatSuccess = () => {
+        console.log("채팅방 나가기 성공. 목록을 다시 불러옵니다.");
+        fetchChatList(); // 채팅방 목록을 다시 불러오는 함수 호출
+    };
+
     return (
         <StyledDrawer
             anchor="right"
@@ -267,6 +272,8 @@ const ChatMain = ({ open, onClose }) => {
                         chatRoom={room}
                         zIndex={1000 + index}
                         offset={index}
+                        // 2️⃣ onLeaveChat prop 추가 및 함수 전달
+                        onLeaveChat={handleLeaveChatSuccess}
                     />
                 );
             })}

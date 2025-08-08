@@ -10,7 +10,7 @@ import boot.sagu.dto.ChatMessageDto;
 @Mapper
 public interface ChatMessageMapper {
 
-	public void insertMessage(ChatMessageDto dto);
+	public Long insertMessage(ChatMessageDto dto);
 	
 	public List<ChatMessageDto> getAllMessages(Long chat_room_id);
 	
@@ -28,4 +28,12 @@ public interface ChatMessageMapper {
 	
 	// 파일 메시지 조회 (chatfile 테이블과 JOIN)
 	public List<Map<String, Object>> getMessagesWithFiles(Long chatRoomId);
+	
+	public void insertSystemMessage(ChatMessageDto dto);
+	
+	public void deleteMessage(Long message_id);
+	
+	public Long getChatRoomIdByMessageId(Long messageId);
+	
+	public void updateAllMessagesDeletedAt(Long chatRoomId);
 }
