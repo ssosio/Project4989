@@ -19,9 +19,5 @@ public interface ChatFileMapper {
     // 채팅방의 모든 파일 정보 조회
     public List<ChatFileDto> getChatFilesByRoomId(@Param("chatRoomId") Long chatRoomId);
     
-    // 파일 정보 삭제
-    public void deleteChatFile(@Param("fileId") Long fileId);
-    
-    // 메시지 ID로 파일 정보 삭제
-    public void deleteChatFileByMessageId(@Param("messageId") Long messageId);
+    public void deleteFile(@Param("messageId") Long messageId);
 } 

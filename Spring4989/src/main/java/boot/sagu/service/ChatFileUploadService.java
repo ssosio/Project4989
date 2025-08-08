@@ -158,15 +158,6 @@ public class ChatFileUploadService {
         return chatFileMapper.getChatFilesByRoomId(chatRoomId);
     }
     
-    // 파일 삭제
-    public void deleteChatFile(Long fileId) {
-        ChatFileDto chatFile = chatFileMapper.getChatFileByMessageId(fileId);
-        if (chatFile != null) {
-            File file = new File(chatFile.getFileUrl());
-            if (file.exists()) {
-                file.delete();
-            }
-            chatFileMapper.deleteChatFile(fileId);
-        }
-    }
+    
+    
 }
