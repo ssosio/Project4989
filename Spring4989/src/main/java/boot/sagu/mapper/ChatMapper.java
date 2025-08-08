@@ -18,4 +18,15 @@ public interface ChatMapper {
 	public Map<String, Object> getOtherUserInChatRoom(@Param("chatRoomId") Long chatRoomId, 
             @Param("currentMemberId") Long currentMemberId);
 	
+	public void updateExitStatus(@Param("chatRoomId") Long chatRoomId, 
+			@Param("memberId") Long memberId,
+			@Param("buyerId") Long buyerId,
+			@Param("sellerId") Long sellerId);
+	
+	public Map<String, Integer> getChatroomExitStatus(@Param("chatRoomId") Long chatRoomId);
+	
+	public Map<String, Object> getChatRoomInfoById(@Param("chatRoomId") Long chatRoomId);
+	
+	public String getMemberNickname(@Param("memberId") Long memberId);
+	
 }

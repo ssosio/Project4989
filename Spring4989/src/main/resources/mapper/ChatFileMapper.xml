@@ -55,16 +55,10 @@
         ORDER BY upload_at DESC
     </select>
     
-    <!-- 파일 정보 삭제 -->
-    <delete id="deleteChatFile">
-        DELETE FROM chatfile
-        WHERE file_id = #{fileId}
-    </delete>
-    
-    <!-- 메시지 ID로 파일 정보 삭제 -->
-    <delete id="deleteChatFileByMessageId">
-        DELETE FROM chatfile
-        WHERE message_id = #{messageId}
-    </delete>
+    <update id="deleteFile" parameterType="Long">
+   	 update chatfile 
+		set deleted_at = now() 
+		where message_id = #{messageId}
+</update>
     
 </mapper> 

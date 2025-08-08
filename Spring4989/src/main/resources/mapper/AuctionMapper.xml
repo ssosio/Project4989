@@ -133,5 +133,26 @@
             updated_at = CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
         WHERE post_id = #{postId}
     </update>
-
+	
+	<!-- 멤버가 게시글에 관한 보증급을 납부했는지 -->
+	<select id="countAuctionGuaranteeByPostAndMember" resultType="int">
+		select count(*) from auction_guarantees where post_id=#{postId} and member_id=#{memberId}
+	</select>
+	
+	<!-- 보증금 납부  -->
+	<insert id="insertGuarantee" parameterType="GuaranteeDTO">
+		 INSERT INTO auction_guarantees (post_id, member_id, amount, imp_uid,created_at)
+  							VALUES (#{postId}, #{memberId}, #{amount}, #{impUid},now())
+	</insert>
+	
+	<!-- 게시글에서 입찰자중 낙찰자가 아닌사람들의 모든정보 조회 -->
+	<select id="findNonWinnerGuarantees" resultType="GuaranteeDTO">
+  		select * from auction_guarantees where post_id=#{postId} 
+  			and member_id!=#{winnerId} 	
+  			and status = 'PAID'
+	</select>
+	
+	<update id="updateRefundStatus">
+		update auction_guarantees set status = 'REFUNDED', refunded_at = now() where guaranteeId = #{guaranteeId}
+	</update>
 </mapper> 
