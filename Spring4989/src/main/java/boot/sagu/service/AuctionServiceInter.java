@@ -13,7 +13,7 @@ public interface AuctionServiceInter {
 	
 	
 	
-	
+	public int getStartPrice(long postId);
 	public boolean isGuaranteePaid(long postId,long memberId); //게시글에 보증금 납부했는지
 	public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); //보증금 납부
 	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(long postId,long winnerId);//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기

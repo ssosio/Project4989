@@ -32,5 +32,6 @@ public interface AuctionMapper {
 	//환불
 	public void updateRefundStatus(@Param("guaranteeID")long guaranteeId);
 	
+	public int getStartPrice(@Param("postId") long postId);
 	
 }

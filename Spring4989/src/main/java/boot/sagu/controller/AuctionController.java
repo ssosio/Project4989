@@ -5,27 +5,39 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.mapper.AuctionMapper;
+import boot.sagu.service.AuctionService;
+import boot.sagu.service.PortOneService;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
 public class AuctionController {
-@Autowired
-AuctionMapper auctionmapper;
+	
+	@Autowired
+	private AuctionMapper auctionmapper;
 
-@Autowired
-private SimpMessagingTemplate messagingTemplate;
+	@Autowired
+	private PortOneService portOneService;
+	
+	@Autowired
+	private AuctionService auctionService;
+
+	@Autowired
+	private SimpMessagingTemplate messagingTemplate;
 
 @GetMapping("/auction")
 public List<PostsDto> getAuctionList() {
@@ -186,6 +198,21 @@ public String endAuction(@PathVariable("postId") long postId) {
 }
 
 
-//	@PostMapping("/auction/bid")
-//	public	 
+	@PostMapping("/{postID}/bid")
+	public ResponseEntity<?> placeBId(@PathVariable Long postId,
+									@RequestParam Long memberId,
+									@RequestParam int bidAmount){
+		
+		if(!auctionService.isGuaranteePaid(postId, memberId)) {
+			int startPrice = auctionService.getStartPrice(postId);
+			String paymentUrl = auctionService.createGuaranteePayment(postId, memberId, startPrice);
+			
+			return ResponseEntity.ok(Map.of(
+					"paymentRequired",true,
+					"paymentUrl",paymentUrl));
+		}
+
+		
+		return null;
+	}
 }
