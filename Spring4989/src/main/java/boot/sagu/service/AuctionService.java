@@ -1,5 +1,6 @@
 package boot.sagu.service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,8 @@ public class AuctionService implements AuctionServiceInter {
 			System.err.println("자동 경매 종료 소켓 메시지 전송 실패: " + socketError.getMessage());
 		}
 	}
-
+	
+	//보증금 납부여부 확인
 	@Override
 	public boolean isGuaranteePaid(long postId, long memberId) {
 		return auctionMapper.countAuctionGuaranteeByPostAndMember(postId, memberId) > 0;
@@ -122,12 +124,22 @@ public class AuctionService implements AuctionServiceInter {
 		auctionMapper.updateRefundStatus(guaranteeId);
 	}
 	
-	//경매 첫 입찰시 보증금 결제 요청을 생성한다
+	//경매 첫 입찰시 보증금 결제 요청URL을 생성한다
 	public String createGuaranteePayment(long postId, long memberId, int startPrice) {
 		int guaranteeAmount = Math.max(1, (int)Math.round(startPrice * 0.1));
 		String merchanUid = "guarantee_" + postId + "_" + memberId;
 		
-		return portOneService.requestPayment(merchanUid, guaranteeAmount, merchanUid);
+		return portOneService.requestPayment(merchanUid, guaranteeAmount, "경매보증금 결제");
+	}
+	
+	// 결제 완료 후 보증금 저장
+	public void saveGuarantee(long postId, long memberId, BigDecimal amount, String impUid) {
+		AuctionGuaranteeDTO dto = new AuctionGuaranteeDTO();
+		dto.setPostId(postId);
+		dto.setMemberId(memberId);
+		dto.setAmount(amount);
+		dto.setImpUid(impUid);
+		auctionMapper.insertGuarantee(dto);
 	}
 	
 	//낙찰 실패자 환불 일괄 처리(종료시 호출)
@@ -138,5 +150,11 @@ public class AuctionService implements AuctionServiceInter {
 			updateRefundStatus(loser.getGuaranteeId());
 		}
 		
+	}
+
+	//게시글에 대한 시작가 조회
+	@Override
+	public int getStartPrice(long postId) {
+		return auctionMapper.getStartPrice(postId);
 	}
 }
