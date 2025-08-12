@@ -167,4 +167,16 @@
         WHERE post_id = #{postId}
     </select>
 
+    <!-- 경매 사진 조회 -->
+    <select id="getAuctionPhotos" parameterType="long" resultType="map">
+        SELECT 
+            photo_id,
+            post_id,
+            photo_url,
+            is_main
+        FROM post_photos
+        WHERE post_id = #{postId}
+        ORDER BY is_main DESC, photo_id ASC
+    </select>
+
 </mapper> 

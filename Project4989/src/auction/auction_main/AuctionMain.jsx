@@ -8,7 +8,7 @@ const AuctionMain = () => {
   const [loading, setLoading] = useState(true);
   const [winnerNicknames, setWinnerNicknames] = useState({}); // 낙찰자 닉네임 저장
   const navigate = useNavigate();
-
+  
   useEffect(() => {
     fetchAuctionList();
   }, []);

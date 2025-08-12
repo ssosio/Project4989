@@ -1,5 +1,9 @@
 package boot.sagu.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +15,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import boot.sagu.dto.AuctionDto;
@@ -99,5 +107,50 @@ public class AuctionController {
 	}
 
 	// 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 제거)
+	
+	@GetMapping("/auction/photos/{postId}")
+	public List<Map<String, Object>> getAuctionPhotos(@PathVariable("postId") long postId) {
+		
+		return auctionService.getAuctionPhotos(postId);
+	}
+	
+	// 경매 이미지 파일 직접 제공
+	    @GetMapping("/auction/image/{filename}")
+    public ResponseEntity<Resource> getImage(@PathVariable("filename") String filename) {
+		try {
+			// 파일 경로에서 이미지 파일 읽기
+			Path filePath = Paths.get("src/main/webapp/save/" + filename);
+			
+			// 파일이 존재하는지 확인
+			if (!Files.exists(filePath)) {
+				return ResponseEntity.notFound().build();
+			}
+			
+			Resource resource = new FileSystemResource(filePath.toFile());
+			
+			// 파일 확장자에 따른 Content-Type 설정
+			String contentType = getContentType(filename);
+			
+			return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType(contentType))
+				.body(resource);
+				
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+	
+	// 파일 확장자에 따른 Content-Type 반환
+	private String getContentType(String filename) {
+		if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+			return "image/jpeg";
+		} else if (filename.toLowerCase().endsWith(".png")) {
+			return "image/png";
+		} else if (filename.toLowerCase().endsWith(".gif")) {
+			return "image/gif";
+		} else {
+			return "application/octet-stream";
+		}
+	}
 
 }

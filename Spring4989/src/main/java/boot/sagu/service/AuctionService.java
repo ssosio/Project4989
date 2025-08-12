@@ -289,4 +289,9 @@ public class AuctionService implements AuctionServiceInter {
 			System.err.println("자동 경매 종료 소켓 메시지 전송 실패: " + socketError.getMessage());
 		}
 	}
+	
+	@Override
+	public List<Map<String, Object>> getAuctionPhotos(long postId) {
+		return auctionMapper.getAuctionPhotos(postId);
+	}
 }

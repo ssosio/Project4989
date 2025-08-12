@@ -24,3 +24,7 @@
 .DS_Store
 Thumbs.db
 .metadata/
+# === Secret files (예: API Key 등) ===
+application.yml
+application-oauth.yml
+application-coolsms.yml

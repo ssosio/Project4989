@@ -1,6 +1,7 @@
 package boot.sagu.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -29,4 +30,7 @@ public interface AuctionMapper {
 	public void insertFavorite(FavoritesDto favoritesDto); // 찜 추가
 	public void deleteFavorite(@Param("postId") long postId, @Param("memberId") long memberId); // 찜 삭제
 	public int getFavoriteCount(@Param("postId") long postId); // 찜 개수 조회
+	
+	// 경매 사진 조회
+	public List<Map<String, Object>> getAuctionPhotos(long postId);
 }

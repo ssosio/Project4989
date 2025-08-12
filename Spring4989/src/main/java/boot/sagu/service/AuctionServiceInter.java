@@ -32,4 +32,7 @@ public interface AuctionServiceInter {
 	
 	// 자동 경매 종료 체크 (스케줄러용)
 	void checkAndEndAuctions();
+	
+	// 경매 사진 조회
+	List<Map<String, Object>> getAuctionPhotos(long postId);
 }

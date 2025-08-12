@@ -24,6 +24,15 @@ const AuctionDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false); // 찜 상태
   const [favoriteLoading, setFavoriteLoading] = useState(false); // 찜 로딩 상태
   const [favoriteCount, setFavoriteCount] = useState(0); // 찜 개수
+  
+  // 사진 슬라이더 관련 state
+  const [photos, setPhotos] = useState([]); // 사진 목록
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0); // 현재 사진 인덱스
+  const [photoLoading, setPhotoLoading] = useState(false); // 사진 로딩 상태
+  
+  // 이미지 모달 관련 state
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [modalPhotoIndex, setModalPhotoIndex] = useState(0);
 
   const SERVER_IP = '192.168.10.138';
     const SERVER_PORT = '4989';
@@ -51,6 +60,9 @@ const AuctionDetail = () => {
       });
 
     // 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 호출 제거)
+  
+  // 경매 사진 가져오기
+  getAuctionPhotos();
   }, [postId, sessionId, userInfo]);
 
   // 작성자 닉네임 가져오기
@@ -515,6 +527,62 @@ const AuctionDetail = () => {
       setFavoriteCount(0);
     }
   };
+  
+  // 경매 사진 가져오기
+  const getAuctionPhotos = async () => {
+    if (!postId) return;
+    
+    setPhotoLoading(true);
+    try {
+      const response = await axios.get(`http://192.168.10.138:4989/auction/photos/${postId}`);
+      setPhotos(response.data || []);
+      setCurrentPhotoIndex(0); // 첫 번째 사진부터 시작
+    } catch (error) {
+      console.error('경매 사진 조회 실패:', error);
+      setPhotos([]);
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+  
+  // 사진 네비게이션 함수들
+  const prevPhoto = () => {
+    setCurrentPhotoIndex(prev => 
+      prev === 0 ? photos.length - 1 : prev - 1
+    );
+  };
+
+  const nextPhoto = () => {
+    setCurrentPhotoIndex(prev => 
+      prev === photos.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const goToPhoto = (index) => {
+    setCurrentPhotoIndex(index);
+  };
+
+  // 이미지 모달 관련 함수들
+  const openImageModal = (index) => {
+    setModalPhotoIndex(index);
+    setImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+  };
+
+  const prevModalPhoto = () => {
+    setModalPhotoIndex(prev => 
+      prev === 0 ? photos.length - 1 : prev - 1
+    );
+  };
+
+  const nextModalPhoto = () => {
+    setModalPhotoIndex(prev => 
+      prev === photos.length - 1 ? 0 : prev + 1
+    );
+  };
 
   // 공유 기능 추가
   const shareToSocial = () => {
@@ -616,7 +684,7 @@ const AuctionDetail = () => {
                     fontSize: '14px'
                   }}
                 >
-                  📤 공유하기
+                  📤 공유 
                 </button>
               </div>
             </div>
@@ -677,11 +745,73 @@ const AuctionDetail = () => {
               </div>
             </div>
             
-            {/* 상품 이미지 */}
+            {/* 상품 이미지 슬라이더 */}
             <div className="product-image-container">
-              <div className="image-placeholder">
-                <span>📷 상품 이미지</span>
-              </div>
+              {photoLoading ? (
+                <div className="image-loading">
+                  <span>🔄 사진 로딩 중...</span>
+                </div>
+              ) : photos.length > 0 ? (
+                <div className="photo-slider">
+                  {/* 메인 이미지 */}
+                  <div className="main-photo-container">
+                    <img 
+                      src={`http://localhost:4989/auction/image/${photos[currentPhotoIndex]?.photo_url}`}
+                      alt={`상품 이미지 ${currentPhotoIndex + 1}`}
+                      className="main-photo clickable"
+                      onClick={() => openImageModal(currentPhotoIndex)}
+                      title="클릭하여 크게 보기"
+                    />
+                    
+                    {/* 사진이 2장 이상일 때만 화살표 버튼 표시 */}
+                    {photos.length > 1 && (
+                      <>
+                        <button 
+                          className="photo-nav-btn prev-btn" 
+                          onClick={prevPhoto}
+                          title="이전 사진"
+                        >
+                        </button>
+                        <button 
+                          className="photo-nav-btn next-btn" 
+                          onClick={nextPhoto}
+                          title="다음 사진"
+                        >
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* 썸네일 네비게이션 (사진이 2장 이상일 때만) */}
+                  {photos.length > 1 && (
+                    <div className="photo-thumbnails">
+                      {photos.map((photo, index) => (
+                        <button
+                          key={photo.photo_id}
+                          className={`thumbnail-btn ${index === currentPhotoIndex ? 'active' : ''}`}
+                          onClick={() => goToPhoto(index)}
+                          title={`사진 ${index + 1}`}
+                        >
+                          <img 
+                            src={`http://localhost:4989/auction/image/${photo.photo_url}`}
+                            alt=""
+                            className="thumbnail-img clickable"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openImageModal(index);
+                            }}
+                            title="클릭하여 크게 보기"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="image-placeholder">
+                  <span>📷 상품 이미지가 없습니다</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -853,6 +983,68 @@ const AuctionDetail = () => {
           </div>
         </div>
       </div>
+      
+      {/* 이미지 모달 */}
+      {imageModalOpen && (
+        <div className="image-modal-overlay" onClick={closeImageModal}>
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={closeImageModal}>
+              ✕
+            </button>
+            
+            <div className="modal-image-container">
+              <img 
+                src={`http://localhost:4989/auction/image/${photos[modalPhotoIndex]?.photo_url}`}
+                alt={`상품 이미지 ${modalPhotoIndex + 1}`}
+                className="modal-image"
+              />
+              
+              {/* 모달 내 네비게이션 버튼 */}
+              {photos.length > 1 && (
+                <>
+                  <button 
+                    className="modal-nav-btn modal-prev-btn" 
+                    onClick={prevModalPhoto}
+                    title="이전 사진"
+                  >
+                  </button>
+                  <button 
+                    className="modal-nav-btn modal-next-btn" 
+                    onClick={nextModalPhoto}
+                    title="다음 사진"
+                  >
+                  </button>
+                </>
+              )}
+            </div>
+            
+            {/* 모달 하단 썸네일 */}
+            {photos.length > 1 && (
+              <div className="modal-thumbnails">
+                {photos.map((photo, index) => (
+                  <button
+                    key={photo.photo_id}
+                    className={`modal-thumbnail-btn ${index === modalPhotoIndex ? 'active' : ''}`}
+                    onClick={() => setModalPhotoIndex(index)}
+                    title={`사진 ${index + 1}`}
+                  >
+                    <img 
+                      src={`http://localhost:4989/auction/image/${photo.photo_url}`}
+                      alt=""
+                      className="modal-thumbnail-img"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {/* 이미지 정보 */}
+            <div className="modal-image-info">
+              {modalPhotoIndex + 1} / {photos.length}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

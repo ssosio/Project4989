@@ -21,5 +21,7 @@ public class WebConfig implements WebMvcConfigurer {
         // "http://.../chatsave/..." 요청 시 static 폴더를 기준으로 파일을 찾게 됩니다.
         registry.addResourceHandler(connectPath)
                 .addResourceLocations(resourcePath);
+        
+
     }
 }
