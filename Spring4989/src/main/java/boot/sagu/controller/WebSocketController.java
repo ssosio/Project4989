@@ -101,7 +101,7 @@ public class WebSocketController {
             System.out.println("senderId: " + webSocketMessage.getSenderId());
             
             // 메시지 읽음 처리 (is_read = 1 → 0)
-            chatMessageService.markMessageAsRead(
+            chatMessageService.markMessagesAsRead(
                 Long.valueOf(webSocketMessage.getChatRoomId()), 
                 Long.valueOf(webSocketMessage.getSenderId())
             );

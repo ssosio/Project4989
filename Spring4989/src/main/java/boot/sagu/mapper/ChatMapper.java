@@ -29,4 +29,6 @@ public interface ChatMapper {
 	
 	public String getMemberNickname(@Param("memberId") Long memberId);
 	
+	public void deleteOldChatRooms(@Param("hours") int hours);
+	
 }

@@ -12,4 +12,13 @@ export default defineConfig({
       'sockjs-client': 'sockjs-client/dist/sockjs.min.js',
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4989', // 👈 포트 번호를 4989로 변경
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })

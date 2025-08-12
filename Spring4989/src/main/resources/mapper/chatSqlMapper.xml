@@ -47,29 +47,40 @@
             WHEN cr.seller_id = #{memberId} THEN buyer.profile_image_url
             WHEN cr.buyer_id = #{memberId} THEN seller.profile_image_url
         END as otherUserProfileImage,
-        cm.message_content as lastMessage,
-        cm.created_at as lastMessageTime,
-        (
-            SELECT COUNT(*)
-            FROM chatmessage cm2
-            WHERE cm2.chat_room_id = cr.chat_room_id
-            AND cm2.sender_id != #{memberId}
-            AND cm2.is_read = 0
-        ) as unreadCount
+        lastMsg.message_content as lastMessage,
+        lastMsg.message_type as lastMessageType,
+        lastMsg.created_at as lastMessageTime,
+        COALESCE(unread.unreadCount, 0) as unreadCount
     FROM chatroom cr
     LEFT JOIN members seller ON cr.seller_id = seller.member_id
     LEFT JOIN members buyer ON cr.buyer_id = buyer.member_id
+    -- 마지막 메시지 가져오기
     LEFT JOIN (
         SELECT 
             chat_room_id,
             message_content,
-            created_at,
-            ROW_NUMBER() OVER (PARTITION BY chat_room_id ORDER BY created_at DESC) as rn
+            message_type,
+            created_at
         FROM chatmessage
-    ) cm ON cr.chat_room_id = cm.chat_room_id AND cm.rn = 1
+        WHERE (chat_room_id, created_at) IN (
+            SELECT chat_room_id, MAX(created_at)
+            FROM chatmessage
+            GROUP BY chat_room_id
+        )
+    ) lastMsg ON cr.chat_room_id = lastMsg.chat_room_id
+    -- 읽지 않은 메시지 카운트
+    LEFT JOIN (
+        SELECT 
+            chat_room_id,
+            COUNT(*) AS unreadCount
+        FROM chatmessage
+        WHERE sender_id != #{memberId}
+          AND is_read = 0
+        GROUP BY chat_room_id
+    ) unread ON cr.chat_room_id = unread.chat_room_id
     WHERE (cr.buyer_id = #{memberId} AND cr.buyer_exit_status = 0)
        OR (cr.seller_id = #{memberId} AND cr.seller_exit_status = 0)
-    ORDER BY cm.created_at DESC
+    ORDER BY lastMsg.created_at DESC
 </select>
 
 <select id="getOtherUserInChatRoom" resultType="java.util.Map">
@@ -116,8 +127,9 @@
     SELECT nickname FROM members WHERE member_id = #{memberId}
 </select>
 
-<delete id="deleteEmptyChatRooms">
-    DELETE FROM chatroom
-    WHERE chat_room_id NOT IN (SELECT DISTINCT chat_room_id FROM chatmessage)
-</delete>
+ <delete id="deleteOldChatRooms" parameterType="int">
+        DELETE FROM chatroom
+        WHERE deleted_at IS NOT NULL
+          AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
+    </delete>
 </mapper>

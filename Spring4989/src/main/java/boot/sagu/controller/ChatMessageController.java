@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,8 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
+import boot.sagu.dto.MemberDto;
 import boot.sagu.service.ChatFileUploadService;
 import boot.sagu.service.ChatMessageServiceInter;
+import boot.sagu.service.MemberService;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
@@ -26,6 +32,9 @@ public class ChatMessageController {
 	
 	@Autowired
 	ChatFileUploadService chatFileUploadService;
+	
+	@Autowired
+	MemberService memberService;
 	
 	@PostMapping("/insertMessage")
     public Long insertMessage(@RequestBody ChatMessageDto dto) {
@@ -128,5 +137,39 @@ public class ChatMessageController {
 		}
 	}
 	
+	@GetMapping("/read")
+    public ResponseEntity<Void> markAsRead(
+    		@RequestParam(name = "chat_room_id") Long chatRoomId, 
+            @RequestParam(name = "member_id") Long memberId) {
+
+		  if (memberId == null) {
+		        System.err.println("[ERROR] memberId가 누락되었습니다.");
+		        return ResponseEntity.badRequest().build();
+		    }
+		
+	    System.out.println("[DEBUG] markAsRead 호출됨, chatRoomId: " + chatRoomId + ", memberId: " + memberId);
+	    try {
+	        chatMessageService.markMessagesAsRead(chatRoomId, memberId);
+	        System.out.println("[DEBUG] markMessagesAsRead 실행 완료");
+	        return ResponseEntity.ok().build();
+	    } catch (Exception e) {
+	        System.err.println("[ERROR] markAsRead 예외 발생:");
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+    }
+	
+	@GetMapping("/chat/unread-count")
+    public ResponseEntity<Integer> getUnreadCount(@RequestParam("login_id") String login_id) {
+        // 💡 Spring Security의 Authentication 객체에서 사용자 ID를 가져옵니다.
+        // 이 부분은 프로젝트의 로그인 구현 방식에 따라 달라질 수 있습니다.
+		  int intMemberId = memberService.getMemberByLoginId(login_id).getMemberId();
+	        Long memberId = Long.valueOf(intMemberId); // 👈 Long으로 변환
+
+        int unreadCount = chatMessageService.getUnreadMessageCount(memberId);
+        
+        // 💡 HTTP 200 OK와 함께 읽지 않은 메시지 개수를 반환
+        return ResponseEntity.ok(unreadCount);
+    }
 	
 }
