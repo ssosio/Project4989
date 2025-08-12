@@ -19,6 +19,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
+<<<<<<< HEAD
                 .setAllowedOrigins("http://localhost:5173","http://192.168.10.136:4989");
+=======
+<<<<<<< HEAD
+                .setAllowedOrigins("http://localhost:5173","http://:192.168.10.136:5173");
+=======
+                .setAllowedOrigins("http://localhost:5173","http://192.168.10.136:4989");
+>>>>>>> 13d5c54 (zz)
+>>>>>>> f5cace9 (4989)
     }
 }

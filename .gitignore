@@ -41,6 +41,7 @@ Thumbs.db
 **/*.log
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # === Secret files (예: API Key 등) ===
 application.yml
 application-oauth.yml
@@ -55,3 +56,9 @@ application-coolsms.yml
 Thumbs.db
 .metadata/
 >>>>>>> 4bf20a0 (4989)
+=======
+# === Secret files (예: API Key 등) ===
+application.yml
+application-oauth.yml
+application-coolsms.yml
+>>>>>>> f5cace9 (4989)

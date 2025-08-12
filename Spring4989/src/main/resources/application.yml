@@ -28,8 +28,36 @@ mybatis:
 #jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
+<<<<<<< HEAD
   expiration: 21600000
 
 portone:
   api-key: YOUR_REST_API_KEY
   api-secret: YOUR_REST_API_SECRET
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+  expiration: 21600000
+# CoolSMS
+coolsms:
+  api-key: ''
+  api-secret: ''
+<<<<<<< HEAD
+  sender-phone: ''
+=======
+  sender-phone: '01095801813'
+=======
+  expiration: 21600000
+>>>>>>> 7dae887 (test)
+<<<<<<< HEAD
+>>>>>>> f4d74c4 (4989)
+=======
+=======
+  expiration: 21600000
+
+portone:
+  api-key: YOUR_REST_API_KEY
+  api-secret: YOUR_REST_API_SECRET
+>>>>>>> 13d5c54 (zz)
+>>>>>>> 47c1e64 (4989)
+>>>>>>> f5cace9 (4989)
