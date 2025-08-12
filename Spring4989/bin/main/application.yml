@@ -37,6 +37,7 @@ portone:
 =======
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   expiration: 21600000
 # CoolSMS
 coolsms:
@@ -53,11 +54,20 @@ coolsms:
 >>>>>>> f4d74c4 (4989)
 =======
 =======
+=======
+>>>>>>> 7c67d10 (4989)
   expiration: 21600000
 
 portone:
   api-key: YOUR_REST_API_KEY
+<<<<<<< HEAD
   api-secret: YOUR_REST_API_SECRET
 >>>>>>> 13d5c54 (zz)
 >>>>>>> 47c1e64 (4989)
+<<<<<<< HEAD
 >>>>>>> f5cace9 (4989)
+=======
+=======
+  api-secret: YOUR_REST_API_SECRET
+>>>>>>> 7c67d10 (4989)
+>>>>>>> 495e817 (4989)
