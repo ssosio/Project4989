@@ -36,7 +36,11 @@ function LoginForm({ onLoginSuccess }) {
 
       // 토큰을 디코딩하여 payload(사용자 정보)를 추출합니다.
       const decodedToken = jwtDecode(token);
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> 4bf20a0 (4989)
       const userInfo = {
         loginId: decodedToken.sub,
         memberId: decodedToken.memberId,
@@ -74,11 +78,19 @@ function LoginForm({ onLoginSuccess }) {
 
         {/* 소셜로그인 */}
         <button type='button' onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/kakao'}>
+<<<<<<< HEAD
             카카오로 로그인
         </button>
         <br />
         <button type='button' onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/google'}>
             구글로 로그인
+=======
+          카카오로 로그인
+        </button>
+        <br />
+        <button type='button' onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/google'}>
+          구글로 로그인
+>>>>>>> 4bf20a0 (4989)
         </button>
 
         <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>

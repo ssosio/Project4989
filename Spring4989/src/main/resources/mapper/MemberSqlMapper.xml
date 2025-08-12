@@ -24,8 +24,6 @@
 	</select>
 	<select id="countByLoginId" parameterType="String" resultType="int">
 		SELECT COUNT(*) FROM members WHERE login_id = #{loginId}
-	</select>
-	<select id="findByNickname" parameterType="String" resultType="member">
 	    SELECT * FROM members WHERE nickname = #{nickname}
 	</select>
 	
