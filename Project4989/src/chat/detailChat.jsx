@@ -555,9 +555,14 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     useEffect(() => {
         if (!chatRoomId || !userInfo?.memberId) return;
 
+        const token = localStorage.getItem('accessToken');
+
         fetch(`http://${SERVER_IP}:${SERVER_PORT}/read?chat_room_id=${chatRoomId}&member_id=${userInfo.memberId}`, {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 이 부분을 추가해야 합니다.
+            },
         });
     }, [chatRoomId, userInfo?.memberId]);
 

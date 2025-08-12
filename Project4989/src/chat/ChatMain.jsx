@@ -199,7 +199,7 @@ const ChatMain = ({ open, onClose }) => {
                             const otherUserProfileImage = room.otherUserProfileImage || room.otherUser?.profileImage;
 
                             return (
-                                <React.Fragment key={room.chatRoomId || index}>
+                                <React.Fragment key={room.chatRoomId}>
                                     <ChatItem onClick={() => handleChatRoomClick(room)}>
                                         <ListItemAvatar>
                                             <Box sx={{ position: 'relative' }}>

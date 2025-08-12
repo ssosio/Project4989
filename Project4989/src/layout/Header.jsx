@@ -78,13 +78,15 @@ export const Header = () => {
 
   // 💡 useEffect 훅을 사용하여 읽지 않은 메시지 개수를 가져옵니다.
   useEffect(() => {
+    // userInfo가 존재할 때만 API를 호출합니다.
+    // Root 컴포넌트에서 이미 axios 기본 헤더에 토큰을 설정했으므로,
+    // 별도로 토큰을 가져오거나 헤더를 설정할 필요가 없습니다.
     if (userInfo) {
       const fetchUnreadCount = async () => {
         try {
-          // 💡 수정된 부분: login_id를 API 요청에 포함시킵니다.
           const response = await axios.get('/api/chat/unread-count', {
             params: {
-              login_id: userInfo.loginId // 👈 userInfo 객체에서 loginId를 가져와 파라미터로 전달
+              login_id: userInfo.loginId
             }
           });
           setUnreadMessageCount(response.data);

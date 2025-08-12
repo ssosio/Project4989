@@ -54,20 +54,16 @@
     FROM chatroom cr
     LEFT JOIN members seller ON cr.seller_id = seller.member_id
     LEFT JOIN members buyer ON cr.buyer_id = buyer.member_id
-    -- 마지막 메시지 가져오기
+    -- 마지막 메시지 가져오기 (윈도우 함수 사용)
     LEFT JOIN (
         SELECT 
             chat_room_id,
             message_content,
             message_type,
-            created_at
+            created_at,
+            ROW_NUMBER() OVER(PARTITION BY chat_room_id ORDER BY created_at DESC) as rn
         FROM chatmessage
-        WHERE (chat_room_id, created_at) IN (
-            SELECT chat_room_id, MAX(created_at)
-            FROM chatmessage
-            GROUP BY chat_room_id
-        )
-    ) lastMsg ON cr.chat_room_id = lastMsg.chat_room_id
+    ) lastMsg ON cr.chat_room_id = lastMsg.chat_room_id AND lastMsg.rn = 1
     -- 읽지 않은 메시지 카운트
     LEFT JOIN (
         SELECT 
@@ -80,7 +76,7 @@
     ) unread ON cr.chat_room_id = unread.chat_room_id
     WHERE (cr.buyer_id = #{memberId} AND cr.buyer_exit_status = 0)
        OR (cr.seller_id = #{memberId} AND cr.seller_exit_status = 0)
-    ORDER BY lastMsg.created_at DESC
+    ORDER BY lastMessageTime DESC
 </select>
 
 <select id="getOtherUserInChatRoom" resultType="java.util.Map">

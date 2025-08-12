@@ -30,7 +30,6 @@ import boot.sagu.service.PostsService;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/post")
 public class PostsController {
 	

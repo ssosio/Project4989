@@ -16,12 +16,20 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import boot.sagu.config.JwtAuthenticationFilter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import static org.springframework.security.config.Customizer.withDefaults;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.service.CustomOAuth2UserService;
 import boot.sagu.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import boot.sagu.config.JwtAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -58,6 +66,8 @@ public class SecurityConfig {
         };
     }
 
+    
+    //크로스오리진 대체
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -83,17 +93,27 @@ public class SecurityConfig {
             
             // HTTP 요청에 대한 접근 권한 설정
             .authorizeHttpRequests(authz -> authz
+<<<<<<< HEAD
+=======
+            	.requestMatchers("/ws/**","/post/**").permitAll()
+>>>>>>> f504f44 (4989)
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
-                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
+                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/ws/**").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
+                // 채팅방 인증
+                .requestMatchers("/chatsave/**","/read").permitAll()
+              
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
+<<<<<<< HEAD
                 .requestMatchers("/**").permitAll()
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
+=======
+>>>>>>> f504f44 (4989)
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception
