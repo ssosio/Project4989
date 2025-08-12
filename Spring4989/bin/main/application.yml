@@ -32,4 +32,3 @@ jwt:
 portone:
   api-key: YOUR_REST_API_KEY
   api-secret: YOUR_REST_API_SECRET
-
