@@ -1,38 +1,7 @@
-<<<<<<< HEAD
-# === Java(Spring Boot) ===
-/Spring4989/.gradle/
-/Spring4989/build/
-/Spring4989/bin/
-/Spring4989/out/
-!Spring4989/gradle/wrapper/gradle-wrapper.jar
-/Spring4989/*.iml
-/Spring4989/.idea/
-/Spring4989/*.log
-/Spring4989/.DS_Store
-
-# === Node.js(React, Vite) ===
-/Project4989/node_modules/
-/Project4989/dist/
-/Project4989/build/
-/Project4989/.env
-/Project4989/*.log
-/Project4989/.DS_Store
-
-# === VSCode ===
-.vscode/
-
-=======
->>>>>>> 13d5c54d348afdce7b1bb445a812b25679929938
 # === OS 공통 ===
 .DS_Store
 Thumbs.db
 .metadata/
-<<<<<<< HEAD
-# === Secret files (예: API Key 등) ===
-application.yml
-application-oauth.yml
-application-coolsms.yml
-=======
 
 # === 에디터/IDE 공통 ===
 .vscode/
@@ -75,4 +44,5 @@ application-coolsms.yml
 application.yml
 application-oauth.yml
 application-coolsms.yml
->>>>>>> 13d5c54d348afdce7b1bb445a812b25679929938
+
+NUL
