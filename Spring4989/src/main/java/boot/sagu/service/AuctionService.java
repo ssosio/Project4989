@@ -24,6 +24,9 @@ public class AuctionService implements AuctionServiceInter {
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 	
+	@Autowired
+	private PortOneService portOneService;
+	
 	@Override
 	public List<PostsDto> getAuctionPosts() {
 		return auctionMapper.getAuctionPosts();
@@ -117,5 +120,23 @@ public class AuctionService implements AuctionServiceInter {
 	@Override
 	public void updateRefundStatus(long guaranteeId) {
 		auctionMapper.updateRefundStatus(guaranteeId);
+	}
+	
+	//경매 첫 입찰시 보증금 결제 요청을 생성한다
+	public String createGuaranteePayment(long postId, long memberId, int startPrice) {
+		int guaranteeAmount = Math.max(1, (int)Math.round(startPrice * 0.1));
+		String merchanUid = "guarantee_" + postId + "_" + memberId;
+		
+		return portOneService.requestPayment(merchanUid, guaranteeAmount, merchanUid);
+	}
+	
+	//낙찰 실패자 환불 일괄 처리(종료시 호출)
+	public void refundNonWinners(long postId,long winnerId) {
+		List<AuctionGuaranteeDTO> losers = findNonWinnerGuarantees(postId, winnerId);
+		for(AuctionGuaranteeDTO loser : losers) {
+			portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
+			updateRefundStatus(loser.getGuaranteeId());
+		}
+		
 	}
 }
