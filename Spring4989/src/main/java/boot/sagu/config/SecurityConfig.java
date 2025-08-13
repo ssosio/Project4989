@@ -93,10 +93,7 @@ public class SecurityConfig {
             
             // HTTP 요청에 대한 접근 권한 설정
             .authorizeHttpRequests(authz -> authz
-<<<<<<< HEAD
-=======
             	.requestMatchers("/ws/**","/post/**").permitAll()
->>>>>>> f504f44 (4989)
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/ws/**").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
@@ -104,17 +101,6 @@ public class SecurityConfig {
                 // 채팅방 인증
                 .requestMatchers("/chatsave/**","/read").permitAll()
                 .requestMatchers("/api/region/register").permitAll()
-              
-                // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
-<<<<<<< HEAD
-                .requestMatchers("/**").permitAll()
-                // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
-                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
-                // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
-                .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
-                // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
-=======
->>>>>>> f504f44 (4989)
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception

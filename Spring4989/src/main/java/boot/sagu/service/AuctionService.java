@@ -321,16 +321,11 @@ public class AuctionService implements AuctionServiceInter {
 		auctionMapper.updateRefundStatus(guaranteeId);
 	}
 	
-<<<<<<< HEAD
 	//경매 첫 입찰시 보증금 결제 요청URL을 생성한다
-=======
-	//경매 첫 입찰시 보증금 결제 요청을 생성한다
->>>>>>> f5cace9 (4989)
 	public String createGuaranteePayment(long postId, long memberId, int startPrice) {
 		int guaranteeAmount = Math.max(1, (int)Math.round(startPrice * 0.1));
 		String merchanUid = "guarantee_" + postId + "_" + memberId;
 		
-<<<<<<< HEAD
 		return portOneService.requestPayment(merchanUid, guaranteeAmount, "경매보증금 결제");
 	}
 	
@@ -342,9 +337,6 @@ public class AuctionService implements AuctionServiceInter {
 		dto.setAmount(amount);
 		dto.setImpUid(impUid);
 		auctionMapper.insertGuarantee(dto);
-=======
-		return portOneService.requestPayment(merchanUid, guaranteeAmount, merchanUid);
->>>>>>> f5cace9 (4989)
 	}
 	
 	//낙찰 실패자 환불 일괄 처리(종료시 호출)
@@ -356,7 +348,6 @@ public class AuctionService implements AuctionServiceInter {
 		}
 		
 	}
-<<<<<<< HEAD
 
 	//게시글에 대한 시작가 조회
 	@Override
@@ -368,6 +359,4 @@ public class AuctionService implements AuctionServiceInter {
 	public void insertBid(AuctionDto auctionDto) {
 		// TODO Auto-generated method stub
 	}
-=======
->>>>>>> f5cace9 (4989)
 }

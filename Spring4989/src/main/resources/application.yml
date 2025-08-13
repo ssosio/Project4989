@@ -28,40 +28,11 @@ mybatis:
 #jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
-<<<<<<< HEAD
-<<<<<<< HEAD
-  expiration: 21600000
-
-portone:
-  api-key: YOUR_REST_API_KEY
-  api-secret: YOUR_REST_API_SECRET
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f504f44 (4989)
   expiration: 21600000
 portone:
   api-key: YOUR_REST_API_KEY
   api-secret: YOUR_REST_API_SECRET
-<<<<<<< HEAD
->>>>>>> 13d5c54 (zz)
->>>>>>> 47c1e64 (4989)
-<<<<<<< HEAD
->>>>>>> f5cace9 (4989)
-=======
-=======
-  api-secret: YOUR_REST_API_SECRET
->>>>>>> 7c67d10 (4989)
->>>>>>> 495e817 (4989)
-=======
 kakao:
   rest:
     api:
-<<<<<<< HEAD
-      key: 
->>>>>>> f504f44 (4989)
-=======
       key: 137f888033bc0c17b0f4945a9f901900
->>>>>>> c56650f (4989)
