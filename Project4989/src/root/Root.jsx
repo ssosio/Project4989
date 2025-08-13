@@ -16,7 +16,7 @@ const Root = () => {
       try {
         const decodedToken = jwtDecode(token);
         const currentTime = Date.now() / 1000;
-        
+
         // 토큰 만료 검사 추가
         if (decodedToken.exp < currentTime) {
           console.log('토큰이 만료되었습니다. 로그아웃 처리합니다.');
@@ -25,7 +25,7 @@ const Root = () => {
           setUserInfo(null);
           return;
         }
-        
+
         // 토큰이 유효한 경우에만 사용자 정보 설정
         setUserInfo({
           loginId: decodedToken.sub,

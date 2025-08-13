@@ -20,4 +20,8 @@ public interface ChatFileMapper {
     public List<ChatFileDto> getChatFilesByRoomId(@Param("chatRoomId") Long chatRoomId);
     
     public void deleteFile(@Param("messageId") Long messageId);
+    
+    public void deleteOldChatFiles(@Param("hours") int hours);
+    
+    public List<String> getOldFilePaths(@Param("hours") int hours);
 } 
