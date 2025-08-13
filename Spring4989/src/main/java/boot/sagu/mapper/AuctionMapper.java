@@ -43,7 +43,7 @@ public interface AuctionMapper {
 	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postID")long postId,@Param("winnerId")long winnerId);
 	//환불
 	public void updateRefundStatus(@Param("guaranteeID")long guaranteeId);
-	//경매 시작가 확인
+	//경매 시작가
 	public int getStartPrice(@Param("postId") long postId);
 	
 	// 경매 삭제
