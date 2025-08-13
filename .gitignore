@@ -40,25 +40,7 @@ Thumbs.db
 # === 로그(공통) ===
 **/*.log
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 # === Secret files (예: API Key 등) ===
 application.yml
 application-oauth.yml
 application-coolsms.yml
-=======
-# Secret files api key
-application-oauth.yml
-application-coolsms.yml
-
-# === OS 공통 ===
-.DS_Store
-Thumbs.db
-.metadata/
->>>>>>> 4bf20a0 (4989)
-=======
-# === Secret files (예: API Key 등) ===
-application.yml
-application-oauth.yml
-application-coolsms.yml
->>>>>>> f5cace9 (4989)
