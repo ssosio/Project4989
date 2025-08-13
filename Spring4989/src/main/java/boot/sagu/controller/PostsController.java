@@ -1,6 +1,7 @@
 package boot.sagu.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,13 +38,16 @@ public class PostsController {
 	
 	
 	
+//	@GetMapping("/list")
+//	public List<PostsDto> list()
+//	{
+//		return postService.getAllPostData();
+//	}
+	
 	@GetMapping("/list")
-	public List<PostsDto> list()
-	{
-		return postService.getAllPostData();
+	public List<Map<String, Object>> list() {
+	    return postService.getPostListWithNick();
 	}
-	
-	
 	
 	@PostMapping("/upload")
 	public String fileUpload(@RequestParam("uploadFile") MultipartFile uploadFile,HttpSession session) 
@@ -84,7 +88,7 @@ public class PostsController {
 	}
 	
 	@GetMapping("/detail")
-	public PostsDto getPostDetail(@RequestParam("postId") Long postId) {
+	public Map<String, Object> getPostDetail(@RequestParam("postId") Long postId) {
 	    return postService.getPostData(postId);
 	}
 

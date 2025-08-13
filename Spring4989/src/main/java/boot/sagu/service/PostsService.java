@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -149,12 +150,20 @@ public class PostsService implements PostsServiceInter{
 		}
 	}
 
+
 	@Override
-	public PostsDto getPostData(@RequestParam("postId") Long postId) {
+	public List<Map<String, Object>> getPostListWithNick() {
 		// TODO Auto-generated method stub
-		System.out.println("요청 postId: " + postId);
+		return postMapper.getPostListWithNick();
+	}
+
+	@Override
+	public Map<String, Object> getPostData(Long postId) {
+		// TODO Auto-generated method stub
 		return postMapper.getPostData(postId);
 	}
+
+	
 
 	
 	

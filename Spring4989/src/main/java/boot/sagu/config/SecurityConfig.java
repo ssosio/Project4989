@@ -89,6 +89,8 @@ public class SecurityConfig {
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/ws/**").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
+                .requestMatchers("/chatsave/**","/read").permitAll()
+                .requestMatchers("/api/region/register").permitAll()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
                 .anyRequest().authenticated()
             )

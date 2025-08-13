@@ -60,5 +60,17 @@
 		set deleted_at = now() 
 		where message_id = #{messageId}
 </update>
+
+  <delete id="deleteOldChatFiles" parameterType="int">
+        DELETE FROM chatfile
+        WHERE deleted_at IS NOT NULL
+          AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
+    </delete>
+    
+     <select id="getOldFilePaths" parameterType="int" resultType="java.lang.String">
+        SELECT file_url FROM chatfile
+        WHERE deleted_at IS NOT NULL
+          AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
+    </select>
     
 </mapper> 

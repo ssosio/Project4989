@@ -70,7 +70,7 @@
             bid_time
         FROM auction_bids
         WHERE post_id = #{postId}
-        ORDER BY bid_amount DESC
+        ORDER BY bid_amount DESC,bid_time ASC
         LIMIT 1
     </select>
 
@@ -109,7 +109,7 @@
         ]]>
     </select>
 
-    <!-- winner_id 업데이트 -->
+    <!-- winner_id 업데이트 경매종료 처리 -->
     <update id="updateWinnerId">
         UPDATE posts 
         SET winner_id = #{winnerId},
@@ -133,10 +133,56 @@
             updated_at = CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
         WHERE post_id = #{postId}
     </update>
+    
+     <!-- 찜 상태 확인 -->
+    <select id="checkFavoriteStatus" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM favorites
+        WHERE post_id = #{postId} AND member_id = #{memberId}
+    </select>
+    
+     <!-- 찜 추가 -->
+    <insert id="insertFavorite" parameterType="boot.sagu.dto.FavoritesDto">
+        INSERT INTO favorites (
+            member_id,
+            post_id,
+            created_at
+        ) VALUES (
+            #{memberId},
+            #{postId},
+            CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
+        )
+    </insert>
+    
+     <!-- 찜 삭제 -->
+    <delete id="deleteFavorite">
+        DELETE FROM favorites
+        WHERE post_id = #{postId} AND member_id = #{memberId}
+    </delete>
+    
+    <!-- 찜 개수 조회 -->
+    <select id="getFavoriteCount" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM favorites
+        WHERE post_id = #{postId}
+    </select>
+    
+      <!-- 경매 사진 조회 -->
+    <select id="getAuctionPhotos" parameterType="long" resultType="map">
+        SELECT 
+            photo_id,
+            post_id,
+            photo_url,
+            is_main
+        FROM post_photos
+        WHERE post_id = #{postId}
+        ORDER BY is_main DESC, photo_id ASC
+    </select>
 	
+	<!-- ==================================보증금 관련 =================================== -->
 	<!-- 멤버가 게시글에 관한 보증급을 납부했는지 -->
 	<select id="countAuctionGuaranteeByPostAndMember" resultType="int">
-		select count(*) from auction_guarantees where post_id=#{postId} and member_id=#{memberId}
+		select count(*) from auction_guarantees where post_id=#{postId} and member_id=#{memberId} and status ='PAID'
 	</select>
 	
 	<!-- 보증금 납부  -->
@@ -151,8 +197,17 @@
   			and member_id!=#{winnerId} 	
   			and status = 'PAID'
 	</select>
-	
+	<!-- 환불상태 업데이트 -->
 	<update id="updateRefundStatus">
 		update auction_guarantees set status = 'REFUNDED', refunded_at = now() where guaranteeId = #{guaranteeId}
 	</update>
+	
+	<!-- 게시글 시작가 조회 -->
+	<select id="getStartPrice" parameterType="int" resultType="int">
+		select price from posts where post_id=#{postId} limit 1
+	</select>
+	
+	
+	
+	
 </mapper> 

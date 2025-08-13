@@ -88,20 +88,22 @@ public class ChatController {
 	            // 파일 업로드 및 DB 저장
 	            var chatFileDto = fileUploadService.uploadChatImage(file, chatRoomId, senderId);
 	            
-//	            String absoluteImageUrl = SERVER_BASE_URL + chatFileDto.getFileUrl();
-//	            
-//	            // DB 저장 후 웹소켓으로 알림 메시지 전송
-//	            WebSocketMessageDto webSocketMessage = new WebSocketMessageDto();
-//	            webSocketMessage.setType("CHAT");
-//	            webSocketMessage.setChatRoomId(chatRoomId);
-//	            webSocketMessage.setSenderId(senderId);
-//	            webSocketMessage.setMessageType("image");
-//	            webSocketMessage.setMessageContent(absoluteImageUrl); // ⭐⭐ 절대 경로 URL을 설정
-//	            
-//	            System.out.println("웹소켓으로 전송할 절대 URL: " + absoluteImageUrl); // ⭐ 이 로그가 찍히는지 확인
+	            String absoluteImageUrl = SERVER_BASE_URL + chatFileDto.getFileUrl();
+	            
+	            // DB 저장 후 웹소켓으로 알림 메시지 전송
+	            WebSocketMessageDto webSocketMessage = new WebSocketMessageDto();
+	            webSocketMessage.setType("CHAT");
+	            webSocketMessage.setChatRoomId(chatRoomId);
+	            webSocketMessage.setSenderId(senderId);
+	            webSocketMessage.setMessageType("image");
+	            webSocketMessage.setMessageContent(absoluteImageUrl); // ⭐⭐ 절대 경로 URL을 설정
+	            webSocketMessage.setMessageId(chatFileDto.getMessageId());
+	            webSocketMessage.setTimestamp(chatFileDto.getCreatedAt());
+	            
+	            System.out.println("웹소켓으로 전송할 절대 URL: " + absoluteImageUrl); // ⭐ 이 로그가 찍히는지 확인
 	            
 	            // 특정 채팅방 구독자들에게 메시지 전송
-//	            messagingTemplate.convertAndSend("/topic/chat/" + chatRoomId, webSocketMessage);
+	            messagingTemplate.convertAndSend("/topic/chat/" + chatRoomId, webSocketMessage);
 	            
 	            logger.info("이미지 업로드 성공: messageId={}", chatFileDto.getMessageId());
 	            return ResponseEntity.ok(chatFileDto);
