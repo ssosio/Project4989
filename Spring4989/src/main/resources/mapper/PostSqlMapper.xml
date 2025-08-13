@@ -15,10 +15,57 @@ VALUES(#{memberId},#{title},#{price},#{tradeType},
 	FROM posts p 
 	ORDER BY p.post_id DESC
 </select>
-<select id="getPostData" resultType="posts" parameterType="Long">
+<!-- <select id="getPostData" resultType="posts" parameterType="Long">
 	SELECT p.*, 
 	       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1 LIMIT 1) as mainPhotoUrl
 	FROM posts p 
 	where post_id=#{postId}
+</select> -->
+<!-- 게시글 + 닉네임 + 전체 사진(JSON 배열) : alias 상세 지정 버전 -->
+<select id="getPostData" resultType="map" parameterType="long">
+  SELECT
+    p.post_id          AS postId,
+    p.member_id        AS memberId,
+    p.title            AS title,
+    p.price            AS price,
+    p.trade_type       AS tradeType,
+    p.status           AS status,
+    p.view_count       AS viewCount,
+    p.created_at       AS createdAt,
+    p.updated_at       AS UpdatedAt,
+    p.post_type        AS postType,
+    m.nickname         AS nickname,
+    COALESCE(
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'photoId',  pp.photo_id,
+          'photoUrl', pp.photo_url,
+          'isMain',   pp.is_main
+        )
+      ),
+      JSON_ARRAY()
+    ) AS photos
+  FROM posts p
+  LEFT JOIN members      m  ON m.member_id = p.member_id
+  LEFT JOIN post_photos  pp ON pp.post_id  = p.post_id
+  WHERE p.post_id = #{postId}
+</select>
+
+<select id="getPostListWithNick" resultType="map">
+  SELECT
+    p.post_id    AS postId,
+    p.member_id  AS memberId,
+    p.title      AS title,
+    p.price      AS price,
+    p.post_type  AS postType,
+    p.created_at AS createdAt,
+    (SELECT photo_url
+       FROM post_photos
+      WHERE post_id = p.post_id AND is_main = 1
+      LIMIT 1) AS mainPhotoUrl,
+    m.nickname   AS nickname
+  FROM posts p
+  LEFT JOIN members m ON m.member_id = p.member_id
+  ORDER BY p.post_id DESC
 </select>
 </mapper>

@@ -110,7 +110,7 @@ const Real_estate = () => {
                     <div className="real-estate-price">
                       {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
                     </div>
-                    <div className="real-estate-member">판매자: {p.memberId}</div>
+                    <div className="real-estate-member">판매자: {p.nickname}</div>
                     <div className="real-estate-date">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
                     </div>

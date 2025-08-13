@@ -111,7 +111,7 @@ const Cars = () => {
                     <div className="cars-price">
                       {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
                     </div>
-                    <div className="cars-member">판매자: {p.memberId}</div>
+                    <div className="cars-member">판매자: {p.nickname}</div>
                     <div className="cars-date">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
                     </div>
