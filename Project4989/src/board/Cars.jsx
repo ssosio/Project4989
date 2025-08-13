@@ -41,7 +41,7 @@ const Cars = () => {
  
   const clickDetail=(postId)=>{
 
-    navi(`/board/CarDetail?postId=${postId}`);
+    navi(`/board/GoodsDetail?postId=${postId}`);
   
   }
 

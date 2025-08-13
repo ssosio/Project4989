@@ -37,7 +37,7 @@ const Real_estate = () => {
 
     const clickDetail=(postId)=>{
 
-    navi(`/board/estateDetail?postId=${postId}`);
+    navi(`/board/GoodsDetail?postId=${postId}`);
   
   }
   return (
