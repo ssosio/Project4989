@@ -476,6 +476,12 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             // 구독 설정
             client.subscribe(`/topic/chat/${chatRoomId}`, (incomingMessage) => {
                 const receivedMessage = JSON.parse(incomingMessage.body);
+                console.log('받은 WebSocket 메시지:', receivedMessage);
+
+
+
+
+                // 텍스트 메시지 삭제 이벤트를 처리하는 로직 추가
                 if (receivedMessage.type === 'DELETE') {
                     setMessages(prevMessages =>
                         prevMessages.map(msg =>
@@ -496,13 +502,17 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     );
                 } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
                     const convertedMessage = {
-                        message_id: receivedMessage.messageId,
-                        chat_room_id: receivedMessage.chatRoomId,
-                        sender_id: receivedMessage.senderId,
-                        message_type: receivedMessage.messageType,
-                        message_content: receivedMessage.messageContent,
-                        created_at: receivedMessage.timestamp,
-                        is_read: 0
+                        // 기존 receivedMessage.messageId 대신 receivedMessage.message_id로 수정
+                        message_id: receivedMessage.message_id,
+                        chat_room_id: receivedMessage.chat_room_id,
+                        sender_id: receivedMessage.sender_id,
+                        // 기존 receivedMessage.messageType 대신 receivedMessage.message_type로 수정
+                        message_type: receivedMessage.message_type,
+                        // 기존 receivedMessage.messageContent 대신 receivedMessage.message_content로 수정
+                        message_content: receivedMessage.message_content,
+                        // created_at과 timestamp도 일치시켜주는 것이 좋습니다.
+                        created_at: receivedMessage.created_at || receivedMessage.timestamp,
+                        is_read: receivedMessage.is_read // 또는 0
                     };
                     setMessages(prevMessages => {
                         const isDuplicate = prevMessages.some(

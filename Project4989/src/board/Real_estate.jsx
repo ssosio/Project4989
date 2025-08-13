@@ -10,17 +10,20 @@ const Real_estate = () => {
   
   const navi=useNavigate('');
   
-  const list=()=>{
-    let url="http://localhost:4989/post/list";
-
-    axios.get(url)
-    .then(res=>{
-      console.log(res.data);
-      setPostList(res.data);
-    })
-    .catch(err => {
-      console.error("에러 발생:", err);
-    });
+    const list=()=>{
+      let url="http://localhost:4989/post/list";
+  
+      axios.get(url)
+      .then(res=>{
+  
+        console.log("list test:"+res.data);
+        setPostList(res.data);
+  
+      })
+  
+      .catch(err => {
+        console.error("에러 발생:", err);
+      });
   };
 
   useEffect(()=>{
