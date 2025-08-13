@@ -9,7 +9,6 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
 import boot.sagu.dto.WebSocketMessageDto;
 import boot.sagu.service.ChatMessageServiceInter;
