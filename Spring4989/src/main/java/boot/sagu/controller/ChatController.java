@@ -12,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -128,6 +129,25 @@ public class ChatController {
 	        } catch (Exception e) {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 	                    .body("상대방 정보를 가져오는데 실패했습니다: " + e.getMessage());
+	        }
+	    }
+	    
+	    @PostMapping("/chat/exit")
+	    public ResponseEntity<String> exitChatRoom(@RequestBody Map<String, Long> request) {
+	        Long chatRoomId = request.get("chatRoomId");
+	        Long currentMemberId = request.get("currentMemberId");
+
+	        if (chatRoomId == null || currentMemberId == null) {
+	            return ResponseEntity.badRequest().body("chatRoomId 또는 currentMemberId가 누락되었습니다.");
+	        }
+
+	        try {
+	            chatservice.updateExit(chatRoomId, currentMemberId);
+	            return ResponseEntity.ok("채팅방 나가기 성공");
+	        } catch (Exception e) {
+	            System.err.println("채팅방 나가기 중 오류 발생: " + e.getMessage());
+	            e.printStackTrace();
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("채팅방 나가기 실패: " + e.getMessage());
 	        }
 	    }
 }

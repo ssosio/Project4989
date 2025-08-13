@@ -19,6 +19,7 @@ public class ChatMessageDto {
 	private String message_content;
 	private String fileUrl; // 추가
 	private int is_read;
+	private Timestamp deleted_at;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private Timestamp created_at;

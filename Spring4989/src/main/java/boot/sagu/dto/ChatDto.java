@@ -17,6 +17,8 @@ public class ChatDto {
 	private Timestamp created_at;
 	private Timestamp last_message_at;
 	private String opponent_nickname;
-	
+	private int buyer_exit_status;
+	private int seller_exit_status;
+	private Timestamp deleted_at;
 	
 }

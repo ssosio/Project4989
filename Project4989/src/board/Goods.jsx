@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Goods = () => {
 
-  const navi=useNavigate();
+  const navi=useNavigate('');
 
   const [postList,setPostList]=useState([]);
 
@@ -16,7 +16,7 @@ const Goods = () => {
 
       console.log(res.data);
       setPostList(res.data);
-
+      
     })
 
     .catch(err => {
@@ -37,6 +37,13 @@ const Goods = () => {
 
   const photoUrl="http://localhost:4989/save/";
 
+
+  const clickDetail=(postId)=>{
+
+    navi(`/board/GoodsDetail?postId=${postId}`);
+  
+  }
+
   return (
     <div>
 
@@ -48,8 +55,8 @@ const Goods = () => {
       <table>
       
   <tbody>
-    {postList.map(p => (
-      <tr key={p.postId}>
+    {postList.filter(p => p.postType === 'ITEMS').map(p => (
+      <tr key={p.postId} style={{cursor:'pointer'}} onClick={()=>clickDetail(p.postId)}>
         <td style={{width:'100px', height:'130px', border:'1px solid grey'}}>
           {p.mainPhotoUrl ? (
             <img 

@@ -15,4 +15,7 @@ public List<Map<String, Object>> getChatRoomsWithLastMessage(@Param("memberId") 
 
 public Map<String, Object> getOtherUserInChatRoom(@Param("chatRoomId") Long chatRoomId, 
         @Param("currentMemberId") Long currentMemberId);
+
+public void updateExit(Long chatRoomId, Long login_id);
+
 }
