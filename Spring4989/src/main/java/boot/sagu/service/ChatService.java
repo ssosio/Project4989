@@ -2,9 +2,11 @@ package boot.sagu.service;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,7 +101,20 @@ public class ChatService implements ChatServiceInter{
 	            System.out.println("아직 채팅방에 사용자가 남아있습니다. 메시지 삭제를 건너뜁니다.");
 	        }
 	    }
-	
+
+	  @Override
+	    public List<Long> getMemberIdsInChatRoom(Long chatRoomId) {
+	        // chatroom 테이블의 seller_id와 buyer_id를 조회하여 반환
+	        // MyBatis Mapper에 해당 로직이 구현되어 있어야 합니다.
+	        List<Long> memberIds = new ArrayList<>();
+	        Map<String, Long> ids = chatmapper.getSellerAndBuyerIds(chatRoomId);
+	        if (ids != null) {
+	            memberIds.add(ids.get("seller_id"));
+	            memberIds.add(ids.get("buyer_id"));
+	        }
+	        return memberIds;
+	    }
+	 
 }
 
 	

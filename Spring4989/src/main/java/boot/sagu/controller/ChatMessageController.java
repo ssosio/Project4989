@@ -8,6 +8,8 @@ import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,12 +17,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import boot.sagu.dto.WebSocketMessageDto;
 
 import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.service.ChatFileUploadService;
 import boot.sagu.service.ChatMessageServiceInter;
+import boot.sagu.service.ChatServiceInter;
 import boot.sagu.service.MemberService;
 
 @RestController
@@ -28,13 +32,19 @@ import boot.sagu.service.MemberService;
 public class ChatMessageController {
 
 	@Autowired
-	ChatMessageServiceInter chatMessageService;
+	private ChatMessageServiceInter chatMessageService;
 	
 	@Autowired
-	ChatFileUploadService chatFileUploadService;
+	private ChatFileUploadService chatFileUploadService;
 	
 	@Autowired
-	MemberService memberService;
+	private MemberService memberService;
+	
+	@Autowired
+    private ChatServiceInter chatService;
+	
+	 @Autowired
+	private SimpMessagingTemplate messagingTemplate;
 	
 	@PostMapping("/insertMessage")
     public Long insertMessage(@RequestBody ChatMessageDto dto) {
@@ -170,6 +180,35 @@ public class ChatMessageController {
         
         // 💡 HTTP 200 OK와 함께 읽지 않은 메시지 개수를 반환
         return ResponseEntity.ok(unreadCount);
+    }
+	
+	/**
+     * @MessageMapping으로 프론트엔드에서 보낸 '읽음' 상태 메시지를 처리합니다.
+     * 클라이언트가 /app/chat.readMessageStatus 로 메시지를 보내면 이 메서드가 실행됩니다.
+     */
+    @MessageMapping("/chat.readMessageStatus")
+    public void handleReadMessage(WebSocketMessageDto message) {
+        
+        try {
+            // 1. 읽음 처리 로직 호출
+            chatMessageService.markMessagesAsRead(message.getChatRoomId(), message.getSenderId());
+
+            // 2. ChatService의 새로운 메서드를 사용하여 채팅방 멤버 ID를 가져옵니다.
+            List<Long> memberIdsInRoom = chatService.getMemberIdsInChatRoom(message.getChatRoomId());
+
+            // 3. 채팅방에 속한 모든 멤버에게 읽음 처리 알림을 보냅니다.
+            for (Long memberId : memberIdsInRoom) {
+                // 프론트엔드가 구독하는 "/user/{memberId}/queue/read" 채널로 메시지를 전송합니다.
+                // 이 메시지를 받은 프론트엔드는 chatRoomId를 기반으로 unreadCount를 0으로 업데이트합니다.
+                messagingTemplate.convertAndSendToUser(
+                    String.valueOf(memberId), 
+                    "/queue/read", 
+                    message
+                );
+            }
+
+        } catch (Exception e) {
+        }
     }
 	
 }

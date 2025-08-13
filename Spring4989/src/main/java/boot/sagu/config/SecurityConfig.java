@@ -103,6 +103,7 @@ public class SecurityConfig {
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 // 채팅방 인증
                 .requestMatchers("/chatsave/**","/read").permitAll()
+                .requestMatchers("/api/region/register").permitAll()
               
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
 <<<<<<< HEAD

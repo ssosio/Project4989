@@ -1,99 +1,110 @@
 package boot.sagu.controller;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
 import boot.sagu.dto.RegionDto;
 import boot.sagu.mapper.RegionMapper;
 
-@Component
-public class RegionController implements CommandLineRunner {
+import java.util.Arrays;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/region")
+public class RegionController {
 
     @Autowired
     private RegionMapper regionMapper;
 
-    @Value("${kakao.rest.api.key}")
-    private String kakaoApiKey;
+    // 대한민국 특별시/광역시 목록 (예외 처리를 위한 데이터)
+    private static final List<String> SPECIAL_METRO_CITIES = Arrays.asList(
+            "서울", "부산", "대구", "인천",
+            "광주", "대전", "울산", "세종특별자치시"
+    );
 
-    @Override
-    public void run(String... args) throws Exception {
-        // "강남구", "종로구" 등 원하는 지역 키워드 목록
-        List<String> keywords = List.of("강남구", "종로구", "마포구", "성동구");
+    @PostMapping("/register")
+    public ResponseEntity<String> registerRegion(@RequestBody RegionDto requestDto) {
+        // 1. 필수 정보 유효성 검사
+        if (requestDto.getAddress() == null || requestDto.getAddress().isEmpty() ||
+            requestDto.getLatitude() == 0 || requestDto.getLongitude() == 0) {
+            return ResponseEntity.badRequest().body("필수 정보가 누락되었습니다.");
+        }
 
-        for (String keyword : keywords) {
-            // 1. 주소 검색 API 호출
-            JsonNode addressData = searchAddress(keyword);
-            
-            if (addressData != null) {
-                // 2. 주소-좌표 변환 API 호출
-                JsonNode coordData = getCoordinates(addressData.get("address_name").asText());
+        String address = requestDto.getAddress();
+        String[] addressParts = address.split(" ");
 
-                if (coordData != null) {
-                    RegionDto region = new RegionDto();
-                    region.setProvince("서울특별시"); // 예시
-                    region.setCity(keyword);
-                    region.setDistrict(addressData.get("address_name").asText());
-                    region.setLatitude(coordData.get("y").asDouble());
-                    region.setLongitude(coordData.get("x").asDouble());
+        String province = null;
+        String city = null;
+        String district = null;
+        String town = null;
 
-                    // 3. DB에 저장
-                    regionMapper.insertRegion(region);
+        // 2. 주소 파싱 로직
+        if (addressParts.length > 0) {
+            String firstPart = addressParts[0];
+
+            // 2-1. 특별시/광역시 예외 처리
+            if (SPECIAL_METRO_CITIES.contains(firstPart)) {
+                // 예: "서울특별시 강남구 압구정동"
+                province = firstPart; // "서울특별시"
+                // city는 null로 처리
+                if (addressParts.length > 1) {
+                    district = addressParts[1]; // "강남구"
+                }
+                if (addressParts.length > 2) {
+                    town = addressParts[2]; // "압구정동"
                 }
             }
-            Thread.sleep(1000); // API 호출 제한을 피하기 위한 딜레이
-        }
-    }
-    
- // 주소 검색 API 호출 메서드
-    private JsonNode searchAddress(String query) {
-        WebClient webClient = WebClient.create("https://dapi.kakao.com");
-        
-        try {
-            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-            
-            return webClient.get()
-                    .uri("/v2/local/search/address.json?query=" + encodedQuery)
-                    .header("Authorization", "KakaoAK " + kakaoApiKey)
-                    .retrieve()
-                    .bodyToMono(JsonNode.class)
-                    .block();
-        } catch (Exception e) {
-            System.err.println("주소 검색 실패: " + e.getMessage());
-            return null;
-        }
-    }
-
-    // 주소-좌표 변환 API 호출 메서드
-    private JsonNode getCoordinates(String address) {
-        WebClient webClient = WebClient.create("https://dapi.kakao.com");
-        
-        try {
-            String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
-            
-            JsonNode response = webClient.get()
-                    .uri("/v2/local/search/address.json?query=" + encodedAddress)
-                    .header("Authorization", "KakaoAK " + kakaoApiKey)
-                    .retrieve()
-                    .bodyToMono(JsonNode.class)
-                    .block();
-            
-            // 응답에서 documents 배열의 첫 번째 요소가 좌표 정보를 담고 있음
-            if (response != null && response.has("documents") && response.get("documents").size() > 0) {
-                return response.get("documents").get(0);
+            // 2-2. 일반 '도' 주소 처리
+            else if(addressParts.length > 3){
+                // 예: "경기 성남시 분당구 백현동"
+                province = firstPart; // "경기"
+                if (addressParts.length > 1) {
+                    city = addressParts[1]; // "성남시"
+                }
+                if (addressParts.length > 2) {
+                    district = addressParts[2]; // "분당구"
+                }
+                if (addressParts.length > 3) {
+                    town = addressParts[3]; // "백현동"
+                }
             }
-            return null;
+            
+            else {
+            	 // 예: "경기 하남시 미사동"
+                province = firstPart; // "경기"
+                if (addressParts.length > 1) {
+                    city = addressParts[1]; // "하남시"
+                }
+                if (addressParts.length > 2) {
+                	town = addressParts[2]; // "미사동"
+                }
+            }
+        }
+        
+        // 3. 파싱된 데이터로 DTO 생성 및 저장
+        RegionDto region = new RegionDto();
+        region.setProvince(province);
+        region.setCity(city);
+        region.setDistrict(district);
+        region.setTown(town);
+        region.setLatitude(requestDto.getLatitude());
+        region.setLongitude(requestDto.getLongitude());
+
+        try {
+            System.out.println("Province: " + province);
+            System.out.println("City: " + city);
+            System.out.println("District: " + district);
+            System.out.println("Town: " + town);
+
+            regionMapper.insertRegion(region);
+            return ResponseEntity.ok("주소 정보가 성공적으로 저장되었습니다.");
         } catch (Exception e) {
-            System.err.println("좌표 변환 실패: " + e.getMessage());
-            return null;
+            System.err.println("DB 저장 오류: " + e.getMessage());
+            e.printStackTrace(); 
+            return ResponseEntity.status(500).body("DB 저장 중 오류가 발생했습니다.");
         }
     }
 }

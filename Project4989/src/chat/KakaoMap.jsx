@@ -198,6 +198,37 @@ const MapComponent = () => {
         );
     }
 
+    const handleRegisterClick = async () => {
+        if (!center || !address) {
+            alert('주소를 먼저 검색하고 선택해주세요.');
+            return;
+        }
+
+        try {
+            // API 호출
+            const response = await fetch('http://localhost:4989/api/region/register', { // 백엔드 API 주소
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    address: address, // 현재 검색창에 표시된 주소
+                    latitude: center.lat,
+                    longitude: center.lng,
+                }),
+            });
+
+            if (response.ok) {
+                alert('주소와 좌표가 성공적으로 등록되었습니다.');
+            } else {
+                alert('등록에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('API 호출 오류:', error);
+            alert('서버와 통신 중 오류가 발생했습니다.');
+        }
+    };
+
     return (
         <div>
             <h1>지도 반경 설정 기능</h1>
@@ -210,6 +241,7 @@ const MapComponent = () => {
                     placeholder="읍, 면, 동 단위의 주소를 검색하세요"
                 />
                 <SearchButton onClick={handleSearchClick}>검색</SearchButton>
+                <SearchButton onClick={handleRegisterClick}>등록</SearchButton>
                 {places.length > 0 && (
                     <ResultsContainer>
                         {/* ✨ [수정됨] Geocoder 결과 표시 */}

@@ -128,4 +128,12 @@
         WHERE deleted_at IS NOT NULL
           AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
     </delete>
+    
+      <!-- 특정 채팅방의 seller_id와 buyer_id를 가져오는 쿼리 -->
+    <select id="getSellerAndBuyerIds" parameterType="Long" resultType="map">
+        SELECT seller_id, buyer_id
+        FROM chatroom
+        WHERE chat_room_id = #{chatRoomId}
+    </select>
+    
 </mapper>

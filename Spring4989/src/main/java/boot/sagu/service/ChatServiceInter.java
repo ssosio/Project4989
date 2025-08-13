@@ -18,4 +18,5 @@ public Map<String, Object> getOtherUserInChatRoom(@Param("chatRoomId") Long chat
 
 public void updateExit(Long chatRoomId, Long login_id);
 
+public List<Long> getMemberIdsInChatRoom(Long chatRoomId);
 }

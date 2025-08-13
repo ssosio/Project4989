@@ -31,7 +31,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Client } from '@stomp/stompjs';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
-import SearchIcon from '@mui/icons-material/Search'; // 검색 아이콘
+import SearchIcon from '@mui/icons-material/Search';
 
 const StyledDialog = styled(Dialog)(({ zindex, offset }) => ({
     '& .MuiDialog-paper': {
@@ -70,28 +70,28 @@ const MessageBubble = styled(Box)(({ isOwn }) => ({
     boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
 }));
 
-const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeaveChat, onUpdateLastMessage }) => {
+const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeaveChat, onUpdateLastMessage, onMarkAsRead }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const { userInfo } = useContext(AuthContext);
     const messagesContainerRef = useRef(null);
+    // 수정: stompClient 상태를 다시 추가합니다.
     const [stompClient, setStompClient] = useState(null);
     const [otherUserInfo, setOtherUserInfo] = useState(null);
     const [selectedImages, setSelectedImages] = useState([]);
     const fileInputRef = useRef(null);
-    const [anchorEl, setAnchorEl] = useState(null); // 메뉴 상태 관리
+    const [anchorEl, setAnchorEl] = useState(null);
     const [messageMenuAnchorEl, setMessageMenuAnchorEl] = useState(null);
     const [selectedMessageId, setSelectedMessageId] = useState(null);
-    const [reportModalOpen, setReportModalOpen] = useState(false); // 신고 모달 상태
-    const [reportReason, setReportReason] = useState(''); // 선택된 신고 이유
-    const [reportDetail, setReportDetail] = useState(''); // 신고 상세 내용
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportReason, setReportReason] = useState('');
+    const [reportDetail, setReportDetail] = useState('');
 
-    // 검색 관련 상태
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [currentResultIndex, setCurrentResultIndex] = useState(0);
-    const messageRefs = useRef({}); // 메시지 ID별 DOM ref 저장
+    const messageRefs = useRef({});
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const chatRoomId = chatRoom?.chatRoomId;
@@ -110,7 +110,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         setIsSearchOpen(prev => {
             const next = !prev;
             if (!next) {
-                // 닫을 때 초기화
                 setSearchQuery('');
                 setSearchResults([]);
                 setCurrentResultIndex(0);
@@ -135,7 +134,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         setSearchQuery(q);
     };
 
-    // 검색 결과 계산 및 자동 스크롤 처리
     useEffect(() => {
         if (!searchQuery || !searchQuery.trim()) {
             setSearchResults([]);
@@ -154,9 +152,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         if (results.length > 0) {
             const firstId = results[0].message_id;
             setTimeout(() => {
-                // messagesContainerRef 스크롤 영역 안에서 해당 메시지로 이동
                 if (messageRefs.current[firstId]) {
-                    // scrollIntoView는 메시지 요소 기준으로 동작
                     messageRefs.current[firstId].scrollIntoView({
                         behavior: 'smooth',
                         block: 'center'
@@ -199,11 +195,12 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     );
                 }
             } else {
-                alert('메시지 삭제에 실패했습니다.');
+                // 커스텀 모달로 변경 필요
+                console.error('메시지 삭제에 실패했습니다.');
             }
         } catch (error) {
             console.error('메시지 삭제 API 호출 오류:', error);
-            alert('메시지 삭제 중 오류가 발생했습니다.');
+            // 커스텀 모달로 변경 필요
         }
     };
 
@@ -224,11 +221,12 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 onClose();
                 if (onLeaveChat) onLeaveChat();
             } else {
-                alert('채팅방을 나가는 데 실패했습니다. 다시 시도해주세요.');
+                // 커스텀 모달로 변경 필요
+                console.error('채팅방을 나가는 데 실패했습니다. 다시 시도해주세요.');
             }
         } catch (error) {
             console.error('채팅방 나가기 API 호출 오류:', error);
-            alert('채팅방을 나가는 도중 오류가 발생했습니다. 다시 시도해주세요.');
+            // 커스텀 모달로 변경 필요
         }
     };
 
@@ -245,7 +243,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
     const handleReportSubmit = async () => {
         if (!reportReason) {
-            alert('신고 이유를 선택해주세요.');
+            // 커스텀 모달로 변경 필요
+            console.error('신고 이유를 선택해주세요.');
             return;
         }
         try {
@@ -263,37 +262,46 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 { headers: { 'Content-Type': 'application/json' } }
             );
             if (response.status === 200 || response.status === 201) {
-                alert('신고가 접수되었습니다. 감사합니다.');
+                // 커스텀 모달로 변경 필요
+                console.log('신고가 접수되었습니다. 감사합니다.');
                 handleReportModalClose();
             } else {
-                alert('신고 접수에 실패했습니다. 다시 시도해주세요.');
+                // 커스텀 모달로 변경 필요
+                console.error('신고 접수에 실패했습니다. 다시 시도해주세요.');
             }
         } catch (error) {
             console.error('신고 API 호출 오류:', error);
-            alert('신고 접수 중 오류가 발생했습니다.');
+            // 커스텀 모달로 변경 필요
         }
     };
 
     const markMessagesAsRead = () => {
-        if (stompClient && stompClient.active && chatRoomId && userInfo?.memberId) {
-            const hasUnreadMessages = messages.some(msg =>
-                msg.sender_id !== userInfo.memberId && msg.is_read === 0
-            );
-            if (hasUnreadMessages) {
-                const readMessage = {
-                    type: 'READ',
-                    chatRoomId: chatRoomId,
-                    senderId: userInfo.memberId,
-                    timestamp: new Date().toISOString()
-                };
-                try {
-                    stompClient.publish({
-                        destination: '/app/chat.readMessage',
-                        body: JSON.stringify(readMessage)
-                    });
-                } catch (e) {
-                    console.error("읽음 처리 메시지 전송 실패:", e);
+        // 상대방이 보낸 읽지 않은 메시지가 있는지 확인
+        const hasUnreadMessages = messages.some(msg =>
+            String(msg.sender_id) !== String(userInfo.memberId) && msg.is_read === 0
+        );
+
+        if (stompClient && stompClient.active && chatRoom?.chatRoomId && userInfo?.memberId && hasUnreadMessages) {
+            const readMessage = {
+                type: 'READ',
+                chatRoomId: String(chatRoom.chatRoomId),
+                senderId: String(userInfo.memberId),
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                console.log("읽음 처리 메시지 전송:", readMessage);
+                stompClient.publish({
+                    destination: `/app/chat.readMessageStatus`,
+                    body: JSON.stringify(readMessage)
+                });
+
+                // ⭐ 여기서 부모 컴포넌트의 상태를 즉시 업데이트합니다. ⭐
+                if (onMarkAsRead) {
+                    onMarkAsRead(chatRoom.chatRoomId);
                 }
+            } catch (e) {
+                console.error("읽음 처리 메시지 전송 실패:", e);
             }
         }
     };
@@ -340,7 +348,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             setSelectedImages([]);
         } catch (error) {
             console.error('이미지 업로드 및 전송 실패:', error);
-            alert('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+            // 커스텀 모달로 변경 필요
         }
     };
 
@@ -390,9 +398,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         return `${hours}:${minutes}`;
     };
 
-    // WebSocket 연결, 초기 메시지 로드
+    // 수정: STOMP 연결, 구독, 초기 메시지 로드를 한 useEffect에서 관리
     useEffect(() => {
         if (!open || !chatRoomId || !userInfo) {
+            // 컴포넌트가 닫히거나 필수 정보가 없으면,
+            // 기존 연결이 있다면 해제하고 상태를 초기화합니다.
             if (stompClient && stompClient.active) {
                 try {
                     const leaveMessage = {
@@ -451,6 +461,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
         fetchChatData();
 
+        // STOMP 클라이언트 생성 및 연결
         const client = new Client({
             brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
             reconnectDelay: 5000,
@@ -459,21 +470,17 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         });
 
         client.onConnect = () => {
+            console.log('STOMP 연결 성공');
             setStompClient(client);
 
+            // 구독 설정
             client.subscribe(`/topic/chat/${chatRoomId}`, (incomingMessage) => {
                 const receivedMessage = JSON.parse(incomingMessage.body);
-
                 if (receivedMessage.type === 'DELETE') {
                     setMessages(prevMessages =>
                         prevMessages.map(msg =>
                             msg.message_id === receivedMessage.messageId
-                                ? {
-                                    ...msg,
-                                    message_content: '삭제된 메시지입니다.',
-                                    message_type: 'deleted',
-                                    deleted_at: new Date().toISOString()
-                                }
+                                ? { ...msg, message_content: '삭제된 메시지입니다.', message_type: 'deleted', deleted_at: new Date().toISOString() }
                                 : msg
                         )
                     );
@@ -487,7 +494,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             is_read: msg.is_read === 0 && msg.sender_id !== userInfo.memberId ? 1 : msg.is_read,
                         }))
                     );
-                } else if (receivedMessage.type === 'CHAT') {
+                } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
                     const convertedMessage = {
                         message_id: receivedMessage.messageId,
                         chat_room_id: receivedMessage.chatRoomId,
@@ -509,7 +516,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     }
                 }
             });
-
+            // 연결 직후 읽음 처리 메시지 전송
             const timeoutId = setTimeout(markMessagesAsRead, 500);
             return () => clearTimeout(timeoutId);
         };
@@ -520,6 +527,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
         client.activate();
 
+        // 컴포넌트 언마운트 시 클라이언트 비활성화
         return () => {
             if (client && client.active) {
                 try {
@@ -541,16 +549,42 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         };
     }, [open, chatRoomId, userInfo?.memberId]);
 
-    // 메시지가 바뀔 때마다 맨 아래로 스크롤 (새 메시지 수신시)
+    // 메시지가 바뀔 때마다 맨 아래로 스크롤
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // 수정: 컴포넌트가 열릴 때 읽음 처리를 요청하는 별도의 useEffect
+    useEffect(() => {
+        if (open && stompClient && stompClient.active) {
+            const timeoutId = setTimeout(markMessagesAsRead, 500);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [open, messages, stompClient, chatRoomId, userInfo?.memberId]);
 
     useEffect(() => {
         return () => {
             selectedImages.forEach(image => URL.revokeObjectURL(image.preview));
         };
     }, [selectedImages]);
+
+    const DetailChat = ({ chatRoom, stompClient, onMarkAsRead }) => {
+
+        useEffect(() => {
+            // 컴포넌트가 마운트될 때 (채팅방에 들어갈 때)
+            if (stompClient && stompClient.active) {
+                // 서버에 읽음 처리 메시지 전송
+                const readMessage = { chatRoomId: chatRoom.chatRoomId, memberId: userInfo.memberId };
+                stompClient.publish({
+                    destination: `/app/chat/markAsRead`, // 서버의 읽음 처리 엔드포인트
+                    body: JSON.stringify(readMessage)
+                });
+            }
+            // ... (기타 useEffect 로직)
+        }, [stompClient, chatRoom.chatRoomId, userInfo?.memberId]);
+
+        // ... (기존 코드)
+    };
 
     useEffect(() => {
         if (!chatRoomId || !userInfo?.memberId) return;
@@ -561,12 +595,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // 이 부분을 추가해야 합니다.
+                'Authorization': `Bearer ${token}`
             },
         });
     }, [chatRoomId, userInfo?.memberId]);
 
-    // 검색 결과 순회 함수들
     const scrollToMessage = (messageId) => {
         if (messageRefs.current[messageId]) {
             messageRefs.current[messageId].scrollIntoView({
@@ -591,7 +624,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     };
 
     if (!open) return null;
-
     return (
         <>
             <StyledDialog

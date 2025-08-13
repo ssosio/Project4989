@@ -31,4 +31,6 @@ public interface ChatMapper {
 	
 	public void deleteOldChatRooms(@Param("hours") int hours);
 	
+	public Map<String, Long> getSellerAndBuyerIds(@Param("chatRoomId") Long chatRoomId);
+	
 }
