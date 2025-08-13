@@ -17,8 +17,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import static org.springframework.security.config.Customizer.withDefaults;
 
-import java.util.List;
-
 import boot.sagu.dto.MemberDto;
 import boot.sagu.service.CustomOAuth2UserService;
 import boot.sagu.service.CustomUserDetailsService;
@@ -64,7 +62,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173")); // 프론트엔드 주소
+        configuration.addAllowedOrigin("http://localhost:5173"); // 프론트엔드 주소
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true); // 필요시
@@ -87,7 +85,7 @@ public class SecurityConfig {
             // HTTP 요청에 대한 접근 권한 설정
             .authorizeHttpRequests(authz -> authz
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
-                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/post/**").permitAll()
+                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
