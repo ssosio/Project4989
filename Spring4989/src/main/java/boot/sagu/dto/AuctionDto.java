@@ -8,7 +8,7 @@ import org.apache.ibatis.type.Alias;
 import lombok.Data;
 
 @Data
-@Alias("auction")
+@Alias("auctionBid")
 public class AuctionDto {
 
     private long bidId;        

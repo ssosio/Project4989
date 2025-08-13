@@ -32,7 +32,6 @@ import boot.sagu.service.PortOneService;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
 public class AuctionController {
    
-   
    @Autowired
    private PortOneService portOneService;
    
@@ -177,4 +176,5 @@ public class AuctionController {
       
       return null;
    }
+	
 }
