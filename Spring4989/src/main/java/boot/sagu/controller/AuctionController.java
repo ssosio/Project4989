@@ -1,10 +1,16 @@
 package boot.sagu.controller;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -16,20 +22,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import boot.sagu.dto.AuctionDto;
+import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
-import boot.sagu.mapper.AuctionMapper;
 import boot.sagu.service.AuctionService;
 import boot.sagu.service.PortOneService;
-import lombok.RequiredArgsConstructor;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
 public class AuctionController {
 	
-	@Autowired
-	private AuctionMapper auctionmapper;
-
+	
 	@Autowired
 	private PortOneService portOneService;
 	
@@ -38,166 +41,124 @@ public class AuctionController {
 
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
+	
+	// 방 인원수 관리는 WebSocketController에서 처리됨
 
-@GetMapping("/auction")
-public List<PostsDto> getAuctionList() {
-   return auctionmapper.getAuctionPosts();
-}
+	@GetMapping("/auction")
+	public List<PostsDto> getAuctionList() {
+	   return auctionService.getAuctionPosts();
+	}
 
-@GetMapping("/auction/detail/{postId}")
-public PostsDto getAuctionDetail(@PathVariable("postId") long postId) {
-   PostsDto result = auctionmapper.getAuctionDetail(postId);
-   if (result == null) {
-       throw new RuntimeException("경매글을 찾을 수 없습니다: " + postId);
-   }
-   return result;
-}
+	@GetMapping("/auction/detail/{postId}")
+	public PostsDto getAuctionDetail(@PathVariable("postId") long postId) {
+	   return auctionService.getAuctionDetail(postId);
+	}
 
-@GetMapping("/auction/highest-bid/{postId}")
-public AuctionDto getHighestBid(@PathVariable("postId") long postId) {
-   return auctionmapper.getHighestBid(postId);
-}
+	@GetMapping("/auction/highest-bid/{postId}")
+	public AuctionDto getHighestBid(@PathVariable("postId") long postId) {
+	   return auctionService.getHighestBid(postId);
+	}
+	
+	@GetMapping("/auction/member/{memberId}")
+	public MemberDto getMemberNickname(@PathVariable("memberId") long memberId) {
+	   return auctionService.getMemberNickname(memberId);
+	}
+	
+	// 찜 상태 확인
+	@GetMapping("/auction/favorite/check/{postId}/{memberId}")
+	public Map<String, Object> checkFavoriteStatus(@PathVariable("postId") long postId, @PathVariable("memberId") long memberId) {
+	   Map<String, Object> response = new HashMap<>();
+	   try {
+	       boolean isFavorite = auctionService.checkFavoriteStatus(postId, memberId);
+	       response.put("isFavorite", isFavorite);
+	       response.put("success", true);
+	   } catch (Exception e) {
+	       response.put("success", false);
+	       response.put("message", "찜 상태 확인 실패: " + e.getMessage());
+	   }
+	   return response;
+	}
+	
+	// 찜 추가/삭제 토글
+	@PostMapping("/auction/favorite/toggle")
+	public Map<String, Object> toggleFavorite(@RequestBody FavoritesDto favoritesDto) {
+	   return auctionService.toggleFavorite(favoritesDto);
+	}
 
-@GetMapping("/auction/member/{memberId}")
-public MemberDto getMemberNickname(@PathVariable("memberId") long memberId) {
-   return auctionmapper.getMemberNickname(memberId);
-}
+		// 찜 개수 조회
+	@GetMapping("/auction/favorite/count/{postId}")
+	public Map<String, Object> getFavoriteCount(@PathVariable("postId") long postId) {
+		Map<String, Object> response = new HashMap<>();
+	   try {
+	       int favoriteCount = auctionService.getFavoriteCount(postId);
+	       response.put("success", true);
+	       response.put("favoriteCount", favoriteCount);
+	   } catch (Exception e) {
+	       response.put("success", false);
+	       response.put("message", "찜 개수 조회 실패: " + e.getMessage());
+	   }
+	   return response;
+		}
+	
+	@PostMapping("/auction/bid")
+	public String placeBid(@RequestBody AuctionDto auctionDto) {
+		   return auctionService.placeBid(auctionDto);
+		}
 
-@PostMapping("/auction/bid")
-public String placeBid(@RequestBody AuctionDto auctionDto) {
-   try {
-       // 현재 최고가 조회
-       AuctionDto currentHighestBid = auctionmapper.getHighestBid(auctionDto.getPostId());
-       
-       // 최고가가 있고, 입찰 금액이 최고가보다 낮거나 같은 경우
-       if (currentHighestBid != null && currentHighestBid.getBidAmount() != null) {
-           if (auctionDto.getBidAmount().compareTo(currentHighestBid.getBidAmount()) <= 0) {
-               return "입찰가가 최고가보다 낮습니다.";
-           }
-       }
-       
-       auctionmapper.insertBid(auctionDto);
-       
-       // 소켓으로 실시간 입찰 정보 전송
-       try {
-           // 새로운 최고가 정보 조회
-           AuctionDto newHighestBid = auctionmapper.getHighestBid(auctionDto.getPostId());
-           
-           // 입찰자 정보 조회
-           MemberDto bidder = auctionmapper.getMemberNickname(auctionDto.getBidderId());
-           
-           // 소켓 메시지 생성
-           Map<String, Object> socketMessage = new HashMap<>();
-           socketMessage.put("type", "BID_UPDATE");
-           socketMessage.put("bid", newHighestBid);
-           
-           // 입찰자 정보 추가
-           Map<String, Object> bidderInfo = new HashMap<>();
-           if (bidder != null) {
-               bidderInfo.put("id", bidder.getMemberId());
-               bidderInfo.put("nickname", bidder.getNickname());
-           } else {
-               bidderInfo.put("id", auctionDto.getBidderId());
-               bidderInfo.put("nickname", "ID: " + auctionDto.getBidderId());
-           }
-           socketMessage.put("bidder", bidderInfo);
-           
-           // 소켓 메시지 전송
-           messagingTemplate.convertAndSend("/topic/auction/" + auctionDto.getPostId(), socketMessage);
-           
-           System.out.println("입찰 소켓 메시지 전송 완료: " + socketMessage);
-       } catch (Exception socketError) {
-           System.err.println("소켓 메시지 전송 실패: " + socketError.getMessage());
-           // 소켓 에러가 있어도 입찰은 성공으로 처리
-       }
-       
-       return "입찰이 성공적으로 등록되었습니다.";
-   } catch (Exception e) {
-       return "입찰 등록에 실패했습니다: " + e.getMessage();
-   }
-}
+	//수동 경매 종료 API
+	@PostMapping("/auction/end/{postId}")
+	public String endAuction(@PathVariable("postId") long postId) {
+		return auctionService.endAuction(postId);
+	}
+	
+	// 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 제거)
+	@GetMapping("/auction/photos/{postId}")
+	public List<Map<String, Object>> getAuctionPhotos(@PathVariable("postId") long postId) {
+		
+		return auctionService.getAuctionPhotos(postId);
+	}
+	
+	// 경매 이미지 파일 직접 제공
+    @GetMapping("/auction/image/{filename}")
+	public ResponseEntity<Resource> getImage(@PathVariable("filename") String filename) {
+		try {
+			// 파일 경로에서 이미지 파일 읽기
+			Path filePath = Paths.get("src/main/webapp/save/" + filename);
+			
+			// 파일이 존재하는지 확인
+			if (!Files.exists(filePath)) {
+				return ResponseEntity.notFound().build();
+			}
+			
+			Resource resource = new FileSystemResource(filePath.toFile());
+			
+			// 파일 확장자에 따른 Content-Type 설정
+			String contentType = getContentType(filename);
+			
+			return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType(contentType))
+				.body(resource);
+				
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError().build();
+		}
+	}
+    
+ // 파일 확장자에 따른 Content-Type 반환
+ 	private String getContentType(String filename) {
+ 		if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+ 			return "image/jpeg";
+ 		} else if (filename.toLowerCase().endsWith(".png")) {
+ 			return "image/png";
+ 		} else if (filename.toLowerCase().endsWith(".gif")) {
+ 			return "image/gif";
+ 		} else {
+ 			return "application/octet-stream";
+ 		}
+ 	}
 
-// 수동 경매 종료 API
-@PostMapping("/auction/end/{postId}")
-public String endAuction(@PathVariable("postId") long postId) {
-   try {
-       // 경매 정보 조회
-       PostsDto auction = auctionmapper.getAuctionDetail(postId);
-       if (auction == null) {
-           return "경매글을 찾을 수 없습니다.";
-       }
-       
-       // 이미 종료된 경매인지 확인
-       if ("SOLD".equals(auction.getStatus())) {
-           return "이미 종료된 경매입니다.";
-       }
-       
-       // 최고 입찰자 조회
-       AuctionDto highestBid = auctionmapper.getHighestBid(postId);
-       
-       if (highestBid != null) {
-           // winner_id 업데이트
-           auctionmapper.updateWinnerId(postId, highestBid.getBidderId());
-           
-           // 경매 상태를 SOLD로 변경하고 종료시간을 현재시간으로 업데이트
-           auctionmapper.updateAuctionStatusAndEndTime(postId, "SOLD");
-           
-           // 소켓으로 경매 종료 알림
-           try {
-               // 낙찰자 정보 조회
-               MemberDto winner = auctionmapper.getMemberNickname(highestBid.getBidderId());
-               
-               // 소켓 메시지 생성
-               Map<String, Object> socketMessage = new HashMap<>();
-               socketMessage.put("type", "AUCTION_END");
-               socketMessage.put("winnerId", highestBid.getBidderId());
-               
-               // 낙찰자 정보 추가
-               Map<String, Object> winnerInfo = new HashMap<>();
-               if (winner != null) {
-                   winnerInfo.put("id", winner.getMemberId());
-                   winnerInfo.put("nickname", winner.getNickname());
-               } else {
-                   winnerInfo.put("id", highestBid.getBidderId());
-                   winnerInfo.put("nickname", "ID: " + highestBid.getBidderId());
-               }
-               socketMessage.put("winner", winnerInfo);
-               
-               // 소켓 메시지 전송
-               messagingTemplate.convertAndSend("/topic/auction/" + postId, socketMessage);
-               
-               System.out.println("경매 종료 소켓 메시지 전송 완료: " + socketMessage);
-           } catch (Exception socketError) {
-               System.err.println("소켓 메시지 전송 실패: " + socketError.getMessage());
-           }
-           
-           return "경매가 성공적으로 종료되었습니다. 낙찰자: ID " + highestBid.getBidderId();
-       } else {
-           // 입찰자가 없는 경우 상태와 종료시간 변경
-           auctionmapper.updateAuctionStatusAndEndTime(postId, "SOLD");
-           
-           // 소켓으로 경매 종료 알림 (낙찰자 없음)
-           try {
-               Map<String, Object> socketMessage = new HashMap<>();
-               socketMessage.put("type", "AUCTION_END");
-               socketMessage.put("winnerId", null);
-               socketMessage.put("winner", null);
-               
-               messagingTemplate.convertAndSend("/topic/auction/" + postId, socketMessage);
-               
-               System.out.println("경매 종료 소켓 메시지 전송 완료 (낙찰자 없음): " + socketMessage);
-           } catch (Exception socketError) {
-               System.err.println("소켓 메시지 전송 실패: " + socketError.getMessage());
-           }
-           
-           return "경매가 종료되었습니다. (입찰자 없음)";
-       }
-   } catch (Exception e) {
-       return "경매 종료 처리에 실패했습니다: " + e.getMessage();
-   }
-}
-
-
+ 	
+ 	//
 	@PostMapping("/{postID}/bid")
 	public ResponseEntity<?> placeBId(@PathVariable Long postId,
 									@RequestParam Long memberId,
@@ -212,6 +173,7 @@ public String endAuction(@PathVariable("postId") long postId) {
 					"paymentUrl",paymentUrl));
 		}
 
+		//이미 납부했으면 바로 입찰 처리
 		
 		return null;
 	}
