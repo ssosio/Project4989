@@ -1,29 +1,35 @@
 server:
- port: 4989
-#mysql_setting
+  port: 4989
+
 spring:
- datasource:
-   driver-class-name: com.mysql.cj.jdbc.Driver
-   url: jdbc:mysql://project4989.c5200is4auzz.ap-northeast-2.rds.amazonaws.com:3306/sagupalgu
-   username: admin4989
-   password: project49898949
-servlet:
-  multipart:
-    max-file-size: 10MB
-    max-request-size: 10MB
-    enabled: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://project4989.c5200is4auzz.ap-northeast-2.rds.amazonaws.com:3306/sagupalgu
+    username: admin4989
+    password: project49898949
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+  # 분리된 설정 파일들을 포함하도록 설정
+  profiles:
+    include: 
+      - oauth
+      - coolsms
+
 #mybatis
 mybatis:
   type-aliases-package: boot.sagu.dto
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
+
 #jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
   expiration: 21600000
-# CoolSMS
-coolsms:
-  api-key: 'NCSDJNFKIX6MFYPO'
-  api-secret: '2A3QAHAVIG8UZREZ3OW0AN7S3I8AHS3A'
-  sender-phone: '01095801813'
+
+portone:
+  api-key: YOUR_REST_API_KEY
+  api-secret: YOUR_REST_API_SECRET

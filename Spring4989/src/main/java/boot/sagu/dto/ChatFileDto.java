@@ -16,7 +16,7 @@ public class ChatFileDto {
     private Long messageId;
     private String fileUrl;
     private Long fileSize;
-    
+    private Timestamp deleted_at;
     @JsonFormat(pattern = "yyyyMMddHHmmss")
     private Timestamp uploadAt;
     

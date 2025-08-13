@@ -1,5 +1,6 @@
 eclipse.preferences.version=1
 org.eclipse.jdt.core.classpath.outputOverlappingAnotherSource=ignore
+<<<<<<< HEAD
 org.eclipse.jdt.core.compiler.annotation.missingNonNullByDefaultAnnotation=ignore
 org.eclipse.jdt.core.compiler.annotation.nonnull=org.springframework.lang.NonNull
 org.eclipse.jdt.core.compiler.annotation.nonnullbydefault=org.springframework.lang.NonNullApi
@@ -15,3 +16,8 @@ org.eclipse.jdt.core.compiler.problem.potentialNullReference=warning
 org.eclipse.jdt.core.compiler.problem.syntacticNullAnalysisForFields=enabled
 org.eclipse.jdt.core.compiler.processAnnotations=enabled
 org.eclipse.jdt.core.compiler.source=11
+=======
+org.eclipse.jdt.core.compiler.codegen.targetPlatform=17
+org.eclipse.jdt.core.compiler.compliance=17
+org.eclipse.jdt.core.compiler.source=17
+>>>>>>> 13d5c54d348afdce7b1bb445a812b25679929938

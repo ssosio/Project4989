@@ -25,5 +25,43 @@
 	<select id="countByLoginId" parameterType="String" resultType="int">
 		SELECT COUNT(*) FROM members WHERE login_id = #{loginId}
 	</select>
+	<select id="findByNickname" parameterType="String" resultType="member">
+	    SELECT * FROM members WHERE nickname = #{nickname}
+	</select>
+	
+	<!-- 소셜로그인 -->
+	<select id="findByEmail" parameterType="String" resultType="member">
+	    SELECT * FROM members WHERE email = #{email}
+	</select>
+	<select id="findByProviderAndProviderId" resultType="member">
+	    SELECT m.* FROM members m
+	    JOIN social_accounts s ON m.member_id = s.member_id
+	    WHERE s.provider = #{provider} AND s.provider_id = #{providerId}
+	</select>
+	
+	<!-- 소셜로그인 추가 -->
+	<insert id="insertSocialAccount" parameterType="boot.sagu.dto.SocialAccountDto">
+	    INSERT INTO social_accounts (member_id, provider, provider_id)
+	    VALUES (#{memberId}, #{provider}, #{providerId})
+	</insert>
+	
+	<!-- 아이디 찾기 - 이메일과 전화번호로 회원 조회 -->
+	<select id="findByEmailAndPhone" resultType="member">
+		SELECT * FROM members 
+		WHERE email = #{email} AND phone_number = #{phoneNumber}
+	</select>
+	
+	<!-- 비밀번호 재설정을 위한 회원 확인 - 아이디와 전화번호로 회원 조회 -->
+	<select id="findByLoginIdAndPhone" resultType="member">
+		SELECT * FROM members 
+		WHERE login_id = #{loginId} AND phone_number = #{phoneNumber}
+	</select>
+	
+	<!-- 비밀번호 업데이트 -->
+	<update id="updatePassword">
+		UPDATE members 
+		SET password = #{password}, updated_at = CURRENT_TIMESTAMP 
+		WHERE login_id = #{loginId}
+	</update>
 	
 </mapper>

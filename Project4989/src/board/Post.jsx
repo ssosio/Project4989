@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 const Post = () => {
@@ -31,10 +31,47 @@ const Post = () => {
     const [transmission,setTransmission]=useState('');
 
     //아이템(카테고리)
-    // const [parents, setParents] = useState([]);
-    // const [children, setChildren] = useState([]);
-    // const [selectedParent, setSelectedParent] = useState('');
-    // const [selectedChild, setSelectedChild] = useState('');
+    const [parents, setParents] = useState([]);
+    const [children, setChildren] = useState([]);
+    const [selectedParent, setSelectedParent] = useState('');
+    const [selectedChild, setSelectedChild] = useState('');
+    const [conditions,setConditions]=useState('');
+    const [categoryId,setCategoryId]=useState('');
+
+
+    useEffect(()=>{
+        axios.get("http://localhost:4989/category/category")
+        .then(res=> setParents(res.data))
+        .catch(err=> console.log(err));
+    },[]);
+
+    const handleParentChange = (e) => {
+  const val = e.target.value;
+
+  if (!val || isNaN(Number(val))) {
+    console.warn("❌ 유효하지 않은 parentId:", val);
+    setSelectedParent('');
+    setChildren([]);
+    return;
+  }
+
+  const parentId = Number(val);
+  setSelectedParent(parentId);
+  setCategoryId(parentId);
+  console.log("✅ 선택된 parentId:", parentId);
+
+  axios.get(`http://localhost:4989/category/child?parentId=${parentId}`)
+    .then(res => setChildren(res.data))
+    .catch(err => console.error("❌ axios 에러:", err));
+};
+
+
+    const handleChildChange=(e)=>{
+        const parentId=Number(e.target.value);
+        setSelectedChild(parentId);
+    };
+
+    
 
     const navi=useNavigate();
 
@@ -91,9 +128,10 @@ const Post = () => {
         
 
         //아이템
-        // if(postType==='ITEMS'){
-        // formData.append("name",category);
-        // }
+        if(postType==='ITEMS'){
+            formData.append("categoryId",categoryId);
+            formData.append("conditions",conditions);
+         }
         
 
         // 디버깅을 위한 콘솔 로그 추가
@@ -112,7 +150,7 @@ const Post = () => {
         console.log("전송할 mileage:", mileage);
         console.log("전송할 fuelType:", fuelType);
         console.log("전송할 transmission:", transmission);
-        // console.log("전송할 category:", category);
+        console.log("전송할 condition:", conditions);
 
         
 
@@ -146,6 +184,7 @@ const Post = () => {
 
   return (
     <div>
+       
         <table>
             <tr>
                 <td>
@@ -310,19 +349,49 @@ const Post = () => {
                     </tr>
                     )
                 }
-                {/* {
+                {
                     postType==='ITEMS' &&(
                     <tr>
                         <td>
-                            <label>카테고리
-                                <input type="text" name='category' style={{width:'150px'}} value={category} onChange={(e)=>{
-                                        setCategory(e.target.value);
-                                    }}/>
+                            <label>대분류
+                                <select onChange={handleParentChange} value={selectedParent}>
+                                    <option value=""></option>
+                                    {
+                                        parents.map(p=>(
+                                            <option key={p.categoryId} value={p.categoryId}>{p.name}</option>
+                                        ))
+                                    }
+                                </select>
+                            </label>
+                        </td>
+                        <td>
+                            <label>소분류
+                                <select onChange={handleChildChange} value={selectedChild}>
+                                    <option value=""></option>
+                                    {
+                                        children.map(c=>(
+                                            <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
+                                        ))
+                                    }
+                                </select>
+                            </label>
+                        </td>
+                         <td>
+                            <label>상태
+                                <select value={conditions} onChange={(e)=>{
+                                    setConditions(e.target.value);
+                                }}>
+                                    <option value="">선택해주세요</option>
+                                    <option value="best">상</option>
+                                    <option value="good">중</option>
+                                    <option value="bad">하</option>
+                                </select>
                             </label>
                         </td>
                     </tr>
+                   
                     )
-                } */}
+                } 
             <tr>
                 <td>
                     <label>제목
@@ -363,7 +432,7 @@ const Post = () => {
                 </td>
             </tr>
             <tr>
-                <button type='button' style={{width:'130px', backgroundColor:'bisque',marginRight:'30px'}} onClick={postInsert}>등록</button>
+                <button type='submit' style={{width:'130px', backgroundColor:'bisque',marginRight:'30px'}} onClick={postInsert}>등록</button>
                 <button type='button' style={{width:'130px', backgroundColor:'bisque'}} onClick={clickList}>목록</button>
             </tr>
         </table>

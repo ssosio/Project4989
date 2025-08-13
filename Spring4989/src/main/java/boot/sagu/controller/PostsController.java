@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.CarDto;
+import boot.sagu.dto.CategoryDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
@@ -43,6 +44,7 @@ public class PostsController {
 	private MemberServiceInter memberService;
 	
 	
+	
 	@GetMapping("/list")
 	public List<PostsDto> list()
 	{
@@ -63,7 +65,7 @@ public class PostsController {
 			@ModelAttribute CarDto cdto,
 			@ModelAttribute RealEstateDto rdto,
 			@ModelAttribute ItemDto idto,
-			@RequestParam("uploadFiles") List<MultipartFile> uploadFiles,
+			@RequestParam(value = "uploadFiles", required = false) List<MultipartFile> uploadFiles,
 			@RequestHeader(value = "Authorization", required = false) String authorization,
 		    HttpSession session)
 	{
@@ -88,5 +90,11 @@ public class PostsController {
 		
 		postService.insertPostWithPhoto(pdto, uploadFiles, session, cdto, rdto, idto);
 	}
+	
+	@GetMapping("/detail")
+	public PostsDto getPostDetail(@RequestParam("postId") Long postId) {
+	    return postService.getPostData(postId);
+	}
+
 
 }

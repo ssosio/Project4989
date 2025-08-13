@@ -209,7 +209,7 @@ export const Header = () => {
                   fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif'
                 }}
               >
-                <Avatar src={userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{
+                <Avatar src={'http://localhost:4989'+userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{
                   width: 36,
                   height: 36,
                   mr: 1.5,
