@@ -13,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
+import boot.sagu.dto.PortOneWebhookPayloadDTO;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
 import boot.sagu.service.PortOneService;
@@ -158,23 +160,52 @@ public class AuctionController {
  	}
 
  	
- 	//
-	@PostMapping("/{postID}/bid")
-	public ResponseEntity<?> placeBId(@PathVariable Long postId,
-									@RequestParam Long memberId,
-									@RequestParam int bidAmount){
-		
-		if(!auctionService.isGuaranteePaid(postId, memberId)) {
-			int startPrice = auctionService.getStartPrice(postId);
-			String paymentUrl = auctionService.createGuaranteePayment(postId, memberId, startPrice);
-			
-			return ResponseEntity.ok(Map.of(
-					"paymentRequired",true,
-					"paymentUrl",paymentUrl));
-		}
+ 	// 입찰 시도
+	@PostMapping("/{postID}/bids")
+	  public ResponseEntity<?> placeBid(
+	            @PathVariable long postId,
+	            @RequestBody AuctionDto body,
+	            @AuthenticationPrincipal(expression = "id") Long memberId // 있으면 사용
+	    ) {
+	        body.setPostId(postId);
+	        if (memberId != null) body.setBidderId(memberId);
 
-		//이미 납부했으면 바로 입찰 처리
-		
-		return null;
-	}
+	        String res = auctionService.placeBidWithGuarantee(body);
+	        if (res.startsWith("[NEED_GUARANTEE]")) {
+	            String link = res.substring("[NEED_GUARANTEE]".length());
+	            // 402 Payment Required로 명확히 응답
+	            return ResponseEntity.status(402).body(Map.of(
+	                "status", "NEED_GUARANTEE",
+	                "paymentLink", link
+	            ));
+	        }
+	        return ResponseEntity.ok(Map.of("status", "OK", "message", res));
+	    }
+	
+	  // 포트원 웹훅(결제 성공 검증 → 보증금 저장)
+    @PostMapping("/portone/webhook")
+    public ResponseEntity<String> portoneWebhook(@RequestBody PortOneWebhookPayloadDTO p) {
+        // postId/memberId는 merchant_uid 규칙(guarantee_{postId}_{memberId})에서 파싱하거나,
+        // 프론트 custom_data로 넘겨 받도록 설계하세요.
+        auctionService.handlePortOneWebhook(p.getPostId(), p.getMemberId(), p.getImpUid(), p.getMerchantUid());
+        return ResponseEntity.ok("ok");
+    }
+    
+    //수동 종료(운영/관리자용)
+    @PostMapping("/{postId}/end")
+    public ResponseEntity<?> end(@PathVariable long postId) {
+        String msg = auctionService.endAuction(postId);
+        return ResponseEntity.ok(Map.of("message", msg));
+    }
+    
+    //낙찰 거래 최종처리(정상완료 환불 or 노쇼 몰수)
+    @PostMapping("/{postId}/winner/{winnerId}/finalize")
+    public ResponseEntity<?> finalizeWinner(
+            @PathVariable long postId,
+            @PathVariable long winnerId,
+            @RequestParam String action // "REFUND" or "FORFEIT"
+    ) {
+        auctionService.finalizeWinnerGuarantee(postId, winnerId, action);
+        return ResponseEntity.ok(Map.of("status", "OK"));
+    }
 }

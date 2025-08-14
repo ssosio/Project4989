@@ -44,9 +44,11 @@ public interface AuctionServiceInter {
 	   public boolean isGuaranteePaid(long postId,long memberId); //게시글에 보증금 납부했는지
 	   public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); //보증금 납부
 	   public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(long postId,long winnerId);//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기
-	   public void updateRefundStatus(long guaranteeId); //환불
+	   public void updateGuaranteeStatus(long guaranteeId,String status); //보증금 관리
+	   
+	   public String placeBidWithGuarantee(AuctionDto auctionDto); //최초 입찰 시 보증금 없으면 결제링크 반환
 	
 	   public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
-		
+	   
 	
 }
