@@ -46,5 +46,20 @@ public interface AuctionMapper {
 	//경매 시작가 확인
 	public int getStartPrice(@Param("postId") long postId);
 	
+	// 경매 삭제
+	public void deleteAuction(@Param("postId") long postId);
+	
+	// 경매 삭제 전 연관된 used_items 데이터 삭제
+	public void deleteUsedItemsByPostId(@Param("postId") long postId);
+	
+	// 경매 삭제 전 연관된 사진 데이터 삭제
+	public void deletePhotosByPostId(@Param("postId") long postId);
+	
+	// 경매 삭제 전 연관된 favorites 데이터 삭제
+	public void deleteFavoritesByPostId(@Param("postId") long postId);
+	
+	// 경매 삭제 전 연관된 chatroom 데이터 삭제
+	public void deleteChatroomsByPostId(@Param("postId") long postId);
+	
 	
 }

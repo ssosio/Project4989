@@ -14,10 +14,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,6 +29,7 @@ import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
 import boot.sagu.service.PortOneService;
+import boot.sagu.config.JwtUtil;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
@@ -41,6 +44,9 @@ public class AuctionController {
 
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
+	
+	@Autowired
+	private JwtUtil jwtUtil;
 	
 	// 방 인원수 관리는 WebSocketController에서 처리됨
 
@@ -176,5 +182,26 @@ public class AuctionController {
 		//이미 납부했으면 바로 입찰 처리
 		
 		return null;
+	}
+	
+	// 경매 삭제 (비밀번호 확인 포함)
+	@DeleteMapping("/auction/delete/{postId}")
+	public ResponseEntity<?> deleteAuction(
+		@PathVariable("postId") long postId,
+		@RequestBody Map<String, String> request,
+		@RequestHeader("Authorization") String token
+	) {
+		try {
+			// JWT 토큰에서 사용자 정보 추출
+			String loginId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
+			String password = request.get("password");
+			
+			// 경매 삭제 (비밀번호 확인 포함)
+			auctionService.deleteAuction(postId, loginId, password);
+			
+			return ResponseEntity.ok().body(Map.of("message", "경매가 삭제되었습니다."));
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+		}
 	}
 }
