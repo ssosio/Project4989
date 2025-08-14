@@ -54,8 +54,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 // --- Styled Components 끝 ---
 
-
-
 export const Header = () => {
   // useContext를 사용해 Root 컴포넌트의 userInfo와 handleLogout 함수를 가져옵니다.
   const { userInfo, handleLogout } = useContext(AuthContext);
@@ -71,6 +69,10 @@ export const Header = () => {
   };
   const handleChatClose = () => {
     setChatDrawerOpen(false);
+  };
+  const handleUnreadCountChange = (count) => {
+    console.log("Header에서 새로운 읽지 않은 메시지 개수 수신:", count);
+    setUnreadMessageCount(count);
   };
   useEffect(() => {
     console.log("Header received userInfo:", userInfo);
@@ -341,7 +343,11 @@ export const Header = () => {
       </Toolbar>
 
       {/* 채팅 드로어 */}
-      <ChatMain open={chatDrawerOpen} onClose={handleChatClose} />
+      <ChatMain
+        open={chatDrawerOpen}
+        onClose={handleChatClose}
+        onUnreadCountChange={handleUnreadCountChange}
+      />
     </AppBar>
   );
 };

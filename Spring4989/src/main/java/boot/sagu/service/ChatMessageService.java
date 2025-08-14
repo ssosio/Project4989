@@ -155,5 +155,10 @@ public class ChatMessageService implements ChatMessageServiceInter{
 	   public int getUnreadMessageCount(Long memberId) {
 	        return chatMessageMapper.getUnreadMessageCount(memberId);
 	    }
+	   
+	   @Override
+	    public void insertFirstChatMessage(Map<String, Object> params) {
+	        chatMessageMapper.insertFirstChatMessage(params);
+	    } 
 
 }

@@ -10,10 +10,10 @@ import lombok.Data;
 @Alias("chat")
 public class ChatDto {
 
-	private int chat_room_id;
-	private int product_id;
-	private int seller_id;
-	private int buyer_id;
+	private Long chat_room_id;
+	private Long product_id;
+	private Long seller_id;
+	private Long buyer_id;
 	private Timestamp created_at;
 	private Timestamp last_message_at;
 	private String opponent_nickname;

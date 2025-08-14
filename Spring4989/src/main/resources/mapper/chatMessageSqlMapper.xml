@@ -86,4 +86,9 @@
           AND (cr.seller_id = #{memberId} OR cr.buyer_id = #{memberId})
     </select>
     
+    <insert id="insertFirstChatMessage" parameterType="java.util.Map">
+    INSERT INTO chatmessage (chat_room_id, sender_id, message_type, message_content)
+    VALUES (#{chatRoomId}, #{senderId}, #{messageType}, #{messageContent})
+</insert>
+    
 </mapper>

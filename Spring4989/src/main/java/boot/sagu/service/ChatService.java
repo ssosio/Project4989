@@ -3,8 +3,10 @@ package boot.sagu.service;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -114,7 +116,35 @@ public class ChatService implements ChatServiceInter{
 	        }
 	        return memberIds;
 	    }
-	 
+	  
+	  @Override
+	    public Long findChatroomByProductIdAndBuyerId(Long productId, Long buyerId) {
+	        return chatmapper.findChatroomByProductIdAndBuyerId(productId, buyerId);
+	    }
+
+	    @Override
+	    @Transactional
+	    public void createChatRoomAndSendMessage(ChatDto chatDto, ChatMessageDto messageDto) {
+	        // 1. chatroom 테이블에 새로운 채팅방 생성
+	        chatmapper.insertChatroom(chatDto);
+
+	        // 2. 생성된 chat_room_id를 사용하여 첫 메시지 저장
+	        Map<String, Object> messageParams = new HashMap<>();
+	        messageParams.put("chatRoomId", chatDto.getChat_room_id());
+	        messageParams.put("senderId", messageDto.getSender_id());
+	        messageParams.put("messageType", messageDto.getMessage_type());
+	        messageParams.put("messageContent", messageDto.getMessage_content());
+	        messageParams.put("isRead", 1); // 첫 메시지는 보낸 사람이 직접 보낸 것이므로 읽음 처리
+
+	        chatmessagemapper.insertFirstChatMessage(messageParams);
+	    }
+
+
+	    @Override
+	    public Map<String, Object> getChatRoomById(Long chatRoomId, Long memberId) {
+	    	// Map 객체를 생성하는 대신, 두 인자를 직접 매퍼로 전달
+	    	return chatmapper.getChatRoomById(chatRoomId, memberId);
+	    }
 }
 
 	
