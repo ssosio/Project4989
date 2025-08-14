@@ -1,7 +1,8 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import {useLocation } from 'react-router-dom';
 import ReportModal from './ReportModal';
+import { AuthContext } from '../context/AuthContext';
 
 
 const GoodsDetail = () => {
@@ -9,7 +10,7 @@ const GoodsDetail = () => {
   const [reportContent, setReportContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-   const { search } = useLocation(); // URL의 ?postId=123
+  const { search } = useLocation(); // URL의 ?postId=123
   const query = new URLSearchParams(search);
   const postId = query.get("postId");
 
@@ -17,17 +18,35 @@ const GoodsDetail = () => {
   const [goods,setGoods]=useState(null);
   const [cars,setCars]=useState(null);
   const [estate,setEstate]=useState(null);
-  const [photos,setPhotos]=useState(null);
+  const [photos,setPhotos]=useState([]);
+
+
+
+ 
   // const photoUrl = "http://localhost:4989/save/";
 
-  const [token, setToken] = useState(() => {
-  const t = localStorage.getItem('token');
-  return t && t !== 'null' && t !== 'undefined' ? t : null;
-});
+  // JWT 토큰 가져오기
+  const { userInfo } = useContext(AuthContext);
+ 
+  // view count
+  const incCalledRef = useRef(false);
+
+  useEffect(() => {
+    if (!postId) return;
+    if (incCalledRef.current) return;   // ✅ 두 번째 실행 차단 (StrictMode/재렌더)
+    incCalledRef.current = true;
+
+    axios.post(`http://localhost:4989/post/viewcount?postId=${postId}`)
+      .catch(console.error);
+  }, [postId]);
+
+
 
   useEffect(() => {
     console.log("✅ useEffect 실행됨. postId:", postId);
   if (!postId) return;
+
+  
 
   const fetchPostData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`);
   const fetchGoodsData = axios.get(`http://localhost:4989/goods/detail?postId=${postId}`);
@@ -53,17 +72,6 @@ const GoodsDetail = () => {
 
 }, [postId]);
 
-useEffect(() => {
-  // 다른 탭/창에서 로그인/로그아웃해도 반영
-  const onStorage = (e) => {
-    if (e.key === 'token') {
-      const v = e.newValue;
-      setToken(v && v !== 'null' && v !== 'undefined' ? v : null);
-    }
-  };
-  window.addEventListener('storage', onStorage);
-  return () => window.removeEventListener('storage', onStorage);
-}, []);
 
 
 const handleSubmitReport = async () => {
@@ -86,6 +94,11 @@ const handleSubmitReport = async () => {
   };
 
 
+  
+
+
+
+
   if (!post) return <div>로딩 중...</div>;
 
 
@@ -96,10 +109,14 @@ const handleSubmitReport = async () => {
       <h2>{post.title}</h2>
       
       <p>작성자: {post.nickname}</p>
+      
       <p>가격: {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}</p>
       <p>작성일: {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
       <p>location: </p>
-
+      <p>조회수: {post.viewCount}</p>
+      <p>거래상태 :{post.status==='ON_SALE'?'판매중':post.status==='RESERVED'?'예약':'판매완료'}</p>
+      
+      
       <h3>사진 목록</h3>
       {photos.length > 0 ? (
         photos.map(photo => (
@@ -115,9 +132,9 @@ const handleSubmitReport = async () => {
       )}
       { post.postType === 'ITEMS'&&(
         <>
-        <p>거래유형: {post.tradeType}</p>
-      <p>상태: {goods.conditions}</p>
-      <p>{goods.categoryId === 1
+        <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
+      <p>상태: {goods.conditions ==='best'?'상':goods.conditions ==='good'?'중':'하'}</p>
+      <p>분류: {goods.categoryId === 1
       ? '전자제품'
       : goods.categoryId === 2
       ? '의류'
@@ -126,7 +143,7 @@ const handleSubmitReport = async () => {
       )}
       { post.postType === 'CARS'&&(
         <>
-        <p>거래유형: {post.tradeType}</p>
+        <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
         <p>브랜드: {cars.brand}</p>
         <p>모델: {cars.model}</p>
         <p>연식: {cars.year}</p>
@@ -152,7 +169,7 @@ const handleSubmitReport = async () => {
 
       {/* 신고 모달 추가 */}
       {
-        token ? (
+        userInfo.memberId ? (
           <>
           <div>
           <button type='button'>거래</button>

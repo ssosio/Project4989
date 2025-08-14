@@ -114,6 +114,8 @@ const Real_estate = () => {
                       {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
                     </div>
                     <div className="real-estate-member">판매자: {p.nickname}</div>
+                    <div>조회수: {p.viewCount}</div>
+                    <div>{p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}</div>
                     <div className="real-estate-date">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
                     </div>

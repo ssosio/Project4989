@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.CarDto;
+import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
@@ -47,6 +48,7 @@ public class PostsService implements PostsServiceInter{
 	
 	@Autowired
 	private CategoryMapperInter categoryMapper;
+	
 	
 	@Override
 	public void insertPost(PostsDto pdto) {
@@ -163,9 +165,36 @@ public class PostsService implements PostsServiceInter{
 		return postMapper.getPostData(postId);
 	}
 
-	
+	@Override
+	public void increaseViewCount(Long postId) {
+		// TODO Auto-generated method stub
+		postMapper.increaseViewCount(postId);
+	}
 
-	
-	
+	@Override
+	public int countFavorite(int postId) {
+		// TODO Auto-generated method stub
+		return postMapper.countFavorite(postId);
+	}
+
+	@Override
+	public boolean isFavorited(int postId, int memberId) {
+		// TODO Auto-generated method stub
+		return postMapper.existsFavorite(postId, memberId) > 0;
+	}
+
+	@Override
+	public boolean toggleFavorite(int postId, int memberId) {
+		// TODO Auto-generated method stub
+		boolean exists = isFavorited(postId, memberId);
+        if (exists) {
+        	postMapper.deleteFavorite(postId, memberId);
+            return false; // 해제됨
+        } else {
+        	postMapper.insertFavorite(postId, memberId);
+            return true; // 좋아요됨
+        }
+	}
+
 	
 }

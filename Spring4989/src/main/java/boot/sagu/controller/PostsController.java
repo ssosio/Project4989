@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,9 @@ import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.service.CarService;
+import boot.sagu.service.EstateService;
+import boot.sagu.service.ItemService;
 import boot.sagu.service.MemberServiceInter;
 import boot.sagu.service.PostsService;
 import jakarta.servlet.http.HttpSession;
@@ -36,7 +40,14 @@ public class PostsController {
 	@Autowired
 	private MemberServiceInter memberService;
 	
+	@Autowired
+	CarService carService;
 	
+	@Autowired
+	EstateService estateService;
+	
+	@Autowired
+	ItemService itemService;
 	
 //	@GetMapping("/list")
 //	public List<PostsDto> list()
@@ -91,6 +102,41 @@ public class PostsController {
 	public Map<String, Object> getPostDetail(@RequestParam("postId") Long postId) {
 	    return postService.getPostData(postId);
 	}
+	
+	
+	@PostMapping("/viewcount")
+	public void increaseViewCount(@RequestParam("postId") Long postId)
+	{
+		postService.increaseViewCount(postId);
+	}
 
+	
+	@GetMapping("/count")
+	 public Map<String, Object> count(@RequestParam("postId") int postId) {
+        int count = postService.countFavorite(postId);
+        return Map.of("count", count);
+    }
+	
+	/*
+	//	count + 내가 찜했는지
+    @GetMapping("/status")
+    public Map<String, Object> status(@RequestParam("postId") int postId,
+                                      @AuthenticationPrincipal JwtUtil jwt) {
+        // Jwt에 memberId 클레임이 있다고 가정 (문자/숫자 어떤 타입이어도 toString 후 파싱)
+        int memberId = Integer.parseInt(String.valueOf(jwt.extractMemberId("memberId")));
+        boolean favorited = postService.isFavorited(postId, memberId);
+        int count = postService.countFavorite(postId);
+        return Map.of("favorited", favorited, "count", count);
+    }
+    
+    @PostMapping("/toggle")
+    public Map<String, Object> toggle(@RequestParam("postId") int postId,
+                                      @AuthenticationPrincipal JwtUtil jwt) {
+        int memberId = Integer.parseInt(String.valueOf(jwt.extractMemberId("memberId")));
+        boolean favoritedNow = postService.toggleFavorite(postId, memberId); // 토글 후 상태
+        int count = postService.countFavorite(postId);
+        return Map.of("favorited", favoritedNow, "count", count);
+    }
+	*/
 
 }
