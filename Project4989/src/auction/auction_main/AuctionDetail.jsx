@@ -33,9 +33,14 @@ const AuctionDetail = () => {
   // 이미지 모달 관련 state
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalPhotoIndex, setModalPhotoIndex] = useState(0);
+  
+  // 삭제 관련 state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const SERVER_IP = '192.168.10.138';
-    const SERVER_PORT = '4989';
+  const SERVER_PORT = '4989';
   
   useEffect(() => {
     // postId를 사용해서 상세 정보를 가져오는 API 호출
@@ -44,10 +49,10 @@ const AuctionDetail = () => {
         setAuctionDetail(res.data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("❌ 에러 발생:", err);
-        setLoading(false);
-      });
+             .catch(err => {
+         console.error("경매 상세 정보 조회 실패:", err);
+         setLoading(false);
+       });
 
     // 최고가 정보 가져오기
     axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`)
@@ -201,7 +206,7 @@ const AuctionDetail = () => {
         }, 1000); // 1초 후 전송
       },
       onDisconnect: () => {
-        console.log('WebSocket 연결 해제');
+        // WebSocket 연결 해제
         
       },
       onStompError: (error) => {
@@ -260,7 +265,6 @@ const AuctionDetail = () => {
       case 'USER_COUNT_UPDATE':
         // 실시간 방 인원수 업데이트
         setUserCount(data.userCount);
-        console.log('방 인원수 업데이트:', data.userCount, '명');
         break;
         
       default:
@@ -584,6 +588,46 @@ const AuctionDetail = () => {
     );
   };
 
+  // 경매 삭제 핸들러 - 비밀번호 확인 모달 표시
+  const handleDeleteAuction = () => {
+    setShowPasswordModal(true);
+  };
+
+  // 비밀번호 확인 후 삭제 처리
+  const handleDeleteWithPassword = async () => {
+    if (!password.trim()) {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
+    
+    setDeleteLoading(true);
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const response = await axios.delete(`http://192.168.10.138:4989/auction/delete/${postId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        data: { password }
+      });
+      
+      if (response.status === 200) {
+        alert('경매가 삭제되었습니다.');
+        navigate('/auction'); // 경매 목록으로 이동
+      }
+    } catch (error) {
+      console.error('경매 삭제 실패:', error);
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('경매 삭제에 실패했습니다.');
+      }
+    } finally {
+      setDeleteLoading(false);
+      setShowPasswordModal(false);
+      setPassword('');
+    }
+  };
+
   // 공유 기능 추가
   const shareToSocial = () => {
     const shareData = {
@@ -596,10 +640,10 @@ const AuctionDetail = () => {
       // 모바일에서 네이티브 공유 메뉴
       navigator.share(shareData)
         .then(() => {
-          console.log('공유 성공!');
+          // 공유 성공
         })
-        .catch((error) => {
-          console.log('공유 취소 또는 실패:', error);
+        .catch(() => {
+          // 공유 취소 또는 실패
         });
     } else {
       // 데스크톱에서는 클립보드 복사
@@ -655,38 +699,89 @@ const AuctionDetail = () => {
           {/* 제목과 메타 정보 */}
           <div className="product-header">
             <div className="title-heart-container">
-              <h1 className="product-title">{auctionDetail.title}</h1>
-              <div className="heart-favorite-container">
-                {/* 찜 하트 버튼 */}
-                <button 
-                  onClick={toggleFavorite}
-                  disabled={favoriteLoading}
-                  className={`favorite-heart-btn ${isFavorite ? 'favorited' : ''}`}
-                  title={isFavorite ? '찜 해제' : '찜 추가'}
-                >
-                  {isFavorite ? '❤️' : '🤍'}
-                </button>
-                <span className="favorite-count-text">찜: {favoriteCount}개</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h1 className="product-title">{auctionDetail.title}</h1>
                 
-                {/* 공유 버튼 추가 */}
-                <button 
-                  onClick={shareToSocial}
-                  className="share-btn"
-                  title="경매 공유하기"
-                  style={{
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    marginLeft: '10px',
-                    fontSize: '14px'
-                  }}
-                >
-                  📤 공유 
-                </button>
+                {/* 삭제 버튼 (작성자만 표시) - 제목 오른쪽에 배치 */}
+                {userInfo?.memberId === auctionDetail?.memberId && (
+                  <button 
+                    onClick={handleDeleteAuction}
+                    className="delete-btn"
+                    title="경매 삭제"
+                                         style={{
+                       background: '#ffb3b3',
+                       color: '#8b0000',
+                       border: 'none',
+                       padding: '6px 12px',
+                       borderRadius: '4px',
+                       cursor: 'pointer',
+                       fontSize: '12px',
+                       fontWeight: '500',
+                       transition: 'all 0.2s ease',
+                       marginLeft: '15px'
+                     }}
+                     onMouseEnter={(e) => {
+                       e.target.style.background = '#ff9999';
+                       e.target.style.transform = 'scale(1.05)';
+                     }}
+                     onMouseLeave={(e) => {
+                       e.target.style.background = '#ffb3b3';
+                       e.target.style.transform = 'scale(1)';
+                     }}
+                   >
+                     삭제
+                   </button>
+                )}
               </div>
+              
+              <div className="heart-favorite-container">
+
+                  
+                  {/* 찜과 공유 버튼을 한 줄에 배치 */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {/* 찜 하트 버튼 */}
+                    <button 
+                      onClick={toggleFavorite}
+                      disabled={favoriteLoading}
+                      className={`favorite-heart-btn ${isFavorite ? 'favorited' : ''}`}
+                      title={isFavorite ? '찜 해제' : '찜 추가'}
+                    >
+                      {isFavorite ? '❤️' : '🤍'}
+                    </button>
+                    <span className="favorite-count-text">찜: {favoriteCount}개</span>
+                   
+                    {/* 공유 버튼 */}
+                    <button 
+                      onClick={shareToSocial}
+                      className="share-btn"
+                      title="경매 공유하기"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        marginLeft: '10px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <img 
+                        src="/공유.png" 
+                        alt="공유" 
+                        style={{ 
+                          width: '24px', 
+                          height: '24px',
+                          filter: 'brightness(0.8)',
+                          transition: 'filter 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.filter = 'brightness(1)'}
+                        onMouseLeave={(e) => e.target.style.filter = 'brightness(0.8)'}
+                      />
+                    </button>
+                  </div>
+                  
+
+                </div>
             </div>
             
             {/* 메타 정보 섹션 */}
@@ -1041,6 +1136,29 @@ const AuctionDetail = () => {
             {/* 이미지 정보 */}
             <div className="modal-image-info">
               {modalPhotoIndex + 1} / {photos.length}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 비밀번호 확인 모달 */}
+      {showPasswordModal && (
+        <div className="password-modal-overlay">
+          <div className="password-modal">
+            <h3>비밀번호 확인</h3>
+            <p>경매를 삭제하려면 비밀번호를 입력하세요.</p>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호 입력"
+              className="password-input"
+            />
+            <div className="modal-buttons">
+              <button onClick={() => setShowPasswordModal(false)}>취소</button>
+              <button onClick={handleDeleteWithPassword} disabled={deleteLoading}>
+                {deleteLoading ? '삭제 중...' : '삭제'}
+              </button>
             </div>
           </div>
         </div>
