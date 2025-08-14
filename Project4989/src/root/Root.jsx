@@ -80,8 +80,15 @@ const Root = () => {
     setUserInfo(null);
   };
 
+  // 사용자 정보 업데이트 함수
+  const updateUserInfo = (updatedUserInfo) => {
+    setUserInfo(updatedUserInfo);
+  };
+
+
+
   return (
-    <AuthContext.Provider value={{ userInfo, handleLogout }}>
+    <AuthContext.Provider value={{ userInfo, handleLogout, updateUserInfo }}>
       <BrowserRouter>
         {/* RouterMain에 handleLoginSuccess 함수를 props로 전달 */}
         <RouterMain handleLoginSuccess={handleLoginSuccess} />

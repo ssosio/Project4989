@@ -70,7 +70,7 @@ const MessageBubble = styled(Box)(({ isOwn }) => ({
     boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
 }));
 
-const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeaveChat, onUpdateLastMessage, onMarkAsRead }) => {
+const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeaveChat, onUpdateLastMessage, onMarkAsRead, onIncrementUnreadCount, isChatRoomActive }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -249,15 +249,14 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         }
         try {
             const reportData = {
-                chatRoomId: chatRoomId,
-                reporterId: userInfo.memberId,
-                reportedId: otherUserInfo?.memberId,
-                reportReason: reportReason,
-                reportDetail: reportDetail,
-                reportType: 'CHAT'
+                declaration_chat_room_id: chatRoomId,
+                declaration_memberid: userInfo.memberId,
+                declaration_opposite_memberid: otherUserInfo.memberId,
+                declaration_type: reportReason,
+                declaration_content: reportDetail
             };
             const response = await axios.post(
-                `http://${SERVER_IP}:${SERVER_PORT}/reports`,
+                `http://${SERVER_IP}:${SERVER_PORT}/submit`,
                 reportData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
@@ -276,36 +275,34 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     };
 
     const markMessagesAsRead = () => {
-        // 상대방이 보낸 읽지 않은 메시지가 있는지 확인
         const hasUnreadMessages = messages.some(msg =>
             String(msg.sender_id) !== String(userInfo.memberId) && msg.is_read === 0
         );
 
-        if (stompClient && stompClient.active && chatRoom?.chatRoomId && userInfo?.memberId && hasUnreadMessages) {
-            const readMessage = {
-                type: 'READ',
-                chatRoomId: String(chatRoom.chatRoomId),
-                senderId: String(userInfo.memberId),
-                timestamp: new Date().toISOString()
-            };
+        if (hasUnreadMessages) {
+            setMessages(prevMessages =>
+                prevMessages.map(msg =>
+                    msg.sender_id !== userInfo.memberId ? { ...msg, is_read: 1 } : msg
+                )
+            );
+        }
 
-            try {
-                console.log("읽음 처리 메시지 전송:", readMessage);
-                stompClient.publish({
-                    destination: `/app/chat.readMessageStatus`,
-                    body: JSON.stringify(readMessage)
-                });
+        if (stompClient?.active) {
+            stompClient.publish({
+                destination: `/app/chat.readMessageStatus`,
+                body: JSON.stringify({
+                    type: 'READ',
+                    chatRoomId: String(chatRoom.chatRoomId),
+                    senderId: String(userInfo.memberId),
+                    timestamp: new Date().toISOString()
+                })
+            });
+        }
 
-                // ⭐ 여기서 부모 컴포넌트의 상태를 즉시 업데이트합니다. ⭐
-                if (onMarkAsRead) {
-                    onMarkAsRead(chatRoom.chatRoomId);
-                }
-            } catch (e) {
-                console.error("읽음 처리 메시지 전송 실패:", e);
-            }
+        if (onMarkAsRead) {
+            onMarkAsRead(chatRoom.chatRoomId);
         }
     };
-
     const scrollToBottom = () => {
         if (messagesContainerRef.current) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -476,12 +473,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             // 구독 설정
             client.subscribe(`/topic/chat/${chatRoomId}`, (incomingMessage) => {
                 const receivedMessage = JSON.parse(incomingMessage.body);
-                console.log('받은 WebSocket 메시지:', receivedMessage);
-
-
-
-
-                // 텍스트 메시지 삭제 이벤트를 처리하는 로직 추가
                 if (receivedMessage.type === 'DELETE') {
                     setMessages(prevMessages =>
                         prevMessages.map(msg =>
@@ -502,17 +493,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     );
                 } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
                     const convertedMessage = {
-                        // 기존 receivedMessage.messageId 대신 receivedMessage.message_id로 수정
-                        message_id: receivedMessage.message_id,
-                        chat_room_id: receivedMessage.chat_room_id,
-                        sender_id: receivedMessage.sender_id,
-                        // 기존 receivedMessage.messageType 대신 receivedMessage.message_type로 수정
-                        message_type: receivedMessage.message_type,
-                        // 기존 receivedMessage.messageContent 대신 receivedMessage.message_content로 수정
-                        message_content: receivedMessage.message_content,
-                        // created_at과 timestamp도 일치시켜주는 것이 좋습니다.
-                        created_at: receivedMessage.created_at || receivedMessage.timestamp,
-                        is_read: receivedMessage.is_read // 또는 0
+                        message_id: receivedMessage.messageId,
+                        chat_room_id: receivedMessage.chatRoomId,
+                        sender_id: receivedMessage.senderId,
+                        message_type: receivedMessage.messageType,
+                        message_content: receivedMessage.messageContent,
+                        created_at: receivedMessage.timestamp,
+                        is_read: 0
                     };
                     setMessages(prevMessages => {
                         const isDuplicate = prevMessages.some(
@@ -523,6 +510,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     if (onUpdateLastMessage) {
                         const lastMessageContent = receivedMessage.messageType === 'image' ? '사진' : receivedMessage.messageContent;
                         onUpdateLastMessage(receivedMessage.chatRoomId, lastMessageContent, receivedMessage.messageType, receivedMessage.timestamp);
+                    }
+
+                    // 🔹 채팅방이 닫혀있으면 unreadCount 증가 요청
+                    if (onIncrementUnreadCount && !isChatRoomActive(receivedMessage.chatRoomId)) {
+                        onIncrementUnreadCount(receivedMessage.chatRoomId);
                     }
                 }
             });
@@ -578,23 +570,20 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         };
     }, [selectedImages]);
 
-    const DetailChat = ({ chatRoom, stompClient, onMarkAsRead }) => {
+    useEffect(() => {
+        // 컴포넌트가 마운트될 때 (채팅방에 들어갈 때)
+        if (stompClient && stompClient.active) {
+            // 서버에 읽음 처리 메시지 전송
+            const readMessage = { chatRoomId: chatRoom.chatRoomId, memberId: userInfo.memberId };
+            stompClient.publish({
+                destination: `/app/chat/markAsRead`, // 서버의 읽음 처리 엔드포인트
+                body: JSON.stringify(readMessage)
+            });
+        }
+        // ... (기타 useEffect 로직)
+    }, [stompClient, chatRoom.chatRoomId, userInfo?.memberId]);
 
-        useEffect(() => {
-            // 컴포넌트가 마운트될 때 (채팅방에 들어갈 때)
-            if (stompClient && stompClient.active) {
-                // 서버에 읽음 처리 메시지 전송
-                const readMessage = { chatRoomId: chatRoom.chatRoomId, memberId: userInfo.memberId };
-                stompClient.publish({
-                    destination: `/app/chat/markAsRead`, // 서버의 읽음 처리 엔드포인트
-                    body: JSON.stringify(readMessage)
-                });
-            }
-            // ... (기타 useEffect 로직)
-        }, [stompClient, chatRoom.chatRoomId, userInfo?.memberId]);
-
-        // ... (기존 코드)
-    };
+    // ... (기존 코드)
 
     useEffect(() => {
         if (!chatRoomId || !userInfo?.memberId) return;
@@ -997,10 +986,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             <MenuItem value="">
                                 <em>선택</em>
                             </MenuItem>
-                            <MenuItem value="SPAM">스팸</MenuItem>
-                            <MenuItem value="HARASSMENT">괴롭힘</MenuItem>
-                            <MenuItem value="INAPPROPRIATE_CONTENT">부적절한 내용</MenuItem>
-                            <MenuItem value="ETC">기타</MenuItem>
+                            <MenuItem value="스팸">스팸</MenuItem>
+                            <MenuItem value="괴롭힘">괴롭힘</MenuItem>
+                            <MenuItem value="부적절한 내용">부적절한 내용</MenuItem>
+                            <MenuItem value="기타">기타</MenuItem>
                         </Select>
                     </FormControl>
                     <TextField

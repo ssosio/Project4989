@@ -259,7 +259,10 @@ export const Header = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
               >
-                <MenuItem onClick={handleClose}>내 프로필</MenuItem>
+                <MenuItem onClick={() => {
+                  navi('/mypage');
+                  handleClose();
+                }}>마이페이지</MenuItem>
                 <MenuItem onClick={() => {
                   handleLogout();
                   handleClose();

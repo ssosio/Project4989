@@ -26,4 +26,8 @@ public interface MemberMapper {
     public MemberDto findByLoginIdAndPhone(@Param("loginId") String loginId, @Param("phoneNumber") String phoneNumber);
     // 비밀번호 업데이트
     public void updatePassword(@Param("loginId") String loginId, @Param("password") String password);
+    
+    // 마이페이지 관련 메서드들
+    public void updateProfile(MemberDto member);
+    public void updateProfileImage(@Param("loginId") String loginId, @Param("profileImageUrl") String profileImageUrl);
 }
