@@ -92,6 +92,10 @@ public class SecurityConfig {
                 .requestMatchers("/chatsave/**","/read").permitAll()
                 .requestMatchers("/api/region/register").permitAll()
                 .requestMatchers("/submit").authenticated()
+                // 경매 조회용 API는 인증 불필요
+                .requestMatchers("/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
+                // 경매 삭제 API는 인증 필요
+                .requestMatchers("/auction/delete/**").authenticated()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
                 .anyRequest().authenticated()
             )
