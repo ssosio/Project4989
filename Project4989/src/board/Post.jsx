@@ -47,7 +47,7 @@ const Post = () => {
         .catch(err=> console.log(err));
     },[]);
 
-    const handleParentChange = (e) => {
+  const handleParentChange = (e) => {
   const val = e.target.value;
 
   if (!val || isNaN(Number(val))) {

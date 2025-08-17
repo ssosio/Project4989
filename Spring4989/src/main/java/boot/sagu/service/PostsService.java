@@ -20,6 +20,7 @@ import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.ReportsDto;
 import boot.sagu.mapper.CarMapperInter;
 import boot.sagu.mapper.CategoryMapperInter;
 import boot.sagu.mapper.EstateMapperInter;
@@ -172,19 +173,19 @@ public class PostsService implements PostsServiceInter{
 	}
 
 	@Override
-	public int countFavorite(int postId) {
+	public int countFavorite(Long postId) {
 		// TODO Auto-generated method stub
 		return postMapper.countFavorite(postId);
 	}
 
 	@Override
-	public boolean isFavorited(int postId, int memberId) {
+	public boolean isFavorited(Long postId, Long memberId) {
 		// TODO Auto-generated method stub
 		return postMapper.existsFavorite(postId, memberId) > 0;
 	}
 
 	@Override
-	public boolean toggleFavorite(int postId, int memberId) {
+	public boolean toggleFavorite(Long postId, Long memberId) {
 		// TODO Auto-generated method stub
 		boolean exists = isFavorited(postId, memberId);
         if (exists) {
@@ -194,6 +195,12 @@ public class PostsService implements PostsServiceInter{
         	postMapper.insertFavorite(postId, memberId);
             return true; // 좋아요됨
         }
+	}
+
+	@Override
+	public void insertReport(ReportsDto dto) {
+		// TODO Auto-generated method stub
+		postMapper.insertReport(dto);
 	}
 
 	

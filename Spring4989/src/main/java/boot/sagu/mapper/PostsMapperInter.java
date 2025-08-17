@@ -3,10 +3,8 @@ package boot.sagu.mapper;
 import java.util.List;
 import java.util.Map;
 
-import boot.sagu.dto.CarDto;
-import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PostsDto;
-import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.ReportsDto;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -20,9 +18,13 @@ public interface PostsMapperInter {
 	public List<Map<String, Object>> getPostListWithNick();
 	public void increaseViewCount(@RequestParam("postId") Long postId);
 	
-	public int countFavorite(@Param("postId") int postId);
-	public int existsFavorite(@Param("postId") int postId, @Param("memberId") int memberId);
-	public int insertFavorite(@Param("postId") int postId, @Param("memberId") int memberId);
-	public int deleteFavorite(@Param("postId") int postId, @Param("memberId") int memberId);
+	//	좋아요	
+	public int countFavorite(@Param("postId") Long postId);
+	public int existsFavorite(@Param("postId") Long postId, @Param("memberId") Long memberId);
+	public int insertFavorite(@Param("postId") Long postId, @Param("memberId") Long memberId);
+	public int deleteFavorite(@Param("postId") Long postId, @Param("memberId") Long memberId);
+	
+	//신고
+	public void insertReport(ReportsDto dto);
 	
 }

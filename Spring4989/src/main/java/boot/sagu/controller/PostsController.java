@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -20,6 +22,7 @@ import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.ReportsDto;
 import boot.sagu.service.CarService;
 import boot.sagu.service.EstateService;
 import boot.sagu.service.ItemService;
@@ -103,6 +106,23 @@ public class PostsController {
 	    return postService.getPostData(postId);
 	}
 	
+	@GetMapping("/cardetail")
+	public CarDto getOneCarData(@RequestParam("postId") Long postId)
+	{
+		return carService.getOneCarData(postId);
+	}
+	
+	@GetMapping("/itemdetail")
+	public ItemDto getOneItemData(@RequestParam("postId") Long postId)
+	{
+		return itemService.getOneItemData(postId);
+	}
+	
+	@GetMapping("/estatedetail")
+	public RealEstateDto getOneEstateData(@RequestParam("postId") Long postId)
+	{
+		return estateService.getOneEstateData(postId);
+	}
 	
 	@PostMapping("/viewcount")
 	public void increaseViewCount(@RequestParam("postId") Long postId)
@@ -112,31 +132,45 @@ public class PostsController {
 
 	
 	@GetMapping("/count")
-	 public Map<String, Object> count(@RequestParam("postId") int postId) {
+	 public Map<String, Object> count(@RequestParam("postId") Long postId) {
         int count = postService.countFavorite(postId);
         return Map.of("count", count);
     }
 	
-	/*
-	//	count + 내가 찜했는지
-    @GetMapping("/status")
-    public Map<String, Object> status(@RequestParam("postId") int postId,
-                                      @AuthenticationPrincipal JwtUtil jwt) {
-        // Jwt에 memberId 클레임이 있다고 가정 (문자/숫자 어떤 타입이어도 toString 후 파싱)
-        int memberId = Integer.parseInt(String.valueOf(jwt.extractMemberId("memberId")));
-        boolean favorited = postService.isFavorited(postId, memberId);
-        int count = postService.countFavorite(postId);
-        return Map.of("favorited", favorited, "count", count);
-    }
-    
-    @PostMapping("/toggle")
-    public Map<String, Object> toggle(@RequestParam("postId") int postId,
-                                      @AuthenticationPrincipal JwtUtil jwt) {
-        int memberId = Integer.parseInt(String.valueOf(jwt.extractMemberId("memberId")));
-        boolean favoritedNow = postService.toggleFavorite(postId, memberId); // 토글 후 상태
-        int count = postService.countFavorite(postId);
-        return Map.of("favorited", favoritedNow, "count", count);
-    }
-	*/
-
+	@GetMapping("/checkfav")
+	public Map<String, Boolean> isFavorited(@RequestParam("postId") Long postId,
+			@RequestHeader("Authorization") String authorization)
+	{
+		String token = authorization.substring(7);
+		long memberId=jwtUtil.extractMemberId(token);
+		boolean favorited=postService.isFavorited(postId, (long)memberId);
+		return Map.of("favorited",favorited);
+	}
+	
+	@PostMapping("/toggle")
+	public Map<String, Object> toggleFavorite(@RequestParam("postId") Long postId,
+			@RequestHeader("Authorization") String authorization)
+	{
+		String token=authorization.substring(7);
+		long memberId=jwtUtil.extractMemberId(token);
+		boolean nowFavorited=postService.toggleFavorite(postId, (long)memberId);
+		int count=postService.countFavorite(postId);
+		return Map.of("favorited",nowFavorited,"count",count);
+	}
+	
+	@PostMapping("report")
+	public ResponseEntity<Void> insertReport(@ModelAttribute ReportsDto dto,
+            @RequestHeader("Authorization") String authorization) 
+	{
+		String token=authorization.substring(7);
+	if (token == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+	
+	long memberId = jwtUtil.extractMemberId(token); // 토큰에 넣어둔 클레임 키 사용
+	dto.setReporterId(memberId);              // ✅ 여기서 주입
+	
+	postService.insertReport(dto);
+	return ResponseEntity.ok().build();
+	}
+	
+	
 }

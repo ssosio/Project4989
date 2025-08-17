@@ -12,7 +12,7 @@ public class ReportsDto {
 	
 	private Long reportId;
 	private Long reporterId;
-	private String target_type;
+	private String targetType;
 	private Long targetId;
 	private String reason;
 	private String status;

@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import boot.sagu.dto.CarDto;
-import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.ReportsDto;
 import jakarta.servlet.http.HttpSession;
 
 public interface PostsServiceInter {
@@ -24,9 +24,11 @@ public interface PostsServiceInter {
 	public void increaseViewCount(@RequestParam("postId") Long postId);
 	
 	
-	public int countFavorite(int postId);
-	public boolean isFavorited(int postId, int memberId);
-	public boolean toggleFavorite(int postId, int memberId);
+	public int countFavorite(Long postId);
+	public boolean isFavorited(Long postId, Long memberId);
+	public boolean toggleFavorite(Long postId, Long memberId);
 	
+	public void insertReport(ReportsDto dto);
 	
+
 }

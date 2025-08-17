@@ -20,7 +20,8 @@ const GoodsDetail = () => {
   const [estate,setEstate]=useState(null);
   const [photos,setPhotos]=useState([]);
 
-
+  const [count,setCount]=useState(0);
+  const [favorited,setFavorited]=useState(false);
 
  
   // const photoUrl = "http://localhost:4989/save/";
@@ -28,19 +29,6 @@ const GoodsDetail = () => {
   // JWT 토큰 가져오기
   const { userInfo } = useContext(AuthContext);
  
-  // view count
-  const incCalledRef = useRef(false);
-
-  useEffect(() => {
-    if (!postId) return;
-    if (incCalledRef.current) return;   // ✅ 두 번째 실행 차단 (StrictMode/재렌더)
-    incCalledRef.current = true;
-
-    axios.post(`http://localhost:4989/post/viewcount?postId=${postId}`)
-      .catch(console.error);
-  }, [postId]);
-
-
 
   useEffect(() => {
     console.log("✅ useEffect 실행됨. postId:", postId);
@@ -49,9 +37,9 @@ const GoodsDetail = () => {
   
 
   const fetchPostData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`);
-  const fetchGoodsData = axios.get(`http://localhost:4989/goods/detail?postId=${postId}`);
-  const fetchCarsData = axios.get(`http://localhost:4989/cars/detail?postId=${postId}`);
-  const fetchEstateData = axios.get(`http://localhost:4989/estate/detail?postId=${postId}`);
+  const fetchGoodsData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`);
+  const fetchCarsData = axios.get(`http://localhost:4989/post/cardetail?postId=${postId}`);
+  const fetchEstateData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`);
 
   Promise.all([fetchPostData, fetchGoodsData,fetchCarsData,fetchEstateData])
     .then(([postRes, goodsRes,carsRes,estateRes]) => {
@@ -73,12 +61,87 @@ const GoodsDetail = () => {
 }, [postId]);
 
 
+  // view count(조회수)
+  const incCalledRef = useRef(false);
+
+  useEffect(() => {
+    if (!postId) return;
+    if (incCalledRef.current) return;   // ✅ 두 번째 실행 차단 (StrictMode/재렌더)
+    incCalledRef.current = true;
+
+    axios.post(`http://localhost:4989/post/viewcount?postId=${postId}`)
+      .catch(console.error);
+  }, [postId]);
+
+  //좋아요갯수
+  useEffect(()=>{
+    axios.get(`http://localhost:4989/post/count?postId=${postId}`)
+    .then(({ data }) => setCount(Number(data.count) || 0))
+    .catch(err=> console.log(err));
+  },[postId]);
+
+  // 내가 좋아요 눌렀는지 (로그인시에만 호출)
+// useEffect(() => {
+//   if (!postId || !userInfo?.memberId) return;
+//   axios
+//     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
+//     .then(({ data }) => setFavorited(Boolean(data.favorited)))
+//     .catch(() => setFavorited(false));
+// }, [postId, userInfo]);
+
+// 내가 좋아요 눌렀는지 (로그인시에만 호출)
+useEffect(() => {
+  if (!postId || !userInfo?.memberId) return;
+
+  console.group('[checkfav] 요청 시작');
+  console.log('postId:', postId, 'memberId:', userInfo.memberId);
+
+  axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
+    .then(({ data, status }) => {
+      console.log('HTTP status:', status);
+      console.log('response data:', data);
+      const value = !!data?.favorited;
+      console.log('parsed favorited:', value);
+      setFavorited(value);
+    })
+    .catch((err) => {
+      console.error('요청 실패:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
+      setFavorited(false);
+    })
+    .finally(() => console.groupEnd());
+}, [postId, userInfo]);
+
+
+
+  //좋아요 토글
+  const onToggle = async () => {
+  if (!userInfo?.memberId) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+  try {
+    const { data } = await axios.post(
+      `http://localhost:4989/post/toggle`,
+      null,                           
+      { params: { postId } }          
+    );
+    setFavorited(Boolean(data.favorited));         
+    setCount(Number(data.count) || 0);              
+  } catch (e) {
+    console.error(e);
+    alert('잠시 후 다시 시도해주세요.');
+  }
+};
 
 const handleSubmitReport = async () => {
     if (!reportContent.trim()) return;
     try {
       setSubmitting(true);
-      await axios.post('http://localhost:4989/report', {
+      await axios.post('http://localhost:4989/post/report', {
         postId,
         content: reportContent.trim(),
       });
@@ -115,7 +178,10 @@ const handleSubmitReport = async () => {
       <p>location: </p>
       <p>조회수: {post.viewCount}</p>
       <p>거래상태 :{post.status==='ON_SALE'?'판매중':post.status==='RESERVED'?'예약':'판매완료'}</p>
-      
+      <button onClick={onToggle} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ fontSize: 20 }}>{favorited ? "❤️" : "🤍"}</span>
+      <span>{count}</span>
+    </button>
       
       <h3>사진 목록</h3>
       {photos.length > 0 ? (
@@ -169,7 +235,7 @@ const handleSubmitReport = async () => {
 
       {/* 신고 모달 추가 */}
       {
-        userInfo.memberId ? (
+        !!userInfo?.memberId && (
           <>
           <div>
           <button type='button'>거래</button>
@@ -186,10 +252,7 @@ const handleSubmitReport = async () => {
       />
       </div>
           </>
-        ): (
-    // 비로그인 안내 (선택)
-    <button onClick={() => alert('로그인 후 이용 가능합니다.')}>신고/문의</button>
-  )}
+        )}
       
       
     </div>
