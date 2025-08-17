@@ -50,7 +50,7 @@ const ChatItem = styled(ListItem)(() => ({
     }
 }));
 
-const ChatMain = ({ open, onClose }) => {
+const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
     const [openChatRooms, setOpenChatRooms] = useState([]);
     const [chatList, setChatList] = useState([]);
     const { userInfo } = useContext(AuthContext);
@@ -77,6 +77,13 @@ const ChatMain = ({ open, onClose }) => {
         }
     };
 
+    const calculateAndNotifyUnreadCount = (list) => {
+        const totalUnreadCount = list.reduce((sum, room) => sum + (room.unreadCount || 0), 0);
+        if (onUnreadCountChange) {
+            onUnreadCountChange(totalUnreadCount);
+        }
+    };
+
     const handleUpdateLastMessage = (updatedChatRoomId, lastMessageContent, lastMessageType, lastMessageTime) => {
         setChatList(prevList => {
             const newList = prevList.map(room => {
@@ -94,7 +101,6 @@ const ChatMain = ({ open, onClose }) => {
         });
     };
 
-    // 추가: DetailChat에서 호출할 읽음 처리 핸들러
     const handleMarkAsRead = (chatRoomId) => {
         setChatList(prevList =>
             prevList.map(room => {
@@ -106,12 +112,30 @@ const ChatMain = ({ open, onClose }) => {
         );
     };
 
-    // 채팅방 목록 가져오기
+    const handleIncrementUnreadCount = (chatRoomId) => {
+        setChatList(prevList =>
+            prevList.map(room =>
+                room.chatRoomId === chatRoomId
+                    ? { ...room, unreadCount: (room.unreadCount || 0) + 1 }
+                    : room
+            )
+        );
+    };
+
+    const isChatRoomActive = (chatRoomId) => {
+        return openChatRooms.some(room => room.chatRoomId === chatRoomId);
+    };
+
+    // 💡 수정된 useEffect: open 상태가 변경될 때마다 채팅 목록을 다시 가져오도록 변경
     useEffect(() => {
-        if (userInfo) {
+        if (open && userInfo) {
             fetchChatList();
         }
-    }, [userInfo]);
+    }, [open, userInfo]);
+
+    useEffect(() => {
+        calculateAndNotifyUnreadCount(chatList);
+    }, [chatList]);
 
     const fetchChatList = () => {
         if (!userInfo || !userInfo.memberId) {
@@ -128,8 +152,10 @@ const ChatMain = ({ open, onClose }) => {
                         return timeB - timeA;
                     });
                     setChatList(sortedChatRooms);
+                    calculateAndNotifyUnreadCount(sortedChatRooms);
                 } else {
                     setChatList([]);
+                    calculateAndNotifyUnreadCount([]);
                 }
             })
             .catch(error => {
@@ -138,7 +164,6 @@ const ChatMain = ({ open, onClose }) => {
             });
     };
 
-    // Stomp 클라이언트 연결 및 구독
     useEffect(() => {
         if (!open || !userInfo) {
             if (stompClient && stompClient.active) {
@@ -158,39 +183,35 @@ const ChatMain = ({ open, onClose }) => {
         client.onConnect = () => {
             console.log('STOMP 연결 성공');
             setStompClient(client);
-
             client.subscribe(`/user/${userInfo.memberId}/queue/chat-rooms`, message => {
                 const chatRoomUpdate = JSON.parse(message.body);
                 setChatList(prevList => {
                     const existingIndex = prevList.findIndex(room => room.chatRoomId === chatRoomUpdate.chatRoomId);
+                    let newList;
                     if (existingIndex > -1) {
-                        const newList = [...prevList];
-                        // 서버에서 보낸 unreadCount를 그대로 사용
+                        newList = [...prevList];
                         newList[existingIndex] = { ...newList[existingIndex], ...chatRoomUpdate };
-                        return newList.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
                     } else {
-                        // 새로운 채팅방일 경우 추가
-                        return [chatRoomUpdate, ...prevList].sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+                        newList = [chatRoomUpdate, ...prevList];
                     }
+                    const sortedList = newList.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+                    calculateAndNotifyUnreadCount(sortedList);
+                    return sortedList;
                 });
             });
 
-            // 읽음 처리 메시지 수신 구독
             client.subscribe(`/user/${userInfo.memberId}/queue/read`, message => {
                 const readUpdate = JSON.parse(message.body);
-                console.log("읽음 처리 WebSocket 메시지 수신:", readUpdate);
-                console.log("받은 chatRoomId 타입:", typeof readUpdate.chatRoomId);
-
-                setChatList(prevList =>
-                    prevList.map(room => {
-                        console.log(`채팅방 ${room.chatRoomId} 비교:`, room.chatRoomId, 'vs', readUpdate.chatRoomId, '일치:', room.chatRoomId === readUpdate.chatRoomId);
-                        // chatRoomId가 Long 타입으로 들어오므로, Number로 변환하여 비교합니다.
+                setChatList(prevList => {
+                    const newList = prevList.map(room => {
                         if (room.chatRoomId === Number(readUpdate.chatRoomId)) {
                             return { ...room, unreadCount: 0 };
                         }
                         return room;
-                    })
-                );
+                    });
+                    calculateAndNotifyUnreadCount(newList);
+                    return newList;
+                });
             });
         };
 
@@ -207,20 +228,17 @@ const ChatMain = ({ open, onClose }) => {
         };
     }, [open, userInfo?.memberId, SERVER_IP, SERVER_PORT]);
 
+
     const handleChatRoomClick = (room) => {
         const isAlreadyOpen = openChatRooms.find(openRoom => openRoom.chatRoomId === room.chatRoomId);
         if (!isAlreadyOpen) {
             setOpenChatRooms(prev => [...prev, room]);
         }
 
-        // 채팅방을 열 때 unreadCount를 0으로 바로 업데이트 (UI 반응성 향상)
-        handleMarkAsRead(room.chatRoomId);
-
-        // 서버로 읽음 처리 요청
         if (stompClient && stompClient.active) {
             const readMessage = { chatRoomId: room.chatRoomId, memberId: userInfo.memberId };
             stompClient.publish({
-                destination: `/app/chat/markAsRead`, // 서버의 읽음 처리 엔드포인트
+                destination: `/app/chat/markAsRead`,
                 body: JSON.stringify(readMessage)
             });
         }
@@ -371,7 +389,9 @@ const ChatMain = ({ open, onClose }) => {
                         offset={index * 460}
                         onLeaveChat={handleLeaveChatSuccess}
                         onUpdateLastMessage={handleUpdateLastMessage}
-                        onMarkAsRead={handleMarkAsRead} // 추가: DetailChat 컴포넌트에 읽음 처리 함수 전달
+                        onMarkAsRead={handleMarkAsRead}
+                        onIncrementUnreadCount={handleIncrementUnreadCount}
+                        isChatRoomActive={isChatRoomActive}
                         stompClient={stompClient}
                     />
                 );

@@ -2,6 +2,7 @@ package boot.sagu.mapper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -32,5 +33,11 @@ public interface ChatMapper {
 	public void deleteOldChatRooms(@Param("hours") int hours);
 	
 	public Map<String, Long> getSellerAndBuyerIds(@Param("chatRoomId") Long chatRoomId);
+	
+    public void insertChatroom(ChatDto chatDto);
+
+    public Long findChatroomByProductIdAndBuyerId(@Param("productId") Long productId, @Param("buyerId") Long buyerId);
+    
+    public Map<String, Object> getChatRoomById(@Param("chatRoomId") Long chatRoomId, @Param("memberId") Long memberId);
 	
 }

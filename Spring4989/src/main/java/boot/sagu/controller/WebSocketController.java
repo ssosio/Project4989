@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
 import boot.sagu.dto.WebSocketMessageDto;
 import boot.sagu.service.ChatMessageServiceInter;
@@ -73,13 +74,28 @@ public class WebSocketController {
 
     @MessageMapping("/chat.addUser")
     public WebSocketMessageDto addUser(@Payload WebSocketMessageDto webSocketMessage, 
-                                     SimpMessageHeaderAccessor headerAccessor) {
-        // 사용자 이름을 WebSocket 세션에 추가
+                                       SimpMessageHeaderAccessor headerAccessor) {
+        // 세션에 사용자 저장
         headerAccessor.getSessionAttributes().put("username", webSocketMessage.getSenderId());
-        
-        // 특정 채팅방에 사용자 입장 메시지 전송
+
+        // === 입장 시 읽음 처리 추가 ===
+        chatMessageService.markMessagesAsRead(
+            Long.valueOf(webSocketMessage.getChatRoomId()), 
+            Long.valueOf(webSocketMessage.getSenderId())
+        );
+
+        // READ_UPDATE 브로드캐스트
+        WebSocketMessageDto readUpdate = new WebSocketMessageDto();
+        readUpdate.setType("READ_UPDATE");
+        readUpdate.setChatRoomId(webSocketMessage.getChatRoomId());
+        readUpdate.setSenderId(webSocketMessage.getSenderId());
+        readUpdate.setTimestamp(new Timestamp(System.currentTimeMillis()));
+
+        messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), readUpdate);
+
+        // 입장 알림도 같이 전송
         messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), webSocketMessage);
-        
+
         return webSocketMessage;
     }
     

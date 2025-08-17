@@ -136,4 +136,56 @@
         WHERE chat_room_id = #{chatRoomId}
     </select>
     
+ <insert id="insertChatroom" parameterType="boot.sagu.dto.ChatDto" useGeneratedKeys="true" keyProperty="chat_room_id">
+    INSERT INTO chatroom (product_id, seller_id, buyer_id)
+    VALUES (#{product_id}, #{seller_id}, #{buyer_id})
+</insert>
+
+<select id="findChatroomByProductIdAndBuyerId" resultType="java.lang.Long">
+    SELECT chat_room_id FROM chatroom WHERE product_id = #{productId} AND buyer_id = #{buyerId}
+</select>
+
+<select id="getChatRoomById" resultType="java.util.Map">
+    SELECT 
+        cr.chat_room_id as chatRoomId,
+        cr.product_id as productId,
+        cr.seller_id as sellerId,
+        cr.buyer_id as buyerId,
+        seller.nickname as sellerNickname,
+        buyer.nickname as buyerNickname,
+        seller.profile_image_url as sellerProfileImage,
+        buyer.profile_image_url as buyerProfileImage,
+        lastMsg.message_content as lastMessage,
+        lastMsg.message_type as lastMessageType,
+        lastMsg.created_at as lastMessageTime,
+        COALESCE(unread.unreadCount, 0) as unreadCount,
+        p.title as postTitle,
+        p.price as postPrice
+    FROM chatroom cr
+    LEFT JOIN members seller ON cr.seller_id = seller.member_id
+    LEFT JOIN members buyer ON cr.buyer_id = buyer.member_id
+    LEFT JOIN posts p ON cr.product_id = p.post_id
+
+    LEFT JOIN (
+        SELECT 
+            chat_room_id,
+            message_content,
+            message_type,
+            created_at,
+            ROW_NUMBER() OVER(PARTITION BY chat_room_id ORDER BY created_at DESC) as rn
+        FROM chatmessage
+    ) lastMsg ON cr.chat_room_id = lastMsg.chat_room_id AND lastMsg.rn = 1
+    
+    LEFT JOIN (
+        SELECT 
+            chat_room_id,
+            COUNT(*) AS unreadCount
+        FROM chatmessage
+        WHERE sender_id != #{memberId}
+          AND is_read = 0
+        GROUP BY chat_room_id
+    ) unread ON cr.chat_room_id = unread.chat_room_id
+    
+    WHERE cr.chat_room_id = #{chatRoomId}
+</select>
 </mapper>
