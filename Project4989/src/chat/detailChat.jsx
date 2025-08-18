@@ -992,7 +992,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             <MenuItem value="스팸">스팸</MenuItem>
                             <MenuItem value="괴롭힘">괴롭힘</MenuItem>
                             <MenuItem value="부적절한 내용">부적절한 내용</MenuItem>
-                            <MenuItem value="ETC">기타</MenuItem>
+                            <MenuItem value="기타">기타</MenuItem>
                         </Select>
                     </FormControl>
                     <TextField

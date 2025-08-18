@@ -5,6 +5,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -84,7 +85,13 @@ public class SecurityConfig {
             
             // HTTP 요청에 대한 접근 권한 설정
             .authorizeHttpRequests(authz -> authz
-            	.requestMatchers("/ws/**","/post/**", "/goods/**", "/cars/**", "/estate/**","/room/enter","/room/create-with-message","/chat/**").permitAll()
+                // 마이페이지 관련 API는 인증이 필요함 (JWT 토큰 검증) - 가장 먼저 설정
+                .requestMatchers(HttpMethod.GET ,"/member/**").authenticated()
+                // 채팅 관련 API는 인증 없이 접근 가능
+                .requestMatchers("/chat/**", "/chat/rooms/**", "/chat/rooms", "/unread-count/**", "/api/chat/**","/room/create-with-message","/room/enter","/estate/**").permitAll()
+                // 기타 공개 경로들
+            	.requestMatchers("/ws/**").permitAll()
+            	.requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/ws/**").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
@@ -101,12 +108,21 @@ public class SecurityConfig {
             )
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
+                    // 상세한 디버깅을 위한 로그 추가
+                    System.out.println("=== Security Exception Details ===");
+                    System.out.println("Request URI: " + request.getRequestURI());
+                    System.out.println("Request Method: " + request.getMethod());
+                    System.out.println("Authorization Header: " + request.getHeader("Authorization"));
+                    System.out.println("Error: " + authException.getMessage());
+                    System.out.println("Error Type: " + authException.getClass().getSimpleName());
+                    System.out.println("================================");
+                    
                     response.setContentType("application/json;charset=UTF-8");
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.getWriter().write("{\"error\": \"Unauthorized\"}");
                 })
             )
-            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
             
             // OAuth2 로그인 설정
             .oauth2Login(oauth2 -> oauth2
@@ -117,6 +133,7 @@ public class SecurityConfig {
                 // 로그인 성공 시 실행될 핸들러를 등록
                 .successHandler(oAuth2LoginSuccessHandler())
             );
+        
             
         return http.build();
     }

@@ -64,4 +64,26 @@
 		WHERE login_id = #{loginId}
 	</update>
 	
+	<!-- 마이페이지 관련 SQL -->
+	
+	<!-- 프로필 정보 업데이트 -->
+	<update id="updateProfile" parameterType="member">
+		UPDATE members 
+		SET 
+			nickname = #{nickname},
+			email = #{email},
+			phone_number = #{phoneNumber},
+			updated_at = CURRENT_TIMESTAMP 
+		WHERE member_id = #{memberId}
+	</update>
+	
+	<!-- 프로필 이미지 업데이트 -->
+	<update id="updateProfileImage">
+		UPDATE members 
+		SET 
+			profile_image_url = #{profileImageUrl},
+			updated_at = CURRENT_TIMESTAMP 
+		WHERE login_id = #{loginId}
+	</update>
+	
 </mapper>

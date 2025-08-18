@@ -12,6 +12,10 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
       enabled: true
+  # 정적 리소스 설정 추가
+  web:
+    resources:
+      static-locations: classpath:/static/, classpath:/public/, file:save/
   # 분리된 설정 파일들을 포함하도록 설정
   profiles:
     include: 
