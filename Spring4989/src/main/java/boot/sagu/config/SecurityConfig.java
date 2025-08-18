@@ -97,7 +97,7 @@ public class SecurityConfig {
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
-                .requestMatchers("/api/region/register").permitAll()
+                .requestMatchers("/api/region/**","/api/member-region/**").permitAll()
                 .requestMatchers("/submit").authenticated()
                 // 경매 조회용 API는 인증 불필요
                 .requestMatchers("/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()

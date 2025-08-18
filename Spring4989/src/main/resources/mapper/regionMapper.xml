@@ -6,7 +6,15 @@
    <insert id="insertRegion" parameterType="boot.sagu.dto.RegionDto">
       INSERT INTO regions VALUES (null,#{province},#{city},#{district},#{town},#{latitude},#{longitude})
    </insert>
-
    
+    <select id="findRegionsByKeyword" resultType="boot.sagu.dto.RegionDto">
+        SELECT * FROM regions
+        WHERE 
+            (province IS NOT NULL AND province LIKE CONCAT('%', #{keyword}, '%')) OR
+            (city IS NOT NULL AND city LIKE CONCAT('%', #{keyword}, '%')) OR
+            (district IS NOT NULL AND district LIKE CONCAT('%', #{keyword}, '%')) OR
+            (town IS NOT NULL AND town LIKE CONCAT('%', #{keyword}, '%'))
+        LIMIT 10
+    </select>
    
 </mapper>

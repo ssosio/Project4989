@@ -1,8 +1,10 @@
 package boot.sagu.controller;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,6 +107,23 @@ public class RegionController {
             System.err.println("DB 저장 오류: " + e.getMessage());
             e.printStackTrace(); 
             return ResponseEntity.status(500).body("DB 저장 중 오류가 발생했습니다.");
+        }
+    }
+    
+    @GetMapping("/search")
+    public ResponseEntity<List<RegionDto>> searchRegions(@RequestParam("keyword") String keyword) {
+        if (keyword == null || keyword.isEmpty()) {
+            // 키워드가 없으면 빈 리스트를 반환
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+
+        try {
+            List<RegionDto> results = regionMapper.findRegionsByKeyword(keyword);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.err.println("DB 검색 오류: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
         }
     }
 }
