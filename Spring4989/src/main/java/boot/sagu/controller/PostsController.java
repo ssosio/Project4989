@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -158,6 +160,8 @@ public class PostsController {
 		return Map.of("favorited",nowFavorited,"count",count);
 	}
 	
+	/*
+	//신고
 	@PostMapping("report")
 	public ResponseEntity<Void> insertReport(@ModelAttribute ReportsDto dto,
             @RequestHeader("Authorization") String authorization) 
@@ -171,6 +175,38 @@ public class PostsController {
 	postService.insertReport(dto);
 	return ResponseEntity.ok().build();
 	}
+	*/
 	
+	@PostMapping(value = "/update")
+    public ResponseEntity<Void> updatePost(
+            @ModelAttribute PostsDto post,                     // postId 필수
+            @ModelAttribute CarDto car,
+            @ModelAttribute RealEstateDto realEstate,
+            @ModelAttribute ItemDto item,
+            @RequestParam(value = "uploadFiles", required = false) List<MultipartFile> uploadFiles,
+            @RequestParam(value = "deletePhotoIds", required = false) List<Long> deletePhotoIds,
+            @RequestParam(value = "mainPhotoId", required = false) Long mainPhotoId,
+            @RequestHeader("Authorization") String authorization,
+            HttpSession session
+    ) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        long actorId = jwtUtil.extractMemberId(authorization.substring(7));
+
+        postService.updatePostAll(post, car, realEstate, item,
+                                  uploadFiles, deletePhotoIds, mainPhotoId,
+                                  session, actorId);
+        return ResponseEntity.ok().build();
+    }
 	
+	@DeleteMapping("/{postId}")
+    public ResponseEntity<Void> deletePost(@PathVariable("postId") Long postId,
+                                           @RequestHeader("Authorization") String authorization,
+                                           @ModelAttribute PostsDto dto) {
+        // JWT 검증 로직 넣을 수 있음 (작성자 본인인지 확인)
+		long actorId=jwtUtil.extractMemberId(authorization.substring(7));
+        postService.deletePost(postId, dto, actorId);
+        return ResponseEntity.ok().build();
+    }
 }

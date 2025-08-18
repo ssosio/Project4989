@@ -88,7 +88,7 @@
 
 
 	<!-- 찜 추가 -->
-	<insert id="insertFavorite" >
+	<insert id="insertFavorite">
 		INSERT INTO favorites (
 		member_id,
 		post_id,
@@ -107,7 +107,7 @@
 	</delete>
 
 	<!-- 찜 개수 조회 -->
-	<select id="countFavorite" parameterType="long" >
+	<select id="countFavorite" parameterType="long">
 		SELECT COUNT(*)
 		FROM favorites
 		WHERE post_id = #{postId}
@@ -119,18 +119,82 @@
 		WHERE post_id = #{postId}
 		AND member_id = #{memberId}
 	</select>
-	
+
+	<!-- 수정 -->
+	<!-- 게시글 공통 수정 -->
+	<update id="updatePost" parameterType="posts"> UPDATE posts <set>
+			<if test="title != null">title = #{title},</if>
+      <if test="price != null">price = #{price},</if>
+      <if test="content != null">content = #{content},</if>
+      <if test="tradeType != null">trade_type = #{tradeType},</if>
+
+      <if test="postType != null">post_type = #{postType},</if> updated_at
+		= CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul') </set> WHERE post_id =
+		#{postId} </update>
+
+	<!-- 자동차 수정 -->
+	<update id="updateCar" parameterType="car"> UPDATE cars <set>
+			<if test="brand != null">brand = #{brand},</if>
+			<if test="model != null">model = #{model},</if>
+			<if test="year != null">year = #{year},</if>
+			<if test="mileage != null">mileage = #{mileage},</if>
+			<if test="fuelType != null">fuel_type = #{fuelType},</if>
+			<if test="transmission != null">transmission = #{transmission},</if>
+		</set>
+		WHERE post_id = #{postId} </update>
+
+	<!-- 부동산 수정 -->
+	<update id="updateRealEstate" parameterType="estate"> UPDATE real_estates <set>
+			<if test="propertyType != null">property_type = #{propertyType},</if>
+			<if test="area != null">area = #{area},</if>
+			<if test="rooms != null">rooms = #{rooms},</if>
+			<if test="floor != null">floor = #{floor},</if>
+			<if test="dealType != null">deal_type = #{dealType},</if>
+		</set>
+		WHERE post_id = #{postId} </update>
+
+	<!-- 중고물품(아이템) 수정 -->
+	<update id="updateItem" parameterType="item"> UPDATE used_items <set>
+			<if test="categoryId != null">category_id = #{categoryId},</if>
+			<if test="conditions != null">conditions = #{conditions},</if>
+		</set>
+		WHERE post_id = #{postId} </update>
+
+
+	<!-- 경매 종료시간 24시간 뒤로 -->
+	<update id="updateAuctionEndTimeToNowPlus24H" parameterType="long">
+		UPDATE posts
+		SET auction_end_time = DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'),
+		INTERVAL 24 HOUR)
+		WHERE post_id = #{postId}
+	</update>
+
+	<!--권한 확인-->
+	<select id="findOwnerId" parameterType="long" resultType="long">
+		SELECT member_id
+		FROM posts
+		WHERE post_id = #{postId}
+	</select>
+
+	<!--삭제-->
+	<delete id="deletePost" parameterType="long">
+    DELETE FROM posts 
+    WHERE post_id = #{postId}
+	</delete>
+
+
 	<!-- 신고 -->
 	<insert id="insertReport" parameterType="report">
-  INSERT INTO reports
-    (reporter_id, target_type, target_id, reason, status, created_at)
-  VALUES
-    (#{reporterId},
-     #{targetType},
-     #{targetId},
-     #{reason},
-     #{status},
-     CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'))
-</insert>
+		INSERT INTO reports
+		(reporter_id, target_type, target_id, reason, status, created_at)
+		VALUES
+		(#{reporterId},
+		#{targetType},
+		#{targetId},
+		#{reason},
+		#{status},
+		CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'))
+	</insert>
+
 
 </mapper>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import {useLocation } from 'react-router-dom';
+import {useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
 import { AuthContext } from '../context/AuthContext';
 
@@ -10,7 +10,9 @@ const GoodsDetail = () => {
   const [reportContent, setReportContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { search } = useLocation(); // URL의 ?postId=123
+   // URL의 ?postId=123
+  const location=useLocation();
+  const { search } = location;
   const query = new URLSearchParams(search);
   const postId = query.get("postId");
 
@@ -23,11 +25,14 @@ const GoodsDetail = () => {
   const [count,setCount]=useState(0);
   const [favorited,setFavorited]=useState(false);
 
+  const navi = useNavigate();
  
-  // const photoUrl = "http://localhost:4989/save/";
+  // 상단 state 모음 근처에 추가
+  const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
+
 
   // JWT 토큰 가져오기
-  const { userInfo } = useContext(AuthContext);
+  const { userInfo} = useContext(AuthContext);
  
 
   useEffect(() => {
@@ -137,6 +142,49 @@ useEffect(() => {
   }
 };
 
+
+// 게시글 삭제
+  const handleDeletePost = async () => {
+    if (!postId) return;
+
+    if (!userInfo?.memberId) {
+      alert('로그인이 필요합니다.');
+      navi('/login', { replace: true, state: { from: location.pathname } });
+      return;
+    }
+    if (userInfo.memberId !== post?.memberId) {
+      alert('삭제 권한이 없습니다. 작성자만 삭제할 수 있어요.');
+      return;
+    }
+    if (!window.confirm('정말로 이 게시글을 삭제하시겠어요?')) return;
+
+    setDeleting(true);
+    try {
+      await axios.delete(`http://localhost:4989/post/${postId}`); // 쿠키 인증이면 헤더 없이 OK
+      alert('삭제되었습니다.');
+      navi('/goods');
+    } catch (e) {
+      // 응답 자체가 없을 때 (네트워크/프리플라이트/CORS)
+      if (!e.response) {
+        console.log('navigator.onLine =', navigator.onLine, 'message =', e.message, 'code =', e.code);
+        alert('네트워크/프록시/CORS 문제로 요청이 차단됐습니다. 콘솔 확인!');
+        return;
+      }
+      const { status, data } = e.response;
+      console.log('status =', status, 'data =', data);
+      if (status === 401) {
+        navi('/login', { replace: true, state: { from: location.pathname } });
+      } else if (status === 403) {
+        alert('작성자만 삭제할 수 있어요.');
+      } else if (status === 404) {
+        alert('이미 삭제되었거나 존재하지 않는 게시글입니다.');
+      } else {
+        alert('삭제 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 const handleSubmitReport = async () => {
     if (!reportContent.trim()) return;
     try {
@@ -154,6 +202,7 @@ const handleSubmitReport = async () => {
     } finally {
       setSubmitting(false);
     }
+  
   };
 
 
@@ -240,6 +289,28 @@ const handleSubmitReport = async () => {
           <div>
           <button type='button'>거래</button>
           </div>
+
+      {/* 작성자 본인에게만 보이는 수정 버튼 */}
+        {userInfo?.memberId === post?.memberId && (
+          <div>
+            <button
+              type="button"
+              onClick={() => navi(`/board/update?postId=${postId}`)}  // 라우트는 실제 매칭 경로로
+            >
+              수정
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeletePost}
+              disabled={deleting}
+              style={{ color: 'white', background: '#d23f3f' }}
+            >
+              {deleting ? '삭제 중...' : '삭제'}
+            </button>
+          </div>
+        )}
+
           <div>
           <button onClick={() => setOpen(true)}>신고/문의</button>
         <ReportModal
