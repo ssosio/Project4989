@@ -77,6 +77,13 @@ public class PortOneService {
 	        }
 	    }
 	    
+	    // 결제 요청 (기존 호환성을 위해 유지)
+	    public String requestPayment(String merchantUid, int amount, String name) {
+	    	preparePayment(merchantUid, amount);
+	    	// 프론트에서 iamport.request_pay 호출 시 이 merchantUid와 amount를 사용
+	    	return "/payment-page?merchant_uid=" + merchantUid + "&amount=" + amount + "&name=" + name;
+	    }
+	    
 	    //단건 결제 조회(imp_uid)-> 상태/금액/merchant_uid 검증 용도
 	    public PortOnePayment getPayment(String impUid) {
 	        String token = getAccessToken();
