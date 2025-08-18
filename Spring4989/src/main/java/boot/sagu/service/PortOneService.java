@@ -3,6 +3,9 @@ package boot.sagu.service;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Base64;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -16,11 +19,23 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class PortOneService {
 
-	 @Value("${portone.api-key}")
-	    private String apiKey;
+	@Value("${portone.api-key}")
+	private String apiKey;
 
-	    @Value("${portone.api-secret}")
-	    private String apiSecret;
+	@Value("${portone.api-secret}")
+	private String apiSecret;
+	
+	@Value("${portone.channel-key}")
+	private String channelKey;
+	
+	@Value("${portone.webhook-secret}")
+	private String webhookSecret;
+	
+	@Value("${portone.inicis.merchant-id}")
+	private String inicisMerchantId;
+	
+	@Value("${portone.inicis.license-key}")
+	private String inicisLicenseKey;
 
 	    private String getAccessToken() {
 	    	 RestTemplate rest = new RestTemplate();
@@ -47,11 +62,19 @@ public class PortOneService {
 	        rest.postForEntity("https://api.iamport.kr/payments/prepare", entity, Map.class);
 	    }
 
-	    //프론트 결제창 호출 전 링크 생성 (사전등록 후 링크 반환)
-	    public String requestPayment(String merchantUid, int amount, String name) {
+	    //프론트 결제창 호출 전 사전 결제 등록 (위변조 방지)
+	    public void preparePaymentForAuction(String merchantUid, int amount, String name) {
 	    	preparePayment(merchantUid, amount);
-	        // 프론트에서 iamport.request_pay 호출 시 이 merchantUid와 amount를 사용
-	        return "/payment-page?merchant_uid=" + merchantUid + "&amount=" + amount + "&name=" + name;
+	    }
+	    
+	    // 결제 준비 상태 확인
+	    public boolean isPaymentPrepared(String merchantUid) {
+	        try {
+	            // 결제 준비 상태 확인 로직 (실제 구현 필요)
+	            return true;
+	        } catch (Exception e) {
+	            return false;
+	        }
 	    }
 	    
 	    //단건 결제 조회(imp_uid)-> 상태/금액/merchant_uid 검증 용도
@@ -77,6 +100,23 @@ public class PortOneService {
 	        pay.setAmount(((Number) response.get("amount")).intValue());
 	        pay.setStatus((String) response.get("status")); // paid, ready, cancelled 등
 	        return pay;
+	    }
+	    
+	    // 웹훅 서명 검증
+	    public boolean verifyWebhookSignature(String signature, String body) {
+	        try {
+	            // HMAC-SHA256을 사용한 서명 검증
+	            Mac mac = Mac.getInstance("HmacSHA256");
+	            SecretKeySpec secretKeySpec = new SecretKeySpec(webhookSecret.getBytes(), "HmacSHA256");
+	            mac.init(secretKeySpec);
+	            
+	            byte[] hmac = mac.doFinal(body.getBytes());
+	            String expectedSignature = Base64.getEncoder().encodeToString(hmac);
+	            
+	            return signature.equals(expectedSignature);
+	        } catch (Exception e) {
+	            return false;
+	        }
 	    }
 	    
 	    //결제 취소(환불). amount null이면 전액취소 
