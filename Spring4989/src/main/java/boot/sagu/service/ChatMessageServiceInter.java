@@ -1,6 +1,7 @@
 package boot.sagu.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Param;
 
@@ -22,5 +23,7 @@ public interface ChatMessageServiceInter {
 	
 	public void deleteMessage(Long messageId);
 	
-	 public int getUnreadMessageCount(Long memberId);
+	public int getUnreadMessageCount(Long memberId);
+
+	public void insertFirstChatMessage(Map<String, Object> params);
 }

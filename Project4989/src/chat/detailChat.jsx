@@ -87,7 +87,6 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [reportReason, setReportReason] = useState('');
     const [reportDetail, setReportDetail] = useState('');
-
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [currentResultIndex, setCurrentResultIndex] = useState(0);
@@ -118,10 +117,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         });
     };
 
-    const handleMessageMenuOpen = (event, messageId) => {
+    const handleMessageMenuOpen = (event, message) => {
         event.preventDefault();
-        setMessageMenuAnchorEl({ mouseX: event.clientX, mouseY: event.clientY });
-        setSelectedMessageId(messageId);
+        // ⭐ 변경: 자신이 보낸 메시지인 경우에만 메뉴를 엽니다.
+        if (String(message.sender_id) === String(userInfo.memberId)) {
+            setMessageMenuAnchorEl({ mouseX: event.clientX, mouseY: event.clientY });
+            setSelectedMessageId(message.message_id);
+        }
     };
 
     const handleMessageMenuClose = () => {
@@ -488,7 +490,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     setMessages(prevMessages =>
                         prevMessages.map(msg => ({
                             ...msg,
-                            is_read: msg.is_read === 0 && msg.sender_id !== userInfo.memberId ? 1 : msg.is_read,
+                            is_read: msg.is_read === 0 && msg.sender_id === userInfo.memberId ? 1 : msg.is_read,
                         }))
                     );
                 } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
@@ -581,7 +583,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             });
         }
         // ... (기타 useEffect 로직)
-    }, [stompClient, chatRoom.chatRoomId, userInfo?.memberId]);
+    }, [stompClient, chatRoom.chatRoomId, userInfo?.memberId, otherUserInfo?.memberId]);
 
     // ... (기존 코드)
 
@@ -784,9 +786,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                         borderRadius: isMatch ? '8px' : '0',
                                         padding: isMatch ? '6px' : 0
                                     }}
-                                    onContextMenu={(e) => {
-                                        handleMessageMenuOpen(e, msg.message_id);
-                                    }}
+                                    onContextMenu={(event) => handleMessageMenuOpen(event, msg)}
                                     ref={el => {
                                         if (msg.message_id) messageRefs.current[msg.message_id] = el;
                                     }}
@@ -863,10 +863,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                 : undefined
                         }
                     >
-                        <MenuItem onClick={handleDeleteMessage}>
-                            <DeleteIcon sx={{ mr: 1 }} />
-                            삭제
-                        </MenuItem>
+                        {/* ⭐ 변경: 자신의 메시지인 경우에만 삭제 메뉴를 보여줍니다. */}
+                        {selectedMessageId && messages.find(m => m.message_id === selectedMessageId && String(m.sender_id) === String(userInfo.memberId)) && (
+                            <MenuItem onClick={handleDeleteMessage}>
+                                <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+                                메시지 삭제
+                            </MenuItem>
+                        )}
                     </Menu>
 
                     <Divider />

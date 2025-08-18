@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="boot.sagu.mapper.ChatDeclarationMapper">
+	<insert id="insertDeclaration" parameterType="boot.sagu.dto.ChatDeclarationDto" useGeneratedKeys="true" keyProperty="declaration_id">
+		insert into chatdeclaration (
+			declaration_chat_room_id,
+			declaration_memberid,
+			declaration_opposite_memberid,
+			declaration_type,
+			declaration_content,
+			declaration_time
+		) values (
+			#{declaration_chat_room_id},
+			#{declaration_memberid},
+			#{declaration_opposite_memberid},
+			#{declaration_type},
+			#{declaration_content},
+			now()
+		)
+	</insert>
+</mapper>

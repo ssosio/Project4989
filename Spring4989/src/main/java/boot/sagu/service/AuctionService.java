@@ -16,12 +16,24 @@ import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.mapper.AuctionMapper;
+import boot.sagu.mapper.MemberMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Service
 public class AuctionService implements AuctionServiceInter {
 	
 	@Autowired
 	private AuctionMapper auctionMapper;
+	
+	@Autowired
+	private MemberMapper memberMapper;
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 	
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
@@ -358,5 +370,79 @@ public class AuctionService implements AuctionServiceInter {
 	@Override
 	public void insertBid(AuctionDto auctionDto) {
 		// TODO Auto-generated method stub
+	}
+	
+	// 비밀번호 확인 후 경매 삭제
+	public void deleteAuction(long postId, String loginId, String rawPassword) {
+		// 1. 비밀번호 확인
+		MemberDto member = memberMapper.findByLoginId(loginId);
+		if (member == null) {
+			throw new RuntimeException("사용자를 찾을 수 없습니다.");
+		}
+		
+		// 2. 비밀번호 검증
+		if (!passwordEncoder.matches(rawPassword, member.getPassword())) {
+			throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+		}
+		
+		// 3. 경매 작성자 확인
+		PostsDto auction = auctionMapper.getAuctionDetail(postId);
+		if (auction == null || auction.getMemberId() != member.getMemberId()) {
+			throw new RuntimeException("삭제 권한이 없습니다.");
+		}
+		
+		// 4. 연관된 used_items 데이터 먼저 삭제
+		auctionMapper.deleteUsedItemsByPostId(postId);
+		
+		// 5. 연관된 favorites 데이터 삭제
+		auctionMapper.deleteFavoritesByPostId(postId);
+		
+		// 6. 연관된 chatroom 데이터 삭제
+		auctionMapper.deleteChatroomsByPostId(postId);
+		
+		// 7. 연관된 사진 데이터 삭제
+		auctionMapper.deletePhotosByPostId(postId);
+		
+		// 8. 실제 이미지 파일 삭제
+		deleteImageFiles(postId);
+		
+		// 9. 경매 삭제
+		auctionMapper.deleteAuction(postId);
+	}
+	
+	// 실제 이미지 파일 삭제
+	private void deleteImageFiles(long postId) {
+		try {
+			// post_photos 테이블에서 해당 경매의 사진 정보 조회
+			List<Map<String, Object>> photos = auctionMapper.getAuctionPhotos(postId);
+			
+			for (Map<String, Object> photo : photos) {
+				String photoUrl = (String) photo.get("photo_url");
+				if (photoUrl != null && !photoUrl.isEmpty()) {
+					// 파일 시스템에서 이미지 파일 삭제
+					deleteImageFile(photoUrl);
+				}
+			}
+		} catch (Exception e) {
+			// 파일 삭제 실패 시에도 로그만 남기고 계속 진행
+			System.err.println("이미지 파일 삭제 중 오류 발생: " + e.getMessage());
+		}
+	}
+	
+	// 개별 이미지 파일 삭제
+	private void deleteImageFile(String photoUrl) {
+		try {
+			// 서버의 save 폴더 경로
+			String savePath = "src/main/webapp/save/";
+			Path filePath = Paths.get(savePath + photoUrl);
+			
+			// 파일이 존재하면 삭제
+			if (Files.exists(filePath)) {
+				Files.delete(filePath);
+				System.out.println("이미지 파일 삭제 완료: " + photoUrl);
+			}
+		} catch (Exception e) {
+			System.err.println("이미지 파일 삭제 실패: " + photoUrl + ", 오류: " + e.getMessage());
+		}
 	}
 }

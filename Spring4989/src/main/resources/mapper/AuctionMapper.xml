@@ -207,6 +207,31 @@
 		select price from posts where post_id=#{postId} limit 1
 	</select>
 	
+	<!-- 경매 삭제 -->
+	<delete id="deleteAuction" parameterType="long">
+		DELETE FROM posts WHERE post_id = #{postId}
+	</delete>
+	
+	<!-- 경매 삭제 전 연관된 used_items 데이터 삭제 -->
+	<delete id="deleteUsedItemsByPostId" parameterType="long">
+		DELETE FROM used_items WHERE post_id = #{postId}
+	</delete>
+	
+	<!-- 경매 삭제 전 연관된 사진 데이터 삭제 -->
+	<delete id="deletePhotosByPostId" parameterType="long">
+		DELETE FROM post_photos WHERE post_id = #{postId}
+	</delete>
+	
+	<!-- 경매 삭제 전 연관된 favorites 데이터 삭제 -->
+	<delete id="deleteFavoritesByPostId" parameterType="long">
+		DELETE FROM favorites WHERE post_id = #{postId}
+	</delete>
+	
+	<!-- 경매 삭제 전 연관된 chatroom 데이터 삭제 -->
+	<delete id="deleteChatroomsByPostId" parameterType="long">
+		DELETE FROM chatroom WHERE product_id = #{postId}
+	</delete>
+	
 	
 	
 	

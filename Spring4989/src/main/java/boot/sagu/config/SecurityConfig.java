@@ -88,15 +88,21 @@ public class SecurityConfig {
                 // 마이페이지 관련 API는 인증이 필요함 (JWT 토큰 검증) - 가장 먼저 설정
                 .requestMatchers(HttpMethod.GET ,"/member/**").authenticated()
                 // 채팅 관련 API는 인증 없이 접근 가능
-                .requestMatchers("/chat/**", "/chat/rooms/**", "/chat/rooms", "/unread-count/**", "/api/chat/**").permitAll()
+                .requestMatchers("/chat/**", "/chat/rooms/**", "/chat/rooms", "/unread-count/**", "/api/chat/**","/room/create-with-message","/room/enter","/estate/**").permitAll()
                 // 기타 공개 경로들
-            	.requestMatchers("/ws/**","/post/**").permitAll()
+            	.requestMatchers("/ws/**").permitAll()
+            	.requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/ws/**").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
                 .requestMatchers("/api/region/register").permitAll()
+                .requestMatchers("/submit").authenticated()
+                // 경매 조회용 API는 인증 불필요
+                .requestMatchers("/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
+                // 경매 삭제 API는 인증 필요
+                .requestMatchers("/auction/delete/**").authenticated()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
                 .anyRequest().authenticated()
             )
