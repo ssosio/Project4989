@@ -16,6 +16,7 @@ import Chat from '../chat/ChatMain'
 import Map from '../chat/KakaoMap'
 import GoodsDetail from '../board/GoodsDetail'
 import AuthCallback from '../login/AuthCallback'
+import MyPage from '../mypage'
 
 const RouterMain = ({ handleLoginSuccess }) => {
   return (
@@ -32,11 +33,11 @@ const RouterMain = ({ handleLoginSuccess }) => {
           <Route path='/signup' element={<SignupForm />} />
           <Route path='/board/post' element={<Post />} />
           {/* props로 받은 함수를 그대로 전달 */}
-          <Route path='/login' element={<LoginMain onLoginSuccess={handleLoginSuccess}/>} />
+          <Route path='/login' element={<LoginMain onLoginSuccess={handleLoginSuccess} />} />
           <Route path='/auth/callback' element={<AuthCallback />} />
-          
-          <Route path='/board/post' element={<Post />} />
+          <Route path='/mypage' element={<MyPage />} />
           <Route path='/board/GoodsDetail' element={<GoodsDetail />} />
+          <Route path='/map' element={<Map />} />
         </Route>
       </Routes>
     </div>

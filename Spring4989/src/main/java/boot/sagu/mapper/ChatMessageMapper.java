@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import boot.sagu.dto.ChatMessageDto;
 
@@ -15,8 +16,7 @@ public interface ChatMessageMapper {
 	public List<ChatMessageDto> getAllMessages(Long chat_room_id);
 	
 	// 메시지 읽음 처리
-	public int updateMessagesAsRead(Long chatRoomId, Long readerId);
-	
+	public void markMessagesAsRead(@Param("chatRoomId") Long chatRoomId, @Param("memberId") Long memberId);
 	// 디버깅용: 메시지 상태 확인
 	public List<ChatMessageDto> getMessageStatus(Long chatRoomId);
 	
@@ -36,4 +36,10 @@ public interface ChatMessageMapper {
 	public Long getChatRoomIdByMessageId(Long messageId);
 	
 	public void updateAllMessagesDeletedAt(Long chatRoomId);
+	
+	public void deleteOldMessages(@Param("hours") int hours);
+	
+	public int getUnreadMessageCount(@Param("memberId") Long memberId);
+	 
+	public void insertFirstChatMessage(Map<String, Object> params);
 }

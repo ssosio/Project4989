@@ -1,6 +1,3 @@
-=\=\=\=\=\=\=
-<<<<<<<=HEAD
->>>>>>>=13d5c54d348afdce7b1bb445a812b25679929938
 arguments=--init-script C\:\\Users\\user\\AppData\\Roaming\\Cursor\\User\\globalStorage\\redhat.java\\1.44.0\\config_win\\org.eclipse.osgi\\58\\0\\.cp\\gradle\\init\\init.gradle --init-script C\:\\Users\\user\\AppData\\Roaming\\Cursor\\User\\globalStorage\\redhat.java\\1.44.0\\config_win\\org.eclipse.osgi\\58\\0\\.cp\\gradle\\protobuf\\init.gradle
 auto.sync=false
 build.scans.enabled=false

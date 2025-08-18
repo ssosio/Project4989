@@ -9,6 +9,7 @@ import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import ChatMain from '../chat/ChatMain';
 import './Header.css';
+import axios from 'axios';
 
 // --- Styled Components (디자인을 위한 코드) ---
 const TossSearch = styled('div')(({ theme }) => ({
@@ -53,13 +54,12 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 // --- Styled Components 끝 ---
 
-
-
 export const Header = () => {
   // useContext를 사용해 Root 컴포넌트의 userInfo와 handleLogout 함수를 가져옵니다.
   const { userInfo, handleLogout } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0); // 👈 읽지 않은 메시지 개수를 저장할 상태
   const navi = useNavigate();
 
   const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -70,10 +70,46 @@ export const Header = () => {
   const handleChatClose = () => {
     setChatDrawerOpen(false);
   };
+  const handleUnreadCountChange = (count) => {
+    console.log("Header에서 새로운 읽지 않은 메시지 개수 수신:", count);
+    setUnreadMessageCount(count);
+  };
   useEffect(() => {
     console.log("Header received userInfo:", userInfo);
   }, [userInfo]);
 
+  // 💡 useEffect 훅을 사용하여 읽지 않은 메시지 개수를 가져옵니다.
+  useEffect(() => {
+    // userInfo가 존재할 때만 API를 호출합니다.
+    // Root 컴포넌트에서 이미 axios 기본 헤더에 토큰을 설정했으므로,
+    // 별도로 토큰을 가져오거나 헤더를 설정할 필요가 없습니다.
+    if (userInfo) {
+      const fetchUnreadCount = async () => {
+        try {
+          const response = await axios.get('/api/chat/unread-count', {
+            params: {
+              login_id: userInfo.loginId
+            }
+          });
+          setUnreadMessageCount(response.data);
+        } catch (error) {
+          console.error('읽지 않은 메시지 개수를 가져오는 데 실패했습니다.', error);
+          setUnreadMessageCount(0);
+        }
+      };
+
+      fetchUnreadCount();
+
+
+      // 실시간 업데이트를 위해 10초마다 API를 호출
+      const intervalId = setInterval(fetchUnreadCount, 50000);
+
+      // 컴포넌트 언마운트 시 인터벌 해제
+      return () => clearInterval(intervalId);
+    } else {
+      setUnreadMessageCount(0);
+    }
+  }, [userInfo]); // userInfo가 변경될 때마다 useEffect를 실행합니다.
 
   return (
     <AppBar position="static" elevation={0} sx={{
@@ -144,27 +180,22 @@ export const Header = () => {
             // 로그인 후 UI
             <>
               <IconButton color="inherit" sx={{
-                p: 1.5,
-                color: '#5B9BD5',
-                borderRadius: '12px',
-                margin: '0 4px',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  backgroundColor: 'rgba(74, 144, 226, 0.1)',
-                  color: '#4A90E2',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
-                }
+                // ... (기존 스타일) ...
               }} onClick={handleChatClick}>
-                <Badge badgeContent={2} color="primary" sx={{
-                  '& .MuiBadge-badge': {
-                    background: '#4A90E2',
-                    fontSize: '10px',
-                    fontWeight: '600'
-                  }
-                }}>
+                {/* 💡 unreadMessageCount가 0보다 클 때만 Badge를 표시 */}
+                {unreadMessageCount > 0 ? (
+                  <Badge badgeContent={unreadMessageCount} color="primary" sx={{
+                    '& .MuiBadge-badge': {
+                      background: '#4A90E2',
+                      fontSize: '10px',
+                      fontWeight: '600'
+                    }
+                  }}>
+                    <ChatBubbleOutlineRoundedIcon />
+                  </Badge>
+                ) : (
                   <ChatBubbleOutlineRoundedIcon />
-                </Badge>
+                )}
               </IconButton>
               <IconButton color="inherit" sx={{
                 p: 1.5,
@@ -209,7 +240,7 @@ export const Header = () => {
                   fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif'
                 }}
               >
-                <Avatar src={'http://localhost:4989'+userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{
+                <Avatar src={'http://localhost:4989' + userInfo.profileImageUrl || 'https://placehold.co/40x40'} sx={{
                   width: 36,
                   height: 36,
                   mr: 1.5,
@@ -230,7 +261,10 @@ export const Header = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
               >
-                <MenuItem onClick={handleClose}>내 프로필</MenuItem>
+                <MenuItem onClick={() => {
+                  navi('/mypage');
+                  handleClose();
+                }}>마이페이지</MenuItem>
                 <MenuItem onClick={() => {
                   handleLogout();
                   handleClose();
@@ -312,7 +346,11 @@ export const Header = () => {
       </Toolbar>
 
       {/* 채팅 드로어 */}
-      <ChatMain open={chatDrawerOpen} onClose={handleChatClose} />
+      <ChatMain
+        open={chatDrawerOpen}
+        onClose={handleChatClose}
+        onUnreadCountChange={handleUnreadCountChange}
+      />
     </AppBar>
   );
 };

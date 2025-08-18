@@ -79,23 +79,12 @@ public class ChatMessageService implements ChatMessageServiceInter{
 	}
 	
 	@Override
-	// 메시지 읽음 처리 메서드
-	public void markMessageAsRead(Long chatRoomId, Long readerId) {
-		System.out.println("=== ChatMessageService.markMessageAsRead ===");
-		System.out.println("채팅방 ID: " + chatRoomId);
-		System.out.println("읽은 사용자 ID: " + readerId);
-		
-		try {
-			// 상대방이 보낸 안읽은 메시지들을 읽음 처리
-			int updatedRows = chatMessageMapper.updateMessagesAsRead(chatRoomId, readerId);
-			System.out.println("읽음 처리된 메시지 수: " + updatedRows);
-			
-		} catch (Exception e) {
-			System.out.println("=== 메시지 읽음 처리 에러 ===");
-			System.out.println("에러 메시지: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
+	@Transactional
+    public void markMessagesAsRead(Long chatRoomId, Long memberId) {
+		 System.out.println("[DEBUG] markMessagesAsRead 시작, chatRoomId: " + chatRoomId + ", memberId: " + memberId);
+		    chatMessageMapper.markMessagesAsRead(chatRoomId, memberId);
+		    System.out.println("[DEBUG] markMessagesAsRead 쿼리 실행 완료");
+    }
 	
 	@Override
 	// 메시지 읽음 상태 초기화 메서드
@@ -161,5 +150,15 @@ public class ChatMessageService implements ChatMessageServiceInter{
 	            throw new RuntimeException("메시지 삭제 실패: " + e.getMessage());
 	        }
 	    }
+	   
+	   @Override
+	   public int getUnreadMessageCount(Long memberId) {
+	        return chatMessageMapper.getUnreadMessageCount(memberId);
+	    }
+	   
+	   @Override
+	    public void insertFirstChatMessage(Map<String, Object> params) {
+	        chatMessageMapper.insertFirstChatMessage(params);
+	    } 
 
 }

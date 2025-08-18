@@ -7,10 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,7 +24,6 @@ import boot.sagu.service.MemberServiceInter;
 import jakarta.validation.Valid;
 
 @RestController
-@CrossOrigin
 public class MemberController {
 
     @Autowired
@@ -152,5 +152,128 @@ public class MemberController {
             return loginId;
         }
         return loginId.substring(0, 3) + "*".repeat(loginId.length() - 3);
+    }
+
+    // ===== 마이페이지 관련 API =====
+    
+    // 프로필 정보 조회
+    @GetMapping("/member/profile")
+    public ResponseEntity<?> getProfile(@RequestParam("loginId") String loginId) {
+        try {
+            MemberDto member = memberService.getMemberByLoginId(loginId);
+            if (member != null) {
+                // 민감한 정보는 제외하고 반환
+                MemberDto profileInfo = new MemberDto();
+                profileInfo.setMemberId(member.getMemberId());
+                profileInfo.setLoginId(member.getLoginId());
+                profileInfo.setNickname(member.getNickname());
+                profileInfo.setEmail(member.getEmail());
+                profileInfo.setPhoneNumber(member.getPhoneNumber());
+                profileInfo.setProfileImageUrl(member.getProfileImageUrl());
+                profileInfo.setTier(member.getTier());
+                profileInfo.setStatus(member.getStatus());
+                profileInfo.setCreatedAt(member.getCreatedAt());
+                
+                return ResponseEntity.ok(profileInfo);
+            } else {
+                return ResponseEntity.status(404).body("회원을 찾을 수 없습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("프로필 정보 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    // 프로필 정보 수정
+    @PutMapping("/member/profile")
+    public ResponseEntity<?> updateProfile(@RequestParam("loginId") String loginId, @RequestBody MemberDto updateData) {
+        try {
+            MemberDto existingMember = memberService.getMemberByLoginId(loginId);
+            if (existingMember == null) {
+                return ResponseEntity.status(404).body("회원을 찾을 수 없습니다.");
+            }
+            
+            // 업데이트할 수 있는 필드들만 수정
+            if (updateData.getNickname() != null) {
+                existingMember.setNickname(updateData.getNickname());
+            }
+            if (updateData.getEmail() != null) {
+                existingMember.setEmail(updateData.getEmail());
+            }
+            if (updateData.getPhoneNumber() != null) {
+                existingMember.setPhoneNumber(updateData.getPhoneNumber());
+            }
+            
+            memberService.updateProfile(existingMember);
+            return ResponseEntity.ok("프로필이 성공적으로 수정되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("프로필 수정 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    // 프로필 사진 변경
+    @PutMapping("/member/profile-image")
+    public ResponseEntity<?> updateProfileImage(@RequestParam("loginId") String loginId, 
+                                              @RequestParam("profileImageFile") MultipartFile profileImageFile) {
+        try {
+            if (profileImageFile.isEmpty()) {
+                return ResponseEntity.badRequest().body("프로필 사진을 선택해주세요.");
+            }
+            
+            // 파일 유효성 검사
+            if (!profileImageFile.getContentType().startsWith("image/")) {
+                return ResponseEntity.badRequest().body("이미지 파일만 업로드 가능합니다.");
+            }
+            
+            if (profileImageFile.getSize() > 5 * 1024 * 1024) { // 5MB 제한
+                return ResponseEntity.badRequest().body("파일 크기는 5MB 이하여야 합니다.");
+            }
+            
+            // 프로필 사진 업로드 및 URL 반환
+            String imageUrl = memberService.updateProfileImage(loginId, profileImageFile);
+            return ResponseEntity.ok(Map.of("message", "프로필 사진이 성공적으로 변경되었습니다.", "imageUrl", imageUrl));
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("프로필 사진 변경 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    // 비밀번호 변경 (현재 비밀번호 확인 후 변경)
+    @PutMapping("/member/password")
+    public ResponseEntity<?> changePassword(@RequestParam("loginId") String loginId, @RequestBody Map<String, String> request) {
+        try {
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+            
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest().body("현재 비밀번호와 새 비밀번호를 모두 입력해주세요.");
+            }
+            
+            MemberDto member = memberService.getMemberByLoginId(loginId);
+            if (member == null) {
+                return ResponseEntity.status(404).body("회원을 찾을 수 없습니다.");
+            }
+            
+            // 현재 비밀번호 확인
+            if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+                return ResponseEntity.status(401).body("현재 비밀번호가 올바르지 않습니다.");
+            }
+            
+            // 새 비밀번호 유효성 검사
+            if (newPassword.length() < 10) {
+                return ResponseEntity.badRequest().body("새 비밀번호는 10자 이상이어야 합니다.");
+            }
+            
+            // 강력한 비밀번호 정규식 검사
+            String strongPasswordRegex = "^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*[0-9]).{10,}$";
+            if (!newPassword.matches(strongPasswordRegex)) {
+                return ResponseEntity.badRequest().body("비밀번호는 10자 이상이어야 하며, 대문자, 특수문자, 숫자를 포함해야 합니다.");
+            }
+            
+            // 새 비밀번호로 업데이트
+            memberService.updatePassword(loginId, newPassword);
+            return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("비밀번호 변경 중 오류가 발생했습니다: " + e.getMessage());
+        }
     }
 }

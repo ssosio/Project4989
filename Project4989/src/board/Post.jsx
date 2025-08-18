@@ -1,8 +1,10 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
+import './post.css';
 
 const Post = () => {
+
 
     //공통
     const [uploadFiles,setUploadFiles]=useState([]);
@@ -169,6 +171,7 @@ const Post = () => {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
+
         axios.post("http://localhost:4989/post/insert",formData,{
             headers: headers
         }).then(()=>{
@@ -183,13 +186,21 @@ const Post = () => {
 
 
   return (
-    <div>
-       
-        <table>
+    <div className="post-page">
+      <div className="post-container">
+        {/* 헤더 섹션 */}
+        <div className="post-header">
+          <h1 className="post-title">물품 등록</h1>
+          <p className="post-subtitle">판매하고 싶은 물품을 등록해보세요</p>
+        </div>
+
+        {/* 폼 컨테이너 */}
+        <div className="post-form-container">
+          <table className="post-form-table">
             <tr>
                 <td>
                     <label>물건타입
-                    <select name="postType" id="" style={{width:'150px'}} value={postType} onChange={(e)=>{
+                    <select name="postType" id="" value={postType} onChange={(e)=>{
                         setPostType(e.target.value);
                     }}>
                         <option value="" disabled selected>물건타입을 선택해 주세요</option>
@@ -202,10 +213,10 @@ const Post = () => {
                 </tr>
                 {
                     postType==='REAL_ESTATES'&&(
-                        <tr>
+                        <tr className="conditional-section">
                             <td>
                                 <label>매물종류
-                                    <select name='propertyType' style={{width:'150px'}} value={propertyType} onChange={(e)=>{
+                                    <select name='propertyType' value={propertyType} onChange={(e)=>{
                                         setPropertyType(e.target.value);
                                     }}>
                                         <option value="" disabled selected>매물종류를 선택해 주세요</option>
@@ -218,21 +229,21 @@ const Post = () => {
                             </td>
                             <td>
                                 <label>면적
-                                <input type="text" name='area' style={{width:'80px'}} value={area} onChange={(e)=>{
+                                <input type="text" name='area' value={area} onChange={(e)=>{
                                         setArea(e.target.value);
                                     }}/>㎡
                                 </label>
                             </td>
                             <td>
                                 <label>방 개수
-                                <input type="text" name='rooms' style={{width:'50px'}} value={rooms} onChange={(e)=>{
+                                <input type="text" name='rooms' value={rooms} onChange={(e)=>{
                                         setRooms(e.target.value);
                                     }}/>
                                 </label>
                             </td>
                             <td>
                                 <label>층
-                                <input type="text" name='floor' style={{width:'50px'}} value={floor} onChange={(e)=>{
+                                <input type="text" name='floor' value={floor} onChange={(e)=>{
                                         setFloor(e.target.value);
                                     }}/>
                                 </label>
@@ -252,7 +263,7 @@ const Post = () => {
                             </td>
                             <td>
                                 <label>위치
-                                <input type="text" name='location' style={{width:'50px'}} value={location} onChange={(e)=>{
+                                <input type="text" name='location' value={location} onChange={(e)=>{
                                         setLocation(e.target.value);
                                     }}/>
                                 </label>
@@ -262,10 +273,10 @@ const Post = () => {
                 }
                 {
                     postType==='CARS'&&(
-                        <tr>
+                        <tr className="conditional-section">
                             <td>
                                 <label>브랜드
-                                    <select name='brand' style={{width:'150px'}} value={brand} onChange={(e)=>{
+                                    <select name='brand' value={brand} onChange={(e)=>{
                                         setBrand(e.target.value);
                                     }}>
                                         <option value="" disabled selected>브랜드를 선택해 주세요</option>
@@ -279,21 +290,21 @@ const Post = () => {
                             </td>
                             <td>
                                 <label>모델
-                                <input type="text" name='model' style={{width:'180px'}} value={model} onChange={(e)=>{
+                                <input type="text" name='model' value={model} onChange={(e)=>{
                                         setModel(e.target.value);
                                     }}/>
                                 </label>
                             </td>
                             <td>
                                 <label>연식
-                                <input type="number" name='year' style={{width:'80px'}} value={year} onChange={(e)=>{
+                                <input type="number" name='year' value={year} onChange={(e)=>{
                                         setYear(e.target.value);
                                     }}/>
                                 </label>
                             </td>
                             <td>
                                 <label>주행거리
-                                <input type="text" name='mileage' style={{width:'80px'}} value={mileage} onChange={(e)=>{
+                                <input type="text" name='mileage' value={mileage} onChange={(e)=>{
                                         setMileage(e.target.value);
                                     }}/>km
                                 </label>
@@ -323,7 +334,7 @@ const Post = () => {
                             </td>
                             <td>
                                 <label>위치
-                                <input type="text" name='location' style={{width:'50px'}} value={location} onChange={(e)=>{
+                                <input type="text" name='location' value={location} onChange={(e)=>{
                                         setLocation(e.target.value);
                                     }}/>
                                 </label>
@@ -333,10 +344,10 @@ const Post = () => {
                 }
                 {
                     (postType==='ITEMS'||postType==='CARS') &&(
-                    <tr>
+                    <tr className="conditional-section">
                         <td>
                             <label>판매타입
-                            <select name="tradeType" id="" style={{width:'150px'}} value={tradeType} onChange={(e)=>{
+                            <select name="tradeType" id="" value={tradeType} onChange={(e)=>{
                             setTradeType(e.target.value);
                             }}>
                                 <option value="" disabled selected>판매타입을 선택해 주세요</option>
@@ -351,7 +362,7 @@ const Post = () => {
                 }
                 {
                     postType==='ITEMS' &&(
-                    <tr>
+                    <tr className="conditional-section">
                         <td>
                             <label>대분류
                                 <select onChange={handleParentChange} value={selectedParent}>
@@ -395,7 +406,7 @@ const Post = () => {
             <tr>
                 <td>
                     <label>제목
-                    <input type="text" name='title' style={{width:'250px'}} onChange={(e)=>{
+                    <input type="text" name='title' onChange={(e)=>{
                         setTitle(e.target.value);
                     }}/>
                     </label>
@@ -404,7 +415,7 @@ const Post = () => {
             <tr>
                 <td>
                     <label>가격
-                    <input type="text" name='price' style={{width:'150px'}} onChange={(e)=>{
+                    <input type="text" name='price' onChange={(e)=>{
                         setPrice(e.target.value);
                     }}/>
                     </label>
@@ -412,7 +423,7 @@ const Post = () => {
             </tr>
             <tr>
                 <td colSpan='4'>
-                    <textarea name="content" id="" style={{width:'400px',height:'150px'}} onChange={(e)=>{
+                    <textarea name="content" id="" onChange={(e)=>{
                         setContent(e.target.value);
                     }}></textarea>
                 </td>
@@ -420,22 +431,28 @@ const Post = () => {
             <tr>
                 <td>
                     <label>사진
-                    <input type="file" name='uploadfiles' style={{width:'250px'}} multiple onChange={handleFileChag}/>
+                    <input type="file" name='uploadfiles' multiple onChange={handleFileChag}/>
                     </label>
                 </td>
             </tr>
             <tr>
                 <td>
-                    {photoPreview.map((url,idx)=>(
-                        <img src={url} alt="" key={idx} width="200" />
-                    ))}
+                    <div className="photo-preview-container">
+                        {photoPreview.map((url,idx)=>(
+                            <img src={url} alt="" key={idx} className="photo-preview" />
+                        ))}
+                    </div>
                 </td>
             </tr>
-            <tr>
-                <button type='submit' style={{width:'130px', backgroundColor:'bisque',marginRight:'30px'}} onClick={postInsert}>등록</button>
-                <button type='button' style={{width:'130px', backgroundColor:'bisque'}} onClick={clickList}>목록</button>
-            </tr>
-        </table>
+          </table>
+          
+          {/* 버튼 컨테이너 */}
+          <div className="post-button-container">
+            <button type='submit' className="post-submit-btn" onClick={postInsert}>등록</button>
+            <button type='button' className="post-list-btn" onClick={clickList}>목록</button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

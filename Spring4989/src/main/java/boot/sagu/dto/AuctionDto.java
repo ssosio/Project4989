@@ -1,10 +1,9 @@
-package boot.sagu.dto;
+	package boot.sagu.dto;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 import org.apache.ibatis.type.Alias;
-
 import lombok.Data;
 
 @Data

@@ -47,29 +47,36 @@
             WHEN cr.seller_id = #{memberId} THEN buyer.profile_image_url
             WHEN cr.buyer_id = #{memberId} THEN seller.profile_image_url
         END as otherUserProfileImage,
-        cm.message_content as lastMessage,
-        cm.created_at as lastMessageTime,
-        (
-            SELECT COUNT(*)
-            FROM chatmessage cm2
-            WHERE cm2.chat_room_id = cr.chat_room_id
-            AND cm2.sender_id != #{memberId}
-            AND cm2.is_read = 0
-        ) as unreadCount
+        lastMsg.message_content as lastMessage,
+        lastMsg.message_type as lastMessageType,
+        lastMsg.created_at as lastMessageTime,
+        COALESCE(unread.unreadCount, 0) as unreadCount
     FROM chatroom cr
     LEFT JOIN members seller ON cr.seller_id = seller.member_id
     LEFT JOIN members buyer ON cr.buyer_id = buyer.member_id
+    -- 마지막 메시지 가져오기 (윈도우 함수 사용)
     LEFT JOIN (
         SELECT 
             chat_room_id,
             message_content,
+            message_type,
             created_at,
-            ROW_NUMBER() OVER (PARTITION BY chat_room_id ORDER BY created_at DESC) as rn
+            ROW_NUMBER() OVER(PARTITION BY chat_room_id ORDER BY created_at DESC) as rn
         FROM chatmessage
-    ) cm ON cr.chat_room_id = cm.chat_room_id AND cm.rn = 1
+    ) lastMsg ON cr.chat_room_id = lastMsg.chat_room_id AND lastMsg.rn = 1
+    -- 읽지 않은 메시지 카운트
+    LEFT JOIN (
+        SELECT 
+            chat_room_id,
+            COUNT(*) AS unreadCount
+        FROM chatmessage
+        WHERE sender_id != #{memberId}
+          AND is_read = 0
+        GROUP BY chat_room_id
+    ) unread ON cr.chat_room_id = unread.chat_room_id
     WHERE (cr.buyer_id = #{memberId} AND cr.buyer_exit_status = 0)
        OR (cr.seller_id = #{memberId} AND cr.seller_exit_status = 0)
-    ORDER BY cm.created_at DESC
+    ORDER BY lastMessageTime DESC
 </select>
 
 <select id="getOtherUserInChatRoom" resultType="java.util.Map">
@@ -116,8 +123,69 @@
     SELECT nickname FROM members WHERE member_id = #{memberId}
 </select>
 
-<delete id="deleteEmptyChatRooms">
-    DELETE FROM chatroom
-    WHERE chat_room_id NOT IN (SELECT DISTINCT chat_room_id FROM chatmessage)
-</delete>
+ <delete id="deleteOldChatRooms" parameterType="int">
+        DELETE FROM chatroom
+        WHERE deleted_at IS NOT NULL
+          AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
+    </delete>
+    
+      <!-- 특정 채팅방의 seller_id와 buyer_id를 가져오는 쿼리 -->
+    <select id="getSellerAndBuyerIds" parameterType="Long" resultType="map">
+        SELECT seller_id, buyer_id
+        FROM chatroom
+        WHERE chat_room_id = #{chatRoomId}
+    </select>
+    
+ <insert id="insertChatroom" parameterType="boot.sagu.dto.ChatDto" useGeneratedKeys="true" keyProperty="chat_room_id">
+    INSERT INTO chatroom (product_id, seller_id, buyer_id)
+    VALUES (#{product_id}, #{seller_id}, #{buyer_id})
+</insert>
+
+<select id="findChatroomByProductIdAndBuyerId" resultType="java.lang.Long">
+    SELECT chat_room_id FROM chatroom WHERE product_id = #{productId} AND buyer_id = #{buyerId}
+</select>
+
+<select id="getChatRoomById" resultType="java.util.Map">
+    SELECT 
+        cr.chat_room_id as chatRoomId,
+        cr.product_id as productId,
+        cr.seller_id as sellerId,
+        cr.buyer_id as buyerId,
+        seller.nickname as sellerNickname,
+        buyer.nickname as buyerNickname,
+        seller.profile_image_url as sellerProfileImage,
+        buyer.profile_image_url as buyerProfileImage,
+        lastMsg.message_content as lastMessage,
+        lastMsg.message_type as lastMessageType,
+        lastMsg.created_at as lastMessageTime,
+        COALESCE(unread.unreadCount, 0) as unreadCount,
+        p.title as postTitle,
+        p.price as postPrice
+    FROM chatroom cr
+    LEFT JOIN members seller ON cr.seller_id = seller.member_id
+    LEFT JOIN members buyer ON cr.buyer_id = buyer.member_id
+    LEFT JOIN posts p ON cr.product_id = p.post_id
+
+    LEFT JOIN (
+        SELECT 
+            chat_room_id,
+            message_content,
+            message_type,
+            created_at,
+            ROW_NUMBER() OVER(PARTITION BY chat_room_id ORDER BY created_at DESC) as rn
+        FROM chatmessage
+    ) lastMsg ON cr.chat_room_id = lastMsg.chat_room_id AND lastMsg.rn = 1
+    
+    LEFT JOIN (
+        SELECT 
+            chat_room_id,
+            COUNT(*) AS unreadCount
+        FROM chatmessage
+        WHERE sender_id != #{memberId}
+          AND is_read = 0
+        GROUP BY chat_room_id
+    ) unread ON cr.chat_room_id = unread.chat_room_id
+    
+    WHERE cr.chat_room_id = #{chatRoomId}
+</select>
 </mapper>

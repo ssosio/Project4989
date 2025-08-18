@@ -1,19 +1,15 @@
 package boot.sagu.controller;
 
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import boot.sagu.dto.ChatFileDto;
 import boot.sagu.dto.ChatMessageDto;
 import boot.sagu.dto.WebSocketMessageDto;
 import boot.sagu.service.ChatMessageServiceInter;
@@ -27,27 +23,49 @@ public class WebSocketController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-
-    // 방 인원수 관리를 위한 필드들
-    private final Map<String, AtomicInteger> roomUserCounts = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, String>> roomUsers = new ConcurrentHashMap<>();
-
-
     @MessageMapping("/chat.sendMessage")
     public WebSocketMessageDto sendMessage(@Payload WebSocketMessageDto webSocketMessage) {
         // 메시지를 데이터베이스에 저장
-    	 if ("text".equals(webSocketMessage.getMessageType())) {
+    	 if ("text".equals(webSocketMessage.getMessageType()) || "text".equals(webSocketMessage.getMessage_type())) {
              // 메시지를 데이터베이스에 저장
              ChatMessageDto chatMessage = new ChatMessageDto();
-             chatMessage.setChat_room_id(webSocketMessage.getChatRoomId());
-             chatMessage.setSender_id(webSocketMessage.getSenderId());
-             chatMessage.setMessage_content(webSocketMessage.getMessageContent());
-             chatMessage.setMessage_type(webSocketMessage.getMessageType());
+             
+             // 프론트엔드에서 보내는 snake_case 구조 처리
+             if (webSocketMessage.getChat_room_id() != null) {
+                 chatMessage.setChat_room_id(webSocketMessage.getChat_room_id());
+                 chatMessage.setSender_id(webSocketMessage.getSender_id());
+                 chatMessage.setMessage_content(webSocketMessage.getMessage_content());
+                 chatMessage.setMessage_type(webSocketMessage.getMessage_type());
+             } else {
+                 // 기존 camelCase 구조 처리
+                 chatMessage.setChat_room_id(webSocketMessage.getChatRoomId());
+                 chatMessage.setSender_id(webSocketMessage.getSenderId());
+                 chatMessage.setMessage_content(webSocketMessage.getMessageContent());
+                 chatMessage.setMessage_type(webSocketMessage.getMessageType());
+             }
+             
              chatMessage.setCreated_at(new Timestamp(System.currentTimeMillis()));
-             chatMessageService.insertMessage(chatMessage);
+             Long messageId = chatMessageService.insertMessage(chatMessage);
+             chatMessage.setMessage_id(messageId);
          
              // 텍스트 메시지를 특정 채팅방에 전송
-             messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), webSocketMessage);
+             // 프론트엔드에서 보내는 메시지 구조에 맞게 수정
+             WebSocketMessageDto responseMessage = new WebSocketMessageDto();
+             responseMessage.setType("CHAT");
+             responseMessage.setMessageId(chatMessage.getMessage_id());
+             responseMessage.setChatRoomId(chatMessage.getChat_room_id());
+             responseMessage.setSenderId(chatMessage.getSender_id());
+             responseMessage.setMessageType(chatMessage.getMessage_type());
+             responseMessage.setMessageContent(chatMessage.getMessage_content());
+             responseMessage.setTimestamp(chatMessage.getCreated_at());
+             
+             System.out.println("=== WebSocket 메시지 전송 ===");
+             System.out.println("전송할 메시지: " + responseMessage);
+             System.out.println("채팅방 ID: " + chatMessage.getChat_room_id());
+             System.out.println("메시지 내용: " + chatMessage.getMessage_content());
+             System.out.println("메시지 타입: " + chatMessage.getMessage_type());
+             
+             messagingTemplate.convertAndSend("/topic/chat/" + chatMessage.getChat_room_id(), responseMessage);
          }
         
         
@@ -56,13 +74,28 @@ public class WebSocketController {
 
     @MessageMapping("/chat.addUser")
     public WebSocketMessageDto addUser(@Payload WebSocketMessageDto webSocketMessage, 
-                                     SimpMessageHeaderAccessor headerAccessor) {
-        // 사용자 이름을 WebSocket 세션에 추가
+                                       SimpMessageHeaderAccessor headerAccessor) {
+        // 세션에 사용자 저장
         headerAccessor.getSessionAttributes().put("username", webSocketMessage.getSenderId());
-        
-        // 특정 채팅방에 사용자 입장 메시지 전송
+
+        // === 입장 시 읽음 처리 추가 ===
+        chatMessageService.markMessagesAsRead(
+            Long.valueOf(webSocketMessage.getChatRoomId()), 
+            Long.valueOf(webSocketMessage.getSenderId())
+        );
+
+        // READ_UPDATE 브로드캐스트
+        WebSocketMessageDto readUpdate = new WebSocketMessageDto();
+        readUpdate.setType("READ_UPDATE");
+        readUpdate.setChatRoomId(webSocketMessage.getChatRoomId());
+        readUpdate.setSenderId(webSocketMessage.getSenderId());
+        readUpdate.setTimestamp(new Timestamp(System.currentTimeMillis()));
+
+        messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), readUpdate);
+
+        // 입장 알림도 같이 전송
         messagingTemplate.convertAndSend("/topic/chat/" + webSocketMessage.getChatRoomId(), webSocketMessage);
-        
+
         return webSocketMessage;
     }
     
@@ -83,7 +116,7 @@ public class WebSocketController {
             System.out.println("senderId: " + webSocketMessage.getSenderId());
             
             // 메시지 읽음 처리 (is_read = 1 → 0)
-            chatMessageService.markMessageAsRead(
+            chatMessageService.markMessagesAsRead(
                 Long.valueOf(webSocketMessage.getChatRoomId()), 
                 Long.valueOf(webSocketMessage.getSenderId())
             );
@@ -106,106 +139,11 @@ public class WebSocketController {
             System.out.println("오류 메시지: " + e.getMessage());
             e.printStackTrace();
             return webSocketMessage;
-
-         } catch (Exception e) {
-             System.out.println("=== WebSocket 읽음 처리 일반 오류 ===");
-             System.out.println("오류 메시지: " + e.getMessage());
-             e.printStackTrace();
-             return webSocketMessage;
-         }
-     }
-
-    // 경매 방 입장 처리
-    @MessageMapping("/auction/room/join/{postId}")
-    @SendTo("/topic/auction/{postId}")
-    public Map<String, Object> joinAuctionRoom(String message, String postId) {
-        try {
-            // JSON 파싱 (간단한 구현)
-            String sessionId = extractValue(message, "sessionId");
-            String userId = extractValue(message, "userId");
-            String userNickname = extractValue(message, "userNickname");
-            
-            String roomKey = "auction_" + postId;
-            
-            // 방이 없으면 생성
-            roomUserCounts.putIfAbsent(roomKey, new AtomicInteger(0));
-            roomUsers.putIfAbsent(roomKey, new ConcurrentHashMap<>());
-            
-            // 사용자 추가
-            Map<String, String> users = roomUsers.get(roomKey);
-            users.put(sessionId, userNickname != null ? userNickname : "ID: " + userId);
-            
-            // 인원수 증가
-            int currentCount = roomUserCounts.get(roomKey).incrementAndGet();
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("type", "USER_COUNT_UPDATE");
-            response.put("userCount", currentCount);
-            response.put("users", new HashMap<>(users));
-            
-            // System.out.println("WebSocket 경매방 입장: " + roomKey + ", 현재 인원: " + currentCount);
-            
-            return response;
         } catch (Exception e) {
-            System.err.println("WebSocket 경매방 입장 처리 실패: " + e.getMessage());
-            return new HashMap<>();
+            System.out.println("=== WebSocket 읽음 처리 일반 오류 ===");
+            System.out.println("오류 메시지: " + e.getMessage());
+            e.printStackTrace();
+            return webSocketMessage;
         }
-    }
-
-    // 경매 방 퇴장 처리
-    @MessageMapping("/auction/room/leave/{postId}")
-    @SendTo("/topic/auction/{postId}")
-    public Map<String, Object> leaveAuctionRoom(String message, String postId) {
-        try {
-            String sessionId = extractValue(message, "sessionId");
-            String roomKey = "auction_" + postId;
-            
-            Map<String, String> users = roomUsers.get(roomKey);
-            if (users != null) {
-                String userNickname = users.remove(sessionId);
-                
-                // 인원수 감소
-                AtomicInteger count = roomUserCounts.get(roomKey);
-                if (count != null) {
-                    int currentCount = count.decrementAndGet();
-                    
-                    // 방이 비었으면 정리
-                    if (currentCount <= 0) {
-                        roomUserCounts.remove(roomKey);
-                        roomUsers.remove(roomKey);
-                        // System.out.println("WebSocket 경매방 정리: " + roomKey);
-                    }
-                    
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("type", "USER_COUNT_UPDATE");
-                    response.put("userCount", currentCount);
-                    response.put("users", new HashMap<>(users));
-                    
-                    // System.out.println("WebSocket 경매방 퇴장: " + roomKey + ", 현재 인원: " + currentCount);
-                    
-                    return response;
-                }
-            }
-            
-            return new HashMap<>();
-        } catch (Exception e) {
-            System.err.println("WebSocket 경매방 퇴장 처리 실패: " + e.getMessage());
-            return new HashMap<>();
-        }
-    }
-
-    // 간단한 JSON 파싱 헬퍼 메서드
-    private String extractValue(String json, String key) {
-        try {
-            String pattern = "\"" + key + "\":\"([^\"]*)\"";
-            java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
-            java.util.regex.Matcher m = p.matcher(json);
-            if (m.find()) {
-                return m.group(1);
-            }
-        } catch (Exception e) {
-            System.err.println("JSON 파싱 실패: " + e.getMessage());
-        }
-        return null;
     }
 } 

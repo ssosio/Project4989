@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
-<<<<<<< HEAD
-=======
 	<list key="installedFeatures">
 		<item value="org.eclipse.buildship:3.1.10.v20240802-1314"/>
 		<item value="org.eclipse.egit.gitflow.feature:7.3.0.202506031305-r"/>
@@ -37,24 +35,17 @@
 		<item value="org.jboss.tools.m2e.wro4j.feature:1.2.1.202301111328"/>
 		<item value="org.sonatype.m2e.egit.feature:0.17.0.202209271423"/>
 	</list>
->>>>>>> 13d5c54d348afdce7b1bb445a812b25679929938
 	<section name="SmartImportWizard">
 		<item key="SmartImportRootWizardPage.STORE_HIDE_ALREADY_OPEN" value="false"/>
 		<item key="SmartImportRootWizardPage.STORE_CLOSE_IMPORTED" value="false"/>
 		<item key="SmartImportRootWizardPage.STORE_NESTED_PROJECTS" value="true"/>
 		<item key="SmartImportRootWizardPage.STORE_CONFIGURE_NATURES" value="true"/>
-<<<<<<< HEAD
-		<section name="SmartImportWizard.dialogBounds">
-			<item key="DIALOG_X_ORIGIN" value="68"/>
-			<item key="DIALOG_Y_ORIGIN" value="-26"/>
-=======
 		<list key="org.eclipse.ui.internal.wizards.datatransfer.SmartImportRootWizardPage.knownSources">
 			<item value="C:\Users\user\Desktop\4989\Project4989\Spring4989"/>
 		</list>
 		<section name="SmartImportWizard.dialogBounds">
 			<item key="DIALOG_X_ORIGIN" value="306"/>
 			<item key="DIALOG_Y_ORIGIN" value="127"/>
->>>>>>> 13d5c54d348afdce7b1bb445a812b25679929938
 			<item key="DIALOG_WIDTH" value="888"/>
 			<item key="DIALOG_HEIGHT" value="629"/>
 			<item key="DIALOG_FONT_NAME" value="1|맑은 고딕|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|맑은 고딕"/>

@@ -26,7 +26,7 @@ const FindIdForm = ({ onBack }) => {
             setMessage('이메일과 전화번호를 모두 입력해주세요.');
             return;
         }
-        
+
         setLoading(true);
         try {
             // SMS 발송
@@ -193,3 +193,4 @@ const FindIdForm = ({ onBack }) => {
 };
 
 export default FindIdForm;
+

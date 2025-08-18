@@ -16,4 +16,8 @@ public interface MemberServiceInter {
     
     // 비밀번호 업데이트
     public void updatePassword(String loginId, String newPassword);
+    
+    // 마이페이지 관련 메서드들
+    public void updateProfile(MemberDto member);
+    public String updateProfileImage(String loginId, MultipartFile profileImageFile);
 }

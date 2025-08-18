@@ -34,8 +34,6 @@ user global configuration and to define the default location to store repositori
 not correct please set the HOME environment variable and restart Eclipse. Otherwise Git for Windows and
 EGit might behave differently since they see different configuration options.
 This warning can be switched off on the Team > Git > Confirmations and Warnings preference page.
-<<<<<<< HEAD
-=======
 !SESSION 2025-08-08 12:29:50.760 -----------------------------------------------
 eclipse.buildId=4.36.0.202506052058
 java.version=21.0.7
@@ -195,4 +193,3 @@ Caused by: org.eclipse.core.internal.resources.ResourceException: Invalid projec
 	at org.eclipse.ui.internal.wizards.datatransfer.SmartImportJob.createOrImportProject(SmartImportJob.java:594)
 	at org.eclipse.ui.internal.wizards.datatransfer.SmartImportJob.toExistingOrNewProject(SmartImportJob.java:542)
 	... 2 more
->>>>>>> 13d5c54d348afdce7b1bb445a812b25679929938

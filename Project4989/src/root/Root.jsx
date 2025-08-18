@@ -16,7 +16,7 @@ const Root = () => {
       try {
         const decodedToken = jwtDecode(token);
         const currentTime = Date.now() / 1000;
-        
+
         // 토큰 만료 검사 추가
         if (decodedToken.exp < currentTime) {
           console.log('토큰이 만료되었습니다. 로그아웃 처리합니다.');
@@ -25,13 +25,13 @@ const Root = () => {
           setUserInfo(null);
           return;
         }
-        
+
         // 토큰이 유효한 경우에만 사용자 정보 설정
         setUserInfo({
           loginId: decodedToken.sub,
           memberId: decodedToken.memberId,
           nickname: decodedToken.nickname,
-          profileImageUrl: decodedToken.profileImageUrl
+          profileImageUrl: decodedToken.profileImageUrl,
         });
         // 새로고침 후에도 모든 axios 요청 헤더에 토큰을 포함시킵니다.
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -80,8 +80,15 @@ const Root = () => {
     setUserInfo(null);
   };
 
+  // 사용자 정보 업데이트 함수
+  const updateUserInfo = (updatedUserInfo) => {
+    setUserInfo(updatedUserInfo);
+  };
+
+
+
   return (
-    <AuthContext.Provider value={{ userInfo, handleLogout }}>
+    <AuthContext.Provider value={{ userInfo, handleLogout, updateUserInfo }}>
       <BrowserRouter>
         {/* RouterMain에 handleLoginSuccess 함수를 props로 전달 */}
         <RouterMain handleLoginSuccess={handleLoginSuccess} />

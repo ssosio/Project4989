@@ -11,42 +11,42 @@ import boot.sagu.dto.PostsDto;
 
 
 public interface AuctionServiceInter {
-   
-      public List<PostsDto> getAuctionPosts();
-   
-       // 경매 상세 정보
-      public PostsDto getAuctionDetail(long postId);
-      
-      // 최고 입찰 정보
-      public AuctionDto getHighestBid(long postId);
-      
-      // 회원 닉네임 조회
-      public MemberDto getMemberNickname(long memberId);
-      
-      // 찜 관련
-      public boolean checkFavoriteStatus(long postId, long memberId);
-      public Map<String, Object> toggleFavorite(FavoritesDto favoritesDto);
-      public int getFavoriteCount(long postId);
-      
-      // 입찰 처리
-      public String placeBid(AuctionDto auctionDto);
-      
-      // 경매 종료
-      public String endAuction(long postId);
-      
-      // 자동 경매 종료 체크 (스케줄러용)
-      public void checkAndEndAuctions();
-      
-      // 경매 사진 조회
-      public List<Map<String, Object>> getAuctionPhotos(long postId);
-   
-      public int getStartPrice(long postId); //시작가
-      public boolean isGuaranteePaid(long postId,long memberId); //게시글에 보증금 납부했는지
-      public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); //보증금 납부
-      public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(long postId,long winnerId);//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기
-      public void updateRefundStatus(long guaranteeId); //환불
-   
-      public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
-      
-   
+	
+		public List<PostsDto> getAuctionPosts();
+	
+	 	// 경매 상세 정보
+	   public PostsDto getAuctionDetail(long postId);
+	   
+	   // 최고 입찰 정보
+	   public AuctionDto getHighestBid(long postId);
+	   
+	   // 회원 닉네임 조회
+	   public MemberDto getMemberNickname(long memberId);
+	   
+	   // 찜 관련
+	   public boolean checkFavoriteStatus(long postId, long memberId);
+	   public Map<String, Object> toggleFavorite(FavoritesDto favoritesDto);
+	   public int getFavoriteCount(long postId);
+	   
+	   // 입찰 처리
+	   public String placeBid(AuctionDto auctionDto);
+	   
+	   // 경매 종료
+	   public String endAuction(long postId);
+	   
+	   // 자동 경매 종료 체크 (스케줄러용)
+	   public void checkAndEndAuctions();
+	   
+	   // 경매 사진 조회
+	   public List<Map<String, Object>> getAuctionPhotos(long postId);
+	
+	   public int getStartPrice(long postId); //시작가
+	   public boolean isGuaranteePaid(long postId,long memberId); //게시글에 보증금 납부했는지
+	   public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); //보증금 납부
+	   public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(long postId,long winnerId);//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기
+	   public void updateRefundStatus(long guaranteeId); //환불
+	
+	   public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
+		
+	
 }

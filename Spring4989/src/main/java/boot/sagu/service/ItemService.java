@@ -16,7 +16,7 @@ public class ItemService implements ItemServiceInter {
 	@Override
 	public ItemDto getOneItemData(@RequestParam("postId") Long postId) {
 		// TODO Auto-generated method stub
-		System.out.println("요청 받은 postId: " + postId);
+		System.out.println("요청 받은 item postId: " + postId);
 		
 		ItemDto idto =itemMapper.getOneItemData(postId);
 		System.out.println("조회 결과: " + idto);

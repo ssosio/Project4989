@@ -43,13 +43,13 @@
     WHERE m.chat_room_id = #{chat_room_id}
     ORDER BY m.created_at ASC
     </select>
-    <update id="updateMessagesAsRead" parameterType="map">
-            UPDATE chatmessage 
-        SET is_read = 1 
-        WHERE chat_room_id = #{chatRoomId} 
-        AND sender_id != #{readerId} 
-        AND is_read = 0
-    </update>
+ <update id="markMessagesAsRead">
+    UPDATE chatmessage
+    SET is_read = 1
+    WHERE chat_room_id = #{chatRoomId}
+      AND sender_id != #{memberId}
+      AND is_read = 0
+</update>
     
     <insert id="insertSystemMessage" parameterType="boot.sagu.dto.ChatMessageDto">
     INSERT INTO chatmessage (chat_room_id, sender_id, message_type, message_content, created_at)
@@ -77,5 +77,18 @@
     AND deleted_at &lt; NOW() - INTERVAL #{hours} HOUR
 </delete>
 
+<select id="getUnreadMessageCount" parameterType="Long" resultType="int">
+        SELECT COUNT(cm.message_id)
+        FROM chatmessage cm
+        INNER JOIN chatroom cr ON cm.chat_room_id = cr.chat_room_id
+        WHERE cm.is_read = 0
+          AND cm.sender_id != #{memberId}
+          AND (cr.seller_id = #{memberId} OR cr.buyer_id = #{memberId})
+    </select>
+    
+    <insert id="insertFirstChatMessage" parameterType="java.util.Map">
+    INSERT INTO chatmessage (chat_room_id, sender_id, message_type, message_content)
+    VALUES (#{chatRoomId}, #{senderId}, #{messageType}, #{messageContent})
+</insert>
     
 </mapper>
