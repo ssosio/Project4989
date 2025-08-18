@@ -61,5 +61,10 @@ public interface AuctionMapper {
 	// 경매 삭제 전 연관된 chatroom 데이터 삭제
 	public void deleteChatroomsByPostId(@Param("postId") long postId);
 	
+	// 입찰 기록 조회 (최근 5개, 닉네임 포함)
+	public List<Map<String, Object>> getBidHistory(@Param("postId") long postId);
+	
+	// 조회수 증가
+	public void incrementViewCount(@Param("postId") long postId);
 	
 }

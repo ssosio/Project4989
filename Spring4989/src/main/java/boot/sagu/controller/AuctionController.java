@@ -4,8 +4,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -48,7 +51,8 @@ public class AuctionController {
 	@Autowired
 	private JwtUtil jwtUtil;
 	
-	// 방 인원수 관리는 WebSocketController에서 처리됨
+	// 경매 방별 현재 접속 사용자 관리 (postId -> Set<sessionId>)
+	private final Map<String, Set<String>> auctionRoomUsers = new ConcurrentHashMap<>();
 
 	@GetMapping("/auction")
 	public List<PostsDto> getAuctionList() {
@@ -57,12 +61,20 @@ public class AuctionController {
 
 	@GetMapping("/auction/detail/{postId}")
 	public PostsDto getAuctionDetail(@PathVariable("postId") long postId) {
+	   // 조회수 증가
+	   auctionService.incrementViewCount(postId);
 	   return auctionService.getAuctionDetail(postId);
 	}
 
 	@GetMapping("/auction/highest-bid/{postId}")
 	public AuctionDto getHighestBid(@PathVariable("postId") long postId) {
 	   return auctionService.getHighestBid(postId);
+	}
+	
+	// 입찰 기록 조회 (최근 5개)
+	@GetMapping("/auction/bid-history/{postId}")
+	public List<Map<String, Object>> getBidHistory(@PathVariable("postId") long postId) {
+	   return auctionService.getBidHistory(postId);
 	}
 	
 	@GetMapping("/auction/member/{memberId}")
@@ -203,5 +215,126 @@ public class AuctionController {
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
 		}
+	}
+	
+	// 현재 방 인원수 조회
+	@GetMapping("/auction/room/count/{postId}")
+	public Map<String, Object> getRoomUserCount(@PathVariable("postId") String postId) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			Set<String> users = auctionRoomUsers.getOrDefault(postId, new HashSet<>());
+			response.put("success", true);
+			response.put("userCount", users.size());
+		} catch (Exception e) {
+			response.put("success", false);
+			response.put("userCount", 0);
+			response.put("message", "방 인원수 조회 실패: " + e.getMessage());
+		}
+		return response;
+	}
+	
+	// 방 입장 (세션 ID로 사용자 추가)
+	@PostMapping("/auction/room/join/{postId}")
+	public Map<String, Object> joinRoom(@PathVariable("postId") String postId, @RequestBody Map<String, String> request) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			String sessionId = request.get("sessionId");
+			if (sessionId == null || sessionId.trim().isEmpty()) {
+				response.put("success", false);
+				response.put("message", "세션 ID가 필요합니다.");
+				return response;
+			}
+			
+			// 방에 사용자 추가 (Set이므로 중복 자동 제거)
+			Set<String> users = auctionRoomUsers.computeIfAbsent(postId, k -> ConcurrentHashMap.newKeySet());
+			boolean wasAdded = users.add(sessionId);
+			
+			int userCount = users.size();
+			response.put("success", true);
+			response.put("userCount", userCount);
+			response.put("isNewUser", wasAdded); // 새로운 사용자인지 여부
+			response.put("message", wasAdded ? "방에 입장했습니다." : "이미 방에 접속 중입니다.");
+		} catch (Exception e) {
+			response.put("success", false);
+			response.put("message", "방 입장 실패: " + e.getMessage());
+		}
+		return response;
+	}
+	
+	// 방 퇴장 (세션 ID로 사용자 제거) - POST 방식
+	@PostMapping("/auction/room/leave/{postId}")
+	public Map<String, Object> leaveRoom(@PathVariable("postId") String postId, @RequestBody Map<String, String> request) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			String sessionId = request.get("sessionId");
+			if (sessionId == null || sessionId.trim().isEmpty()) {
+				response.put("success", false);
+				response.put("message", "세션 ID가 필요합니다.");
+				return response;
+			}
+			
+			// 방에서 사용자 제거
+			Set<String> users = auctionRoomUsers.get(postId);
+			if (users != null) {
+				users.remove(sessionId);
+				if (users.isEmpty()) {
+					auctionRoomUsers.remove(postId); // 빈 방은 제거
+				}
+			}
+			
+			int userCount = users != null ? users.size() : 0;
+			response.put("success", true);
+			response.put("userCount", userCount);
+			response.put("message", "방에서 퇴장했습니다.");
+		} catch (Exception e) {
+			response.put("success", false);
+			response.put("message", "방 퇴장 실패: " + e.getMessage());
+		}
+		return response;
+	}
+	
+	// 방 퇴장 (GET 방식) - sendBeacon용
+	@GetMapping("/auction/room/leave/{postId}/{sessionId}")
+	public Map<String, Object> leaveRoomGet(@PathVariable("postId") String postId, @PathVariable("sessionId") String sessionId) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			// 방에서 사용자 제거
+			Set<String> users = auctionRoomUsers.get(postId);
+			if (users != null) {
+				users.remove(sessionId);
+				if (users.isEmpty()) {
+					auctionRoomUsers.remove(postId); // 빈 방은 제거
+				}
+			}
+			
+			int userCount = users != null ? users.size() : 0;
+			response.put("success", true);
+			response.put("userCount", userCount);
+			response.put("message", "방에서 퇴장했습니다.");
+		} catch (Exception e) {
+			response.put("success", false);
+			response.put("message", "방 퇴장 실패: " + e.getMessage());
+		}
+		return response;
+	}
+	
+	// 특정 세션이 방에 있는지 확인
+	@GetMapping("/auction/room/check/{postId}/{sessionId}")
+	public Map<String, Object> checkUserInRoom(@PathVariable("postId") String postId, @PathVariable("sessionId") String sessionId) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			Set<String> users = auctionRoomUsers.getOrDefault(postId, new HashSet<>());
+			boolean isInRoom = users.contains(sessionId);
+			
+			response.put("success", true);
+			response.put("isInRoom", isInRoom);
+			response.put("userCount", users.size());
+		} catch (Exception e) {
+			response.put("success", false);
+			response.put("isInRoom", false);
+			response.put("userCount", 0);
+			response.put("message", "확인 실패: " + e.getMessage());
+		}
+		return response;
 	}
 }

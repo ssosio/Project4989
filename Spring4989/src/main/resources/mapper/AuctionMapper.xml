@@ -232,7 +232,26 @@
 		DELETE FROM chatroom WHERE product_id = #{postId}
 	</delete>
 	
+	<!-- 입찰 기록 조회 (최근 5개, 닉네임 포함) -->
+	<select id="getBidHistory" parameterType="long" resultType="java.util.Map">
+		SELECT 
+			ab.bid_id as id,
+			m.nickname as bidderName,
+			ab.bid_amount as bidAmount,
+			ab.bid_time as bidTime
+		FROM auction_bids ab
+		JOIN members m ON ab.bidder_id = m.member_id
+		WHERE ab.post_id = #{postId}
+		ORDER BY ab.bid_time DESC
+		LIMIT 5
+	</select>
 	
+	<!-- 조회수 증가 -->
+	<update id="incrementViewCount" parameterType="long">
+		UPDATE posts 
+		SET view_count = view_count + 1 
+		WHERE post_id = #{postId}
+	</update>
 	
 	
 </mapper> 

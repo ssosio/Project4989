@@ -100,7 +100,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/region/register").permitAll()
                 .requestMatchers("/submit").authenticated()
                 // 경매 조회용 API는 인증 불필요
-                .requestMatchers("/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
+                .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()
+                // 경매 방 인원수 관련 API는 인증 불필요
+                .requestMatchers("/auction/room/**").permitAll()
                 // 경매 삭제 API는 인증 필요
                 .requestMatchers("/auction/delete/**").authenticated()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함

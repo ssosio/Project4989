@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -443,6 +444,34 @@ public class AuctionService implements AuctionServiceInter {
 			}
 		} catch (Exception e) {
 			System.err.println("이미지 파일 삭제 실패: " + photoUrl + ", 오류: " + e.getMessage());
+		}
+	}
+	
+	// 입찰 기록 조회 (최근 5개, 닉네임 포함)
+	public List<Map<String, Object>> getBidHistory(long postId) {
+		return auctionMapper.getBidHistory(postId);
+	}
+	
+	// 조회수 증가 (중복 방지)
+	private final Map<String, Long> lastViewTime = new ConcurrentHashMap<>();
+	
+	public void incrementViewCount(long postId) {
+		try {
+			String key = String.valueOf(postId);
+			long currentTime = System.currentTimeMillis();
+			
+			// 같은 postId로 5초 이내에 조회수 증가 요청이 온 경우 무시
+			Long lastTime = lastViewTime.get(key);
+			if (lastTime != null && (currentTime - lastTime) < 5000) {
+				System.out.println("조회수 증가 무시 (중복 요청): postId=" + postId);
+				return;
+			}
+			
+			auctionMapper.incrementViewCount(postId);
+			lastViewTime.put(key, currentTime);
+			System.out.println("조회수 증가 완료: postId=" + postId);
+		} catch (Exception e) {
+			System.err.println("조회수 증가 실패: postId=" + postId + ", 오류: " + e.getMessage());
 		}
 	}
 }
