@@ -1,5 +1,7 @@
 package boot.sagu.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
 import boot.sagu.dto.RegionDto;
@@ -8,4 +10,6 @@ import boot.sagu.dto.RegionDto;
 public interface RegionMapper {
 	
 	public void insertRegion(RegionDto dto);
+	
+	public List<RegionDto> findRegionsByKeyword(String keyword);
 }

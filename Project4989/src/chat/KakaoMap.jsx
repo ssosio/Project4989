@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import useKakaoLoader from './useKakaoLoader.jsx';
 import styled from 'styled-components';
 import { Typography } from '@mui/material';
+import TestModal from './AddMemberAddress.jsx';
 
 // 스타일 컴포넌트는 이전과 동일합니다.
 const SearchContainer = styled.div`
@@ -75,7 +76,7 @@ const RadiusInput = styled.input`
 `;
 
 
-const MapComponent = () => {
+const KakaoMap = ({ mode = null, onAddressSelect }) => {
     const isKakaoLoaded = useKakaoLoader();
     const [map, setMap] = useState(null);
     const [circle, setCircle] = useState(null);
@@ -84,6 +85,8 @@ const MapComponent = () => {
     const [address, setAddress] = useState('');
     const [places, setPlaces] = useState([]);
     const [marker, setMarker] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false); // 2. 모달 상태를 추가합니다.
+    // 👈 useLocation 훅을 사용하여 현재 경로를 가져옵니다.
 
     // 1. 지도 초기화 (이전과 동일)
     useEffect(() => {
@@ -135,6 +138,14 @@ const MapComponent = () => {
         map.panTo(centerLatLng);
     }, [map, center, radius]);
 
+    const handleAddressRegistrationClick = () => {
+        setIsModalOpen(true); // 3. 버튼 클릭 시 모달 상태를 true로 변경합니다.
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false); // 4. 모달을 닫는 함수를 만듭니다.
+    };
+
     // 3. ✨ [수정됨] 주소 검색 기능 (Geocoder 사용)
     const handleKeywordSearch = (keyword) => {
         if (!isKakaoLoaded || !keyword.trim()) {
@@ -149,7 +160,8 @@ const MapComponent = () => {
             if (status === kakao.maps.services.Status.OK) {
                 if (result.length === 1) {
                     // 결과가 하나면 바로 지도 이동
-                    handlePlaceClick(result[0]);
+                    //handlePlaceClick(result[0]);
+                    setPlaces(result);
                 } else {
                     // 결과가 여러 개면 목록 표시
                     setPlaces(result);
@@ -172,18 +184,23 @@ const MapComponent = () => {
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
+            e.preventDefault(); // form submit 막기
             handleSearchClick();
         }
     };
 
-    // ✨ [수정됨] 검색 결과 클릭 핸들러
+    // ✨ [수정] 검색 결과 클릭 핸들러: onAddressSelect 함수를 호출하여 부모 컴포넌트로 주소 정보 전달
     const handlePlaceClick = (place) => {
-        // Geocoder 결과 객체는 x, y 속성에 좌표 정보가 있습니다.
-        const coords = { lat: parseFloat(place.y), lng: parseFloat(place.x) };
-        setCenter(coords);
-        // Geocoder 결과에는 place_name이 없으므로 address_name을 사용합니다.
-        setAddress(place.address_name);
-        setPlaces([]);
+        const selectedAddressInfo = {
+            location: place.address_name,
+            latitude: parseFloat(place.y),
+            longitude: parseFloat(place.x)
+        };
+        setAddress(place.address_name); // ← 이거 추가
+        setCenter({ lat: parseFloat(place.y), lng: parseFloat(place.x) }); // 지도 이동
+        setPlaces([]); // 클릭 후 자동완성 목록 숨기기
+        // 부모 컴포넌트로 선택된 주소 정보 전달
+        onAddressSelect?.(selectedAddressInfo, false);
     };
 
     const handleRadiusChange = (e) => {
@@ -198,21 +215,18 @@ const MapComponent = () => {
         );
     }
 
-    const handleRegisterClick = async () => {
+    // ⭐ 1. DB에 직접 등록하는 함수 (mode가 'post'가 아닐 때)
+    const handleDbRegister = async () => {
         if (!center || !address) {
             alert('주소를 먼저 검색하고 선택해주세요.');
             return;
         }
-
         try {
-            // API 호출
-            const response = await fetch('http://localhost:4989/api/region/register', { // 백엔드 API 주소
+            const response = await fetch('http://localhost:4989/api/region/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    address: address, // 현재 검색창에 표시된 주소
+                    address: address,
                     latitude: center.lat,
                     longitude: center.lng,
                 }),
@@ -229,6 +243,20 @@ const MapComponent = () => {
         }
     };
 
+    // ⭐ 2. 부모 컴포넌트로 데이터만 전달하는 함수 (mode가 'post'일 때)
+    const handlePostRegister = () => {
+        if (!center || !address) {
+            alert('주소를 먼저 검색하고 선택해주세요.');
+            return;
+        }
+        const selectedAddressInfo = {
+            address: address,
+            latitude: center.lat,
+            longitude: center.lng,
+        };
+        onAddressSelect?.(selectedAddressInfo, true);
+    };
+
     return (
         <div>
             <h1>지도 반경 설정 기능</h1>
@@ -240,8 +268,21 @@ const MapComponent = () => {
                     onKeyDown={handleKeyDown}
                     placeholder="읍, 면, 동 단위의 주소를 검색하세요"
                 />
-                <SearchButton onClick={handleSearchClick}>검색</SearchButton>
-                <SearchButton onClick={handleRegisterClick}>등록</SearchButton>
+                <SearchButton type="button" onClick={handleSearchClick}>검색</SearchButton>
+                {/* 1. '등록' 버튼은 mode가 'post'일 때만 보입니다. */}
+                {mode === 'post' && (
+                    <SearchButton type="button" onClick={handlePostRegister}>등록</SearchButton>
+                )}
+
+                {/* 2. '추가' 버튼은 mode가 'post'가 아닐 때만 보입니다. */}
+                {mode !== 'post' && (
+                    <SearchButton type="button" onClick={handleDbRegister}>추가</SearchButton>
+                )}
+
+                {/* 3. '주소등록' 버튼은 mode가 'post'가 아닐 때만 보입니다. */}
+                {mode !== 'post' && (
+                    <SearchButton type="button" onClick={handleAddressRegistrationClick}>주소등록</SearchButton>
+                )}
                 {places.length > 0 && (
                     <ResultsContainer>
                         {/* ✨ [수정됨] Geocoder 결과 표시 */}
@@ -273,7 +314,7 @@ const MapComponent = () => {
                 </RadiusControl>
             </MapContainer>
 
-            {center && (
+            {/* {center && (
                 <div style={{ marginTop: '20px', fontSize: '16px' }}>
                     <strong>현재 지도 중심 좌표:</strong>
                     <br />
@@ -283,9 +324,12 @@ const MapComponent = () => {
                     <br />
                     반경: {radius}m
                 </div>
-            )}
+            )} */}
+
+            {/* 5. isModalOpen 상태가 true일 때만 TestModal을 렌더링합니다. */}
+            {isModalOpen && <TestModal onClose={handleCloseModal} />}
         </div>
     );
 };
 
-export default MapComponent;
+export default KakaoMap;
