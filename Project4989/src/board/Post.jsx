@@ -329,13 +329,6 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
-                                    <td>
-                                        <label>위치
-                                            <input type="text" name='location' value={location} onChange={(e) => {
-                                                setLocation(e.target.value);
-                                            }} />
-                                        </label>
-                                    </td>
                                 </tr>
                             )
                         }
@@ -398,13 +391,6 @@ const Post = () => {
                                                 <option value="auto">오토</option>
                                                 <option value="stick">수동</option>
                                             </select>
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>위치
-                                            <input type="text" name='location' value={location} onChange={(e) => {
-                                                setLocation(e.target.value);
-                                            }} />
                                         </label>
                                     </td>
                                 </tr>

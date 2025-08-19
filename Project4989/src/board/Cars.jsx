@@ -1,7 +1,8 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './cars.css';
+import { useMemo } from 'react';
 
 const Cars = () => {
 
@@ -10,6 +11,50 @@ const Cars = () => {
   const itemsPerPage = 12;
 
   const navi=useNavigate('');
+  const location = useLocation();
+
+
+ // 쿼리 변화시에만 현재 페이지/스크롤 갱신
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    const page = Number(q.get('page')) || 1;
+    setCurrentPage(page);
+    window.scrollTo(0, 0); // 페이지 바뀔 때만 맨 위로
+  }, [location.search]); 
+  
+  // 필터 / 페이지 계산 (메모)
+  const cars = useMemo(() => postList.filter(p => p.postType === 'CARS'), [postList]);
+  const totalPages = useMemo(() => Math.ceil(cars.length / itemsPerPage), [cars, itemsPerPage]);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = useMemo(() => cars.slice(startIndex, startIndex + itemsPerPage), [cars, startIndex, itemsPerPage]);
+
+  const handlePageChange = (page) => {
+    const q = new URLSearchParams(location.search);
+    q.set('page', page);
+    navi(`${location.pathname}?${q.toString()}`, { replace: true });
+  };
+  const handleNextPage = () => { if (currentPage < totalPages) handlePageChange(currentPage + 1); };
+  const handlePrevPage = () => { if (currentPage > 1) handlePageChange(currentPage - 1); };
+
+  // 상세에서 돌아왔을 때 클릭한 카드로 스크롤
+  useEffect(() => {
+    const focusId = location.state?.focusId;
+    if (!focusId) return;
+
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`post-${focusId}`);
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'auto' });
+        el.classList.add('focused-card');
+        setTimeout(() => el.classList.remove('focused-card'), 700);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [postList, currentPage, location.state]);
+
+  const fromUrl = `${location.pathname}${location.search || ''}`;
+
 
   const list=()=>{
     let url="http://localhost:4989/post/list";
@@ -35,38 +80,35 @@ const Cars = () => {
 
   const photoUrl="http://localhost:4989/save/";
 
-  const clickDetail=(postId)=>{
-    navi(`/board/GoodsDetail?postId=${postId}`);
-  }
-
+ 
   // 현재 페이지의 아이템들 계산
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = postList.filter(p => p.postType === 'CARS').slice(startIndex, endIndex);
-  const totalPages = Math.ceil(postList.filter(p => p.postType === 'CARS').length / itemsPerPage);
+  // const startIndex = (currentPage - 1) * itemsPerPage;
+  // const endIndex = startIndex + itemsPerPage;
+  // const currentItems = postList.filter(p => p.postType === 'CARS').slice(startIndex, endIndex);
+  // const totalPages = Math.ceil(postList.filter(p => p.postType === 'CARS').length / itemsPerPage);
 
-  // 디버깅용 콘솔 로그
-  console.log('총 아이템 수:', postList.filter(p => p.postType === 'CARS').length);
-  console.log('페이지당 아이템 수:', itemsPerPage);
-  console.log('총 페이지 수:', totalPages);
-  console.log('현재 페이지:', currentPage);
-  console.log('현재 아이템 수:', currentItems.length);
+  // // 디버깅용 콘솔 로그
+  // console.log('총 아이템 수:', postList.filter(p => p.postType === 'CARS').length);
+  // console.log('페이지당 아이템 수:', itemsPerPage);
+  // console.log('총 페이지 수:', totalPages);
+  // console.log('현재 페이지:', currentPage);
+  // console.log('현재 아이템 수:', currentItems.length);
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  }
+  // const handleNextPage = () => {
+  //   if (currentPage < totalPages) {
+  //     setCurrentPage(currentPage + 1);
+  //   }
+  // }
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }
+  // const handlePrevPage = () => {
+  //   if (currentPage > 1) {
+  //     setCurrentPage(currentPage - 1);
+  //   }
+  // }
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  }
+  // const handlePageChange = (page) => {
+  //   setCurrentPage(page);
+  // }
 
   return (
     <div className="cars-page">
@@ -93,7 +135,14 @@ const Cars = () => {
           <>
             <div className="cars-grid">
               {currentItems.map(p => (
-                <div key={p.postId} className="cars-card" onClick={()=>clickDetail(p.postId)}>
+                <div id={`post-${p.postId}`}
+                  key={p.postId}
+                  className="cars-card"
+                  onClick={() =>
+                    navi(`/board/GoodsDetail?postId=${p.postId}`, {
+                      state: { from: fromUrl, page: currentPage, focusId: p.postId }
+                    })
+                  }>
                   <div className="cars-image">
                     {p.mainPhotoUrl ? (
                       <img 
@@ -125,7 +174,7 @@ const Cars = () => {
             {/* 페이지네이션 */}
             <div className="cars-pagination">
               <div className="cars-page-info">
-                총 {postList.filter(p => p.postType === 'CARS').length}개 중 {startIndex + 1}-{Math.min(endIndex, postList.filter(p => p.postType === 'CARS').length)}개 표시
+                총 {cars.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, cars.length)}개 표시
               </div>
               
               {totalPages > 1 && (

@@ -9,10 +9,10 @@ const GoodsDetail = () => {
   // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
   const { userInfo } = useContext(AuthContext);
   // const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
-  
- const token =
-  userInfo?.token ??
-  localStorage.getItem("jwtToken");
+
+  const token =
+    userInfo?.token ??
+    localStorage.getItem("jwtToken");
 
   const [open, setOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -20,7 +20,7 @@ const GoodsDetail = () => {
   const [showChat, setShowChat] = useState(false);
   const [chatRoom, setChatRoom] = useState(null); // 💡 chatRoom 상태 추가
 
-  const location=useLocation();
+  const location = useLocation();
   const { search } = location;
   const query = new URLSearchParams(search);
   const postId = query.get("postId");
@@ -31,8 +31,8 @@ const GoodsDetail = () => {
   const [estate, setEstate] = useState(null);
   const [photos, setPhotos] = useState(null);
 
-   const [count,setCount]=useState(0);
-  const [favorited,setFavorited]=useState(false);
+  const [count, setCount] = useState(0);
+  const [favorited, setFavorited] = useState(false);
 
   const [reportType, setReportType] = useState(''); // '', 'POST', 'MEMBER'
   const [targetId, setTargetId] = useState(null);
@@ -40,7 +40,8 @@ const GoodsDetail = () => {
 
 
   const navi = useNavigate();
- 
+
+
   // 상단 state 모음 근처에 추가
   const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
 
@@ -92,71 +93,71 @@ const GoodsDetail = () => {
   }, [postId]);
 
   //좋아요갯수
-  useEffect(()=>{
+  useEffect(() => {
     axios.get(`http://localhost:4989/post/count?postId=${postId}`)
-    .then(({ data }) => setCount(Number(data.count) || 0))
-    .catch(err=> console.log(err));
-  },[postId]);
+      .then(({ data }) => setCount(Number(data.count) || 0))
+      .catch(err => console.log(err));
+  }, [postId]);
 
   // 내가 좋아요 눌렀는지 (로그인시에만 호출)
-// useEffect(() => {
-//   if (!postId || !userInfo?.memberId) return;
-//   axios
-//     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
-//     .then(({ data }) => setFavorited(Boolean(data.favorited)))
-//     .catch(() => setFavorited(false));
-// }, [postId, userInfo]);
+  // useEffect(() => {
+  //   if (!postId || !userInfo?.memberId) return;
+  //   axios
+  //     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
+  //     .then(({ data }) => setFavorited(Boolean(data.favorited)))
+  //     .catch(() => setFavorited(false));
+  // }, [postId, userInfo]);
 
-// 내가 좋아요 눌렀는지 (로그인시에만 호출)
-useEffect(() => {
-  if (!postId || !userInfo?.memberId) return;
+  // 내가 좋아요 눌렀는지 (로그인시에만 호출)
+  useEffect(() => {
+    if (!postId || !userInfo?.memberId) return;
 
-  console.group('[checkfav] 요청 시작');
-  console.log('postId:', postId, 'memberId:', userInfo.memberId);
+    console.group('[checkfav] 요청 시작');
+    console.log('postId:', postId, 'memberId:', userInfo.memberId);
 
-  axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
-    .then(({ data, status }) => {
-      console.log('HTTP status:', status);
-      console.log('response data:', data);
-      const value = !!data?.favorited;
-      console.log('parsed favorited:', value);
-      setFavorited(value);
-    })
-    .catch((err) => {
-      console.error('요청 실패:', {
-        status: err.response?.status,
-        data: err.response?.data,
-        message: err.message,
-      });
-      setFavorited(false);
-    })
-    .finally(() => console.groupEnd());
-}, [postId, userInfo]);
+    axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
+      .then(({ data, status }) => {
+        console.log('HTTP status:', status);
+        console.log('response data:', data);
+        const value = !!data?.favorited;
+        console.log('parsed favorited:', value);
+        setFavorited(value);
+      })
+      .catch((err) => {
+        console.error('요청 실패:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message,
+        });
+        setFavorited(false);
+      })
+      .finally(() => console.groupEnd());
+  }, [postId, userInfo]);
 
 
 
   //좋아요 토글
   const onToggle = async () => {
-  if (!userInfo?.memberId) {
-    alert('로그인이 필요합니다.');
-    return;
-  }
-  try {
-    const { data } = await axios.post(
-      `http://localhost:4989/post/toggle`,
-      null,                           
-      { params: { postId } }          
-    );
-    setFavorited(Boolean(data.favorited));         
-    setCount(Number(data.count) || 0);              
-  } catch (e) {
-    console.error(e);
-    alert('잠시 후 다시 시도해주세요.');
-  }
-};
+    if (!userInfo?.memberId) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    try {
+      const { data } = await axios.post(
+        `http://localhost:4989/post/toggle`,
+        null,
+        { params: { postId } }
+      );
+      setFavorited(Boolean(data.favorited));
+      setCount(Number(data.count) || 0);
+    } catch (e) {
+      console.error(e);
+      alert('잠시 후 다시 시도해주세요.');
+    }
+  };
 
 
-// 게시글 삭제
+  // 게시글 삭제
   const handleDeletePost = async () => {
     if (!postId) return;
 
@@ -278,63 +279,86 @@ useEffect(() => {
   //     } finally {
   //       setSubmitting(false);
   //     }
-    
+
   //   };
 
- const handleChangeType = (type) => {
-  setReportType(type);
-  setTargetId(type === 'POST' ? Number(postId) :
-             type === 'MEMBER' ? Number(authorId) : null);
-             console.log(authorId);
-             console.log(postId);
-}; 
+  const handleChangeType = (type) => {
+    setReportType(type);
+    setTargetId(type === 'POST' ? Number(postId) :
+      type === 'MEMBER' ? Number(authorId) : null);
+    console.log(authorId);
+    console.log(postId);
+  };
 
- const handleSubmitReport = async () => {
-  if (!reportReason.trim() ) return;
-  if (!token || token === "null" || token === "undefined") {
-  alert("로그인이 필요합니다.");
-  return;
-}
+  const handleSubmitReport = async () => {
+    if (!reportReason.trim()) return;
+    if (!token || token === "null" || token === "undefined") {
+      alert("로그인이 필요합니다.");
+      return;
+    }
 
-  // 선택에 따라 targetId 결정
-  // const targetId =
-  //   reportType === 'POST'   ? Number(postId) :
-  //   reportType === 'MEMBER' ? Number(authorId) :
-  //   null;
+    // 선택에 따라 targetId 결정
+    // const targetId =
+    //   reportType === 'POST'   ? Number(postId) :
+    //   reportType === 'MEMBER' ? Number(authorId) :
+    //   null;
 
-  if (!targetId) { alert('대상 정보를 찾을 수 없습니다.'); return; }
+    if (!targetId) { alert('대상 정보를 찾을 수 없습니다.'); return; }
 
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    const fd = new FormData();
-    fd.append('targetType', reportType);          // ✅ 선택값 반영
-    if (reportType === "POST") fd.append("targetPostId", targetId);
-    if (reportType === "MEMBER") fd.append("targetMemberId", targetId);
-    fd.append('reason', reportReason.trim());
-    fd.append('status', 'PENDING');
+      const fd = new FormData();
+      fd.append('targetType', reportType);          // ✅ 선택값 반영
+      if (reportType === "POST") fd.append("targetPostId", targetId);
+      if (reportType === "MEMBER") fd.append("targetMemberId", targetId);
+      fd.append('reason', reportReason.trim());
+      fd.append('status', 'PENDING');
 
-    console.log(reportType);
-    console.log(targetId);
-    console.log(reportReason);
+      console.log(reportType);
+      console.log(targetId);
+      console.log(reportReason);
 
-    await axios.post('http://localhost:4989/post/report', fd, {
-      headers: { Authorization: `Bearer ${token}` }, // Content-Type 자동
-    });
+      await axios.post('http://localhost:4989/post/report', fd, {
+        headers: { Authorization: `Bearer ${token}` }, // Content-Type 자동
+      });
 
-    alert('보냈습니다!');
-    setReportReason('');
-    setReportType('');
-    setOpen(false);
-  } catch (e) {
-    console.error(e);
-    alert(e?.response?.data || '전송 실패');
-  } finally {
-    setSubmitting(false);
-  }
-};
+      alert('보냈습니다!');
+      setReportReason('');
+      setReportType('');
+      setOpen(false);
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data || '전송 실패');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
+  // 탭별 기본 경로 (from이 없을 때용)
+  const getFallbackListPath = () => {
+    switch (post?.postType) {
+      case 'CARS':
+        return '/cars';
+      case 'REAL_ESTATES':
+        return '/real_estate';
+      case 'ITEMS':
+      default:
+        return '/goods';
+    }
+  };
 
+  // 목록 복귀 핸들러
+  const handleGoBackToList = () => {
+    const { from, focusId } = location.state || {};
+    // 1) 리스트에서 들어온 경우: from(URL에 ?page 포함)으로 되돌리면서 클릭 카드로 포커스
+    if (from) {
+      navi(from, { state: { focusId: focusId ?? Number(postId) } });
+      return;
+    }
+    // 2) 외부에서 바로 상세로 들어온 경우: 탭 기본 경로로 이동(페이지는 기본 1), 그래도 카드 포커스 시도
+    navi(getFallbackListPath(), { state: { focusId: Number(postId) } });
+  };
 
 
 
@@ -344,17 +368,17 @@ useEffect(() => {
     <div>
       <h2>{post.title}</h2>
       <p>작성자: {post.nickname}</p>
-      
+
       <p>가격: {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}</p>
       <p>작성일: {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
       <p>location: </p>
       <p>조회수: {post.viewCount}</p>
-      <p>거래상태 :{post.status==='ON_SALE'?'판매중':post.status==='RESERVED'?'예약':'판매완료'}</p>
+      <p>거래상태 :{post.status === 'ON_SALE' ? '판매중' : post.status === 'RESERVED' ? '예약' : '판매완료'}</p>
       <button onClick={onToggle} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <span style={{ fontSize: 20 }}>{favorited ? "❤️" : "🤍"}</span>
-      <span>{count}</span>
-    </button>
-      
+        <span style={{ fontSize: 20 }}>{favorited ? "❤️" : "🤍"}</span>
+        <span>{count}</span>
+      </button>
+
       <h3>사진 목록</h3>
       {photos.length > 0 ? (
         photos.map(photo => (
@@ -370,18 +394,18 @@ useEffect(() => {
       )}
       {post.postType === 'ITEMS' && (
         <>
-        <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
-      <p>상태: {goods.conditions ==='best'?'상':goods.conditions ==='good'?'중':'하'}</p>
-      <p>분류: {goods.categoryId === 1
-      ? '전자제품'
-      : goods.categoryId === 2
-      ? '의류'
-      : '가구'}</p>
-      </>
+          <p>판매유형: {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}</p>
+          <p>상태: {goods.conditions === 'best' ? '상' : goods.conditions === 'good' ? '중' : '하'}</p>
+          <p>분류: {goods.categoryId === 1
+            ? '전자제품'
+            : goods.categoryId === 2
+              ? '의류'
+              : '가구'}</p>
+        </>
       )}
       {post.postType === 'CARS' && (
         <>
-          <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
+          <p>판매유형: {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}</p>
           <p>브랜드: {cars.brand}</p>
           <p>모델: {cars.model}</p>
           <p>연식: {cars.year}</p>
@@ -403,14 +427,14 @@ useEffect(() => {
         {post.content}
       </div>
 
-      
+
 
       {/* 신고 모달 추가 */}
-      
+
 
       {/* 작성자 본인에게만 보이는 수정 버튼 */}
-        {userInfo ? (
-          <>
+      {userInfo && userInfo.memberId === post.memberId ? (
+        <>
           <div>
             <button
               type="button"
@@ -428,32 +452,32 @@ useEffect(() => {
               {deleting ? '삭제 중...' : '삭제'}
             </button>
           </div>
-           {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
+          {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
           <div><button onClick={handleChatToggle}>대화</button></div>
-          
+
           <div>
 
-<>
-      {/* <button onClick={() => setOpen(true)}>신고/문의</button>
+            <>
+              {/* <button onClick={() => setOpen(true)}>신고/문의</button>
       <ReportModal
         open={open}
         onClose={() => setOpen(false)}
         onSubmit={handleSubmitReport}
       /> */}
-    </>
+            </>
 
-          <button onClick={() => setOpen(true)}>신고/문의</button>
-        <ReportModal
-  open={open}
-  onClose={() => setOpen(false)}
-  reason={reportReason}
-  onChangeReason={(e) => setReportReason(e.target.value)}   // ✅ 추가
-  reportType={reportType}                                   // ✅ 추가
-  onChangeType={handleChangeType}                              // ✅ 추가
-  onSubmit={handleSubmitReport}
-  submitting={submitting}
-      />
-      </div>
+            <button onClick={() => setOpen(true)}>신고/문의</button>
+            <ReportModal
+              open={open}
+              onClose={() => setOpen(false)}
+              reason={reportReason}
+              onChangeReason={(e) => setReportReason(e.target.value)}   // ✅ 추가
+              reportType={reportType}                                   // ✅ 추가
+              onChangeType={handleChangeType}                              // ✅ 추가
+              onSubmit={handleSubmitReport}
+              submitting={submitting}
+            />
+          </div>
         </>
       ) : (
         <>
@@ -462,8 +486,10 @@ useEffect(() => {
         </>
       )}
 
-      
-         
+      <button onClick={handleGoBackToList}>목록</button>
+
+
+
       {/* DetailChat 컴포넌트 렌더링 */}
       {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
     </div>
