@@ -16,7 +16,8 @@ const GoodsDetail = () => {
   const [showChat, setShowChat] = useState(false);
   const [chatRoom, setChatRoom] = useState(null); // 💡 chatRoom 상태 추가
 
-  const { search } = useLocation();
+  const location=useLocation();
+  const { search } = location;
   const query = new URLSearchParams(search);
   const postId = query.get("postId");
 
@@ -28,6 +29,7 @@ const GoodsDetail = () => {
 
    const [count,setCount]=useState(0);
   const [favorited,setFavorited]=useState(false);
+
 
   const navi = useNavigate();
  
@@ -45,9 +47,9 @@ const GoodsDetail = () => {
 
     // 모든 API 호출을 Promise.all로 병렬 처리합니다.
     const fetchPostData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`, { headers });
-    const fetchGoodsData = axios.get(`http://localhost:4989/goods/detail?postId=${postId}`, { headers });
-    const fetchCarsData = axios.get(`http://localhost:4989/cars/detail?postId=${postId}`, { headers });
-    const fetchEstateData = axios.get(`http://localhost:4989/estate/detail?postId=${postId}`, { headers });
+    const fetchGoodsData = axios.get(`http://localhost:4989/post/itemdetail?postId=${postId}`, { headers });
+    const fetchCarsData = axios.get(`http://localhost:4989/post/cardetail?postId=${postId}`, { headers });
+    const fetchEstateData = axios.get(`http://localhost:4989/post/estatedetail?postId=${postId}`, { headers });
 
     Promise.all([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
       .then(([postRes, goodsRes, carsRes, estateRes]) => {
@@ -316,23 +318,9 @@ const handleSubmitReport = async () => {
       : '가구'}</p>
       </>
       )}
-      { post.postType === 'CARS'&&(
-        <>
-        <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
-        <p>브랜드: {cars.brand}</p>
-        <p>모델: {cars.model}</p>
-        <p>연식: {cars.year}</p>
-        <p>주행거리: {cars.mileage}</p>
-        <p>연료: {cars.fuelType}</p>
-        <p>변속기: {cars.transmission}</p>
-          <p>거래유형: {post.tradeType}</p>
-          <p>상태: {goods.conditions}</p>
-          <p>{goods.categoryId === 1 ? '전자제품' : goods.categoryId === 2 ? '의류' : '가구'}</p>
-        </>
-      )}
       {post.postType === 'CARS' && (
         <>
-          <p>거래유형: {post.tradeType}</p>
+          <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
           <p>브랜드: {cars.brand}</p>
           <p>모델: {cars.model}</p>
           <p>연식: {cars.year}</p>
@@ -381,16 +369,7 @@ const handleSubmitReport = async () => {
           </div>
            {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
           <div><button onClick={handleChatToggle}>대화</button></div>
-        </>
-      ) : (
-        <>
-          {/* 비로그인 상태일 때의 버튼들 */}
-          <button onClick={() => alert('로그인 후 이용 가능합니다.')}>신고/문의</button>
-          <button onClick={() => alert('로그인 후 이용 가능합니다.')}>대화</button>
-        </>
-      )}
-
-
+          
           <div>
           <button onClick={() => setOpen(true)}>신고/문의</button>
         <ReportModal
@@ -402,6 +381,14 @@ const handleSubmitReport = async () => {
         submitting={submitting}
       />
       </div>
+        </>
+      ) : (
+        <>
+          {/* 비로그인 상태일 때의 버튼들 */}
+          <button onClick={() => alert('로그인 후 이용 가능합니다.')}>대화</button>
+        </>
+      )}
+
       
          
       {/* DetailChat 컴포넌트 렌더링 */}

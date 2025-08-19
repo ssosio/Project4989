@@ -263,11 +263,7 @@ const Post = () => {
                                 </label>
                             </td>
                             <td>
-                                <label>위치
-                                <input type="text" name='location' value={location} onChange={(e)=>{
-                                        setLocation(e.target.value);
-                                    }}/>
-                                </label>
+                                
                             </td>
                         </tr>
                     )
