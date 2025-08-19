@@ -34,8 +34,16 @@ jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'
   expiration: 21600000
 portone:
-  api-key: YOUR_REST_API_KEY
-  api-secret: YOUR_REST_API_SECRET
+  api-key: 4048016241671038
+  api-secret: I2X0XpFPvjA6nw6ECnF1W5bn5cMPpcIgYPi1m5l9uDB4uNj0DJKKCEKJwNVYsIrPt1qfIROOwu27Csf2
+  # 포트원 채널 설정
+  channel-key: channel-key-d5b0b41e-9697-4899-b765-77bb0ff2bd15
+  # 웹결제 signkey (위변조 방지용)
+  webhook-secret: test_webhook_secret_123
+  # KG이니시스 설정
+  inicis:
+    merchant-id: test_merchant_123
+    license-key: test_license_123
 kakao:
   rest:
     api:

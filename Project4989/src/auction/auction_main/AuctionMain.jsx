@@ -7,6 +7,14 @@ const AuctionMain = () => {
   const [auctionList, setAuctionList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [winnerNicknames, setWinnerNicknames] = useState({}); // 낙찰자 닉네임 저장
+  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지
+  const [itemsPerPage] = useState(20); // 페이지당 아이템 수
+  const [auctionPhotos, setAuctionPhotos] = useState({}); // 경매 사진들
+  const [highestBids, setHighestBids] = useState({}); // 최고가 정보
+  const [filters, setFilters] = useState({
+    ongoing: true,  // 경매중 (기본값: true)
+    ended: false    // 경매종료 (기본값: false)
+  });
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -18,9 +26,13 @@ const AuctionMain = () => {
       const response = await axios.get('http://192.168.10.138:4989/auction');
       setAuctionList(response.data);
       
-      // 낙찰자 닉네임 가져오기
+      // 낙찰자 닉네임, 사진, 최고가 가져오기
       const nicknames = {};
+      const photos = {};
+      const highestBids = {};
+      
       for (const auction of response.data) {
+        // 낙찰자 닉네임 가져오기
         if (auction.winnerId) {
           try {
             const nicknameResponse = await axios.get(`http://192.168.10.138:4989/auction/member/${auction.winnerId}`);
@@ -30,8 +42,31 @@ const AuctionMain = () => {
             nicknames[auction.postId] = `ID ${auction.winnerId}`;
           }
         }
+        
+        // 경매 사진 가져오기 (첫 번째 사진만)
+        try {
+          const photoResponse = await axios.get(`http://192.168.10.138:4989/auction/photos/${auction.postId}`);
+          if (photoResponse.data && photoResponse.data.length > 0) {
+            photos[auction.postId] = photoResponse.data[0].photo_url;
+          }
+        } catch (err) {
+          console.error(`경매 사진 조회 실패 (postId: ${auction.postId}):`, err);
+        }
+        
+        // 최고가 가져오기
+        try {
+          const bidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${auction.postId}`);
+          if (bidResponse.data && bidResponse.data.bidAmount) {
+            highestBids[auction.postId] = bidResponse.data.bidAmount;
+          }
+        } catch (err) {
+          console.error(`최고가 조회 실패 (postId: ${auction.postId}):`, err);
+        }
       }
+      
       setWinnerNicknames(nicknames);
+      setAuctionPhotos(photos);
+      setHighestBids(highestBids);
       
       setLoading(false);
     } catch (error) {
@@ -79,11 +114,60 @@ const AuctionMain = () => {
     return text;
   };
 
+  // 시간 남은 계산 함수
+  const getTimeRemaining = (endTime) => {
+    if (!endTime) return '시간 미정';
+    
+    const now = new Date();
+    const end = new Date(endTime);
+    const diff = end - now;
+    
+    if (diff <= 0) return '경매 종료';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `${days}일 ${hours}시간`;
+    if (hours > 0) return `${hours}시간 ${minutes}분`;
+    return `${minutes}분`;
+  };
+
+  // 필터링된 경매 목록
+  const filteredAuctions = auctionList.filter(post => {
+    const isOngoing = new Date(post.auctionEndTime) > new Date();
+    const isEnded = new Date(post.auctionEndTime) <= new Date();
+    
+    return (filters.ongoing && isOngoing) || (filters.ended && isEnded);
+  });
+
+  // 페이지네이션 계산 (필터링된 목록 기준)
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredAuctions.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAuctions.length / itemsPerPage);
+
+  // 페이지 변경 함수
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo(0, 0);
+  };
+
+  // 필터 토글 함수
+  const handleFilterToggle = (filterType) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: !prev[filterType]
+    }));
+    setCurrentPage(1); // 필터 변경시 첫 페이지로 이동
+  };
+
   if (loading) {
     return (
       <div className="auction-main-container">
         <h2>경매 리스트</h2>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
           <h3>로딩 중...</h3>
         </div>
       </div>
@@ -92,54 +176,145 @@ const AuctionMain = () => {
 
   return (
     <div className="auction-main-container">
-      <h2>경매 리스트</h2>
-      <table className="auction-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>회원ID</th>
-            <th>제목</th>
-            <th>가격</th>
-            <th>거래유형</th>
-            <th>상태</th>
-            <th>마감시간</th>
-            <th>낙찰자ID</th>
-            <th>조회수</th>
-            <th>작성일</th>
-            <th>수정일</th>
-          </tr>
-        </thead>
-        <tbody>
-          {auctionList.map(post => (
-            <tr 
-              key={post.postId}
-              onClick={() => handleRowClick(post.postId)}
-            >
-              <td>{formatText(post.postId)}</td>
-              <td>{formatText(post.memberId)}</td>
-              <td>{formatText(post.title)}</td>
-              <td>{formatPrice(post.price)}</td>
-              <td>{formatText(post.tradeType)}</td>
-              <td>{formatText(post.status)}</td>
-              <td>{formatDate(post.auctionEndTime)}</td>
-              <td>
+      <div className="auction-header">
+        <h2>경매 리스트</h2>
+        <div className="auction-count">
+          총 {filteredAuctions.length}개의 경매 ({currentPage}/{totalPages} 페이지)
+        </div>
+      </div>
+      
+      {/* 필터 버튼들 */}
+      <div className="filter-container">
+        <button 
+          className={`filter-btn ${filters.ongoing ? 'active' : ''}`}
+          onClick={() => handleFilterToggle('ongoing')}
+        >
+          <span className="filter-icon">🔥</span>
+          경매중
+          {filters.ongoing && <span className="check-mark">✓</span>}
+        </button>
+        <button 
+          className={`filter-btn ${filters.ended ? 'active' : ''}`}
+          onClick={() => handleFilterToggle('ended')}
+        >
+          <span className="filter-icon">🏁</span>
+          경매종료
+          {filters.ended && <span className="check-mark">✓</span>}
+        </button>
+      </div>
+      
+      <div className="auction-grid">
+        {currentItems.map(post => (
+          <div 
+            key={post.postId}
+            className="auction-card"
+            onClick={() => handleRowClick(post.postId)}
+          >
+            {/* 상품 이미지 */}
+            <div className="card-image">
+              {auctionPhotos[post.postId] ? (
+                <img 
+                  src={`http://localhost:4989/auction/image/${auctionPhotos[post.postId]}`}
+                  alt={post.title}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className="no-image" style={{ display: auctionPhotos[post.postId] ? 'none' : 'flex' }}>
+                <span>📷</span>
+                <span>이미지 없음</span>
+              </div>
+              
+              {/* 상태 배지 */}
+              <div className="status-badge">
                 {post.winnerId ? (
-                  <span style={{ color: '#2ecc71', fontWeight: 'bold' }}>
-                    🎉 {winnerNicknames[post.postId] || `ID ${post.winnerId}`}
-                  </span>
+                  <span className="status-completed">낙찰완료</span>
                 ) : (
-                  <span style={{ color: '#95a5a6', fontStyle: 'italic' }}>
-                    미정
-                  </span>
+                  new Date(post.auctionEndTime) < new Date() ? (
+                    <span className="status-failed">유찰</span>
+                  ) : (
+                    <span className="status-ongoing">경매중</span>
+                  )
                 )}
-              </td>
-              <td>{formatText(post.viewCount)}</td>
-              <td>{formatDate(post.createdAt)}</td>
-              <td>{formatDate(post.updatedAt)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </div>
+            
+            {/* 상품 정보 */}
+            <div className="card-content">
+              <h3 className="card-title">{post.title}</h3>
+              
+              <div className="card-price">
+                <div className="price-row">
+                  <span className="price-label">시작가:</span>
+                  <span className="price-value">{formatPrice(post.price)}</span>
+                </div>
+                <div className="price-row">
+                  <span className="price-label">현재 경매가:</span>
+                  <span className="price-value current-bid">
+                    {highestBids[post.postId] ? formatPrice(highestBids[post.postId]) : formatPrice(post.price)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="card-bottom">
+                <div className="time-info">
+                  ⏰ {getTimeRemaining(post.auctionEndTime)}
+                </div>
+                <div className="view-count">
+                  👁️ {post.viewCount || 0}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button 
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            이전
+          </button>
+          
+          {[...Array(totalPages)].map((_, index) => {
+            const pageNumber = index + 1;
+            const showPage = pageNumber === 1 || 
+                           pageNumber === totalPages || 
+                           Math.abs(pageNumber - currentPage) <= 2;
+            
+            if (!showPage) {
+              if (pageNumber === currentPage - 3 || pageNumber === currentPage + 3) {
+                return <span key={pageNumber} className="pagination-dots">...</span>;
+              }
+              return null;
+            }
+            
+            return (
+              <button
+                key={pageNumber}
+                onClick={() => handlePageChange(pageNumber)}
+                className={`pagination-btn ${currentPage === pageNumber ? 'active' : ''}`}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+          
+          <button 
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            다음
+          </button>
+        </div>
+      )}
     </div>
   );
 };

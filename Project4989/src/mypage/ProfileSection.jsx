@@ -110,6 +110,10 @@ const ProfileSection = ({ userInfo }) => {
           nickname: userData.nickname || '',
           email: userData.email || '',
           phoneNumber: userData.phoneNumber || '',
+          createdAt: userData.createdAt || '',
+          role: userData.role || '',
+          status: userData.status || '',
+          tier: userData.tier || '',
           profileImageUrl: userData.profileImageUrl || ''
         });
         
@@ -126,7 +130,9 @@ const ProfileSection = ({ userInfo }) => {
         console.log('Profile data updated:', {
           profileData: userData,
           profileImageUrl: userData.profileImageUrl,
-          fullUrl: userData.profileImageUrl ? `http://localhost:4989${userData.profileImageUrl}` : 'No URL'
+          fullUrl: userData.profileImageUrl ? `http://localhost:4989${userData.profileImageUrl}` : 'No URL',
+          role: userData.role,
+          status: userData.status
         });
     } catch (error) {
       console.error('프로필 정보를 가져오는데 실패했습니다:', error);
@@ -334,6 +340,49 @@ const ProfileSection = ({ userInfo }) => {
     }
   };
 
+  // 가입일 포맷팅 함수
+  const formatJoinDate = (timestamp) => {
+    if (!timestamp) return '정보 없음';
+    
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return '정보 없음';
+      
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      
+      return `${year}년 ${month}월 ${day}일`;
+    } catch (error) {
+      console.error('날짜 포맷팅 오류:', error);
+      return '정보 없음';
+    }
+  };
+
+  // 역할을 한국어로 변환하는 함수
+  const formatRole = (role) => {
+    switch (role) {
+      case 'ROLE_USER':
+        return '일반 회원';
+      case 'ROLE_ADMIN':
+        return '관리자';
+      default:
+        return '일반 회원';
+    }
+  };
+
+  // 상태를 한국어로 변환하는 함수
+  const formatStatus = (status) => {
+    switch (status) {
+      case 'ACTIVE':
+        return '활성 회원';
+      case 'BANNED':
+        return '정지 회원';
+      default:
+        return '활성 회원';
+    }
+  };
+
   // 프로필 이미지 변경
   const handleProfileImageChange = async (event) => {
     const file = event.target.files[0];
@@ -452,15 +501,16 @@ const ProfileSection = ({ userInfo }) => {
               
               <Box sx={{ mt: 2 }}>
                 <Chip 
-                  label="활성 회원" 
-                  color="success" 
+                  label={formatStatus(profileData.status)} 
+                  color={profileData.status === 'ACTIVE' ? 'success' : 'error'} 
                   size="small" 
                   sx={{ mr: 1 }}
                 />
                 <Chip 
-                  label="일반 회원" 
+                  label={formatRole(profileData.role)} 
                   variant="outlined" 
                   size="small"
+                  color={profileData.role === 'ROLE_ADMIN' ? 'error' : 'primary'}
                 />
               </Box>
             </CardContent>
@@ -546,7 +596,7 @@ const ProfileSection = ({ userInfo }) => {
                   <TextField
                     fullWidth
                     label="가입일"
-                    value="2024년 1월 1일" // 실제 데이터로 교체 필요
+                    value={profileData.createdAt ? formatJoinDate(profileData.createdAt) : '정보 없음'}
                     disabled
                     margin="normal"
                   />

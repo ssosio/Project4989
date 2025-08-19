@@ -1,71 +1,200 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="boot.sagu.mapper.PostsMapperInter">
-<insert id="insertPost" parameterType="posts" useGeneratedKeys="true" keyProperty="postId">
-	INSERT INTO posts(member_id,title,price,trade_type,auction_end_time,created_at,post_type,content) 
-VALUES(#{memberId},#{title},#{price},#{tradeType},
+	<insert id="insertPost" parameterType="posts" useGeneratedKeys="true"
+		keyProperty="postId">
+		INSERT INTO
+		posts(member_id,title,price,trade_type,auction_end_time,created_at,post_type,content)
+		VALUES(#{memberId},#{title},#{price},#{tradeType},
 		CASE
-        WHEN #{tradeType} = 'AUCTION'
-        THEN DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR)
-        ELSE NULL END, CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'),#{postType},#{content})
-</insert>
-<select id="getAllPostData" resultType="posts">
-	SELECT p.*, 
-	       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1 LIMIT 1) as mainPhotoUrl
-	FROM posts p 
-	ORDER BY p.post_id DESC
-</select>
-<!-- <select id="getPostData" resultType="posts" parameterType="Long">
-	SELECT p.*, 
-	       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1 LIMIT 1) as mainPhotoUrl
-	FROM posts p 
-	where post_id=#{postId}
-</select> -->
-<!-- 게시글 + 닉네임 + 전체 사진(JSON 배열) : alias 상세 지정 버전 -->
-<select id="getPostData" resultType="map" parameterType="long">
-  SELECT
-    p.post_id          AS postId,
-    p.member_id        AS memberId,
-    p.title            AS title,
-    p.price            AS price,
-    p.trade_type       AS tradeType,
-    p.status           AS status,
-    p.view_count       AS viewCount,
-    p.created_at       AS createdAt,
-    p.updated_at       AS UpdatedAt,
-    p.post_type        AS postType,
-    m.nickname         AS nickname,
-    COALESCE(
-      JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'photoId',  pp.photo_id,
-          'photoUrl', pp.photo_url,
-          'isMain',   pp.is_main
-        )
-      ),
-      JSON_ARRAY()
-    ) AS photos
-  FROM posts p
-  LEFT JOIN members      m  ON m.member_id = p.member_id
-  LEFT JOIN post_photos  pp ON pp.post_id  = p.post_id
-  WHERE p.post_id = #{postId}
-</select>
+		WHEN #{tradeType} = 'AUCTION'
+		THEN DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR)
+		ELSE NULL END, CONVERT_TZ(NOW(), 'UTC',
+		'Asia/Seoul'),#{postType},#{content})
+	</insert>
+	<!-- <select id="getAllPostData" resultType="posts">
+		SELECT p.*, 
+		       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1
+		LIMIT 1) as mainPhotoUrl
+		FROM posts p 
+		ORDER BY p.post_id DESC
+	</select> -->
+	<!-- <select id="getPostData" resultType="posts" parameterType="Long">
+		SELECT p.*, 
+		       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1
+		LIMIT 1) as mainPhotoUrl
+		FROM posts p 
+		where post_id=#{postId}
+	</select> -->
 
-<select id="getPostListWithNick" resultType="map">
-  SELECT
-    p.post_id    AS postId,
-    p.member_id  AS memberId,
-    p.title      AS title,
-    p.price      AS price,
-    p.post_type  AS postType,
-    p.created_at AS createdAt,
-    (SELECT photo_url
-       FROM post_photos
-      WHERE post_id = p.post_id AND is_main = 1
-      LIMIT 1) AS mainPhotoUrl,
-    m.nickname   AS nickname
-  FROM posts p
-  LEFT JOIN members m ON m.member_id = p.member_id
-  ORDER BY p.post_id DESC
-</select>
+	<!-- 상세리스트 -->
+	<select id="getPostData" resultType="map" parameterType="long">
+		SELECT
+		p.post_id AS postId,
+		p.member_id AS memberId,
+		p.title AS title,
+		p.price AS price,
+		p.trade_type AS tradeType,
+		p.status AS status,
+		p.view_count AS viewCount,
+		p.created_at AS createdAt,
+		p.updated_at AS UpdatedAt,
+		p.post_type AS postType,
+		m.nickname AS nickname,
+		m.member_id AS memberId,
+		COALESCE(
+		JSON_ARRAYAGG(
+		JSON_OBJECT(
+		'photoId', pp.photo_id,
+		'photoUrl', pp.photo_url,
+		'isMain', pp.is_main
+		)
+		),
+		JSON_ARRAY()
+		) AS photos
+		FROM posts p
+		LEFT JOIN members m ON m.member_id = p.member_id
+		LEFT JOIN post_photos pp ON pp.post_id = p.post_id
+		WHERE p.post_id = #{postId}
+	</select>
+
+	<!-- 전체리스트 -->
+	<select id="getPostListWithNick" resultType="map">
+		SELECT
+		p.post_id AS postId,
+		p.member_id AS memberId,
+		p.title AS title,
+		p.price AS price,
+		p.post_type AS postType,
+		p.created_at AS createdAt,
+		p.view_count AS viewCount,
+		p.status AS status,
+		(SELECT photo_url
+		FROM post_photos
+		WHERE post_id = p.post_id AND is_main = 1
+		LIMIT 1) AS mainPhotoUrl,
+		m.nickname AS nickname
+		FROM posts p
+		LEFT JOIN members m ON m.member_id = p.member_id
+		ORDER BY p.post_id DESC
+	</select>
+
+	<!-- 조회수 -->
+	<update id="increaseViewCount" parameterType="long">
+		UPDATE posts
+		SET view_count = view_count + 1
+		WHERE post_id = #{postId}
+	</update>
+
+
+	<!-- 찜 추가 -->
+	<insert id="insertFavorite">
+		INSERT INTO favorites (
+		member_id,
+		post_id,
+		created_at
+		) VALUES (
+		#{memberId},
+		#{postId},
+		CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
+		)
+	</insert>
+
+	<!-- 찜 삭제 -->
+	<delete id="deleteFavorite">
+		DELETE FROM favorites
+		WHERE post_id = #{postId} AND member_id = #{memberId}
+	</delete>
+
+	<!-- 찜 개수 조회 -->
+	<select id="countFavorite" parameterType="long">
+		SELECT COUNT(*)
+		FROM favorites
+		WHERE post_id = #{postId}
+	</select>
+
+	<!-- 나의 찜 상태 확인 -->
+	<select id="existsFavorite" parameterType="map">
+		SELECT COUNT(*) FROM favorites
+		WHERE post_id = #{postId}
+		AND member_id = #{memberId}
+	</select>
+
+	<!-- 수정 -->
+	<!-- 게시글 공통 수정 -->
+	<update id="updatePost" parameterType="posts"> UPDATE posts <set>
+			<if test="title != null">title = #{title},</if>
+      <if test="price != null">price = #{price},</if>
+      <if test="content != null">content = #{content},</if>
+      <if test="tradeType != null">trade_type = #{tradeType},</if>
+
+      <if test="postType != null">post_type = #{postType},</if> updated_at
+		= CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul') </set> WHERE post_id =
+		#{postId} </update>
+
+	<!-- 자동차 수정 -->
+	<update id="updateCar" parameterType="car"> UPDATE cars <set>
+			<if test="brand != null">brand = #{brand},</if>
+			<if test="model != null">model = #{model},</if>
+			<if test="year != null">year = #{year},</if>
+			<if test="mileage != null">mileage = #{mileage},</if>
+			<if test="fuelType != null">fuel_type = #{fuelType},</if>
+			<if test="transmission != null">transmission = #{transmission},</if>
+		</set>
+		WHERE post_id = #{postId} </update>
+
+	<!-- 부동산 수정 -->
+	<update id="updateRealEstate" parameterType="estate"> UPDATE real_estates <set>
+			<if test="propertyType != null">property_type = #{propertyType},</if>
+			<if test="area != null">area = #{area},</if>
+			<if test="rooms != null">rooms = #{rooms},</if>
+			<if test="floor != null">floor = #{floor},</if>
+			<if test="dealType != null">deal_type = #{dealType},</if>
+		</set>
+		WHERE post_id = #{postId} </update>
+
+	<!-- 중고물품(아이템) 수정 -->
+	<update id="updateItem" parameterType="item"> UPDATE used_items <set>
+			<if test="categoryId != null">category_id = #{categoryId},</if>
+			<if test="conditions != null">conditions = #{conditions},</if>
+		</set>
+		WHERE post_id = #{postId} </update>
+
+
+	<!-- 경매 종료시간 24시간 뒤로 -->
+	<update id="updateAuctionEndTimeToNowPlus24H" parameterType="long">
+		UPDATE posts
+		SET auction_end_time = DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'),
+		INTERVAL 24 HOUR)
+		WHERE post_id = #{postId}
+	</update>
+
+	<!--권한 확인-->
+	<select id="findOwnerId" parameterType="long" resultType="long">
+		SELECT member_id
+		FROM posts
+		WHERE post_id = #{postId}
+	</select>
+
+	<!--삭제-->
+	<delete id="deletePost" parameterType="long">
+    DELETE FROM posts 
+    WHERE post_id = #{postId}
+	</delete>
+
+
+	<!-- 신고 -->
+	<insert id="insertReport" parameterType="report">
+		INSERT INTO reports
+		(reporter_id, target_type, target_id, reason, status, created_at)
+		VALUES
+		(#{reporterId},
+		#{targetType},
+		#{targetId},
+		#{reason},
+		#{status},
+		CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'))
+	</insert>
+
+
 </mapper>

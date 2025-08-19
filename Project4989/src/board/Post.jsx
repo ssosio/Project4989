@@ -222,7 +222,8 @@ const Post = () => {
         });
 
         // JWT 토큰 가져오기
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('jwtToken');
+        console.log(token);
         const headers = {
             'Content-Type': 'multipart/form-data'
         };
