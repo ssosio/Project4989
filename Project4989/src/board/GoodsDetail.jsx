@@ -1,6 +1,6 @@
 import axios from 'axios';
-import React, { useEffect, useState, useContext } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useState, useContext, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
 import DetailChat from '../chat/detailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
@@ -16,7 +16,8 @@ const GoodsDetail = () => {
   const [showChat, setShowChat] = useState(false);
   const [chatRoom, setChatRoom] = useState(null); // 💡 chatRoom 상태 추가
 
-  const { search } = useLocation();
+  const location=useLocation();
+  const { search } = location;
   const query = new URLSearchParams(search);
   const postId = query.get("postId");
 
@@ -25,6 +26,15 @@ const GoodsDetail = () => {
   const [cars, setCars] = useState(null);
   const [estate, setEstate] = useState(null);
   const [photos, setPhotos] = useState(null);
+
+   const [count,setCount]=useState(0);
+  const [favorited,setFavorited]=useState(false);
+
+
+  const navi = useNavigate();
+ 
+  // 상단 state 모음 근처에 추가
+  const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
 
   // 💡 수정된 useEffect: userInfo 또는 postId가 변경될 때 API를 다시 호출하도록 변경
   useEffect(() => {
@@ -37,9 +47,9 @@ const GoodsDetail = () => {
 
     // 모든 API 호출을 Promise.all로 병렬 처리합니다.
     const fetchPostData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`, { headers });
-    const fetchGoodsData = axios.get(`http://localhost:4989/goods/detail?postId=${postId}`, { headers });
-    const fetchCarsData = axios.get(`http://localhost:4989/cars/detail?postId=${postId}`, { headers });
-    const fetchEstateData = axios.get(`http://localhost:4989/estate/detail?postId=${postId}`, { headers });
+    const fetchGoodsData = axios.get(`http://localhost:4989/post/itemdetail?postId=${postId}`, { headers });
+    const fetchCarsData = axios.get(`http://localhost:4989/post/cardetail?postId=${postId}`, { headers });
+    const fetchEstateData = axios.get(`http://localhost:4989/post/estatedetail?postId=${postId}`, { headers });
 
     Promise.all([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
       .then(([postRes, goodsRes, carsRes, estateRes]) => {
@@ -61,15 +71,134 @@ const GoodsDetail = () => {
     // AuthContext가 상태를 관리하므로, context의 변경에 따라 컴포넌트가 재렌더링됩니다.
   }, [postId, userInfo, token]); // 의존성 배열에 userInfo와 token을 추가
 
-  const handleSubmitReport = async () => {
+  // view count(조회수)
+  const incCalledRef = useRef(false);
+
+  useEffect(() => {
+    if (!postId) return;
+    if (incCalledRef.current) return;   // ✅ 두 번째 실행 차단 (StrictMode/재렌더)
+    incCalledRef.current = true;
+
+    axios.post(`http://localhost:4989/post/viewcount?postId=${postId}`)
+      .catch(console.error);
+  }, [postId]);
+
+  //좋아요갯수
+  useEffect(()=>{
+    axios.get(`http://localhost:4989/post/count?postId=${postId}`)
+    .then(({ data }) => setCount(Number(data.count) || 0))
+    .catch(err=> console.log(err));
+  },[postId]);
+
+  // 내가 좋아요 눌렀는지 (로그인시에만 호출)
+// useEffect(() => {
+//   if (!postId || !userInfo?.memberId) return;
+//   axios
+//     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
+//     .then(({ data }) => setFavorited(Boolean(data.favorited)))
+//     .catch(() => setFavorited(false));
+// }, [postId, userInfo]);
+
+// 내가 좋아요 눌렀는지 (로그인시에만 호출)
+useEffect(() => {
+  if (!postId || !userInfo?.memberId) return;
+
+  console.group('[checkfav] 요청 시작');
+  console.log('postId:', postId, 'memberId:', userInfo.memberId);
+
+  axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
+    .then(({ data, status }) => {
+      console.log('HTTP status:', status);
+      console.log('response data:', data);
+      const value = !!data?.favorited;
+      console.log('parsed favorited:', value);
+      setFavorited(value);
+    })
+    .catch((err) => {
+      console.error('요청 실패:', {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
+      setFavorited(false);
+    })
+    .finally(() => console.groupEnd());
+}, [postId, userInfo]);
+
+
+
+  //좋아요 토글
+  const onToggle = async () => {
+  if (!userInfo?.memberId) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+  try {
+    const { data } = await axios.post(
+      `http://localhost:4989/post/toggle`,
+      null,                           
+      { params: { postId } }          
+    );
+    setFavorited(Boolean(data.favorited));         
+    setCount(Number(data.count) || 0);              
+  } catch (e) {
+    console.error(e);
+    alert('잠시 후 다시 시도해주세요.');
+  }
+};
+
+
+// 게시글 삭제
+  const handleDeletePost = async () => {
+    if (!postId) return;
+
+    if (!userInfo?.memberId) {
+      alert('로그인이 필요합니다.');
+      navi('/login', { replace: true, state: { from: location.pathname } });
+      return;
+    }
+    if (userInfo.memberId !== post?.memberId) {
+      alert('삭제 권한이 없습니다. 작성자만 삭제할 수 있어요.');
+      return;
+    }
+    if (!window.confirm('정말로 이 게시글을 삭제하시겠어요?')) return;
+
+    setDeleting(true);
+    try {
+      await axios.delete(`http://localhost:4989/post/${postId}`); // 쿠키 인증이면 헤더 없이 OK
+      alert('삭제되었습니다.');
+      navi('/goods');
+    } catch (e) {
+      // 응답 자체가 없을 때 (네트워크/프리플라이트/CORS)
+      if (!e.response) {
+        console.log('navigator.onLine =', navigator.onLine, 'message =', e.message, 'code =', e.code);
+        alert('네트워크/프록시/CORS 문제로 요청이 차단됐습니다. 콘솔 확인!');
+        return;
+      }
+      const { status, data } = e.response;
+      console.log('status =', status, 'data =', data);
+      if (status === 401) {
+        navi('/login', { replace: true, state: { from: location.pathname } });
+      } else if (status === 403) {
+        alert('작성자만 삭제할 수 있어요.');
+      } else if (status === 404) {
+        alert('이미 삭제되었거나 존재하지 않는 게시글입니다.');
+      } else {
+        alert('삭제 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+const handleSubmitReport = async () => {
     if (!reportContent.trim()) return;
     try {
       setSubmitting(true);
-      const headers = { 'Authorization': `Bearer ${token}` };
-      await axios.post('http://localhost:4989/report', {
+      await axios.post('http://localhost:4989/post/report', {
         postId,
         content: reportContent.trim(),
-      }, { headers });
+      });
       alert('보냈습니다!');
       setReportContent('');
       setOpen(false);
@@ -79,6 +208,7 @@ const GoodsDetail = () => {
     } finally {
       setSubmitting(false);
     }
+  
   };
 
   const handleChatToggle = async () => {
@@ -142,15 +272,28 @@ const GoodsDetail = () => {
   };
 
 
+  
+
+
+
+
   if (!post) return <div>로딩 중...</div>;
 
   return (
     <div>
       <h2>{post.title}</h2>
       <p>작성자: {post.nickname}</p>
+      
       <p>가격: {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}</p>
       <p>작성일: {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
       <p>location: </p>
+      <p>조회수: {post.viewCount}</p>
+      <p>거래상태 :{post.status==='ON_SALE'?'판매중':post.status==='RESERVED'?'예약':'판매완료'}</p>
+      <button onClick={onToggle} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span style={{ fontSize: 20 }}>{favorited ? "❤️" : "🤍"}</span>
+      <span>{count}</span>
+    </button>
+      
       <h3>사진 목록</h3>
       {photos.length > 0 ? (
         photos.map(photo => (
@@ -166,14 +309,18 @@ const GoodsDetail = () => {
       )}
       {post.postType === 'ITEMS' && (
         <>
-          <p>거래유형: {post.tradeType}</p>
-          <p>상태: {goods.conditions}</p>
-          <p>{goods.categoryId === 1 ? '전자제품' : goods.categoryId === 2 ? '의류' : '가구'}</p>
-        </>
+        <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
+      <p>상태: {goods.conditions ==='best'?'상':goods.conditions ==='good'?'중':'하'}</p>
+      <p>분류: {goods.categoryId === 1
+      ? '전자제품'
+      : goods.categoryId === 2
+      ? '의류'
+      : '가구'}</p>
+      </>
       )}
       {post.postType === 'CARS' && (
         <>
-          <p>거래유형: {post.tradeType}</p>
+          <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
           <p>브랜드: {cars.brand}</p>
           <p>모델: {cars.model}</p>
           <p>연식: {cars.year}</p>
@@ -195,33 +342,55 @@ const GoodsDetail = () => {
         {post.content}
       </div>
 
-      {/* 로그인 상태에 따라 버튼을 렌더링하는 명확한 조건부 로직 */}
-      {userInfo ? (
-        <>
-          {/* 로그인 상태일 때의 버튼들 */}
-          <div><button type='button'>거래</button></div>
+      
+
+      {/* 신고 모달 추가 */}
+      
+
+      {/* 작성자 본인에게만 보이는 수정 버튼 */}
+        {userInfo ? (
+          <>
           <div>
-            <button onClick={() => setOpen(true)}>신고/문의</button>
-            <ReportModal
-              open={open}
-              onClose={() => setOpen(false)}
-              content={reportContent}
-              onChange={(e) => setReportContent(e.target.value)}
-              onSubmit={handleSubmitReport}
-              submitting={submitting}
-            />
+            <button
+              type="button"
+              onClick={() => navi(`/board/update?postId=${postId}`)}  // 라우트는 실제 매칭 경로로
+            >
+              수정
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDeletePost}
+              disabled={deleting}
+              style={{ color: 'white', background: '#d23f3f' }}
+            >
+              {deleting ? '삭제 중...' : '삭제'}
+            </button>
           </div>
-          {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
+           {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
           <div><button onClick={handleChatToggle}>대화</button></div>
+          
+          <div>
+          <button onClick={() => setOpen(true)}>신고/문의</button>
+        <ReportModal
+        open={open}
+        onClose={() => setOpen(false)}
+        content={reportContent}
+        onChange={(e) => setReportContent(e.target.value)}
+        onSubmit={handleSubmitReport}
+        submitting={submitting}
+      />
+      </div>
         </>
       ) : (
         <>
           {/* 비로그인 상태일 때의 버튼들 */}
-          <button onClick={() => alert('로그인 후 이용 가능합니다.')}>신고/문의</button>
           <button onClick={() => alert('로그인 후 이용 가능합니다.')}>대화</button>
         </>
       )}
 
+      
+         
       {/* DetailChat 컴포넌트 렌더링 */}
       {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
     </div>

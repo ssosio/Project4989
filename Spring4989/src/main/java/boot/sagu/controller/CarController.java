@@ -17,9 +17,9 @@ public class CarController {
 	@Autowired
 	CarService carService;
 
-	@GetMapping("/detail")
-	public CarDto getOneCarData(@RequestParam("postId") Long postId)
-	{
-		return carService.getOneCarData(postId);
-	}
+//	@GetMapping("/detail")
+//	public CarDto getOneCarData(@RequestParam("postId") Long postId)
+//	{
+//		return carService.getOneCarData(postId);
+//	}
 }

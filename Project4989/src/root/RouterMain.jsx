@@ -16,6 +16,7 @@ import Chat from '../chat/ChatMain'
 import Map from '../chat/KakaoMap'
 import GoodsDetail from '../board/GoodsDetail'
 import AuthCallback from '../login/AuthCallback'
+import UpdatePost from '../board/UpdatePost'
 import MyPage from '../mypage'
 
 const RouterMain = ({ handleLoginSuccess }) => {
@@ -38,6 +39,7 @@ const RouterMain = ({ handleLoginSuccess }) => {
           <Route path='/mypage' element={<MyPage />} />
           <Route path='/board/GoodsDetail' element={<GoodsDetail />} />
           <Route path='/map' element={<Map />} />
+          <Route path='/board/update' element={<UpdatePost />} />
         </Route>
       </Routes>
     </div>

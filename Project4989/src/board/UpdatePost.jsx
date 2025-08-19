@@ -1,10 +1,13 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './post.css';
 
-const Post = () => {
+const UpdatePost = () => {
 
+    const navi = useNavigate();
+    const { search } = useLocation();
+    const postId = new URLSearchParams(search).get('postId');
 
     //공통
     const [uploadFiles,setUploadFiles]=useState([]);
@@ -15,7 +18,12 @@ const Post = () => {
     const [content,setContent]=useState('');
     const [photoPreview,setPhotoPreview]=useState([]);
 
-    const [location,setLocation]=useState('');
+    const [locationVal, setLocationVal] = useState('');
+
+    // 기존 사진(서버 저장본) + 삭제/대표 관리
+    const [existingPhotos, setExistingPhotos] = useState([]); // [{photoId, photoUrl, isMain}]
+    const [deletePhotoIds, setDeletePhotoIds] = useState([]);
+    const [mainPhotoId, setMainPhotoId] = useState(null);
 
     //부동산
     const [propertyType,setPropertyType]=useState('');
@@ -73,14 +81,56 @@ const Post = () => {
         setSelectedChild(parentId);
     };
 
+    // 상세 데이터 로드 (초기값 세팅)
+  useEffect(() => {
+    if (!postId) return;
+    axios.get(`http://localhost:4989/post/detail?postId=${postId}`)
+      .then(res => {
+        // 응답 구조는 백에서 보낸 형태에 맞춰 조정
+        // 예시: { post, car, realEstate, item, photos }
+        const data = res.data || {};
+        const p = data.post || data; // 혹시 바로 post 필드 없이 map이면 보정
+        setPostType(p.postType || '');
+        setTradeType(p.tradeType || '');
+        setTitle(p.title || '');
+        setPrice(p.price ?? '');
+        setContent(p.content || '');
+        setLocationVal(p.location || '');
+
+        // subtype
+        if (data.car) {
+          setBrand(data.car.brand || '');
+          setModel(data.car.model || '');
+          setYear(data.car.year ?? '');
+          setMileage(data.car.mileage ?? '');
+          setFuelType(data.car.fuelType || '');
+          setTransmission(data.car.transmission || '');
+        }
+        if (data.realEstate) {
+          setPropertyType(data.realEstate.propertyType || '');
+          setArea(data.realEstate.area ?? '');
+          setRooms(data.realEstate.rooms ?? '');
+          setFloor(data.realEstate.floor ?? '');
+          setDealType(data.realEstate.dealType || '');
+          setLocationVal(data.realEstate.location || p.location || '');
+        }
+        if (data.item) {
+          setCategoryId(data.item.categoryId ?? '');
+          setConditions(data.item.conditions || '');
+          // parent/child는 필요시 별도 API로 역추적
+        }
+
+        // 사진
+        const photos = data.photos || p.photos || [];
+        setExistingPhotos(Array.isArray(photos) ? photos : []);
+        // 대표 기본값 (있다면)
+        const main = (Array.isArray(photos) ? photos : []).find(ph => ph.isMain === 1 || ph.isMain === true);
+        setMainPhotoId(main ? main.photoId : null);
+      })
+      .catch(err => console.error(err));
+  }, [postId]);
     
-
-    const navi=useNavigate();
-
-    // let uploadUrl="http://localhost:4989/post/upload";
-    // let insertUrl="http://localhost:4989/post/insert";
-    //let photoUrl="http://localhost:4989/save";
-
+   //사진파일업로드
     const handleFileChag=(e)=>{
         const files=Array.from(e.target.files);
 
@@ -88,111 +138,105 @@ const Post = () => {
         setPhotoPreview(files.map(file=>URL.createObjectURL(file)));
     }
 
+    // 기존 사진 삭제 토글
+  const toggleDeletePhoto = (photoId) => {
+    setDeletePhotoIds(prev =>
+      prev.includes(photoId) ? prev.filter(id => id !== photoId) : [...prev, photoId]
+    );
+    // 삭제로 체크한 사진이 대표로 선택되어 있으면 대표 선택 해제
+    if (mainPhotoId === photoId) {
+      setMainPhotoId(null);
+    }
+  };
+
+  const appendIf = (fd, key, val) => {
+    if (val !== undefined && val !== null && `${val}`.trim() !== '') {
+      fd.append(key, val);
+    }
+  };
+
+  const submitUpdate = () => {
+    if (!postId) {
+      alert('postId가 없습니다.');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('postId', postId);
+
+    // 공통
+    appendIf(fd, 'title', title);
+    appendIf(fd, 'postType', postType);
+    appendIf(fd, 'content', content);
+    appendIf(fd, 'price', price);
+    appendIf(fd, 'location', locationVal);
+
+    if (postType !== 'REAL_ESTATES') {
+      appendIf(fd, 'tradeType', tradeType);
+    }
+
+    // 부동산
+    if (postType === 'REAL_ESTATES') {
+      appendIf(fd, 'propertyType', propertyType);
+      appendIf(fd, 'area', area);
+      appendIf(fd, 'rooms', rooms);
+      appendIf(fd, 'floor', floor);
+      appendIf(fd, 'dealType', dealType);
+    }
+
+    // 자동차
+    if (postType === 'CARS') {
+      appendIf(fd, 'brand', brand);
+      appendIf(fd, 'model', model);
+      appendIf(fd, 'year', year);
+      appendIf(fd, 'mileage', mileage);
+      appendIf(fd, 'fuelType', fuelType);
+      appendIf(fd, 'transmission', transmission);
+    }
+
+    // 아이템
+    if (postType === 'ITEMS') {
+      appendIf(fd, 'categoryId', categoryId);
+      appendIf(fd, 'conditions', conditions);
+    }
+
+    // 새 파일
+    uploadFiles.forEach(f => fd.append('uploadFiles', f));
+
+    // 삭제할 기존 사진 ids
+    deletePhotoIds.forEach(id => fd.append('deletePhotoIds', id));
+
+    // 대표 선택(선택)
+    if (mainPhotoId) fd.append('mainPhotoId', mainPhotoId);
+
+    // 헤더
+    const token = localStorage.getItem('jwtToken');
+    const headers = { 'Content-Type': 'multipart/form-data' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    axios.post('http://localhost:4989/post/update', fd, { headers })
+      .then(() => {
+        alert('수정 성공');
+        navi('/goods'); // 또는 상세로
+      })
+      .catch(err => {
+        console.error('에러 상세:', err.response?.data || err);
+        alert('수정 실패');
+      });
+  };
+
     const clickList=()=>{
         navi("/goods");
     }
 
 
-    const postInsert=()=>{
-        const formData=new FormData();
-
-        //공통
-        formData.append("title",title);
-        formData.append("postType",postType);
-        
-        formData.append("content",content);
-        formData.append("price",price);
-        formData.append("location",location);
-
-        if(postType!=='REAL_ESTATES'){
-        formData.append("tradeType",tradeType);
-        }
-
-        //부동산
-        if(postType==='REAL_ESTATES'){
-        formData.append("propertyType",propertyType);
-        formData.append("area",area);
-        formData.append("rooms",rooms);
-        formData.append("floor",floor);
-        formData.append("dealType",dealType);
-        }
-        
-
-        //자동차
-        if(postType==='CARS'){
-        formData.append("brand",brand);
-        formData.append("model",model);
-        formData.append("year",year);
-        formData.append("mileage",mileage);
-        formData.append("fuelType",fuelType);
-        formData.append("transmission",transmission);
-        }
-        
-
-        //아이템
-        if(postType==='ITEMS'){
-            formData.append("categoryId",categoryId);
-            formData.append("conditions",conditions);
-         }
-        
-
-        // 디버깅을 위한 콘솔 로그 추가
-        console.log("전송할 tradeType:", tradeType);
-        console.log("전송할 postType:", postType);
-        console.log("전송할 title:", title);
-        console.log("전송할 price:", price);
-        console.log("전송할 location:", location);
-        console.log("전송할 propertyType:", propertyType);
-        console.log("전송할 area:", area);
-        console.log("전송할 rooms:", rooms);
-        console.log("전송할 floor:", floor);
-        console.log("전송할 brand:", brand);
-        console.log("전송할 model:", model);
-        console.log("전송할 year:", year);
-        console.log("전송할 mileage:", mileage);
-        console.log("전송할 fuelType:", fuelType);
-        console.log("전송할 transmission:", transmission);
-        console.log("전송할 condition:", conditions);
-
-        
-
-
-        uploadFiles.forEach(file=>{
-            formData.append("uploadFiles",file);
-        });
-
-        // JWT 토큰 가져오기
-        const token = localStorage.getItem('jwtToken');
-        console.log(token);
-        const headers = {
-            'Content-Type': 'multipart/form-data'
-        };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
-
-        axios.post("http://localhost:4989/post/insert",formData,{
-            headers: headers
-        }).then(()=>{
-            alert("성공");
-            navi("/goods");
-        }).catch(err=>{
-            console.error("에러 상세:", err.response?.data);
-            alert("에러"+err);
-        })
-    }
-
-
-
-  return (
-    <div className="post-page">
+    return (
+         <div className="post-page">
       <div className="post-container">
         {/* 헤더 섹션 */}
         <div className="post-header">
-          <h1 className="post-title">물품 등록</h1>
-          <p className="post-subtitle">판매하고 싶은 물품을 등록해보세요</p>
+          <h1 className="post-title">물품 수정</h1>
+          <p className="post-subtitle">판매하고 싶은 물품을 수정해보세요</p>
         </div>
 
         {/* 폼 컨테이너 */}
@@ -263,7 +307,11 @@ const Post = () => {
                                 </label>
                             </td>
                             <td>
-                                
+                                <label>위치
+                                <input type="text" name='location' value={location} onChange={(e)=>{
+                                        setLocationVal(e.target.value);
+                                    }}/>
+                                </label>
                             </td>
                         </tr>
                     )
@@ -332,7 +380,7 @@ const Post = () => {
                             <td>
                                 <label>위치
                                 <input type="text" name='location' value={location} onChange={(e)=>{
-                                        setLocation(e.target.value);
+                                        setLocationVal(e.target.value);
                                     }}/>
                                 </label>
                             </td>
@@ -403,7 +451,7 @@ const Post = () => {
             <tr>
                 <td>
                     <label>제목
-                    <input type="text" name='title' onChange={(e)=>{
+                    <input type="text" name='title'  value={title} onChange={(e)=>{
                         setTitle(e.target.value);
                     }}/>
                     </label>
@@ -412,7 +460,7 @@ const Post = () => {
             <tr>
                 <td>
                     <label>가격
-                    <input type="text" name='price' onChange={(e)=>{
+                    <input type="text" name='price'  value={price} onChange={(e)=>{
                         setPrice(e.target.value);
                     }}/>
                     </label>
@@ -420,38 +468,75 @@ const Post = () => {
             </tr>
             <tr>
                 <td colSpan='4'>
-                    <textarea name="content" id="" onChange={(e)=>{
+                    <textarea name="content" id="" value={content} onChange={(e)=>{
                         setContent(e.target.value);
                     }}></textarea>
                 </td>
             </tr>
-            <tr>
+            
+              {/* 기존 사진 목록 (삭제/대표 선택) */}
+              <tr>
                 <td>
-                    <label>사진
-                    <input type="file" name='uploadfiles' multiple onChange={handleFileChag}/>
-                    </label>
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    {existingPhotos.map((ph) => (
+                      <div key={ph.photoId} style={{ textAlign: 'center' }}>
+                        <img
+                          src={`http://localhost:4989/save/${ph.photoUrl}`}
+                          alt=""
+                          className="photo-preview"
+                          style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
+                        />
+                        <div style={{ marginTop: 6 }}>
+                          <label style={{ display: 'block' }}>
+                            <input
+                              type="checkbox"
+                              checked={deletePhotoIds.includes(ph.photoId)}
+                              onChange={() => toggleDeletePhoto(ph.photoId)}
+                            /> 삭제
+                          </label>
+                          <label style={{ display: 'block' }}>
+                            <input
+                              type="radio"
+                              name="mainPhoto"
+                              checked={mainPhotoId === ph.photoId}
+                              onChange={() => setMainPhotoId(ph.photoId)}
+                              disabled={deletePhotoIds.includes(ph.photoId)}
+                            /> 대표
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </td>
-            </tr>
-            <tr>
+              </tr>
+
+              {/* 새 사진 추가 */}
+              <tr>
                 <td>
-                    <div className="photo-preview-container">
-                        {photoPreview.map((url,idx)=>(
-                            <img src={url} alt="" key={idx} className="photo-preview" />
-                        ))}
-                    </div>
+                  <label>사진 추가
+                    <input type="file" multiple onChange={handleFileChag} />
+                  </label>
                 </td>
-            </tr>
+              </tr>
+              <tr>
+                <td>
+                  <div className="photo-preview-container">
+                    {photoPreview.map((url, idx) => (
+                      <img src={url} alt="" key={idx} className="photo-preview" />
+                    ))}
+                  </div>
+                </td>
+              </tr>
           </table>
-          
-          {/* 버튼 컨테이너 */}
+
           <div className="post-button-container">
-            <button type='submit' className="post-submit-btn" onClick={postInsert}>등록</button>
-            <button type='button' className="post-list-btn" onClick={clickList}>목록</button>
+            <button type="button" className="post-submit-btn" onClick={submitUpdate}>수정</button>
+            <button type="button" className="post-list-btn" onClick={clickList}>목록</button>
           </div>
         </div>
       </div>
     </div>
-  )
-}
+    );
+};
 
-export default Post
+export default UpdatePost;

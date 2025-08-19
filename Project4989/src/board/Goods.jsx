@@ -11,6 +11,7 @@ const Goods = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+
   const list=()=>{
     let url="http://localhost:4989/post/list";
 
@@ -68,6 +69,8 @@ const Goods = () => {
     setCurrentPage(page);
   }
 
+  
+
   return (
     <div className="goods-page">
       <div className="goods-container">
@@ -112,6 +115,8 @@ const Goods = () => {
                       {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
                     </div>
                     <div className="goods-member">판매자: {p.nickname}</div>
+                    <div>조회수: {p.viewCount}</div>
+                    <div>{p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}</div>
                     <div className="goods-date">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
                     </div>

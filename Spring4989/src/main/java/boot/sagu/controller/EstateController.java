@@ -16,10 +16,6 @@ public class EstateController {
 	@Autowired
 	EstateService estateService;
 	
-	@GetMapping("/detail")
-	public RealEstateDto getOneEstateData(@RequestParam("postId") Long postId)
-	{
-		return estateService.getOneEstateData(postId);
-	}
+	
 
 }

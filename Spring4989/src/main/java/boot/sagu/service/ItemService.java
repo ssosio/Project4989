@@ -12,7 +12,7 @@ public class ItemService implements ItemServiceInter {
 
 	@Autowired
 	ItemMapperInter itemMapper;
-	
+
 	@Override
 	public ItemDto getOneItemData(@RequestParam("postId") Long postId) {
 		// TODO Auto-generated method stub
