@@ -366,6 +366,7 @@ public class AuctionService implements AuctionServiceInter {
 	    dto.setAmount(BigDecimal.valueOf(pay.getAmount()));
 	    dto.setImpUid(impUid);
 	    dto.setMerchantUid(pay.getMerchantUid());
+	    dto.setStatus("PAID");
 	    auctionMapper.insertGuarantee(dto);
 	}
 	
@@ -410,6 +411,7 @@ public class AuctionService implements AuctionServiceInter {
 		dto.setMemberId(memberId);
 		dto.setAmount(amount);
 		dto.setImpUid(impUid);
+		dto.setStatus("PAID");
 		auctionMapper.insertGuarantee(dto);
 	}
 	

@@ -491,7 +491,7 @@ const AuctionDetail = () => {
         }
       });
 
-      if (response.status === 402 && response.data.status === 'NEED_GUARANTEE') {
+      if (response.data.status === 'NEED_GUARANTEE') {
         // 보증금 결제 필요
         const guaranteeAmount = response.data.guaranteeAmount || Math.max(1, Math.round(auctionDetail.price * 0.1));
         setPaymentAmount(guaranteeAmount);
@@ -517,10 +517,12 @@ const AuctionDetail = () => {
       if (error.response?.status === 401) {
         setBidMessage('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해주세요.');
         setBidMessageType('error');
-      } else if (error.response?.status === 402 && error.response?.data?.status === 'NEED_GUARANTEE') {
+      } else if (error.response?.data?.status === 'NEED_GUARANTEE') {
         // 보증금 결제 필요
         const guaranteeAmount = error.response.data.guaranteeAmount || Math.max(1, Math.round(auctionDetail.price * 0.1));
         setPaymentAmount(guaranteeAmount);
+        setBidMessage('보증금 결제가 필요합니다. 결제를 진행해주세요.');
+        setBidMessageType('info');
         setShowPaymentModal(true);
       } else {
         setBidMessage('입찰에 실패했습니다. 다시 시도해주세요.');
@@ -775,10 +777,15 @@ const AuctionDetail = () => {
     
     // 결제 완료 후 다시 입찰 시도
     try {
+      const token = localStorage.getItem('jwtToken');
       const response = await axios.post(`http://192.168.10.138:4989/auction/${postId}/bids`, {
         postId: parseInt(postId),
         bidderId: userInfo.memberId,
         bidAmount: bidAmount
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       setBidMessage('보증금 결제가 완료되었고, 입찰이 성공했습니다!');
