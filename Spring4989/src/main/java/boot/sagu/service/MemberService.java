@@ -68,4 +68,21 @@ public class MemberService implements MemberServiceInter {
 		// 암호화된 비밀번호로 업데이트
 		memberMapper.updatePassword(loginId, encodedPassword);
 	}
+	
+	@Override
+	public void updateProfile(MemberDto member) {
+		// 프로필 정보 업데이트
+		memberMapper.updateProfile(member);
+	}
+	
+	@Override
+	public String updateProfileImage(String loginId, MultipartFile profileImageFile) {
+		// 1. 프로필 이미지 업로드
+		String profileImageUrl = fileUploadService.uploadFile(profileImageFile);
+		
+		// 2. DB에 프로필 이미지 URL 업데이트
+		memberMapper.updateProfileImage(loginId, profileImageUrl);
+		
+		return profileImageUrl;
+	}
 }

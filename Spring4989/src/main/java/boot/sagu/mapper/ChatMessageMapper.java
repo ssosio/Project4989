@@ -39,5 +39,7 @@ public interface ChatMessageMapper {
 	
 	public void deleteOldMessages(@Param("hours") int hours);
 	
-	 public int getUnreadMessageCount(@Param("memberId") Long memberId);
+	public int getUnreadMessageCount(@Param("memberId") Long memberId);
+	 
+	public void insertFirstChatMessage(Map<String, Object> params);
 }

@@ -20,7 +20,15 @@ const AuctionDetail = () => {
   const [winnerNickname, setWinnerNickname] = useState(''); // 낙찰자 닉네임 추가
   const [highestBidderNickname, setHighestBidderNickname] = useState(''); // 최고 입찰자 닉네임 추가
   const [userCount, setUserCount] = useState(0); // 방 인원수
-  const [sessionId] = useState(() => Math.random().toString(36).substr(2, 9)); // 고유 세션 ID
+  // 세션 ID를 localStorage에서 가져오거나 새로 생성
+  const [sessionId] = useState(() => {
+    let storedSessionId = localStorage.getItem('auctionSessionId');
+    if (!storedSessionId) {
+      storedSessionId = Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('auctionSessionId', storedSessionId);
+    }
+    return storedSessionId;
+  });
   const [isFavorite, setIsFavorite] = useState(false); // 찜 상태
   const [favoriteLoading, setFavoriteLoading] = useState(false); // 찜 로딩 상태
   const [favoriteCount, setFavoriteCount] = useState(0); // 찜 개수
@@ -33,9 +41,33 @@ const AuctionDetail = () => {
   // 이미지 모달 관련 state
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [modalPhotoIndex, setModalPhotoIndex] = useState(0);
+  
+  // 삭제 관련 state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  
+  // 입찰 기록 관련 state
+  const [bidHistory, setBidHistory] = useState([]);
 
   const SERVER_IP = '192.168.10.138';
-    const SERVER_PORT = '4989';
+  const SERVER_PORT = '4989';
+  
+  // 시간 차이 계산 함수
+  const getTimeAgo = (bidTime) => {
+    const now = new Date();
+    const bidDate = new Date(bidTime);
+    const diffInMinutes = Math.floor((now - bidDate) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return '방금 전';
+    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}시간 전`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}일 전`;
+  };
   
   useEffect(() => {
     // postId를 사용해서 상세 정보를 가져오는 API 호출
@@ -44,10 +76,10 @@ const AuctionDetail = () => {
         setAuctionDetail(res.data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error("❌ 에러 발생:", err);
-        setLoading(false);
-      });
+             .catch(err => {
+         console.error("경매 상세 정보 조회 실패:", err);
+         setLoading(false);
+       });
 
     // 최고가 정보 가져오기
     axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`)
@@ -59,10 +91,43 @@ const AuctionDetail = () => {
         setHighestBid(null);
       });
 
-    // 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 호출 제거)
+    // 방 입장 API 호출
+    axios.post(`http://192.168.10.138:4989/auction/room/join/${postId}`, {
+      sessionId: sessionId
+    })
+      .then(res => {
+        if (res.data.success) {
+          setUserCount(res.data.userCount);
+        }
+      })
+      .catch(err => {
+        console.error("방 입장 실패:", err);
+      });
   
-  // 경매 사진 가져오기
-  getAuctionPhotos();
+      // 경매 사진 가져오기
+    getAuctionPhotos();
+    
+    // 입찰 기록 가져오기
+    getBidHistory();
+    
+    // 페이지 언로드 시 방 퇴장 처리 (브라우저 탭 닫기, 다른 페이지 이동 등)
+    const handleBeforeUnload = () => {
+      navigator.sendBeacon(`http://192.168.10.138:4989/auction/room/leave/${postId}/${sessionId}`);
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // 컴포넌트 언마운트는 새로고침이 아닌 실제 페이지 이동일 때만 방 퇴장
+      axios.post(`http://192.168.10.138:4989/auction/room/leave/${postId}`, {
+        sessionId: sessionId
+      })
+        .catch(err => {
+          console.error("방 퇴장 실패:", err);
+        });
+    };
   }, [postId, sessionId, userInfo]);
 
   // 작성자 닉네임 가져오기
@@ -110,6 +175,32 @@ const AuctionDetail = () => {
       setHighestBidderNickname('');
     }
   }, [highestBid?.bidderId]);
+
+  // 입찰 기록 시간 실시간 업데이트
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBidHistory(prev => [...prev]); // 리렌더링을 위한 state 업데이트
+    }, 60000); // 1분마다 업데이트
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // 방 인원수 주기적 업데이트
+  useEffect(() => {
+    const interval = setInterval(() => {
+      axios.get(`http://192.168.10.138:4989/auction/room/count/${postId}`)
+        .then(res => {
+          if (res.data.success) {
+            setUserCount(res.data.userCount);
+          }
+        })
+        .catch(err => {
+          console.error("방 인원수 조회 실패:", err);
+        });
+    }, 10000); // 10초마다 업데이트
+    
+    return () => clearInterval(interval);
+  }, [postId]);
 
   // 실시간 타이머 업데이트
   useEffect(() => {
@@ -201,7 +292,7 @@ const AuctionDetail = () => {
         }, 1000); // 1초 후 전송
       },
       onDisconnect: () => {
-        console.log('WebSocket 연결 해제');
+        // WebSocket 연결 해제
         
       },
       onStompError: (error) => {
@@ -240,6 +331,19 @@ const AuctionDetail = () => {
         setBidMessage(`${data.bidder?.nickname || '누군가'}님이 입찰했습니다!`);
         setBidMessageType('info');
         
+        // 입찰 기록에 새 입찰 추가 (최신 순으로 맨 위에)
+        const newBidRecord = {
+          id: Date.now(), // 임시 ID
+          bidderName: data.bidder?.nickname || `ID: ${data.bidder?.id}`,
+          bidAmount: data.bid?.bidAmount || 0,
+          bidTime: new Date().toISOString()
+        };
+        
+        setBidHistory(prev => {
+          const updated = [newBidRecord, ...prev];
+          return updated.slice(0, 5); // 최대 5개만 유지
+        });
+        
         // 경매 정보도 업데이트 (필요시)
         if (data.auctionDetail) {
           setAuctionDetail(data.auctionDetail);
@@ -260,7 +364,6 @@ const AuctionDetail = () => {
       case 'USER_COUNT_UPDATE':
         // 실시간 방 인원수 업데이트
         setUserCount(data.userCount);
-        console.log('방 인원수 업데이트:', data.userCount, '명');
         break;
         
       default:
@@ -452,13 +555,13 @@ const AuctionDetail = () => {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'ON_SALE':
-        return 'status-badge status-onsale';
+        return 'detail-status-badge detail-status-onsale';
       case 'SOLD':
-        return 'status-badge status-sold';
+        return 'detail-status-badge detail-status-sold';
       case 'RESERVED':
-        return 'status-badge status-reserved';
+        return 'detail-status-badge detail-status-reserved';
       default:
-        return 'status-badge status-onsale';
+        return 'detail-status-badge detail-status-onsale';
     }
   };
 
@@ -545,6 +648,19 @@ const AuctionDetail = () => {
     }
   };
   
+  // 입찰 기록 가져오기 함수
+  const getBidHistory = async () => {
+    if (!postId) return;
+    
+    try {
+      const response = await axios.get(`http://192.168.10.138:4989/auction/bid-history/${postId}`);
+      setBidHistory(response.data || []);
+    } catch (error) {
+      console.error('입찰 기록 조회 실패:', error);
+      setBidHistory([]);
+    }
+  };
+  
   // 사진 네비게이션 함수들
   const prevPhoto = () => {
     setCurrentPhotoIndex(prev => 
@@ -584,6 +700,46 @@ const AuctionDetail = () => {
     );
   };
 
+  // 경매 삭제 핸들러 - 비밀번호 확인 모달 표시
+  const handleDeleteAuction = () => {
+    setShowPasswordModal(true);
+  };
+
+  // 비밀번호 확인 후 삭제 처리
+  const handleDeleteWithPassword = async () => {
+    if (!password.trim()) {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
+    
+    setDeleteLoading(true);
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const response = await axios.delete(`http://192.168.10.138:4989/auction/delete/${postId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        data: { password }
+      });
+      
+      if (response.status === 200) {
+        alert('경매가 삭제되었습니다.');
+        navigate('/auction'); // 경매 목록으로 이동
+      }
+    } catch (error) {
+      console.error('경매 삭제 실패:', error);
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('경매 삭제에 실패했습니다.');
+      }
+    } finally {
+      setDeleteLoading(false);
+      setShowPasswordModal(false);
+      setPassword('');
+    }
+  };
+
   // 공유 기능 추가
   const shareToSocial = () => {
     const shareData = {
@@ -596,10 +752,10 @@ const AuctionDetail = () => {
       // 모바일에서 네이티브 공유 메뉴
       navigator.share(shareData)
         .then(() => {
-          console.log('공유 성공!');
+          // 공유 성공
         })
-        .catch((error) => {
-          console.log('공유 취소 또는 실패:', error);
+        .catch(() => {
+          // 공유 취소 또는 실패
         });
     } else {
       // 데스크톱에서는 클립보드 복사
@@ -655,38 +811,89 @@ const AuctionDetail = () => {
           {/* 제목과 메타 정보 */}
           <div className="product-header">
             <div className="title-heart-container">
-              <h1 className="product-title">{auctionDetail.title}</h1>
-              <div className="heart-favorite-container">
-                {/* 찜 하트 버튼 */}
-                <button 
-                  onClick={toggleFavorite}
-                  disabled={favoriteLoading}
-                  className={`favorite-heart-btn ${isFavorite ? 'favorited' : ''}`}
-                  title={isFavorite ? '찜 해제' : '찜 추가'}
-                >
-                  {isFavorite ? '❤️' : '🤍'}
-                </button>
-                <span className="favorite-count-text">찜: {favoriteCount}개</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h1 className="product-title">{auctionDetail.title}</h1>
                 
-                {/* 공유 버튼 추가 */}
-                <button 
-                  onClick={shareToSocial}
-                  className="share-btn"
-                  title="경매 공유하기"
-                  style={{
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 12px',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    marginLeft: '10px',
-                    fontSize: '14px'
-                  }}
-                >
-                  📤 공유 
-                </button>
+                {/* 삭제 버튼 (작성자만 표시) - 제목 오른쪽에 배치 */}
+                {userInfo?.memberId === auctionDetail?.memberId && (
+                  <button 
+                    onClick={handleDeleteAuction}
+                    className="delete-btn"
+                    title="경매 삭제"
+                                         style={{
+                       background: '#ffb3b3',
+                       color: '#8b0000',
+                       border: 'none',
+                       padding: '6px 12px',
+                       borderRadius: '4px',
+                       cursor: 'pointer',
+                       fontSize: '12px',
+                       fontWeight: '500',
+                       transition: 'all 0.2s ease',
+                       marginLeft: '15px'
+                     }}
+                     onMouseEnter={(e) => {
+                       e.target.style.background = '#ff9999';
+                       e.target.style.transform = 'scale(1.05)';
+                     }}
+                     onMouseLeave={(e) => {
+                       e.target.style.background = '#ffb3b3';
+                       e.target.style.transform = 'scale(1)';
+                     }}
+                   >
+                     삭제
+                   </button>
+                )}
               </div>
+              
+              <div className="heart-favorite-container">
+
+                  
+                  {/* 찜과 공유 버튼을 한 줄에 배치 */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {/* 찜 하트 버튼 */}
+                    <button 
+                      onClick={toggleFavorite}
+                      disabled={favoriteLoading}
+                      className={`favorite-heart-btn ${isFavorite ? 'favorited' : ''}`}
+                      title={isFavorite ? '찜 해제' : '찜 추가'}
+                    >
+                      {isFavorite ? '❤️' : '🤍'}
+                    </button>
+                    <span className="favorite-count-text">찜: {favoriteCount}개</span>
+                   
+                    {/* 공유 버튼 */}
+                    <button 
+                      onClick={shareToSocial}
+                      className="share-btn"
+                      title="경매 공유하기"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        marginLeft: '10px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <img 
+                        src="/공유.png" 
+                        alt="공유" 
+                        style={{ 
+                          width: '24px', 
+                          height: '24px',
+                          filter: 'brightness(0.8)',
+                          transition: 'filter 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.filter = 'brightness(1)'}
+                        onMouseLeave={(e) => e.target.style.filter = 'brightness(0.8)'}
+                      />
+                    </button>
+                  </div>
+                  
+
+                </div>
             </div>
             
             {/* 메타 정보 섹션 */}
@@ -715,9 +922,10 @@ const AuctionDetail = () => {
                   <div>
                     <span className="meta-label">상태</span>
                     <span className={getStatusBadgeClass(auctionDetail.status)}>
-                      {auctionDetail.status === 'ON_SALE' ? '판매중' : 
-                       auctionDetail.status === 'SOLD' ? '판매완료' : 
-                       auctionDetail.status === 'RESERVED' ? '예약중' : auctionDetail.status}
+                      {auctionDetail.status === 'ON_SALE' ? '경매중' : 
+                       auctionDetail.status === 'SOLD' ? '낙찰완료' : 
+                       auctionDetail.status === 'RESERVED' ? '예약중' : 
+                       auctionDetail.status || '상태미정'}
                     </span>
                   </div>
                 </div>
@@ -829,8 +1037,7 @@ const AuctionDetail = () => {
           {/* 타이머 섹션 */}
           <div className="timer-section-overlay">
             <div className="timer-title">
-              <img src="/clock.png" alt="시계" className="clock-icon" />
-              남은 시간 (경매 마감까지)
+``              남은 시간 (경매 마감까지)
             </div>
             <div className="timer-display">{timeRemaining}</div>
           </div>
@@ -849,43 +1056,75 @@ const AuctionDetail = () => {
           
           {/* 현재 최고가 섹션 */}
           <div className="current-price-section">
-            {/* 경매 이미지 */}
-            <div className="auction-image-wrapper">
-              <img 
-                src="/auction.png" 
-                alt="경매 이미지" 
-                className="auction-image"
-              />
-            </div>
-            
-                                      {/* 현재 최고가/낙찰가 텍스트 - 독립적 관리 */}
-             <div className={`current-price-label ${!highestBid ? 'starting-price' : timeRemaining === '경매 종료' ? 'final-price' : ''}`}>
-               {!highestBid ? '시작가' : timeRemaining === '경매 종료' ? '낙찰가' : '현재 최고가'}
-             </div>
+            <div className="price-bid-container">
+              {/* 왼쪽: 가격 정보 */}
+              <div className="price-info-left">
+                {/* 현재 최고가/낙찰가 텍스트 */}
+                <div className={`current-price-label ${!highestBid ? 'starting-price' : timeRemaining === '경매 종료' ? 'final-price' : ''}`}>
+                  {!highestBid ? '시작가' : timeRemaining === '경매 종료' ? '낙찰가' : '현재 최고가'}
+                </div>
 
-             {/* 가격 텍스트 - 독립적 관리 */}
-             <div className={`current-price-value ${!highestBid ? 'starting-price-value' : timeRemaining === '경매 종료' ? 'final-price-value' : ''}`}>
-               {formatPrice(getCurrentPrice())}
-             </div>
-            
-                         {/* 현재 최고 입찰자 또는 낙찰자 정보 표시 - 고정 영역 */}
-             <div className="price-info-container">
-               {highestBid && timeRemaining !== '경매 종료' ? (
-                 <div className="highest-bid-info">
-                   <small>👑 현재 최고 입찰자: {highestBidderNickname || `ID ${highestBid.bidderId}`}</small>
-                   <small>입찰 시간: {formatDate(highestBid.bidTime)}</small>
-                 </div>
-               ) : timeRemaining === '경매 종료' && auctionDetail?.winnerId ? (
-                 <div className="winner-info">
-                   <small>🎉 낙찰자: {winnerNickname || `ID ${auctionDetail.winnerId}`}</small>
-                   <small>경매가 성공적으로 종료되었습니다!</small>
-                 </div>
-               ) : (
-                 <div className="empty-info-placeholder">
-                   경매 정보가 없습니다
-                 </div>
-               )}
-             </div>
+                {/* 가격 텍스트 */}
+                <div className={`current-price-value ${!highestBid ? 'starting-price-value' : timeRemaining === '경매 종료' ? 'final-price-value' : ''}`}>
+                  {formatPrice(getCurrentPrice())}
+                </div>
+              </div>
+
+              {/* 오른쪽: 최근 입찰 기록 */}
+              <div className="bid-history-right">
+                <div className="bid-history-title">
+                  {timeRemaining === '경매 종료' ? '최종 입찰 기록' : '최근 입찰 기록'}
+                </div>
+                
+                {/* 최고 입찰자 정보 - 폭죽 아이콘과 함께 */}
+                {highestBid && timeRemaining !== '경매 종료' ? (
+                  <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#d4a574', marginBottom: '3px' }}>
+                      🎉 최고 입찰자: {highestBidderNickname || `ID ${highestBid.bidderId}`} 🎉
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#8b7355' }}>
+                      입찰 시간: {formatDate(highestBid.bidTime)}
+                    </div>
+                  </div>
+                ) : timeRemaining === '경매 종료' && auctionDetail?.winnerId ? (
+                  <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#d4a574', marginBottom: '3px' }}>
+                      🎉 낙찰자: {winnerNickname || `ID ${auctionDetail.winnerId}`} 🎉
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#8b7355' }}>
+                      경매가 성공적으로 종료되었습니다!
+                    </div>
+                  </div>
+                ) : timeRemaining === '경매 종료' && !auctionDetail?.winnerId ? (
+                  <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#e74c3c', marginBottom: '3px' }}>
+                      유찰
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#8b7355' }}>
+                      입찰자가 없어 경매가 유찰되었습니다.
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="bid-history-list">
+                  {bidHistory.length > 0 ? (
+                    bidHistory.map((bid) => (
+                      <div key={bid.id} className="bid-history-item">
+                        <span className="bidder-name">{bid.bidderName}</span>
+                        <span className="bid-amount">{formatPrice(bid.bidAmount)}</span>
+                        <span className="bid-time">{getTimeAgo(bid.bidTime)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-bid-history">
+                      <span style={{ color: '#6c757d', fontStyle: 'italic' }}>
+                        아직 입찰 기록이 없습니다
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             
              {/* 금액 버튼들 */}
              <div className="bid-amount-buttons">
@@ -1041,6 +1280,29 @@ const AuctionDetail = () => {
             {/* 이미지 정보 */}
             <div className="modal-image-info">
               {modalPhotoIndex + 1} / {photos.length}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 비밀번호 확인 모달 */}
+      {showPasswordModal && (
+        <div className="password-modal-overlay">
+          <div className="password-modal">
+            <h3>비밀번호 확인</h3>
+            <p>경매를 삭제하려면 비밀번호를 입력하세요.</p>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호 입력"
+              className="password-input"
+            />
+            <div className="modal-buttons">
+              <button onClick={() => setShowPasswordModal(false)}>취소</button>
+              <button onClick={handleDeleteWithPassword} disabled={deleteLoading}>
+                {deleteLoading ? '삭제 중...' : '삭제'}
+              </button>
             </div>
           </div>
         </div>

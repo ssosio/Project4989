@@ -3,6 +3,8 @@ package boot.sagu.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+
 import org.springframework.stereotype.Component;
 
 import boot.sagu.dto.MemberDto;
@@ -21,6 +23,17 @@ public class JwtUtil {
 
     @Value("${jwt.expiration}")
     private long expiration;
+
+    // 디버깅을 위한 초기화 로그
+    public JwtUtil() {
+        System.out.println("JwtUtil 생성자 호출됨");
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("JWT Secret Key: " + secret);
+        System.out.println("JWT Expiration: " + expiration);
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());

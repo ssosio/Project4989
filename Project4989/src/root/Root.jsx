@@ -31,7 +31,7 @@ const Root = () => {
           loginId: decodedToken.sub,
           memberId: decodedToken.memberId,
           nickname: decodedToken.nickname,
-          profileImageUrl: decodedToken.profileImageUrl
+          profileImageUrl: decodedToken.profileImageUrl,
         });
         // 새로고침 후에도 모든 axios 요청 헤더에 토큰을 포함시킵니다.
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -80,8 +80,15 @@ const Root = () => {
     setUserInfo(null);
   };
 
+  // 사용자 정보 업데이트 함수
+  const updateUserInfo = (updatedUserInfo) => {
+    setUserInfo(updatedUserInfo);
+  };
+
+
+
   return (
-    <AuthContext.Provider value={{ userInfo, handleLogout }}>
+    <AuthContext.Provider value={{ userInfo, handleLogout, updateUserInfo }}>
       <BrowserRouter>
         {/* RouterMain에 handleLoginSuccess 함수를 props로 전달 */}
         <RouterMain handleLoginSuccess={handleLoginSuccess} />
