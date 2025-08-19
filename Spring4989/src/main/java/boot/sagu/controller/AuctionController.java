@@ -192,7 +192,6 @@ public class AuctionController {
 		}
 
 		//이미 납부했으면 바로 입찰 처리
-		
 		return null;
 	}
 	
