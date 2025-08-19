@@ -43,7 +43,7 @@ public interface PostsServiceInter {
     void deletePost(@Param("postId") Long postId,PostsDto post,Long actorId);
 
 	//신고
-	public void insertReport(ReportsDto dto);
+	public int insertReport(ReportsDto dto);
 	
 
 }

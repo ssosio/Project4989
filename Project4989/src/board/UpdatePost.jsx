@@ -481,7 +481,7 @@ const UpdatePost = () => {
                     {existingPhotos.map((ph) => (
                       <div key={ph.photoId} style={{ textAlign: 'center' }}>
                         <img
-                          src={`http://localhost:4989/save/${ph.photoUrl}`}
+                          src={`http://localhost:4989/postphoto/${ph.photoUrl}`}
                           alt=""
                           className="photo-preview"
                           style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}

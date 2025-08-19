@@ -160,22 +160,6 @@ public class PostsController {
 		return Map.of("favorited",nowFavorited,"count",count);
 	}
 	
-	/*
-	//신고
-	@PostMapping("report")
-	public ResponseEntity<Void> insertReport(@ModelAttribute ReportsDto dto,
-            @RequestHeader("Authorization") String authorization) 
-	{
-		String token=authorization.substring(7);
-	if (token == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-	
-	long memberId = jwtUtil.extractMemberId(token); // 토큰에 넣어둔 클레임 키 사용
-	dto.setReporterId(memberId);              // ✅ 여기서 주입
-	
-	postService.insertReport(dto);
-	return ResponseEntity.ok().build();
-	}
-	*/
 	
 	@PostMapping(value = "/update")
     public ResponseEntity<Void> updatePost(
@@ -209,4 +193,26 @@ public class PostsController {
         postService.deletePost(postId, dto, actorId);
         return ResponseEntity.ok().build();
     }
+	
+	//신고
+	@PostMapping("report")
+	public ResponseEntity<?> insertReport(@ModelAttribute ReportsDto dto,
+            @RequestHeader("Authorization") String authorization) 
+	{
+		long memberId = jwtUtil.extractMemberId(authorization.substring(7));
+	    dto.setReporterId(memberId);
+
+	    if ("POST".equals(dto.getTargetType())) {
+	        // post FK 체크 후 저장
+	    } else if ("MEMBER".equals(dto.getTargetType())) {
+	        // member FK 체크 후 저장
+	    } else {
+	        return ResponseEntity.badRequest().build();
+	    }
+
+	    postService.insertReport(dto);
+	    return ResponseEntity.ok().build();
+	}
+	
+	
 }

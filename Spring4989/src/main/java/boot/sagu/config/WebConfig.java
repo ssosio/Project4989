@@ -20,6 +20,9 @@ public class WebConfig implements WebMvcConfigurer {
             
             registry.addResourceHandler("/chatsave/**")
                     .addResourceLocations("file:src/main/resources/static/chatsave/");
+            
+            registry.addResourceHandler("/postphoto/**")
+            		.addResourceLocations("file:src/main/webapp/save/");
         } else {
             // 운영 환경: classpath 사용
             registry.addResourceHandler("/save/**")

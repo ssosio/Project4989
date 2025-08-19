@@ -49,6 +49,6 @@ public interface PostsMapperInter {
     void deletePost(@Param("postId") Long postId);
 	
 	//신고
-	public void insertReport(ReportsDto dto);
+	public int insertReport(ReportsDto dto);
 	
 }

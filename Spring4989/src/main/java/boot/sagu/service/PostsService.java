@@ -196,14 +196,6 @@ public class PostsService implements PostsServiceInter {
 		}
 	}
 
-	// 신고
-	@Override
-	public void insertReport(ReportsDto dto) {
-		// TODO Auto-generated method stub
-		postMapper.insertReport(dto);
-	}
-	
-	
 	
 	//수정시작
 	//부동산타입 아닌경우 처리
@@ -334,4 +326,13 @@ public class PostsService implements PostsServiceInter {
 		postMapper.deletePost(postId);
 	}
 
+
+	// 신고
+	@Override
+	public int insertReport(ReportsDto dto) {
+		// TODO Auto-generated method stub
+		return postMapper.insertReport(dto);
+	}
+	
+	
 }

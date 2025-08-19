@@ -223,9 +223,8 @@ const AddMemberAddress = ({ onClose, onAddressSelect, mode = "member" }) => {
         // post 모드 (게시물 등록 시 location input에 값 넣기)
         else if (mode === "post") {
             const selectedAddress = {
-                location: searchTerm,
-                latitude: "",   // 필요시 카카오/네이버 API 등으로 채울 수 있음
-                longitude: ""
+                locationText: searchTerm,     // 화면에 표시할 텍스트
+                locationId: selectedRegionId  // 서버 전송용 숫자
             };
             if (onAddressSelect) onAddressSelect(selectedAddress);
             onClose();

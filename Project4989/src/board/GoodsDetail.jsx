@@ -8,10 +8,14 @@ import { AuthContext } from '../context/AuthContext'; // AuthContext import 추�
 const GoodsDetail = () => {
   // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
   const { userInfo } = useContext(AuthContext);
-  const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
+  // const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
+  
+ const token =
+  userInfo?.token ??
+  localStorage.getItem("jwtToken");
 
   const [open, setOpen] = useState(false);
-  const [reportContent, setReportContent] = useState('');
+  const [reportReason, setReportReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [chatRoom, setChatRoom] = useState(null); // 💡 chatRoom 상태 추가
@@ -29,6 +33,10 @@ const GoodsDetail = () => {
 
    const [count,setCount]=useState(0);
   const [favorited,setFavorited]=useState(false);
+
+  const [reportType, setReportType] = useState(''); // '', 'POST', 'MEMBER'
+  const [targetId, setTargetId] = useState(null);
+  const authorId = post?.memberId;
 
 
   const navi = useNavigate();
@@ -191,25 +199,6 @@ useEffect(() => {
     }
   };
 
-const handleSubmitReport = async () => {
-    if (!reportContent.trim()) return;
-    try {
-      setSubmitting(true);
-      await axios.post('http://localhost:4989/post/report', {
-        postId,
-        content: reportContent.trim(),
-      });
-      alert('보냈습니다!');
-      setReportContent('');
-      setOpen(false);
-    } catch (e) {
-      console.error(e);
-      alert('전송 실패');
-    } finally {
-      setSubmitting(false);
-    }
-  
-  };
 
   const handleChatToggle = async () => {
     // 채팅창이 이미 열려 있다면, 닫아주는 로직을 실행합니다.
@@ -272,7 +261,79 @@ const handleSubmitReport = async () => {
   };
 
 
-  
+  // const handleSubmitReport = async () => {
+  //     if (!reportReason.trim()) return;
+  //     try {
+  //       setSubmitting(true);
+  //       await axios.post('http://localhost:4989/post/report', {
+  //         postId,
+  //         reason: reportReason.trim(),
+  //       });
+  //       alert('보냈습니다!');
+  //       setReportReason('');
+  //       setOpen(false);
+  //     } catch (e) {
+  //       console.error(e);
+  //       alert('전송 실패');
+  //     } finally {
+  //       setSubmitting(false);
+  //     }
+    
+  //   };
+
+ const handleChangeType = (type) => {
+  setReportType(type);
+  setTargetId(type === 'POST' ? Number(postId) :
+             type === 'MEMBER' ? Number(authorId) : null);
+             console.log(authorId);
+             console.log(postId);
+}; 
+
+ const handleSubmitReport = async () => {
+  if (!reportReason.trim() ) return;
+  if (!token || token === "null" || token === "undefined") {
+  alert("로그인이 필요합니다.");
+  return;
+}
+
+  // 선택에 따라 targetId 결정
+  // const targetId =
+  //   reportType === 'POST'   ? Number(postId) :
+  //   reportType === 'MEMBER' ? Number(authorId) :
+  //   null;
+
+  if (!targetId) { alert('대상 정보를 찾을 수 없습니다.'); return; }
+
+  try {
+    setSubmitting(true);
+
+    const fd = new FormData();
+    fd.append('targetType', reportType);          // ✅ 선택값 반영
+    if (reportType === "POST") fd.append("targetPostId", targetId);
+    if (reportType === "MEMBER") fd.append("targetMemberId", targetId);
+    fd.append('reason', reportReason.trim());
+    fd.append('status', 'PENDING');
+
+    console.log(reportType);
+    console.log(targetId);
+    console.log(reportReason);
+
+    await axios.post('http://localhost:4989/post/report', fd, {
+      headers: { Authorization: `Bearer ${token}` }, // Content-Type 자동
+    });
+
+    alert('보냈습니다!');
+    setReportReason('');
+    setReportType('');
+    setOpen(false);
+  } catch (e) {
+    console.error(e);
+    alert(e?.response?.data || '전송 실패');
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
 
 
@@ -299,7 +360,7 @@ const handleSubmitReport = async () => {
         photos.map(photo => (
           <img
             key={photo.photoId}
-            src={`http://localhost:4989/save/${photo.photoUrl}`}
+            src={`http://localhost:4989/postphoto/${photo.photoUrl}`}
             alt=""
             style={{ width: "150px", marginRight: "8px" }}
           />
@@ -371,14 +432,26 @@ const handleSubmitReport = async () => {
           <div><button onClick={handleChatToggle}>대화</button></div>
           
           <div>
-          <button onClick={() => setOpen(true)}>신고/문의</button>
-        <ReportModal
+
+<>
+      {/* <button onClick={() => setOpen(true)}>신고/문의</button>
+      <ReportModal
         open={open}
         onClose={() => setOpen(false)}
-        content={reportContent}
-        onChange={(e) => setReportContent(e.target.value)}
         onSubmit={handleSubmitReport}
-        submitting={submitting}
+      /> */}
+    </>
+
+          <button onClick={() => setOpen(true)}>신고/문의</button>
+        <ReportModal
+  open={open}
+  onClose={() => setOpen(false)}
+  reason={reportReason}
+  onChangeReason={(e) => setReportReason(e.target.value)}   // ✅ 추가
+  reportType={reportType}                                   // ✅ 추가
+  onChangeType={handleChangeType}                              // ✅ 추가
+  onSubmit={handleSubmitReport}
+  submitting={submitting}
       />
       </div>
         </>

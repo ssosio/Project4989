@@ -35,7 +35,7 @@ const Real_estate = () => {
     console.log(postList); // mainPhotoUrl 값 확인
   }, [postList]);
 
-  const photoUrl="http://localhost:4989/save/";
+  const photoUrl="http://localhost:4989/postphoto/";
 
   const clickDetail=(postId)=>{
     navi(`/board/GoodsDetail?postId=${postId}`);

@@ -99,7 +99,7 @@ public class SecurityConfig {
             	.requestMatchers("/api/auctions/portone/webhook").permitAll()
             	.requestMatchers("/ws/**","/post/**").permitAll()
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
-                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
+                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/postphoto/**").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
