@@ -84,7 +84,7 @@ function SignupForm() {
     try {
       // 실제 SMS 발송 대신 서버 콘솔에 인증번호를 출력하는 Mocking 방식 사용
       await axios.post('http://localhost:4989/sms/send', { phoneNumber });
-      alert('인증번호가 발송되었습니다. (서버 콘솔을 확인하세요)');
+      alert('인증번호가 발송되었습니다.');
       setIsCodeSent(true);
     } catch (error) {
       alert('인증번호 발송에 실패했습니다.');

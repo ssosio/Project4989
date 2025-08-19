@@ -172,6 +172,7 @@ public class MemberController {
                 profileInfo.setProfileImageUrl(member.getProfileImageUrl());
                 profileInfo.setTier(member.getTier());
                 profileInfo.setStatus(member.getStatus());
+                profileInfo.setRole(member.getRole());
                 profileInfo.setCreatedAt(member.getCreatedAt());
                 
                 return ResponseEntity.ok(profileInfo);

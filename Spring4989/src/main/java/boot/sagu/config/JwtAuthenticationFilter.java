@@ -98,6 +98,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/read") ||
                requestURI.startsWith("/api/region/register") ||
                requestURI.startsWith("/chat/") ||
-               requestURI.startsWith("/api/chat/");
+               requestURI.startsWith("/api/chat/") ||
+               requestURI.startsWith("/save/");
     }
 }
