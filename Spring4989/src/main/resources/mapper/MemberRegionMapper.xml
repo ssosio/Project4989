@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="boot.sagu.mapper.MemberRegionMapper">
+    <insert id="insertMemberRegion" parameterType="boot.sagu.dto.MemberRegionDto">
+        INSERT INTO member_regions (member_id, region_id, is_primary, created_at)
+        VALUES (#{memberId}, #{regionId}, #{isPrimary}, NOW())
+    </insert>
+
+    <select id="countMemberRegionsByMemberId" resultType="int">
+        SELECT COUNT(*) FROM member_regions WHERE member_id = #{memberId}
+    </select>
+    
+    <select id="findMaxIsPrimaryByMemberId" resultType="int">
+    	SELECT COALESCE(MAX(is_primary), 0) FROM member_regions WHERE member_id = #{memberId}
+    </select>
+</mapper>	

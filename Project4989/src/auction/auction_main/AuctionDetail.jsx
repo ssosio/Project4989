@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Client } from '@stomp/stompjs';
 import { AuthContext } from '../../context/AuthContext';
 import './auction.css';
+import { api } from '../../lib/api';
+import PortOnePayment from './PortOnePayment';
 
 const AuctionDetail = () => {
   const { postId } = useParams();
@@ -49,6 +51,10 @@ const AuctionDetail = () => {
   
   // 입찰 기록 관련 state
   const [bidHistory, setBidHistory] = useState([]);
+  // 결제 관련 상태
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const SERVER_IP = '192.168.10.138';
   const SERVER_PORT = '4989';
@@ -468,36 +474,58 @@ const AuctionDetail = () => {
       return;
     }
 
-    const bidData = {
-      postId: parseInt(postId),
-      bidderId: currentUserId,
-      bidAmount: bidAmount
-    };
-
+    // 보증금 결제가 필요한지 확인
     try {
-      const response = await axios.post('http://192.168.10.138:4989/auction/bid', bidData);
-      setBidMessage(response.data);
+      const token = localStorage.getItem('jwtToken');
+      console.log('JWT Token:', token);
+      console.log('User ID:', currentUserId);
+      console.log('Bid Amount:', bidAmount);
       
-      // 메시지 타입 설정
-      if (response.data.includes('성공')) {
-        setBidMessageType('success');
-        setBidAmount(0);
-        // 경매 정보 새로고침
-        const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
-        setAuctionDetail(refreshResponse.data);
-        
-        // 최고가 정보 새로고침
-        const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
-        setHighestBid(highestBidResponse.data);
-      } else if (response.data.includes('낮습니다')) {
-        setBidMessageType('error');
-      } else {
-        setBidMessageType('error');
+      const response = await axios.post(`http://192.168.10.138:4989/auction/${postId}/bids`, {
+        postId: parseInt(postId),
+        bidderId: currentUserId,
+        bidAmount: bidAmount
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 402 && response.data.status === 'NEED_GUARANTEE') {
+        // 보증금 결제 필요
+        const guaranteeAmount = response.data.guaranteeAmount || Math.max(1, Math.round(auctionDetail.price * 0.1));
+        setPaymentAmount(guaranteeAmount);
+        setShowPaymentModal(true);
+        return;
       }
+
+      // 보증금이 이미 납부된 경우 또는 입찰 성공
+      setBidMessage(response.data.message || '입찰이 완료되었습니다.');
+      setBidMessageType('success');
+      setBidAmount(0);
+      
+      // 경매 정보 새로고침
+      const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
+      setAuctionDetail(refreshResponse.data);
+      
+      // 최고가 정보 새로고침
+      const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
+      setHighestBid(highestBidResponse.data);
+      
     } catch (error) {
       console.error('입찰 실패:', error);
-      setBidMessage('입찰에 실패했습니다. 다시 시도해주세요.');
-      setBidMessageType('error');
+      if (error.response?.status === 401) {
+        setBidMessage('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해주세요.');
+        setBidMessageType('error');
+      } else if (error.response?.status === 402 && error.response?.data?.status === 'NEED_GUARANTEE') {
+        // 보증금 결제 필요
+        const guaranteeAmount = error.response.data.guaranteeAmount || Math.max(1, Math.round(auctionDetail.price * 0.1));
+        setPaymentAmount(guaranteeAmount);
+        setShowPaymentModal(true);
+      } else {
+        setBidMessage('입찰에 실패했습니다. 다시 시도해주세요.');
+        setBidMessageType('error');
+      }
     }
   };
 
@@ -738,6 +766,46 @@ const AuctionDetail = () => {
       setShowPasswordModal(false);
       setPassword('');
     }
+  };
+
+  // 결제 완료 후 처리
+  const handlePaymentComplete = async () => {
+    setShowPaymentModal(false);
+    setIsProcessingPayment(false);
+    
+    // 결제 완료 후 다시 입찰 시도
+    try {
+      const response = await axios.post(`http://192.168.10.138:4989/auction/${postId}/bids`, {
+        postId: parseInt(postId),
+        bidderId: userInfo.memberId,
+        bidAmount: bidAmount
+      });
+
+      setBidMessage('보증금 결제가 완료되었고, 입찰이 성공했습니다!');
+      setBidMessageType('success');
+      setBidAmount(0);
+      
+      // 경매 정보 새로고침
+      const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
+      setAuctionDetail(refreshResponse.data);
+      
+      // 최고가 정보 새로고침
+      const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
+      setHighestBid(highestBidResponse.data);
+      
+    } catch (error) {
+      console.error('입찰 실패:', error);
+      setBidMessage('보증금은 결제되었지만 입찰에 실패했습니다. 다시 시도해주세요.');
+      setBidMessageType('error');
+    }
+  };
+
+  // 결제 취소 처리
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
+    setIsProcessingPayment(false);
+    setBidMessage('보증금 결제가 취소되었습니다.');
+    setBidMessageType('info');
   };
 
   // 공유 기능 추가
@@ -1306,6 +1374,51 @@ const AuctionDetail = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 보증금 결제 모달 */}
+      {showPaymentModal && (
+        <div className="payment-modal">
+          <div className="payment-modal-content">
+            <h2>보증금 결제</h2>
+            <p>경매 참여를 위해 시작가의 10% 보증금을 결제해주세요.</p>
+            <div className="payment-details">
+              <p><strong>경매 제목:</strong> {auctionDetail?.title}</p>
+              <p><strong>시작가:</strong> {auctionDetail?.price?.toLocaleString()}원</p>
+              <p><strong>보증금:</strong> {paymentAmount.toLocaleString()}원</p>
+              <p><strong>결제 수단:</strong> KG이니시스 (카드)</p>
+              <p><strong>입찰 금액:</strong> {bidAmount.toLocaleString()}원</p>
+            </div>
+            <div className="payment-modal-buttons">
+              <button 
+                className="confirm-btn"
+                onClick={() => {
+                  setIsProcessingPayment(true);
+                  setShowPaymentModal(false);
+                }}
+              >
+                결제 진행
+              </button>
+              <button 
+                className="cancel-btn"
+                onClick={handlePaymentCancel}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 포트원 결제 컴포넌트 */}
+      {isProcessingPayment && (
+        <PortOnePayment
+          postId={parseInt(postId)}
+          memberId={userInfo?.memberId}
+          amount={paymentAmount}
+          onPaymentComplete={handlePaymentComplete}
+          onPaymentCancel={handlePaymentCancel}
+        />
       )}
     </div>
   );

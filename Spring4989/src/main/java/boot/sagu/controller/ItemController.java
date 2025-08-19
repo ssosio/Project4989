@@ -16,11 +16,6 @@ public class ItemController {
 	@Autowired
 	ItemService itemService;
 	
-	@GetMapping("/detail")
-	public ItemDto getOneItemData(@RequestParam("postId") Long postId)
-	{
-		return itemService.getOneItemData(postId);
-	}
 	
 
 }

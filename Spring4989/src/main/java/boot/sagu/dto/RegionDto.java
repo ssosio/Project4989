@@ -6,7 +6,7 @@ import lombok.Data;
 public class RegionDto {
 
 	private String address;
-	private int region_id;
+	private int regionId;
 	private String province;
 	private String city;
 	private String district;
