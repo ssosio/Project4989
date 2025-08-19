@@ -76,8 +76,10 @@ const AuctionDetail = () => {
   };
   
   useEffect(() => {
+    const baseURL = import.meta.env.VITE_API_BASE;
+    
     // postId를 사용해서 상세 정보를 가져오는 API 호출
-    axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`)
+    axios.get(`${baseURL}/auction/detail/${postId}`)
       .then(res => {
         setAuctionDetail(res.data);
         setLoading(false);
@@ -88,7 +90,7 @@ const AuctionDetail = () => {
        });
 
     // 최고가 정보 가져오기
-    axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`)
+    axios.get(`${baseURL}/auction/highest-bid/${postId}`)
       .then(res => {
         setHighestBid(res.data);
       })
@@ -98,7 +100,7 @@ const AuctionDetail = () => {
       });
 
     // 방 입장 API 호출
-    axios.post(`http://192.168.10.138:4989/auction/room/join/${postId}`, {
+    axios.post(`${baseURL}/auction/room/join/${postId}`, {
       sessionId: sessionId
     })
       .then(res => {
@@ -344,6 +346,14 @@ const AuctionDetail = () => {
           bidAmount: data.bid?.bidAmount || 0,
           bidTime: new Date().toISOString()
         };
+
+        // Authorization 헤더를 항상 'Bearer <토큰>' 한 번만 붙여서 반환
+        const authHeader = () => {
+          const raw = localStorage.getItem('jwtToken'); // 'Bearer xxx' or 'xxx'
+          if (!raw) return {};                          // 토큰 없으면 헤더 비움
+          const jwt = raw.startsWith('Bearer ') ? raw.slice(7) : raw;
+          return { Authorization: `Bearer ${jwt}` };
+        };
         
         setBidHistory(prev => {
           const updated = [newBidRecord, ...prev];
@@ -481,13 +491,15 @@ const AuctionDetail = () => {
       console.log('User ID:', currentUserId);
       console.log('Bid Amount:', bidAmount);
       
-      const response = await axios.post(`http://192.168.10.138:4989/auction/${postId}/bids`, {
-        postId: parseInt(postId),
-        bidderId: currentUserId,
-        bidAmount: bidAmount
+      const baseURL = import.meta.env.VITE_API_BASE;
+      const response = await axios.post(`${baseURL}/auction/${postId}/bids`, {
+        postId: parseInt(postId,10),
+        bidderId: Number(currentUserId),
+        bidAmount: Number(bidAmount)
       }, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type' : 'application/json'
         }
       });
 
@@ -505,27 +517,35 @@ const AuctionDetail = () => {
       setBidAmount(0);
       
       // 경매 정보 새로고침
-      const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
+      const refreshResponse = await axios.get(`${baseURL}/auction/detail/${postId}`);
       setAuctionDetail(refreshResponse.data);
       
       // 최고가 정보 새로고침
-      const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
+      const highestBidResponse = await axios.get(`${baseURL}/auction/highest-bid/${postId}`);
       setHighestBid(highestBidResponse.data);
       
-    } catch (error) {
-      console.error('입찰 실패:', error);
-      if (error.response?.status === 401) {
-        setBidMessage('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해주세요.');
+        } catch (error) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+      console.error('입찰 실패 status/data:', status, data);
+
+      // 서버가 내려준 메시지 우선 사용
+      const msg =
+        data?.message ||
+        data?.error ||
+        (error.message || '알 수 없는 오류가 발생했습니다.');
+
+      if (status === 401) {
+        setBidMessage(msg || '로그인이 필요하거나 인증이 만료되었습니다.');
         setBidMessageType('error');
-      } else if (error.response?.data?.status === 'NEED_GUARANTEE') {
-        // 보증금 결제 필요
-        const guaranteeAmount = error.response.data.guaranteeAmount || Math.max(1, Math.round(auctionDetail.price * 0.1));
+      } else if (status === 402 && data?.status === 'NEED_GUARANTEE') {
+        const guaranteeAmount = data.guaranteeAmount || Math.max(1, Math.round(auctionDetail.price * 0.1));
         setPaymentAmount(guaranteeAmount);
         setBidMessage('보증금 결제가 필요합니다. 결제를 진행해주세요.');
         setBidMessageType('info');
         setShowPaymentModal(true);
       } else {
-        setBidMessage('입찰에 실패했습니다. 다시 시도해주세요.');
+        setBidMessage(msg || '입찰에 실패했습니다. 다시 시도해주세요.');
         setBidMessageType('error');
       }
     }

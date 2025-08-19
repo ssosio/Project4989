@@ -206,8 +206,8 @@
 	  WHERE guarantee_id = #{guaranteeId}
 	</update>
 	<!-- 게시글 시작가 조회 -->
-	<select id="getStartPrice" parameterType="int" resultType="int">
-		select price from posts where post_id=#{postId} limit 1
+	<select id="getStartPrice" parameterType="long" resultType="int">
+		select price from posts where post_id=#{postId, jdbcType=BIGINT} limit 1
 	</select>
 	
 	<!-- 경매 삭제 -->
