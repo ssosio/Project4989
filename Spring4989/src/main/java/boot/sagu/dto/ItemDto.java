@@ -12,5 +12,8 @@ public class ItemDto {
 	private Long postId;
 	private int categoryId;
 	private String conditions;
-	private String location;
+	private int location;
+	private String detail_location;
+	private double latitude;
+	private double logitude;
 }
