@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
@@ -70,10 +70,22 @@ export const Header = () => {
   const handleChatClose = () => {
     setChatDrawerOpen(false);
   };
-  const handleUnreadCountChange = (count) => {
-    console.log("Header에서 새로운 읽지 않은 메시지 개수 수신:", count);
-    setUnreadMessageCount(count);
-  };
+  // ✅ 수정: useCallback을 사용하여 함수를 메모이제이션
+  const handleUnreadCountChange = useCallback((count) => {
+    // 불필요한 상태 업데이트를 막기 위해 현재 값과 다른지 확인
+    setUnreadMessageCount(prevCount => {
+      if (prevCount !== count) {
+        console.log("Header에서 새로운 읽지 않은 메시지 개수 수신:", count);
+        return count;
+      }
+      return prevCount; // 값이 같으면 상태를 업데이트하지 않아 재렌더링을 막음
+    });
+  }, []); // 💡 빈 의존성 배열을 넣어 컴포넌트가 처음 마운트될 때만 함수가 생성되도록 함
+
+  // 💡 참고: 기존의 useEffect는 ChatMain으로 이동되었으므로 주석 처리하거나 제거 가능
+  // useEffect(() => {
+  //     ... (이 코드는 ChatMain에서 처리)
+  // }, [userInfo]);
   useEffect(() => {
     console.log("Header received userInfo:", userInfo);
   }, [userInfo]);

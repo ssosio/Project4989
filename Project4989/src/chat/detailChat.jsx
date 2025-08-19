@@ -488,10 +488,14 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     }
                 } else if (receivedMessage.type === 'READ_UPDATE') {
                     setMessages(prevMessages =>
-                        prevMessages.map(msg => ({
-                            ...msg,
-                            is_read: msg.is_read === 0 && msg.sender_id === userInfo.memberId ? 1 : msg.is_read,
-                        }))
+                        prevMessages.map(msg => {
+                            // 동시에 해당 메시지가 내가 보낸 메시지(msg.sender_id)일 경우
+                            if (String(receivedMessage.senderId) !== String(userInfo.memberId) &&
+                                String(msg.sender_id) === String(userInfo.memberId)) {
+                                return { ...msg, is_read: 1 };
+                            }
+                            return msg;
+                        })
                     );
                 } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
                     const convertedMessage = {

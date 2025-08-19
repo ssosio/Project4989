@@ -5,38 +5,38 @@ import './goods.css';
 
 const Goods = () => {
 
-  const navi=useNavigate('');
+  const navi = useNavigate('');
 
-  const [postList,setPostList]=useState([]);
+  const [postList, setPostList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
 
-  const list=()=>{
-    let url="http://localhost:4989/post/list";
+  const list = () => {
+    let url = "http://localhost:4989/post/list";
 
     axios.get(url)
-    .then(res=>{
-      console.log(res.data);
-      setPostList(res.data);
-    })
-    .catch(err => {
-      console.error("에러 발생:", err);
-    });
+      .then(res => {
+        console.log(res.data);
+        setPostList(res.data);
+      })
+      .catch(err => {
+        console.error("에러 발생:", err);
+      });
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log("list");
     list();
-  },[])
+  }, [])
 
   useEffect(() => {
     console.log(postList); // mainPhotoUrl 값 확인
   }, [postList]);
 
-  const photoUrl="http://localhost:4989/save/";
+  const photoUrl = "http://localhost:4989/save/";
 
-  const clickDetail=(postId)=>{
+  const clickDetail = (postId) => {
     navi(`/board/GoodsDetail?postId=${postId}`);
   }
 
@@ -69,7 +69,7 @@ const Goods = () => {
     setCurrentPage(page);
   }
 
-  
+
 
   return (
     <div className="goods-page">
@@ -81,10 +81,10 @@ const Goods = () => {
         </div>
 
         {/* 등록 버튼 */}
-        <button 
-          type='button' 
-          className="goods-register-btn" 
-          onClick={()=>{
+        <button
+          type='button'
+          className="goods-register-btn"
+          onClick={() => {
             navi("/board/post");
           }}
         >
@@ -96,12 +96,12 @@ const Goods = () => {
           <>
             <div className="goods-grid">
               {currentItems.map(p => (
-                <div key={p.postId} className="goods-card" onClick={()=>clickDetail(p.postId)}>
+                <div key={p.postId} className="goods-card" onClick={() => clickDetail(p.postId)}>
                   <div className="goods-image">
                     {p.mainPhotoUrl ? (
-                      <img 
-                        src={photoUrl + p.mainPhotoUrl} 
-                        alt={p.title} 
+                      <img
+                        src={photoUrl + p.mainPhotoUrl}
+                        alt={p.title}
                       />
                     ) : (
                       <div className="goods-image-placeholder">
@@ -116,7 +116,7 @@ const Goods = () => {
                     </div>
                     <div className="goods-member">판매자: {p.nickname}</div>
                     <div>조회수: {p.viewCount}</div>
-                    <div>{p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}</div>
+                    <div>{p.status === 'ON_SALE' ? '판매중' : p.status === 'RESERVED' ? '예약' : '판매완료'}</div>
                     <div className="goods-date">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
                     </div>
@@ -130,17 +130,17 @@ const Goods = () => {
               <div className="goods-page-info">
                 총 {postList.filter(p => p.postType === 'ITEMS').length}개 중 {startIndex + 1}-{Math.min(endIndex, postList.filter(p => p.postType === 'ITEMS').length)}개 표시
               </div>
-              
+
               {totalPages > 1 && (
                 <>
-                  <button 
+                  <button
                     className="goods-page-btn goods-prev-btn"
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
                   >
                     이전
                   </button>
-                  
+
                   <div className="goods-page-numbers">
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
@@ -152,8 +152,8 @@ const Goods = () => {
                       </button>
                     ))}
                   </div>
-                  
-                  <button 
+
+                  <button
                     className="goods-page-btn goods-next-btn"
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
@@ -162,7 +162,7 @@ const Goods = () => {
                   </button>
                 </>
               )}
-              
+
               {totalPages <= 1 && (
                 <div className="goods-page-single">
                   페이지 1 / 1
@@ -174,9 +174,9 @@ const Goods = () => {
           <div className="goods-empty">
             <div className="goods-empty-icon">📦</div>
             <div className="goods-empty-text">등록된 물품이 없습니다</div>
-            <button 
-              className="goods-empty-btn" 
-              onClick={()=>{
+            <button
+              className="goods-empty-btn"
+              onClick={() => {
                 navi("/board/post");
               }}
             >

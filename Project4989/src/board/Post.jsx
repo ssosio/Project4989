@@ -53,10 +53,11 @@ const Post = () => {
 
     // 기존 location 대신, 주소 정보를 객체로 관리합니다.
     const [addressInfo, setAddressInfo] = useState({
-        location: '',
-        detail_location: '', // 희망 거래 장소 추가
-        latitude: '',
-        longitude: ''
+        locationText: "",   // 화면에 보여줄 텍스트
+        locationId: null,   // 서버로 보낼 숫자 ID
+        detail_location: "",
+        latitude: "",
+        longitude: ""
     });
 
     // ✨ 모달 상태 추가
@@ -159,7 +160,7 @@ const Post = () => {
 
         formData.append("content", content);
         formData.append("price", price);
-        formData.append("location", addressInfo.location);
+        formData.append("location", addressInfo.locationId);
         formData.append("detail_location", addressInfo.detail_location);
         formData.append("latitude", addressInfo.latitude); // 위도 추가
         formData.append("longitude", addressInfo.longitude); // 경도 추가
@@ -201,7 +202,10 @@ const Post = () => {
         console.log("전송할 postType:", postType);
         console.log("전송할 title:", title);
         console.log("전송할 price:", price);
-        console.log("전송할 location:", location);
+        console.log("전송할 location:", addressInfo.locationId);
+        console.log("전송할 detail_location:", addressInfo.detail_location);
+        console.log("전송할 latitude:", addressInfo.latitude);
+        console.log("전송할 longitude:", addressInfo.longitude);
         console.log("전송할 propertyType:", propertyType);
         console.log("전송할 area:", area);
         console.log("전송할 rooms:", rooms);
@@ -223,16 +227,19 @@ const Post = () => {
 
         // JWT 토큰 가져오기
         const token = localStorage.getItem('jwtToken');
-        console.log(token);
-        const headers = {
-            'Content-Type': 'multipart/form-data'
-        };
+        console.log("로컬스토리지에서 가져온 토큰:", token);
 
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        if (!token || token === 'undefined') {
+            alert("로그인 후 이용해 주세요.");
+            return;
         }
 
-
+        // 💡 토큰이 있을 경우, headers 객체에 Authorization 헤더를 추가합니다.
+        const headers = {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+        };
+        console.log("로컬스토리지에서 가져온 토큰:", token);
         axios.post("http://localhost:4989/post/insert", formData, {
             headers: headers
         }).then(() => {
@@ -508,7 +515,7 @@ const Post = () => {
                         <tr>
                             <td>
                                 <label>주소
-                                    <input type="text" name='location' value={addressInfo.location} readOnly />
+                                    <input type="text" value={addressInfo.locationText} readOnly />
                                     <button type='button' onClick={handleAddressModalOpen}>주소등록</button>
                                 </label>
                             </td>
