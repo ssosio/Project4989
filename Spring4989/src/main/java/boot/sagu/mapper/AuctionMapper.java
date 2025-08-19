@@ -15,10 +15,10 @@ import boot.sagu.dto.PostsDto;
 @Mapper
 public interface AuctionMapper {
 	public List<PostsDto> getAuctionPosts(); // 경매글 리스트용
-	public PostsDto getAuctionDetail(long postId); // 경매글 상세 조회용
+	public PostsDto getAuctionDetail(@Param("postId") long postId); // 경매글 상세 조회용
 	public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
-	public AuctionDto getHighestBid(long postId); // 최고가 조회용
-	public MemberDto getMemberNickname(long memberId); // 작성자 닉네임 조회용
+	public AuctionDto getHighestBid(@Param("postId") long postId); // 최고가 조회용
+	public MemberDto getMemberNickname(@Param("memberId") long memberId); // 작성자 닉네임 조회용
 	
 	// 경매 종료 처리용 메서드들
 	public List<PostsDto> getEndedAuctions(); // 종료된 경매 목록 조회
@@ -33,19 +33,20 @@ public interface AuctionMapper {
 	public int getFavoriteCount(@Param("postId") long postId); // 찜 개수 조회
 	
 	// 경매 사진 조회
-	public List<Map<String, Object>> getAuctionPhotos(long postId);
+	public List<Map<String, Object>> getAuctionPhotos(@Param("postId") long postId);
 	
 	//보증금 메서드
 	public int countAuctionGuaranteeByPostAndMember(@Param("postId")long postId,@Param("memberId")long memberId); //게시글에 보증금 납부했는지
 	//보증금 납부
 	public void insertGuarantee(AuctionGuaranteeDTO AuctionGuaranteeDto); 
-	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기
-	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postID")long postId,@Param("winnerId")long winnerId);
-	//환불
-	public void updateRefundStatus(@Param("guaranteeID")long guaranteeId);
+	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기 	
+	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postId")long postId,@Param("winnerId")long winnerId);
+	//보증금 상태관리
+	public int updateGuaranteeStatus(@Param("guaranteedId")long guaranteeId,@Param("status") String status);
 	//경매 시작가
 	public int getStartPrice(@Param("postId") long postId);
 	
+
 	// 경매 삭제
 	public void deleteAuction(@Param("postId") long postId);
 	
@@ -60,6 +61,7 @@ public interface AuctionMapper {
 	
 	// 경매 삭제 전 연관된 chatroom 데이터 삭제
 	public void deleteChatroomsByPostId(@Param("postId") long postId);
+
 	
 	// 입찰 기록 조회 (최근 5개, 닉네임 포함)
 	public List<Map<String, Object>> getBidHistory(@Param("postId") long postId);
@@ -67,4 +69,10 @@ public interface AuctionMapper {
 	// 조회수 증가
 	public void incrementViewCount(@Param("postId") long postId);
 	
+
+
+	// 보증금 단건 조회
+	public AuctionGuaranteeDTO findGuarantee(@Param("postId") long postId,
+	                                  @Param("memberId") long memberId);
+
 }

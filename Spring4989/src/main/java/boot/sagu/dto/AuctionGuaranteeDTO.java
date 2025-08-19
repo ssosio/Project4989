@@ -18,6 +18,7 @@ public class AuctionGuaranteeDTO {
 	private Long memberId;
 	private BigDecimal amount;
 	private String impUid;
+	private String merchantUid;
 	private String status;
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "Asia/Seoul")
 	private Timestamp created_at;

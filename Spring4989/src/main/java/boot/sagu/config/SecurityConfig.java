@@ -62,15 +62,19 @@ public class SecurityConfig {
     //크로스오리진 대체
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:5173"); // 프론트엔드 주소
-        configuration.addAllowedMethod("*");
-        configuration.addAllowedHeader("*");
-        configuration.setAllowCredentials(true); // 필요시
+    	 CorsConfiguration configuration = new CorsConfiguration();
+    	    configuration.setAllowedOrigins(
+    	        java.util.List.of("http://localhost:5173", "http://192.168.10.136:5173")
+    	    );
+    	    configuration.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
+    	    configuration.setAllowedHeaders(java.util.List.of("*"));
+    	    configuration.setAllowCredentials(true);
+    	    
+    	    configuration.addExposedHeader("Authorization");
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+    	    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    	    source.registerCorsConfiguration("/**", configuration);
+    	    return source;
     }
 
     @Bean
@@ -92,8 +96,10 @@ public class SecurityConfig {
                 // 기타 공개 경로들
             	.requestMatchers("/ws/**").permitAll()
             	.requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
+            	.requestMatchers("/api/auctions/portone/webhook").permitAll()
+            	.requestMatchers("/ws/**","/post/**").permitAll()
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
-                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/ws/**").permitAll()
+                .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
@@ -103,6 +109,8 @@ public class SecurityConfig {
                 .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()
                 // 경매 방 인원수 관련 API는 인증 불필요
                 .requestMatchers("/auction/room/**").permitAll()
+                .requestMatchers("/auction/photos/	**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
+
                 // 경매 삭제 API는 인증 필요
                 .requestMatchers("/auction/delete/**").authenticated()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함

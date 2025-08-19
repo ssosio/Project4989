@@ -182,13 +182,13 @@
 	<!-- ==================================보증금 관련 =================================== -->
 	<!-- 멤버가 게시글에 관한 보증급을 납부했는지 -->
 	<select id="countAuctionGuaranteeByPostAndMember" resultType="int">
-		select count(*) from auction_guarantees where post_id=#{postId} and member_id=#{memberId} and status ='PAID'
+		select count(*) from auction_guarantees where post_id=#{postId} and member_id=#{memberId} and status IN ('PAID','HOLD')
 	</select>
 	
 	<!-- 보증금 납부  -->
 	<insert id="insertGuarantee" parameterType="GuaranteeDTO">
-		 INSERT INTO auction_guarantees (post_id, member_id, amount, imp_uid,created_at)
-  							VALUES (#{postId}, #{memberId}, #{amount}, #{impUid},now())
+		 INSERT INTO auction_guarantees (post_id, member_id, amount, imp_uid,merchant_uid,created_at)
+  							VALUES (#{postId}, #{memberId}, #{amount}, #{impUid},#{merchantUid},now())
 	</insert>
 	
 	<!-- 게시글에서 입찰자중 낙찰자가 아닌사람들의 모든정보 조회 -->
@@ -197,11 +197,14 @@
   			and member_id!=#{winnerId} 	
   			and status = 'PAID'
 	</select>
-	<!-- 환불상태 업데이트 -->
-	<update id="updateRefundStatus">
-		update auction_guarantees set status = 'REFUNDED', refunded_at = now() where guaranteeId = #{guaranteeId}
+	<!-- 보증금 상태 변경  -->
+	<update id="updateGuaranteeStatus">
+	  UPDATE auction_guarantees
+	  SET status = #{status},
+	      refunded_at = CASE WHEN #{status}='REFUNDED' THEN NOW() ELSE refunded_at END,
+	      forfeited_at = CASE WHEN #{status} = 'FORFEITED' THEN NOW() ELSE forfeited_at END
+	  WHERE guarantee_id = #{guaranteeId}
 	</update>
-	
 	<!-- 게시글 시작가 조회 -->
 	<select id="getStartPrice" parameterType="int" resultType="int">
 		select price from posts where post_id=#{postId} limit 1
@@ -253,5 +256,11 @@
 		WHERE post_id = #{postId}
 	</update>
 	
+	<!-- 보증금 단건 조회 -->
+	<select id="findGuarantee" resultType="boot.sagu.dto.AuctionGuaranteeDTO">
+	  SELECT * FROM auction_guarantees
+	  WHERE post_id = #{postId} AND member_id = #{memberId}
+	  LIMIT 1
+	</select>
 	
 </mapper> 
