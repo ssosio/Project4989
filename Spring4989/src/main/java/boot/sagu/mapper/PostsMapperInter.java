@@ -51,4 +51,14 @@ public interface PostsMapperInter {
 	//신고
 	public int insertReport(ReportsDto dto);
 	
+	//검색
+	List<PostsDto> searchAll(
+		      @Param("keyword") String keyword,
+		      @Param("postType") String postType, // "ALL" 또는 "CARS"/"ESTATE"/"ITEMS"
+		      @Param("size") int size,
+		      @Param("offset") int offset
+		  );
+		  int countSearchAll(@Param("keyword") String keyword,
+		                     @Param("postType") String postType);
+	
 }

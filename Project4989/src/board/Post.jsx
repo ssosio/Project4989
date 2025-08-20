@@ -365,7 +365,7 @@ const Post = () => {
                                     </td>
                                     <td>
                                         <label>주행거리
-                                            <input type="text" name='mileage' value={mileage} onChange={(e) => {
+                                            <input type="number" name='mileage' min={50000} step={1000} value={mileage} onChange={(e) => {
                                                 setMileage(e.target.value);
                                             }} />km
                                         </label>

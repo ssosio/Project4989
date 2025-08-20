@@ -7,15 +7,44 @@ const Goods = () => {
 
   const navi=useNavigate('');
   const location = useLocation();
-  // const params = new URLSearchParams(location.search);
-  // const initialPage = Number(params.get('page')) || 1;
 
   const [postList,setPostList]=useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
 // ✅ 중고물품 상세 캐시: postId -> detail
   const [itemDetailMap, setItemDetailMap] = useState({});
+  const TRADE_FROM_CODE = { 1: 'SALE', 2: 'AUCTION', 3: 'SHARE' }; // 백이 숫자코드면 매핑
+
+  const normalizeTrade = (v) => {
+  const s = (v ?? '').toString().trim();
+  const u = s.toUpperCase();
+  if (u === '1' || u === 'SALE'    || s === '판매') return 'SALE';
+  if (u === '2' || u === 'AUCTION' || s === '경매') return 'AUCTION';
+  if (u === '3' || u === 'SHARE'   || s === '나눔' || u === 'GIVE' || u === 'GIVEAWAY' || u === 'FREE') return 'SHARE';
+  return u; // 혹시 다른 값이 오면 대문자 그대로
+};
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    setShowScrollTop(scrollTop > 300);
+  };
+
+  // 최상단으로 스크롤하는 함수
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // 스크롤 이벤트 리스너 등록
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
 // ✅ 라디오 필터 상태
   // categoryId: 1 전자, 2 의류, 3 가구 (예시)
@@ -23,6 +52,7 @@ const Goods = () => {
   const [filters, setFilters] = useState({
     categoryId: 'ALL',
     status: 'ALL',
+    tradeType: 'ALL', 
   });
 
 // ② 쿼리 변화시에만 현재 페이지/스크롤 갱신
@@ -121,10 +151,18 @@ useEffect(() => {
     const itemsOnly = (postList || []).filter(p => p.postType === 'ITEMS');
     const arr = itemsOnly.map(p => {
       const d = itemDetailMap[p.postId] || {};
-      return { ...p, ...d };
+      const commonTrade = p.tradeType ?? p.trade_type ?? p.TRADE_TYPE;
+
+    return {
+      ...p,
+      ...d,
+      // ✅ tradeType은 공통 리스트 기준 + 정규화
+      tradeType: normalizeTrade(commonTrade),
+    };
     });
     // 디버깅
     console.log('mergedItems 샘플:', arr.slice(0, 3));
+    console.log('tradeType 값들:', arr.map(item => ({ postId: item.postId, tradeType: item.tradeType })));
     return arr;
   }, [postList, itemDetailMap]);
 
@@ -139,6 +177,9 @@ useEffect(() => {
       if (filters.status !== 'ALL') {
         if (String(it.status) !== String(filters.status)) return false;
       }
+      if (filters.tradeType !== 'ALL') {
+      if (normalizeTrade(it.tradeType) !== normalizeTrade(filters.tradeType)) return false;
+    }
       return true;
     });
   }, [mergedItems, filters]);
@@ -168,29 +209,21 @@ useEffect(() => {
     setCurrentPage(1);
     setFilters(prev => ({ ...prev, status: e.target.value }));
   };
+  const onChangeTradeType = (e) => {
+  setCurrentPage(1);
+  setFilters(prev => ({ ...prev, tradeType: e.target.value }));
+  };
+  
+  // 필터 초기화 함수
+  const resetFilters = () => {
+    setCurrentPage(1);
+    setFilters({
+      categoryId: 'ALL',
+      status: 'ALL',
+      tradeType: 'ALL',
+    });
+  };
 
-
-
-  // useEffect(() => {
-  //   console.log(postList); // mainPhotoUrl 값 확인
-  // }, [postList]);
-
-  // const photoUrl="http://localhost:4989/postphoto/";
-
-  // // 현재 페이지의 아이템들 계산
-  // const startIndex = (currentPage - 1) * itemsPerPage;
-  // const endIndex = startIndex + itemsPerPage;
-  // const currentItems = postList.filter(p => p.postType === 'ITEMS').slice(startIndex, endIndex);
-  // const totalPages = Math.ceil(postList.filter(p => p.postType === 'ITEMS').length / itemsPerPage);
-
-  // // 디버깅용 콘솔 로그
-  // console.log('총 아이템 수:', postList.filter(p => p.postType === 'ITEMS').length);
-  // console.log('페이지당 아이템 수:', itemsPerPage);
-  // console.log('총 페이지 수:', totalPages);
-  // console.log('현재 페이지:', currentPage);
-  // console.log('현재 아이템 수:', currentItems.length);
-
-  // const fromUrl = `${location.pathname}${location.search || ''}`;
 
   return (
     <div className="goods-page">
@@ -200,6 +233,15 @@ useEffect(() => {
           <h1 className="goods-title">중고물품 목록</h1>
           <p className="goods-subtitle">다양한 중고물품을 찾아보세요</p>
         </div>
+
+        {/* search */}
+        <button
+                type="button"
+                className="gooddetail-btn"
+                onClick={() => navi(`/board/search`)}
+              >
+                search
+              </button>
 
         {/* ✅ 라디오 필터 UI */}
         <div className="goods-filters">
@@ -218,6 +260,27 @@ useEffect(() => {
             <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
             <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
           </div>
+
+          <div className="filter-group">
+            <div className="filter-label">판매타입</div>
+            <label><input type="radio" name="tradeType" value="ALL"     checked={filters.tradeType === 'ALL'}     onChange={onChangeTradeType} /> 전체</label>
+            <label><input type="radio" name="tradeType" value="SALE"    checked={filters.tradeType === 'SALE'}    onChange={onChangeTradeType} /> 판매</label>
+            <label><input type="radio" name="tradeType" value="AUCTION" checked={filters.tradeType === 'AUCTION'} onChange={onChangeTradeType} /> 경매</label>
+            <label><input type="radio" name="tradeType" value="SHARE"   checked={filters.tradeType === 'SHARE'}   onChange={onChangeTradeType} /> 나눔</label>
+          </div>
+
+          {/* 필터 초기화 버튼 */}
+          <div className="filter-reset-container">
+            <button 
+              type="button" 
+              className="filter-reset-btn" 
+              onClick={resetFilters}
+              title="모든 필터 초기화"
+            >
+              필터 초기화
+            </button>
+          </div>
+
         </div>
 
         {/* 등록 버튼 */}
@@ -263,13 +326,20 @@ useEffect(() => {
                     </div>
 
                     {/* ✅ 상세에서 온 값 안전 표시 */}
-                    <div className="goods-meta">
+                    {/* <div className="goods-meta">
                       <span>카테고리: {p.categoryId === 1 ? '전자제품' : p.categoryId === 2 ? '의류' : p.categoryId === 3 ? '가구' : '-'}</span>
-                    </div>
+                    </div> */}
 
                     <div className="goods-member">판매자: {p.nickname}</div>
                     <div>조회수: {p.viewCount}</div>
-                    <div>{p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}</div>
+                    <div className="goods-status">
+                      <span className={`status-badge ${p.status === 'ON_SALE' ? 'on-sale' : p.status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                        {p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}
+                      </span>
+                      <span className={`trade-type-badge ${p.tradeType === 'SALE' ? 'sale' : p.tradeType === 'AUCTION' ? 'auction' : p.tradeType === 'SHARE' ? 'share' : ''}`}>
+                        {p.tradeType === 'SALE' ? '판매' : p.tradeType === 'AUCTION' ? '경매' : p.tradeType === 'SHARE' ? '나눔' : p.tradeType || '미정'}
+                      </span>
+                    </div>
                     <div className="goods-date">
                       {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
                     </div>
@@ -313,6 +383,17 @@ useEffect(() => {
               첫 번째 물품 등록하기
             </button>
           </div>
+        )}
+
+        {/* 최상단으로 스크롤하는 화살표 버튼 */}
+        {showScrollTop && (
+          <button 
+            className="scroll-to-top-btn"
+            onClick={scrollToTop}
+            title="최상단으로 이동"
+          >
+            ↑
+          </button>
         )}
       </div>
     </div>

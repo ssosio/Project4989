@@ -334,5 +334,20 @@ public class PostsService implements PostsServiceInter {
 		return postMapper.insertReport(dto);
 	}
 	
+	//검색
+	public List<PostsDto> searchAll(String keyword, String postType, int page, int size) {
+        String kw = keyword == null ? "" : keyword.trim();
+        String pt = (postType == null || postType.isBlank()) ? "ALL" : postType.trim().toUpperCase();
+        int p = Math.max(1, page);
+        int s = Math.max(1, size);
+        int offset = (p - 1) * s;
+        return postMapper.searchAll(kw, pt, s, offset);
+    }
+
+    public int countSearchAll(String keyword, String postType) {
+        String kw = keyword == null ? "" : keyword.trim();
+        String pt = (postType == null || postType.isBlank()) ? "ALL" : postType.trim().toUpperCase();
+        return postMapper.countSearchAll(kw, pt);
+    }
 	
 }

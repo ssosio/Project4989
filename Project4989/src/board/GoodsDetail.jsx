@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
 import DetailChat from '../chat/detailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
+import './gooddetail.css';
 
 const GoodsDetail = () => {
   // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
@@ -33,6 +34,7 @@ const GoodsDetail = () => {
 
   const [count, setCount] = useState(0);
   const [favorited, setFavorited] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   const [reportType, setReportType] = useState(''); // '', 'POST', 'MEMBER'
   const [targetId, setTargetId] = useState(null);
@@ -71,6 +73,15 @@ const GoodsDetail = () => {
           ? postRes.data.photos
           : JSON.parse(postRes.data.photos || "[]");
         setPhotos(photoList);
+        
+        // 시간 정보 확인 (개발용)
+        // if (process.env.NODE_ENV === 'development') {
+        //   console.log('게시글 시간 정보:', {
+        //     createdAt: postRes.data.createdAt,
+        //     updatedAt: postRes.data.updatedAt,
+        //     isUpdated: postRes.data.updatedAt && postRes.data.updatedAt !== postRes.data.createdAt
+        //   });
+        // }
       })
       .catch(err => {
         console.error("데이터 로딩 중 에러:", err);
@@ -360,138 +371,314 @@ const GoodsDetail = () => {
     navi(getFallbackListPath(), { state: { focusId: Number(postId) } });
   };
 
+  // 사진 슬라이드 관련 함수들
+  const nextPhoto = () => {
+    if (photos && photos.length > 0) {
+      setCurrentPhotoIndex((prevIndex) => 
+        prevIndex === photos.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  };
+
+  const prevPhoto = () => {
+    if (photos && photos.length > 0) {
+      setCurrentPhotoIndex((prevIndex) => 
+        prevIndex === 0 ? photos.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  const goToPhoto = (index) => {
+    setCurrentPhotoIndex(index);
+  };
+
 
 
   if (!post) return <div>로딩 중...</div>;
 
   return (
-    <div>
-      <h2>{post.title}</h2>
-      <p>작성자: {post.nickname}</p>
-
-      <p>가격: {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}</p>
-      <p>작성일: {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
-      <p>location: </p>
-      <p>조회수: {post.viewCount}</p>
-      <p>거래상태 :{post.status === 'ON_SALE' ? '판매중' : post.status === 'RESERVED' ? '예약' : '판매완료'}</p>
-      <button onClick={onToggle} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 20 }}>{favorited ? "❤️" : "🤍"}</span>
-        <span>{count}</span>
-      </button>
-
-      <h3>사진 목록</h3>
-      {photos.length > 0 ? (
-        photos.map(photo => (
-          <img
-            key={photo.photoId}
-            src={`http://localhost:4989/postphoto/${photo.photoUrl}`}
-            alt=""
-            style={{ width: "150px", marginRight: "8px" }}
-          />
-        ))
-      ) : (
-        <p>사진 없음</p>
-      )}
-      {post.postType === 'ITEMS' && (
-        <>
-          <p>판매유형: {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}</p>
-          <p>상태: {goods.conditions === 'best' ? '상' : goods.conditions === 'good' ? '중' : '하'}</p>
-          <p>분류: {goods.categoryId === 1
-            ? '전자제품'
-            : goods.categoryId === 2
-              ? '의류'
-              : '가구'}</p>
-        </>
-      )}
-      {post.postType === 'CARS' && (
-        <>
-          <p>판매유형: {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}</p>
-          <p>브랜드: {cars.brand}</p>
-          <p>모델: {cars.model}</p>
-          <p>연식: {cars.year}</p>
-          <p>주행거리: {cars.mileage}</p>
-          <p>연료: {cars.fuelType}</p>
-          <p>변속기: {cars.transmission}</p>
-        </>
-      )}
-      {post.postType === 'REAL_ESTATES' && (
-        <>
-          <p>매물종류: {estate.propertyType === 'apt' ? '아파트' : estate.propertyType === 'studio' ? '오피스텔' : estate.propertyType === 'oneroom' ? '원룸' : '투룸'}</p>
-          <p>면적: {estate.area} ㎡</p>
-          <p>방 개수: {estate.rooms} 개</p>
-          <p>층: {estate.floor} 층</p>
-          <p>거래유형: {estate.dealType === 'lease' ? '전세' : estate.dealType === 'rent' ? '월세' : estate.dealType === 'leaseAndrent' ? '전월세' : '매매'}</p>
-        </>
-      )}
-      <div style={{ width: '300px' }}>
-        {post.content}
-      </div>
-
-
-
-      {/* 신고 모달 추가 */}
-
-
-      {/* 작성자 본인에게만 보이는 수정 버튼 */}
-      {userInfo && userInfo.memberId === post.memberId ? (
-        <>
-          <div>
-            <button
-              type="button"
-              onClick={() => navi(`/board/update?postId=${postId}`)}  // 라우트는 실제 매칭 경로로
-            >
-              수정
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDeletePost}
-              disabled={deleting}
-              style={{ color: 'white', background: '#d23f3f' }}
-            >
-              {deleting ? '삭제 중...' : '삭제'}
-            </button>
+    <div className="gooddetail-page">
+      <div className="gooddetail-container">
+        {/* 헤더 섹션 */}
+        <div className="gooddetail-header">
+          <h1 className="gooddetail-title">{post.title}</h1>
+          
+          <div className="gooddetail-meta">
+            <div className="gooddetail-meta-item">
+              <strong>작성자:</strong> {post.nickname}
+            </div>
+            <div className="gooddetail-meta-item">
+              <strong>작성일:</strong> {post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : ''}
+            </div>
+            {/* 수정일 표시 - updatedAt이 있고 createdAt과 다를 때만 표시 */}
+            {post.updatedAt && post.updatedAt !== post.createdAt && (
+              <div className="gooddetail-meta-item gooddetail-updated-item">
+                <strong>수정일:</strong> {new Date(post.updatedAt).toLocaleString('ko-KR')}
+              </div>
+            )}
+            <div className="gooddetail-meta-item">
+              <strong>조회수:</strong> {post.viewCount}
+            </div>
+            <div className="gooddetail-meta-item">
+              <strong>거래상태:</strong> 
+              <span className={`gooddetail-status ${post.status === 'ON_SALE' ? 'on-sale' : post.status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                {post.status === 'ON_SALE' ? '판매중' : post.status === 'RESERVED' ? '예약' : '판매완료'}
+              </span>
+            </div>
           </div>
-          {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
-          <div><button onClick={handleChatToggle}>대화</button></div>
 
-          <div>
+          {/* 가격 섹션 */}
+          <div className="gooddetail-price">
+            <div className="gooddetail-price-value">
+              {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}
+            </div>
+            <div className="gooddetail-price-label">판매 가격</div>
+          </div>
 
+          {/* 좋아요 버튼 */}
+          <button onClick={onToggle} className="gooddetail-like-btn">
+            <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
+            <span>{count}</span>
+          </button>
+        </div>
+
+        {/* 이미지 갤러리 */}
+        <div className="gooddetail-gallery">
+          <h3 className="gooddetail-gallery-title">사진 목록</h3>
+          {photos && photos.length > 0 ? (
+            <div className="gooddetail-slider">
+              <div className="gooddetail-slider-container">
+                <img
+                  src={`http://localhost:4989/postphoto/${photos[currentPhotoIndex].photoUrl}`}
+                  alt=""
+                  className="gooddetail-slider-photo"
+                />
+                
+                {/* 이전 버튼 */}
+                {photos.length > 1 && (
+                  <button 
+                    className="gooddetail-slider-btn gooddetail-slider-btn-prev"
+                    onClick={prevPhoto}
+                    aria-label="이전 사진"
+                  >
+                    ‹
+                  </button>
+                )}
+                
+                {/* 다음 버튼 */}
+                {photos.length > 1 && (
+                  <button 
+                    className="gooddetail-slider-btn gooddetail-slider-btn-next"
+                    onClick={nextPhoto}
+                    aria-label="다음 사진"
+                  >
+                    ›
+                  </button>
+                )}
+              </div>
+              
+              {/* 사진 인디케이터 */}
+              {photos.length > 1 && (
+                <div className="gooddetail-slider-indicators">
+                  {photos.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`gooddetail-slider-indicator ${index === currentPhotoIndex ? 'active' : ''}`}
+                      onClick={() => goToPhoto(index)}
+                      aria-label={`${index + 1}번째 사진으로 이동`}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {/* 사진 카운터 */}
+              <div className="gooddetail-slider-counter">
+                {currentPhotoIndex + 1} / {photos.length}
+              </div>
+            </div>
+          ) : (
+            <div className="gooddetail-no-photos">
+              <p>등록된 사진이 없습니다</p>
+            </div>
+          )}
+        </div>
+        {/* 상품 정보 섹션 */}
+        <div className="gooddetail-info">
+          <h3 className="gooddetail-info-title">상품 정보</h3>
+          <div className="gooddetail-info-grid">
+            <div className="gooddetail-info-item">
+              <div className="gooddetail-info-label">판매유형</div>
+              <div className="gooddetail-info-value">
+                {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}
+              </div>
+            </div>
+            
+            {post.postType === 'ITEMS' && (
+              <>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">상품상태</div>
+                  <div className="gooddetail-info-value">
+                    {goods.conditions === 'best' ? '상' : goods.conditions === 'good' ? '중' : '하'}
+                  </div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">분류</div>
+                  <div className="gooddetail-info-value">
+                    {goods.categoryId === 1 ? '전자제품' : goods.categoryId === 2 ? '의류' : '가구'}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {post.postType === 'CARS' && (
+              <>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">브랜드</div>
+                  <div className="gooddetail-info-value">{cars.brand}</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">모델</div>
+                  <div className="gooddetail-info-value">{cars.model}</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">연식</div>
+                  <div className="gooddetail-info-value">{cars.year}</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">주행거리</div>
+                  <div className="gooddetail-info-value">{cars.mileage}</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">연료</div>
+                  <div className="gooddetail-info-value">{cars.fuelType}</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">변속기</div>
+                  <div className="gooddetail-info-value">{cars.transmission}</div>
+                </div>
+              </>
+            )}
+            
+            {post.postType === 'REAL_ESTATES' && (
+              <>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">매물종류</div>
+                  <div className="gooddetail-info-value">
+                    {estate.propertyType === 'apt' ? '아파트' : estate.propertyType === 'studio' ? '오피스텔' : estate.propertyType === 'oneroom' ? '원룸' : '투룸'}
+                  </div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">면적</div>
+                  <div className="gooddetail-info-value">{estate.area} ㎡</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">방 개수</div>
+                  <div className="gooddetail-info-value">{estate.rooms} 개</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">층</div>
+                  <div className="gooddetail-info-value">{estate.floor} 층</div>
+                </div>
+                <div className="gooddetail-info-item">
+                  <div className="gooddetail-info-label">거래유형</div>
+                  <div className="gooddetail-info-value">
+                    {estate.dealType === 'lease' ? '전세' : estate.dealType === 'rent' ? '월세' : estate.dealType === 'leaseAndrent' ? '전월세' : '매매'}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        {/* 상품 설명 */}
+        <div className="gooddetail-content">
+          <h3 className="gooddetail-content-title">상품 설명</h3>
+          <div className="gooddetail-content-text">
+            {post.content ? post.content : '상품 설명이 없습니다.'}
+          </div>
+        </div>
+
+
+
+      
+
+        {/* 버튼 액션 섹션 */}
+        <div className="gooddetail-actions">
+          {/* 신고 모달 추가 */}
+      {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
+        <button 
+                className="gooddetail-btn secondary"
+                onClick={() => setOpen(true)}
+              >
+                신고/문의
+              </button>
+      )
+    }
+          {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
+          {userInfo && userInfo.memberId === post.memberId ? (
             <>
-              {/* <button onClick={() => setOpen(true)}>신고/문의</button>
-      <ReportModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onSubmit={handleSubmitReport}
-      /> */}
+              <button
+                type="button"
+                className="gooddetail-btn"
+                onClick={() => navi(`/board/update?postId=${postId}`)}
+              >
+                수정
+              </button>
+
+              <button
+                type="button"
+                className="gooddetail-btn danger"
+                onClick={handleDeletePost}
+                disabled={deleting}
+              >
+                {deleting ? '삭제 중...' : '삭제'}
+              </button>
+
+              <button 
+                className="gooddetail-btn"
+                onClick={handleChatToggle}
+              >
+                대화
+              </button>
+
+              
             </>
+          ) : (
+            <>
+              {/* 비로그인 상태일 때의 버튼들 */}
+              <button 
+                className="gooddetail-btn"
+                onClick={() => alert('로그인 후 이용 가능합니다.')}
+              >
+                대화
+              </button>
+            </>
+          )}
 
-            <button onClick={() => setOpen(true)}>신고/문의</button>
-            <ReportModal
-              open={open}
-              onClose={() => setOpen(false)}
-              reason={reportReason}
-              onChangeReason={(e) => setReportReason(e.target.value)}   // ✅ 추가
-              reportType={reportType}                                   // ✅ 추가
-              onChangeType={handleChangeType}                              // ✅ 추가
-              onSubmit={handleSubmitReport}
-              submitting={submitting}
-            />
-          </div>
-        </>
-      ) : (
-        <>
-          {/* 비로그인 상태일 때의 버튼들 */}
-          <button onClick={() => alert('로그인 후 이용 가능합니다.')}>대화</button>
-        </>
-      )}
+          <button 
+            className="gooddetail-btn secondary"
+            onClick={handleGoBackToList}
+          >
+            목록
+          </button>
+        </div>
 
-      <button onClick={handleGoBackToList}>목록</button>
+        {/* 신고 모달 */}
+        <ReportModal
+          open={open}
+          onClose={() => setOpen(false)}
+          reason={reportReason}
+          onChangeReason={(e) => setReportReason(e.target.value)}
+          reportType={reportType}
+          onChangeType={handleChangeType}
+          onSubmit={handleSubmitReport}
+          submitting={submitting}
+        />
 
 
 
       {/* DetailChat 컴포넌트 렌더링 */}
       {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+      </div>
     </div>
   );
 };

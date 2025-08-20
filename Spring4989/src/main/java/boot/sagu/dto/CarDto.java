@@ -17,5 +17,8 @@ public class CarDto {
 	private String fuelType;
 	private String transmission;
 	private String location;
+	private String detail_location;
+	private double latitude;
+	private double logitude;
 
 }

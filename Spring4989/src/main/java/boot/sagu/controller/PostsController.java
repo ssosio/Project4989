@@ -1,5 +1,6 @@
 package boot.sagu.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -214,5 +215,23 @@ public class PostsController {
 	    return ResponseEntity.ok().build();
 	}
 	
+	//검색
+	 @GetMapping("/search")
+	    public Map<String, Object> search(
+	        @RequestParam String keyword,
+	        @RequestParam(defaultValue = "ALL") String postType, // ALL/CARS/ESTATE/ITEMS
+	        @RequestParam(defaultValue = "1") int page,
+	        @RequestParam(defaultValue = "10") int size
+	    ) {
+	        List<PostsDto> rows = postService.searchAll(keyword, postType, page, size);
+	        int total = postService.countSearchAll(keyword, postType);
+
+	        Map<String, Object> resp = new HashMap<>();
+	        resp.put("rows", rows);
+	        resp.put("total", total);
+	        resp.put("page", page);
+	        resp.put("size", size);
+	        return resp;
+	    }
 	
 }

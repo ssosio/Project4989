@@ -28,7 +28,7 @@ const ReportModal = ({
           onChange={(e) => onChangeType(e.target.value)}
           style={{ width: 330, marginTop: 12 }}
         >
-          <option value="" disabled>선택해주세요</option>
+          <option value="" disabled>신고대상타입을 선택해주세요</option>
           <option value="POST">게시글</option>
           <option value="MEMBER">작성자</option>
         </select>

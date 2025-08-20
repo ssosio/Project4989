@@ -4,12 +4,14 @@
 	<insert id="insertPost" parameterType="posts" useGeneratedKeys="true"
 		keyProperty="postId">
 		INSERT INTO
-		posts(member_id,title,price,trade_type,auction_end_time,created_at,post_type,content)
+		posts(member_id,title,price,trade_type,auction_end_time,created_at,updated_at,post_type,content)
 		VALUES(#{memberId},#{title},#{price},#{tradeType},
 		CASE
 		WHEN #{tradeType} = 'AUCTION'
 		THEN DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR)
 		ELSE NULL END, CONVERT_TZ(NOW(), 'UTC',
+		'Asia/Seoul'), CONVERT_TZ(NOW(), 'UTC',
+		'Asia/Seoul'),CONVERT_TZ(NOW(), 'UTC',
 		'Asia/Seoul'),#{postType},#{content})
 	</insert>
 
@@ -19,6 +21,7 @@
 		p.post_id AS postId,
 		p.member_id AS memberId,
 		p.title AS title,
+		p.content AS content,
 		p.price AS price,
 		p.trade_type AS tradeType,
 		p.status AS status,
@@ -52,6 +55,7 @@
 		p.title AS title,
 		p.price AS price,
 		p.post_type AS postType,
+		p.trade_type AS tradeType,
 		p.created_at AS createdAt,
 		p.view_count AS viewCount,
 		p.status AS status,
@@ -108,15 +112,21 @@
 
 	<!-- 수정 -->
 	<!-- 게시글 공통 수정 -->
-	<update id="updatePost" parameterType="posts"> UPDATE posts <set>
-			<if test="title != null">title = #{title},</if>
-      <if test="price != null">price = #{price},</if>
-      <if test="content != null">content = #{content},</if>
-      <if test="tradeType != null">trade_type = #{tradeType},</if>
-
-      <if test="postType != null">post_type = #{postType},</if> updated_at
-		= CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul') </set> WHERE post_id =
-		#{postId} </update>
+	
+	<update id="updatePost" parameterType="posts"> 
+    UPDATE posts 
+    <set>
+        <if test="title != null">title = #{title},</if>
+        <if test="price != null">price = #{price},</if>
+        <if test="content != null">content = #{content},</if>
+        <if test="tradeType != null">trade_type = #{tradeType},</if>
+        <if test="status != null">status = #{status},</if>
+        <if test="postType != null">post_type = #{postType},</if>
+        updated_at = CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
+    </set> 
+    WHERE post_id = #{postId} 
+</update>
+	
 
 	<!-- 자동차 수정 -->
 	<update id="updateCar" parameterType="car"> UPDATE cars <set>
@@ -182,6 +192,177 @@
 		#{status},
 		CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'))
 	</insert>
+	
+	<!-- 검색 -->
+	
+	<!-- PostsDto 안에 car/estate/item 필드가 있고, 각 DTO가 CarDto/RealEstateDto/UsedItemDto 라고 가정 -->
+<resultMap id="PostsWithDetailsMap" type="boot.sagu.dto.PostsDto">
+  <!-- 공통 -->
+  <id     property="postId"   column="post_id"/>
+  <result property="postType" column="post_type"/>
+  <result property="title"    column="title"/>
+  <result property="price"    column="price"/>
+  <result property="tradeType" column="trade_type"/>
+  <result property="content"  column="content"/>
+
+  <!-- CARS -->
+  <association property="car" javaType="boot.sagu.dto.CarDto" columnPrefix="c_">
+    <id     property="postId"         column="post_id"/>
+    <result property="brand"          column="brand"/>
+    <result property="model"          column="model"/>
+    <result property="year"           column="year"/>
+    <result property="mileage"        column="mileage"/>
+    <result property="fuelType"       column="fuel_type"/>
+    <result property="transmission"   column="transmission"/>
+    <result property="detail_location" column="detail_location"/>
+  </association>
+
+  <!-- ESTATE -->
+  <association property="estate" javaType="boot.sagu.dto.RealEstateDto" columnPrefix="re_">
+    <id     property="postId"         column="post_id"/>
+    <result property="propertyType"   column="property_type"/>
+    <result property="area"           column="area"/>
+    <result property="rooms"          column="rooms"/>
+    <result property="floor"          column="floor"/>
+    <result property="dealType"       column="deal_type"/>
+    <result property="detail_location" column="detail_location"/>
+  </association>
+
+  <!-- ITEMS -->
+  <association property="item" javaType="boot.sagu.dto.ItemDto" columnPrefix="ui_">
+    <id     property="postId"         column="post_id"/>
+    <result property="category"       column="category"/>
+    <result property="conditions"     column="conditions"/>
+    <result property="detail_location" column="detail_location"/>
+  </association>
+</resultMap>
+
+<select id="searchAll" resultMap="PostsWithDetailsMap">
+  <bind name="kw" value="keyword != null ? keyword.trim() : ''"/>
+  SELECT
+    -- 공통
+    p.post_id      AS postId,
+    p.post_type     AS postType,
+    p.title        AS title,
+    p.price        AS price,
+    p.trade_type    AS tradeType,
+    p.content      AS content,
+
+    -- cars (c_)
+    c.post_id       AS c_postId,
+    c.brand         AS c_brand,
+    c.model         AS c_model,
+    c.year          AS c_year,
+    c.mileage       AS c_mileage,
+    c.fuel_type      AS c_fuelType,
+    c.transmission  AS c_transmission,
+    c.detail_location AS c_detail_location,
+
+    -- real_estate (re_)
+    re.post_id        AS re_postId,
+    re.property_type   AS re_propertyType,
+    re.area           AS re_area,
+    re.rooms          AS re_rooms,
+    re.floor          AS re_floor,
+    re.deal_type       AS re_dealType,
+    re.detail_location AS re_detail_location,
+
+    -- used_items (ui_)
+    ui.post_id        AS ui_postId,
+    ui.category       AS ui_category,
+    ui.conditions     AS ui_conditions,
+    ui.detail_location AS ui_detail_location
+
+  FROM posts p
+  LEFT JOIN cars c         ON c.post_id = p.post_id     AND p.post_type = 'CARS'
+  LEFT JOIN real_estate re ON re.post_id = p.post_id    AND p.post_type = 'ESTATE'
+  LEFT JOIN used_items ui  ON ui.post_id = p.post_id    AND p.post_type = 'ITEMS'
+
+  <where>
+    <!-- postType 필터: ALL(또는 null)이면 스킵 -->
+    <if test="postType != null and postType != '' and postType != 'ALL'">
+      p.post_type = #{postType}
+    </if>
+
+    <!-- 키워드 OR 매칭 (비었으면 전체 허용할지 정책 선택) -->
+    <if test="kw != ''">
+      <if test="postType != null and postType != '' and postType != 'ALL'">AND</if>
+      (
+        -- posts
+        LOWER(p.title)       LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.content)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.trade_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.post_type)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(p.price AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+
+        -- cars
+        OR LOWER(c.brand)        LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.model)        LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.year    AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.mileage AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.fuel_type)     LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.transmission) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+
+        -- estate
+        OR LOWER(re.property_type)   LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.area  AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.rooms AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.floor AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.deal_type)        LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.detail_location)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+
+        -- items
+        OR LOWER(ui.category)       LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.conditions)     LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+      )
+    </if>
+  </where>
+
+  ORDER BY p.post_id DESC
+  LIMIT #{size} OFFSET #{offset}
+</select>
+
+<select id="countSearchAll" resultType="int">
+  <bind name="kw" value="keyword != null ? keyword.trim() : ''"/>
+  SELECT COUNT(*)
+  FROM posts p
+  LEFT JOIN cars c         ON c.post_id = p.post_id     AND p.post_type = 'CARS'
+  LEFT JOIN real_estate re ON re.post_id = p.post_id    AND p.post_type = 'ESTATE'
+  LEFT JOIN used_items ui  ON ui.post_id = p.post_id    AND p.post_type = 'ITEMS'
+  <where>
+    <if test="postType != null and postType != '' and postType != 'ALL'">
+      p.post_type = #{postType}
+    </if>
+    <if test="kw != ''">
+      <if test="postType != null and postType != '' and postType != 'ALL'">AND</if>
+      ( 
+        LOWER(p.title) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.content) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.trade_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.post_type)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(p.price AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.brand) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.model) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.year AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.mileage AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.fuel_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.transmission) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.property_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.area  AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.rooms AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.floor AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.deal_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.category) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.conditions) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+      )
+    </if>
+  </where>
+</select>
 
 
 </mapper>

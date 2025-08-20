@@ -34,4 +34,9 @@ public class PostsDto {
     public enum PostStatus {
         ON_SALE, RESERVED, SOLD
     }
+    
+ // 타입별 상세 (nullable)
+    private CarDto car;               
+    private RealEstateDto estate;     
+    private ItemDto item;
 }

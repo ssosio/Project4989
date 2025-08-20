@@ -1,0 +1,421 @@
+.gooddetail-page {
+  background: #f8f9fa;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+}
+
+.gooddetail-container {
+  max-width: 768px;
+  margin: 0 auto;
+  background: white;
+  min-height: 100vh;
+}
+
+/* 헤더 섹션 */
+.gooddetail-header {
+  padding: 20px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.gooddetail-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.gooddetail-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #8e8e93;
+}
+
+.gooddetail-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gooddetail-meta-item strong {
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* 수정일 표시 스타일 */
+.gooddetail-updated-item {
+  color: #FF6B6B;
+}
+
+.gooddetail-updated-item strong {
+  color: #FF6B6B;
+}
+
+/* 가격 섹션 */
+.gooddetail-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.gooddetail-price-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.gooddetail-price-label {
+  font-size: 14px;
+  color: #8e8e93;
+}
+
+/* 상태 표시 */
+.gooddetail-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gooddetail-status.on-sale {
+  background: #4A90E2;
+  color: white;
+}
+
+.gooddetail-status.reserved {
+  background: #FF9500;
+  color: white;
+}
+
+.gooddetail-status.sold {
+  background: #FF3B30;
+  color: white;
+}
+
+/* 좋아요 버튼 */
+.gooddetail-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+.gooddetail-like-btn:hover {
+  border-color: #4A90E2;
+  color: #4A90E2;
+}
+
+.gooddetail-like-btn .like-icon {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.gooddetail-like-btn:hover .like-icon {
+  transform: scale(1.1);
+}
+
+/* 이미지 갤러리 */
+.gooddetail-gallery {
+  margin-bottom: 0;
+}
+
+.gooddetail-gallery-title {
+  display: none;
+}
+
+/* 슬라이더 컨테이너 */
+.gooddetail-slider {
+  position: relative;
+  margin-bottom: 0;
+}
+
+.gooddetail-slider-container {
+  position: relative;
+  width: 600px;
+  height: 700px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.gooddetail-slider-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: all 0.3s ease;
+}
+
+/* 슬라이더 버튼 */
+.gooddetail-slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.gooddetail-slider-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.gooddetail-slider-btn-prev {
+  left: 16px;
+}
+
+.gooddetail-slider-btn-next {
+  right: 16px;
+}
+
+/* 인디케이터 */
+.gooddetail-slider-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 20px;
+}
+
+.gooddetail-slider-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5e5ea;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gooddetail-slider-indicator:hover {
+  background: #4A90E2;
+  transform: scale(1.2);
+}
+
+.gooddetail-slider-indicator.active {
+  background: #4A90E2;
+  transform: scale(1.2);
+}
+
+/* 카운터 */
+.gooddetail-slider-counter {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 12px;
+  color: white;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 8px;
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.gooddetail-no-photos {
+  text-align: center;
+  color: #8e8e93;
+  font-style: italic;
+  padding: 60px 20px;
+  background: #f8f9fa;
+}
+
+/* 상품 정보 섹션 */
+.gooddetail-info {
+  padding: 20px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.gooddetail-info-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.gooddetail-info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gooddetail-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.gooddetail-info-item:last-child {
+  border-bottom: none;
+}
+
+.gooddetail-info-label {
+  font-size: 14px;
+  color: #8e8e93;
+  font-weight: 500;
+}
+
+.gooddetail-info-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* 상품 설명 */
+.gooddetail-content {
+  padding: 20px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.gooddetail-content-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+}
+
+.gooddetail-content-text {
+  line-height: 1.6;
+  color: #1a1a1a;
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 20px;
+  padding: 16px 0;
+}
+
+/* 버튼 컨테이너 */
+.gooddetail-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #f1f3f4;
+  padding: 16px 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+
+.gooddetail-btn {
+  flex: 1;
+  padding: 14px 16px;
+  border: none;
+  background: #4A90E2;
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gooddetail-btn:hover {
+  background: #2E5BBA;
+}
+
+.gooddetail-btn.secondary {
+  background: #f1f3f4;
+  color: #1a1a1a;
+}
+
+.gooddetail-btn.secondary:hover {
+  background: #e5e5ea;
+}
+
+.gooddetail-btn.danger {
+  background: #FF3B30;
+}
+
+.gooddetail-btn.danger:hover {
+  background: #D70015;
+}
+
+.gooddetail-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 하단 여백 (고정 버튼을 위한) */
+.gooddetail-page {
+  padding-bottom: 80px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .gooddetail-container {
+    max-width: 100%;
+  }
+
+  .gooddetail-slider-container {
+    width: 100%;
+    height: 400px;
+  }
+
+  .gooddetail-slider-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .gooddetail-actions {
+    padding: 12px 16px;
+  }
+
+  .gooddetail-btn {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .gooddetail-slider-container {
+    height: 300px;
+  }
+
+  .gooddetail-slider-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .gooddetail-slider-btn-prev {
+    left: 12px;
+  }
+
+  .gooddetail-slider-btn-next {
+    right: 12px;
+  }
+
+  .gooddetail-slider-counter {
+    top: 12px;
+    right: 12px;
+  }
+}

@@ -1,46 +1,298 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './cars.css';
-import { useMemo } from 'react';
+
+const CAR_DETAIL_URL = 'http://localhost:4989/post/cardetail'; // 필요시 수정
+const LIST_URL = 'http://localhost:4989/post/list';
+const PHOTO_BASE = 'http://localhost:4989/postphoto/';
 
 const Cars = () => {
-
-  const [postList,setPostList]=useState([]);
+  const [postList, setPostList] = useState([]);
+  const [carDetailMap, setCarDetailMap] = useState({}); // postId -> detail
   const [currentPage, setCurrentPage] = useState(1);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const itemsPerPage = 12;
 
-  const navi=useNavigate('');
+  const navi = useNavigate('');
   const location = useLocation();
 
+  // ---------- 유틸 ----------
+  const norm = (v) => (v ?? '').toString().trim().toUpperCase();
+  const toInt = (v) => {
+    if (v === null || v === undefined) return null;
+    const n = parseInt(v.toString().replace(/[^0-9]/g, ''), 10);
+    return Number.isNaN(n) ? null : n;
+  };
+  const normalizeFuel = (v) => {
+    const u = norm(v);
+    if (['GAS', 'GASOLINE', 'PETROL'].includes(u)) return 'GASOLINE';
+    if (u === 'DIESEL') return 'DIESEL';
+    if (['EV', 'ELECTRIC'].includes(u)) return 'ELECTRIC';
+    if (u === 'HYBRID') return 'HYBRID';
+    if (u === 'LPG') return 'LPG';
+    return u || null;
+  };
+  const normalizeTrans = (v) => {
+    const u = norm(v);
+    if (['AUTO', 'AUTOMATIC', 'AT'].includes(u)) return 'AUTOMATIC';
+    if (['STICK', 'MT'].includes(u)) return 'MANUAL';
+    return u || null;
+  };
+  const STATUS_ALIAS = (v) => (norm(v) === 'SOLD' ? 'SOLD_OUT' : norm(v));
 
- // 쿼리 변화시에만 현재 페이지/스크롤 갱신
+  const MILEAGE_RANGES = [
+    { key: 'ALL', label: '전체', test: () => true },
+    { key: '<=50000', label: '5만km 이하', test: (m) => m !== null && m <= 50000 },
+    { key: '50000-100000', label: '5만~10만km', test: (m) => m !== null && m > 50000 && m <= 100000 },
+    { key: '100000-150000', label: '10만~15만km', test: (m) => m !== null && m > 100000 && m <= 150000 },
+    { key: '>150000', label: '15만km 이상', test: (m) => m !== null && m > 150000 },
+  ];
+
+  // ---------- 스크롤 ----------
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      setShowScrollTop(scrollTop > 300);
+    };
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // ---------- 페이지 쿼리 ----------
   useEffect(() => {
     const q = new URLSearchParams(location.search);
     const page = Number(q.get('page')) || 1;
     setCurrentPage(page);
-    window.scrollTo(0, 0); // 페이지 바뀔 때만 맨 위로
-  }, [location.search]); 
-  
-  // 필터 / 페이지 계산 (메모)
-  const cars = useMemo(() => postList.filter(p => p.postType === 'CARS'), [postList]);
-  const totalPages = useMemo(() => Math.ceil(cars.length / itemsPerPage), [cars, itemsPerPage]);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = useMemo(() => cars.slice(startIndex, startIndex + itemsPerPage), [cars, startIndex, itemsPerPage]);
+    window.scrollTo(0, 0);
+  }, [location.search]);
 
   const handlePageChange = (page) => {
     const q = new URLSearchParams(location.search);
     q.set('page', page);
     navi(`${location.pathname}?${q.toString()}`, { replace: true });
   };
-  const handleNextPage = () => { if (currentPage < totalPages) handlePageChange(currentPage + 1); };
-  const handlePrevPage = () => { if (currentPage > 1) handlePageChange(currentPage - 1); };
+  const handleNextPage = () => currentPage < totalPages && handlePageChange(currentPage + 1);
+  const handlePrevPage = () => currentPage > 1 && handlePageChange(currentPage - 1);
 
-  // 상세에서 돌아왔을 때 클릭한 카드로 스크롤
+  // ---------- 데이터 로드 (공통 리스트) ----------
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get(LIST_URL);
+        setPostList(data || []);
+      } catch (e) {
+        console.error('리스트 에러:', e);
+      }
+    })();
+  }, []);
+
+  // ---------- CARS만 추출 ----------
+  const carsFromList = useMemo(() => postList.filter((p) => p.postType === 'CARS'), [postList]);
+
+  // ---------- car detail 프리패치 ----------
+  useEffect(() => {
+    const needIds = carsFromList.map((c) => c.postId).filter((id) => carDetailMap[id] === undefined);
+    if (!needIds.length) return;
+
+    Promise.all(
+      needIds.map((id) =>
+        axios
+          .get(CAR_DETAIL_URL, { params: { postId: id } })
+          .then((r) => ({ id, detail: r.data }))
+          .catch((e) => {
+            console.warn('cardetail 실패 postId=', id, e);
+            return { id, detail: null };
+          }),
+      ),
+    ).then((res) => {
+      const next = { ...carDetailMap };
+      res.forEach(({ id, detail }) => (next[id] = detail));
+      setCarDetailMap(next);
+    });
+  }, [carsFromList]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------- 공통(status) + 상세(차필드) 머지 & 정규화 ----------
+  const cars = useMemo(() => {
+    console.log('=== 차량 데이터 처리 ===');
+    console.log('carsFromList:', carsFromList.length);
+    console.log('carDetailMap keys:', Object.keys(carDetailMap));
+    
+    const processed = carsFromList.map((p) => {
+      const d = carDetailMap[p.postId] || {};
+      console.log(`차량 ${p.postId} 상세 데이터:`, d);
+      
+      const brand = d.brand ?? d.carBrand ?? d.make ?? d.manufacturer ?? d.Brand ?? null;
+      const year = d.year ?? d.modelYear ?? d.carYear ?? d.Year ?? null;
+      const mileage = d.mileage ?? d.km ?? d.kms ?? d.odometer ?? d.Mileage ?? null;
+      const fuel = d.fuelType ?? d.fuel ?? d.FuelType ?? null;
+      const trans = d.transmission ?? d.gearbox ?? d.Transmission ?? null;
+
+      const processedCar = {
+        ...p, // 사진/제목/가격/createdAt/status 등
+        // 정규화 필드(필터/옵션/비교는 전부 이 값으로)
+        _status: STATUS_ALIAS(p.status), // ✅ status는 공통 리스트 기준
+        _brand: brand,
+        _year: toInt(year),
+        _mileage: toInt(mileage),
+        _fuel: normalizeFuel(fuel),
+        _trans: normalizeTrans(trans),
+      };
+      
+      console.log(`차량 ${p.postId} 처리 결과:`, {
+        title: processedCar.title,
+        _status: processedCar._status,
+        _brand: processedCar._brand,
+        _year: processedCar._year,
+        _mileage: processedCar._mileage,
+        _fuel: processedCar._fuel,
+        _trans: processedCar._trans
+      });
+      
+      return processedCar;
+    });
+    
+    console.log('=== 차량 데이터 처리 완료 ===');
+    return processed;
+  }, [carsFromList, carDetailMap]);
+
+  // ---------- 필터 상태 ----------
+  const [filters, setFilters] = useState({
+    status: 'ALL',
+    brand: 'ALL',
+    year: 'ALL',
+    mileage: 'ALL',
+    fuelType: 'ALL',
+    transmission: 'ALL',
+  });
+
+
+
+  // ---------- 필터 적용 ----------
+  const filteredCars = useMemo(() => {
+    console.log('=== 필터링 시작 ===');
+    console.log('현재 필터:', filters);
+    console.log('총 차량 수:', cars.length);
+    
+    const filtered = cars.filter((c) => {
+      // 상태 필터
+      if (filters.status !== 'ALL') {
+        if (c._status !== filters.status) {
+          console.log(`❌ 상태 필터 제외: ${c.title} (상태: ${c._status}, 필터: ${filters.status})`);
+          return false;
+        }
+      }
+      
+      // 브랜드 필터
+      if (filters.brand !== 'ALL') {
+        const carBrand = norm(c._brand || '');
+        const filterBrand = norm(filters.brand);
+        if (carBrand !== filterBrand) {
+          console.log(`❌ 브랜드 필터 제외: ${c.title} (브랜드: ${carBrand}, 필터: ${filterBrand})`);
+          return false;
+        }
+      }
+      
+      // 연식 필터
+      if (filters.year !== 'ALL') {
+        const currentYear = new Date().getFullYear();
+        const carYear = c._year;
+        
+        if (!carYear) {
+          console.log(`❌ 연식 필터 제외: ${c.title} (연식 정보 없음)`);
+          return false;
+        }
+        
+        let yearMatch = false;
+        const yearDiff = currentYear - carYear;
+        
+        switch (filters.year) {
+          case '5':
+            yearMatch = yearDiff <= 5;
+            break;
+          case '10':
+            yearMatch = yearDiff <= 10;
+            break;
+          case '15년':
+            yearMatch = yearDiff <= 15;
+            break;
+          default:
+            yearMatch = String(carYear) === String(filters.year);
+        }
+        
+        if (!yearMatch) {
+          console.log(`❌ 연식 필터 제외: ${c.title} (${carYear}년, 차이: ${yearDiff}년, 필터: ${filters.year})`);
+          return false;
+        }
+      }
+      
+      // 주행거리 필터
+      if (filters.mileage !== 'ALL') {
+        const range = MILEAGE_RANGES.find((r) => r.key === filters.mileage);
+        if (!range?.test(c._mileage)) {
+          console.log(`❌ 주행거리 필터 제외: ${c.title} (주행거리: ${c._mileage}km, 필터: ${filters.mileage})`);
+          return false;
+        }
+      }
+      
+      // 연료 필터
+      if (filters.fuelType !== 'ALL') {
+        const carFuel = c._fuel;
+        const filterFuel = filters.fuelType;
+        
+        let fuelMatch = false;
+        if (filterFuel === 'gasoline' && carFuel === 'GASOLINE') fuelMatch = true;
+        else if (filterFuel === 'diesel' && carFuel === 'DIESEL') fuelMatch = true;
+        else if (filterFuel === 'electric' && carFuel === 'ELECTRIC') fuelMatch = true;
+        
+        if (!fuelMatch) {
+          console.log(`❌ 연료 필터 제외: ${c.title} (연료: ${carFuel}, 필터: ${filterFuel})`);
+          return false;
+        }
+      }
+      
+      // 변속기 필터
+      if (filters.transmission !== 'ALL') {
+        const carTrans = c._trans;
+        const filterTrans = filters.transmission;
+        
+        let transMatch = false;
+        if (filterTrans === 'auto' && carTrans === 'AUTOMATIC') transMatch = true;
+        else if (filterTrans === 'stick' && carTrans === 'MANUAL') transMatch = true;
+        
+        if (!transMatch) {
+          console.log(`❌ 변속기 필터 제외: ${c.title} (변속기: ${carTrans}, 필터: ${filterTrans})`);
+          return false;
+        }
+      }
+      
+      console.log(`✅ 필터 통과: ${c.title}`);
+      return true;
+    });
+    
+    console.log('=== 필터링 완료 ===');
+    console.log('필터링 후 차량 수:', filtered.length);
+    console.log('========================');
+    
+    return filtered;
+  }, [cars, filters]);
+
+  // ---------- 페이지네이션 (필터 이후) ----------
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(filteredCars.length / itemsPerPage)),
+    [filteredCars.length, itemsPerPage],
+  );
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = useMemo(
+    () => filteredCars.slice(startIndex, startIndex + itemsPerPage),
+    [filteredCars, startIndex, itemsPerPage],
+  );
+
+  // ---------- 상세에서 돌아왔을 때 포커스 ----------
   useEffect(() => {
     const focusId = location.state?.focusId;
     if (!focusId) return;
-
     const timer = setTimeout(() => {
       const el = document.getElementById(`post-${focusId}`);
       if (el) {
@@ -49,122 +301,168 @@ const Cars = () => {
         setTimeout(() => el.classList.remove('focused-card'), 700);
       }
     }, 0);
-
     return () => clearTimeout(timer);
   }, [postList, currentPage, location.state]);
 
-  const fromUrl = `${location.pathname}${location.search || ''}`;
 
 
-  const list=()=>{
-    let url="http://localhost:4989/post/list";
-
-    axios.get(url)
-    .then(res=>{
-      console.log(res.data);
-      setPostList(res.data);
-    })
-    .catch(err => {
-      console.error("에러 발생:", err);
-    });
+  // ---------- 필터 핸들러 ----------
+  const setAndResetPage = (updater) => {
+    setCurrentPage(1);
+    setFilters((prev) => (typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }));
   };
 
-  useEffect(()=>{
-    console.log("list");
-    list();
-  },[])
-
-  useEffect(() => {
-    console.log(postList); // mainPhotoUrl 값 확인
-  }, [postList]);
-
-  const photoUrl="http://localhost:4989/save/";
-
- 
-  // 현재 페이지의 아이템들 계산
-  // const startIndex = (currentPage - 1) * itemsPerPage;
-  // const endIndex = startIndex + itemsPerPage;
-  // const currentItems = postList.filter(p => p.postType === 'CARS').slice(startIndex, endIndex);
-  // const totalPages = Math.ceil(postList.filter(p => p.postType === 'CARS').length / itemsPerPage);
-
-  // // 디버깅용 콘솔 로그
-  // console.log('총 아이템 수:', postList.filter(p => p.postType === 'CARS').length);
-  // console.log('페이지당 아이템 수:', itemsPerPage);
-  // console.log('총 페이지 수:', totalPages);
-  // console.log('현재 페이지:', currentPage);
-  // console.log('현재 아이템 수:', currentItems.length);
-
-  // const handleNextPage = () => {
-  //   if (currentPage < totalPages) {
-  //     setCurrentPage(currentPage + 1);
-  //   }
-  // }
-
-  // const handlePrevPage = () => {
-  //   if (currentPage > 1) {
-  //     setCurrentPage(currentPage - 1);
-  //   }
-  // }
-
-  // const handlePageChange = (page) => {
-  //   setCurrentPage(page);
-  // }
+  const onChangeStatus = (e) => setAndResetPage({ status: e.target.value });
+  const onChangeBrand = (e) => setAndResetPage({ brand: e.target.value });
+  const onChangeYear = (e) => setAndResetPage({ year: e.target.value });
+  const onChangeMileage = (e) => setAndResetPage({ mileage: e.target.value });
+  const onChangeFuel = (e) => setAndResetPage({ fuelType: e.target.value });
+  const onChangeTrans = (e) => setAndResetPage({ transmission: e.target.value });
+  
+  // 필터 초기화 함수
+  const resetFilters = () => {
+    setAndResetPage({
+      status: 'ALL',
+      brand: 'ALL',
+      year: 'ALL',
+      mileage: 'ALL',
+      fuelType: 'ALL',
+      transmission: 'ALL',
+    });
+  };
 
   return (
     <div className="cars-page">
       <div className="cars-container">
-        {/* 헤더 섹션 */}
+        {/* 헤더 */}
         <div className="cars-header">
           <h1 className="cars-title">자동차 목록</h1>
           <p className="cars-subtitle">다양한 자동차를 찾아보세요</p>
         </div>
 
+        {/* ✅ 라디오 필터 UI */}
+        <div className="cars-filters">
+
+          <div className="filter-group">
+            <div className="filter-label">상태</div>
+            <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
+            <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
+            <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
+            <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-label">브랜드</div>
+            <label><input type="radio" name="brand" value="ALL" checked={filters.brand === 'ALL'} onChange={onChangeBrand} /> 전체</label>
+            <label><input type="radio" name="brand" value="kia" checked={filters.brand === 'kia'} onChange={onChangeBrand} /> 기아</label>
+            <label><input type="radio" name="brand" value="hyundai" checked={filters.brand === 'hyundai'} onChange={onChangeBrand} /> 현대</label>
+            <label><input type="radio" name="brand" value="benz" checked={filters.brand === 'benz'} onChange={onChangeBrand} /> 벤츠</label>
+            <label><input type="radio" name="brand" value="audi" checked={filters.brand === 'audi'} onChange={onChangeBrand} /> 아우디</label>
+            <label><input type="radio" name="brand" value="bmw" checked={filters.brand === 'bmw'} onChange={onChangeBrand} /> BMW</label>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-label">연식</div>
+            <label><input type="radio" name="year" value="ALL" checked={filters.year === 'ALL'} onChange={onChangeYear} /> 전체</label>
+            <label><input type="radio" name="year" value="5년" checked={filters.year === '5년'} onChange={onChangeYear} /> 5년</label>
+            <label><input type="radio" name="year" value="10년" checked={filters.year === '10년'} onChange={onChangeYear} /> 10년</label>
+            <label><input type="radio" name="year" value="15년" checked={filters.year === '15년'} onChange={onChangeYear} /> 15년</label>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-label">주행거리</div>
+            {MILEAGE_RANGES.map((r) => (
+              <label key={`mileage-${r.key}`}>
+                <input type="radio" name="mileage" value={r.key} checked={filters.mileage === r.key} onChange={onChangeMileage} />
+                {r.label}
+              </label>
+            ))}
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-label">연료</div>
+            <label><input type="radio" name="fuelType" value="ALL" checked={filters.fuelType === 'ALL'} onChange={onChangeFuel} /> 전체</label>
+            <label><input type="radio" name="fuelType" value="gasoline" checked={filters.fuelType === 'gasoline'} onChange={onChangeFuel} /> 휘발유</label>
+            <label><input type="radio" name="fuelType" value="diesel" checked={filters.fuelType === 'diesel'} onChange={onChangeFuel} /> 경유</label>
+            <label><input type="radio" name="fuelType" value="electric" checked={filters.fuelType === 'electric'} onChange={onChangeFuel} /> 전기</label>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-label">변속기</div>
+            <label><input type="radio" name="transmission" value="ALL" checked={filters.transmission === 'ALL'} onChange={onChangeTrans} /> 전체</label>
+            <label><input type="radio" name="transmission" value="auto" checked={filters.transmission === 'auto'} onChange={onChangeTrans} /> 오토</label>
+            <label><input type="radio" name="transmission" value="stick" checked={filters.transmission === 'stick'} onChange={onChangeTrans} /> 수동</label>
+          </div>
+
+          {/* 필터 초기화 버튼 */}
+          <div className="filter-reset-container">
+            <button 
+              type="button" 
+              className="filter-reset-btn" 
+              onClick={resetFilters}
+              title="모든 필터 초기화"
+            >
+              필터 초기화
+            </button>
+          </div>
+
+        </div>
+
         {/* 등록 버튼 */}
-        <button 
-          type='button' 
-          className="cars-register-btn" 
-          onClick={()=>{
-            navi("/board/post");
-          }}
-        >
+        <button type="button" className="cars-register-btn" onClick={() => navi('/board/post')}>
           자동차 등록하기
         </button>
 
-        {/* 상품 목록 */}
-        {postList.filter(p => p.postType === 'CARS').length > 0 ? (
+        {/* 목록 */}
+        {filteredCars.length > 0 ? (
           <>
             <div className="cars-grid">
-              {currentItems.map(p => (
-                <div id={`post-${p.postId}`}
+              {currentItems.map((p) => (
+                <div
+                  id={`post-${p.postId}`}
                   key={p.postId}
                   className="cars-card"
                   onClick={() =>
                     navi(`/board/GoodsDetail?postId=${p.postId}`, {
-                      state: { from: fromUrl, page: currentPage, focusId: p.postId }
+                      state: { from: `${location.pathname}${location.search || ''}`, page: currentPage, focusId: p.postId },
                     })
-                  }>
+                  }
+                >
                   <div className="cars-image">
-                    {p.mainPhotoUrl ? (
-                      <img 
-                        src={photoUrl + p.mainPhotoUrl} 
-                        alt={p.title} 
-                      />
-                    ) : (
-                      <div className="cars-image-placeholder">
-                        이미지 없음
-                      </div>
-                    )}
+                    {p.mainPhotoUrl ? <img src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} /> : <div className="cars-image-placeholder">이미지 없음</div>}
                   </div>
                   <div className="cars-info">
                     <h3 className="cars-title-text">{p.title}</h3>
-                    <div className="cars-price">
-                      {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
-                    </div>
+                    <div className="cars-price">{p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}</div>
                     <div className="cars-member">판매자: {p.nickname}</div>
                     <div>조회수: {p.viewCount}</div>
-                    <div>{p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}</div>
-                    <div className="cars-date">
-                      {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
+                    <div className="cars-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+                    
+                    {/* 상태 및 차량 정보 배지 */}
+                    <div className="cars-status">
+                      <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                        {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
+                      </span>
+                      {p._brand && (
+                        <span className="trade-type-badge">
+                          {p._brand}
+                        </span>
+                      )}
+                      {p._year && (
+                        <span className="trade-type-badge">
+                          {p._year}년
+                        </span>
+                      )}
+                      {p._fuel && (
+                        <span className="trade-type-badge">
+                          {p._fuel === 'GASOLINE' ? '가솔린' : p._fuel === 'DIESEL' ? '디젤' : p._fuel === 'ELECTRIC' ? '전기' : p._fuel}
+                        </span>
+                      )}
+                      {p._trans && (
+                        <span className="trade-type-badge">
+                          {p._trans === 'AUTOMATIC' ? '오토' : p._trans === 'MANUAL' ? '수동' : p._trans}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -174,65 +472,49 @@ const Cars = () => {
             {/* 페이지네이션 */}
             <div className="cars-pagination">
               <div className="cars-page-info">
-                총 {cars.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, cars.length)}개 표시
+                총 {filteredCars.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredCars.length)}개 표시
               </div>
-              
-              {totalPages > 1 && (
+
+              {totalPages > 1 ? (
                 <>
-                  <button 
-                    className="cars-page-btn cars-prev-btn"
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1}
-                  >
+                  <button className="cars-page-btn cars-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>
                     이전
                   </button>
-                  
                   <div className="cars-page-numbers">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        className={`cars-page-number ${currentPage === page ? 'active' : ''}`}
-                        onClick={() => handlePageChange(page)}
-                      >
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button key={page} className={`cars-page-number ${currentPage === page ? 'active' : ''}`} onClick={() => handlePageChange(page)}>
                         {page}
                       </button>
                     ))}
                   </div>
-                  
-                  <button 
-                    className="cars-page-btn cars-next-btn"
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                  >
+                  <button className="cars-page-btn cars-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>
                     다음
                   </button>
                 </>
-              )}
-              
-              {totalPages <= 1 && (
-                <div className="cars-page-single">
-                  페이지 1 / 1
-                </div>
+              ) : (
+                <div className="cars-page-single">페이지 1 / 1</div>
               )}
             </div>
           </>
         ) : (
           <div className="cars-empty">
             <div className="cars-empty-icon">🚗</div>
-            <div className="cars-empty-text">등록된 자동차가 없습니다</div>
-            <button 
-              className="cars-empty-btn" 
-              onClick={()=>{
-                navi("/board/post");
-              }}
-            >
+            <div className="cars-empty-text">조건에 맞는 자동차가 없습니다</div>
+            <button className="cars-empty-btn" onClick={() => navi('/board/post')}>
               첫 번째 자동차 등록하기
             </button>
           </div>
         )}
+
+        {/* 최상단 버튼 */}
+        {showScrollTop && (
+          <button className="scroll-to-top-btn" onClick={scrollToTop} title="최상단으로 이동">
+            ↑
+          </button>
+        )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Cars
+export default Cars;
