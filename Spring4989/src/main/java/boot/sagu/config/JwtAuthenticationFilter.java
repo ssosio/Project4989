@@ -1,3 +1,4 @@
+// src/main/java/boot/sagu/config/JwtAuthenticationFilter.java
 package boot.sagu.config;
 
 import java.io.IOException;
@@ -26,51 +27,53 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-    	 String uri = request.getRequestURI();
-    	    String bearer = request.getHeader("Authorization");
-    	    System.out.println("[JWT] uri = " + uri);
-    	    System.out.println("[JWT] Authorization = " + bearer);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        final String uri = request.getRequestURI();
+        final String bearer = request.getHeader("Authorization");
+        System.out.println("[JWT] uri = " + uri);
+        System.out.println("[JWT] Authorization = " + bearer);
 
-    	    try {
-    	        String jwt = getJwtFromRequest(request); // "Bearer " 떼고 순수 토큰
-    	        if (jwt != null) {
-    	            String username = jwtUtil.extractUsername(jwt);
-    	            System.out.println("[JWT] extractUsername = " + username);
+        try {
+            String jwt = getJwtFromRequest(request); // Bearer 파싱(대소문자/공백 관대)
+            if (jwt != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String username = jwtUtil.extractUsername(jwt);
+                System.out.println("[JWT] extractUsername = " + username);
 
-    	            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-    	                // (선택) DB에서 사용자/권한 로드
-    	                UserDetails user = customUserDetailsService.loadUserByUsername(username);
+                if (username != null) {
+                    UserDetails user = customUserDetailsService.loadUserByUsername(username);
+                    boolean valid = jwtUtil.validateToken(jwt, user.getUsername());
+                    System.out.println("[JWT] validate = " + valid);
 
-    	                boolean valid = jwtUtil.validateToken(jwt, user.getUsername());
-    	                System.out.println("[JWT] validate = " + valid);
+                    if (valid) {
+                        UsernamePasswordAuthenticationToken auth =
+                                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                        System.out.println("[JWT] ✅ setAuthentication OK. principal=" + user.getUsername());
+                    } else {
+                        System.out.println("[JWT] ❌ token invalid");
+                    }
+                }
+            } else if (jwt == null) {
+                System.out.println("[JWT] no bearer token (parsed)");
+            }
+        } catch (Exception e) {
+            System.out.println("[JWT] ❌ exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            // 예외가 나도 체인은 계속 처리. 인증 실패 시 EntryPoint가 401 처리.
+        }
 
-    	                if (valid) {
-    	                    UsernamePasswordAuthenticationToken auth =
-    	                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-    	                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-    	                    SecurityContextHolder.getContext().setAuthentication(auth);
-
-    	                    System.out.println("[JWT] ✅ setAuthentication OK. principal=" + user.getUsername());
-    	                } else {
-    	                    System.out.println("[JWT] ❌ token invalid");
-    	                }
-    	            }
-    	        } else {
-    	            System.out.println("[JWT] no bearer token");
-    	        }
-    	    } catch (Exception e) {
-    	        System.out.println("[JWT] ❌ exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-    	        // 예외가 나도 체인은 계속 흘려보냅니다. (EntryPoint가 401 응답)
-    	    }
-
-    	    filterChain.doFilter(request, response);
+        filterChain.doFilter(request, response);
     }
 
+    /** Authorization 헤더에서 "Bearer <token>" 추출 (대소문자 무시 + 앞뒤 공백 허용) */
     private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        String h = request.getHeader("Authorization");
+        if (h == null) return null;
+        String v = h.trim();
+        if (v.length() >= 6 && v.regionMatches(true, 0, "Bearer", 0, 6)) {
+            String token = v.substring(6).trim();
+            return StringUtils.hasText(token) ? token : null;
         }
         return null;
     }
@@ -78,8 +81,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String requestURI = request.getRequestURI();
-        
-        // 인증이 필요하지 않은 경로들
+
+        // ✅ 결제 confirm은 절대 제외하지 않음 (여기서 false를 반환해야 필터를 태움)
+        if ("/api/auctions/portone/confirm".equals(requestURI)) {
+            return false;
+        }
+        // 인증 불필요 경로
         return requestURI.startsWith("/login") ||
                requestURI.startsWith("/signup") ||
                requestURI.startsWith("/oauth2") ||
@@ -95,6 +102,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/api/region/register") ||
                requestURI.startsWith("/chat/") ||
                requestURI.startsWith("/api/chat/") ||
-               requestURI.startsWith("/save/");
+               requestURI.startsWith("/save/") ||
+               requestURI.startsWith("/api/auth") ||
+               requestURI.equals("/api/auctions/portone/webhook") ||
+               requestURI.startsWith("/api/auth") ||     // ← refresh 포함
+               requestURI.equals("/error");
     }
 }

@@ -1,9 +1,9 @@
 // src/components/auction/PortOnePayment.jsx
 import React, { useEffect, useRef, useContext } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { PORTONE_CONFIG, PAYMENT_ERROR_MESSAGES } from '../../config/portone';
+import api from '../../lib/api'; // ★ axios 대신 인터셉터 달린 인스턴스
 
 // 포트원 스크립트를 한 번만 로드
 function loadPortOneScript() {
@@ -33,9 +33,7 @@ export default function PortOnePayment({
 }) {
   const navigate = useNavigate();
   const { userInfo } = useContext(AuthContext);
-
-  // 결제창 중복 오픈 방지(렌더/StrictMode 모두 대비)
-  const launchedRef = useRef(false);
+  const launchedRef = useRef(false); // 결제창 중복 오픈 방지
 
   useEffect(() => {
     if (launchedRef.current) return;
@@ -53,18 +51,20 @@ export default function PortOnePayment({
         const { IMP } = window;
         IMP.init(PORTONE_CONFIG.IMP_CODE);
 
-        // 로그인 토큰 확인
-        const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) {
+        // 🔐 토큰 체크: jwtToken 또는 accessToken 모두 허용 + 접두어 정리
+        const raw = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
+        if (!raw) {
           alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.');
-          navigate(`/login?redirect=/auction/${postId}`);
+          // 실제 상세 경로에 맞춰 redirect 파라미터 조정
+          navigate(`/login?redirect=/auction/detail/${postId}`);
+          window[guardKey] = false;
           return;
         }
 
         // 구매자 정보
         const buyer_email = userInfo?.loginId || userInfo?.email || '';
-        const buyer_name = userInfo?.nickname || '구매자';
-        const buyer_tel = userInfo?.phone || userInfo?.tel || '';
+        const buyer_name  = userInfo?.nickname || '구매자';
+        const buyer_tel   = userInfo?.phone || userInfo?.tel || '';
 
         // 유니크 merchant_uid
         const merchantUid = `guarantee_${postId}_${memberId}_${Date.now()}`;
@@ -86,24 +86,14 @@ export default function PortOnePayment({
 
             if (rsp.success) {
               try {
-                const baseURL = import.meta.env.VITE_API_BASE;
-                await axios.post(
-                  `${baseURL}/api/auctions/portone/confirm`,
-                  {
-                    postId: Number(postId),
-                    memberId: Number(memberId),
-                    impUid: rsp.imp_uid,
-                    merchantUid,
-                    paidAmount: rsp.paid_amount,
-                  },
-                  {
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${accessToken}`, // ★ 추가
-                    },
-                    withCredentials: false, // 세션/쿠키 인증이면 true
-                  }
-                );
+                // ✅ confirm은 api 인스턴스로 호출(Authorization 자동 부착 + 토큰 리프레시)
+                await api.post('/api/auctions/portone/confirm', {
+                  postId: Number(postId),
+                  memberId: Number(memberId),
+                  impUid: rsp.imp_uid,
+                  merchantUid,
+                  paidAmount: rsp.paid_amount,
+                });
 
                 onPaymentComplete?.();
               } catch (err) {
@@ -115,9 +105,7 @@ export default function PortOnePayment({
               const msg =
                 rsp.error_code === 'PAY_CANCEL'
                   ? PAYMENT_ERROR_MESSAGES.CANCELLED
-                  : `${PAYMENT_ERROR_MESSAGES.FAILED}${
-                      rsp.error_msg ? `: ${rsp.error_msg}` : ''
-                    }`;
+                  : `${PAYMENT_ERROR_MESSAGES.FAILED}${rsp.error_msg ? `: ${rsp.error_msg}` : ''}`;
               alert(msg);
               onPaymentCancel?.();
             }

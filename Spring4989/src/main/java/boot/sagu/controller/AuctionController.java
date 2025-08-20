@@ -31,6 +31,7 @@ import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
+import boot.sagu.dto.PortOneConfirmRequest;
 import boot.sagu.dto.PortOneWebhookPayloadDTO;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
@@ -417,7 +418,7 @@ public class AuctionController {
 
 
 	  // 포트원 웹훅(결제 성공 검증 → 보증금 저장)
-    @PostMapping("/api/auction/portone/webhook")
+    @PostMapping("/api/auctions/portone/webhook")
     public ResponseEntity<String> portoneWebhook(@RequestBody PortOneWebhookPayloadDTO p) {
         // postId/memberId는 merchant_uid 규칙(guarantee_{postId}_{memberId})에서 파싱하거나,
         // 프론트 custom_data로 넘겨 받도록 설계하세요.
@@ -441,6 +442,32 @@ public class AuctionController {
     ) {
         auctionService.finalizeWinnerGuarantee(postId, winnerId, action);
         return ResponseEntity.ok(Map.of("status", "OK"));
+    }
+    
+    @PostMapping(value = "/api/auctions/portone/confirm", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> confirmPayment(@RequestBody PortOneConfirmRequest req,
+                                            @RequestHeader("Authorization") String bearer) {
+        try {
+            // (선택) 토큰과 요청 memberId 일치 여부를 체크하고 싶으면 여기서 확인
+            String jwt = bearer.replace("Bearer ", "");
+            String loginId = jwtUtil.extractUsername(jwt);
+            // TODO: loginId -> memberId 매핑해서 req.getMemberId()와 일치 확인 가능하면 더 안전
+
+            // ✅ Service 수정 없이, 웹훅에서 쓰던 메서드를 재사용
+            auctionService.handlePortOneWebhook(
+                req.getPostId(),
+                req.getMemberId(),
+                req.getImpUid(),
+                req.getMerchantUid()
+            );
+
+            return ResponseEntity.ok(Map.of("status", "OK"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "message", "결제 검증 실패: " + e.getMessage()
+            ));
+        }
     }
 
 }
