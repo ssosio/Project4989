@@ -1,18 +1,19 @@
 package boot.sagu.config;
 
-import boot.sagu.config.JwtUtil;
-import boot.sagu.service.CustomUserDetailsService;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import java.io.IOException;
+
+import boot.sagu.service.CustomUserDetailsService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -26,49 +27,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String requestURI = request.getRequestURI();
-        System.out.println("JWT Filter - Processing request: " + requestURI);
-        
-        try {
-            // 1. JWT 토큰 추출
-            String jwt = getJwtFromRequest(request);
-            
-            // 2. 토큰이 있으면 검증
-            if (StringUtils.hasText(jwt)) {
-                // 3. 토큰에서 사용자명 추출
-                String username = jwtUtil.extractUsername(jwt);
-                
-                if (StringUtils.hasText(username) && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    // 4. 사용자 정보 로드
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-                    
-                    // 5. 토큰 유효성 검사
-                    if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
-                        // 6. 인증 객체 생성 및 SecurityContext에 설정
-                        UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                        
-                        // 추가 상세 로깅
-                        System.out.println("JWT Filter - Authentication successful for user: " + username);
-                        System.out.println("JWT Filter - SecurityContext authentication: " + SecurityContextHolder.getContext().getAuthentication());
-                        System.out.println("JWT Filter - SecurityContext authorities: " + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
-                        System.out.println("JWT Filter - SecurityContext is authenticated: " + SecurityContextHolder.getContext().getAuthentication().isAuthenticated());
-                    } else {
-                        System.out.println("JWT Filter - Token validation failed for user: " + username);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("JWT Filter - Error processing JWT: " + e.getMessage());
-            // 에러가 발생해도 필터 체인은 계속 진행
-        }
-        
-        System.out.println("JWT Filter - Before filterChain.doFilter for: " + requestURI);
-        filterChain.doFilter(request, response);
-        System.out.println("JWT Filter - After filterChain.doFilter for: " + requestURI);
+    	 String uri = request.getRequestURI();
+    	    String bearer = request.getHeader("Authorization");
+    	    System.out.println("[JWT] uri = " + uri);
+    	    System.out.println("[JWT] Authorization = " + bearer);
+
+    	    try {
+    	        String jwt = getJwtFromRequest(request); // "Bearer " 떼고 순수 토큰
+    	        if (jwt != null) {
+    	            String username = jwtUtil.extractUsername(jwt);
+    	            System.out.println("[JWT] extractUsername = " + username);
+
+    	            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+    	                // (선택) DB에서 사용자/권한 로드
+    	                UserDetails user = customUserDetailsService.loadUserByUsername(username);
+
+    	                boolean valid = jwtUtil.validateToken(jwt, user.getUsername());
+    	                System.out.println("[JWT] validate = " + valid);
+
+    	                if (valid) {
+    	                    UsernamePasswordAuthenticationToken auth =
+    	                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+    	                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+    	                    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    	                    System.out.println("[JWT] ✅ setAuthentication OK. principal=" + user.getUsername());
+    	                } else {
+    	                    System.out.println("[JWT] ❌ token invalid");
+    	                }
+    	            }
+    	        } else {
+    	            System.out.println("[JWT] no bearer token");
+    	        }
+    	    } catch (Exception e) {
+    	        System.out.println("[JWT] ❌ exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+    	        // 예외가 나도 체인은 계속 흘려보냅니다. (EntryPoint가 401 응답)
+    	    }
+
+    	    filterChain.doFilter(request, response);
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

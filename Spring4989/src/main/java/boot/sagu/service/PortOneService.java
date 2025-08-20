@@ -3,6 +3,7 @@ package boot.sagu.service;
 import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,6 +18,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -58,20 +61,30 @@ public class PortOneService {
     }
 
     private String getAccessToken() {
-        // POST {base}/users/getToken  → access_token 반환
-        // 공식 문서: PortOne REST API Access Token. :contentReference[oaicite:0]{index=0}
         String url = base + "/users/getToken";
-        Map<String, String> body = Map.of(
-            "imp_key", apiKey,
-            "imp_secret", apiSecret
-        );
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        ResponseEntity<Map> res =
-            restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
 
-        Map resp = (Map) res.getBody().get("response");
-        return String.valueOf(resp.get("access_token"));
+        // x-www-form-urlencoded 로 전송
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("imp_key", apiKey);
+        form.add("imp_secret", apiSecret);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        ResponseEntity<Map> res =
+            restTemplate.postForEntity(url, new HttpEntity<>(form, headers), Map.class);
+
+        Map body = res.getBody();
+        if (body == null || body.get("response") == null) {
+            throw new IllegalStateException("PortOne token response empty: " + body);
+        }
+        Map response = (Map) body.get("response");
+        Object token = response.get("access_token");
+        if (token == null) {
+            throw new IllegalStateException("PortOne token missing in response: " + body);
+        }
+        return token.toString();
     }
 
     // ---------- 사전등록(prepare) ----------
@@ -103,6 +116,15 @@ public class PortOneService {
             // 금액이 같으면 멱등(OK)
         }
     }
+    
+ // PortOneService.java 안에 추가
+    public String requestPayment(String merchantUid, int amount, String name) {
+        // 옛 코드와의 호환을 위한 얇은 래퍼
+        preparePayment(merchantUid, amount);
+        // 호출부에서 이 리턴값을 안 쓰더라도 형태 맞춰줌
+        return "/payment-page?merchant_uid=" + merchantUid + "&amount=" + amount + "&name=" + name;
+    }
+
 
     private void tryPrepare(String merchantUid, int amount, String token) {
         // POST /payments/prepare
@@ -119,7 +141,7 @@ public class PortOneService {
         // GET /payments/prepare/{merchant_uid} 로 단건 조회. :contentReference[oaicite:2]{index=2}
         String url = base + "/payments/prepare/" + merchantUid;
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", token);
+        headers.setBearerAuth(token);
         try {
             ResponseEntity<Map> res =
                 restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);

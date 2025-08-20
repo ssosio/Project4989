@@ -64,7 +64,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
     	 CorsConfiguration configuration = new CorsConfiguration();
     	    configuration.setAllowedOrigins(
-    	        java.util.List.of("http://localhost:5173", "http://192.168.10.136:5173")
+    	        java.util.List.of("http://localhost:5173", "http://192.168.10.136:5173","http://192.168.10.138:5173")
     	    );
     	    configuration.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
     	    configuration.setAllowedHeaders(java.util.List.of("*"));
@@ -112,7 +112,7 @@ public class SecurityConfig {
                 .requestMatchers("/auction/photos/	**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
 
                 // 경매 삭제 API는 인증 필요
-                .requestMatchers("/auction/delete/**").authenticated()
+                .requestMatchers("/auction/*/bids","/auction/delete/**").authenticated()
                 // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
                 .anyRequest().authenticated()
             )
@@ -132,7 +132,7 @@ public class SecurityConfig {
                     response.getWriter().write("{\"error\": \"Unauthorized\"}");
                 })
             )
-            .addFilterAfter(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
             
             // OAuth2 로그인 설정
             .oauth2Login(oauth2 -> oauth2

@@ -327,6 +327,14 @@ const AuctionDetail = () => {
     };
   }, [postId, sessionId, userInfo]);
 
+   // Authorization 헤더를 항상 'Bearer <토큰>' 한 번만 붙여서 반환
+        const authHeader = () => {
+          const raw = localStorage.getItem('jwtToken'); // 'Bearer xxx' or 'xxx'
+          if (!raw) return {};                          // 토큰 없으면 헤더 비움
+          const jwt = raw.startsWith('Bearer ') ? raw.slice(7) : raw;
+          return { Authorization: `Bearer ${jwt}` };
+        };
+
   // 소켓 메시지 처리
   const handleSocketMessage = (data) => {
     switch(data.type) {
@@ -347,14 +355,6 @@ const AuctionDetail = () => {
           bidTime: new Date().toISOString()
         };
 
-        // Authorization 헤더를 항상 'Bearer <토큰>' 한 번만 붙여서 반환
-        const authHeader = () => {
-          const raw = localStorage.getItem('jwtToken'); // 'Bearer xxx' or 'xxx'
-          if (!raw) return {};                          // 토큰 없으면 헤더 비움
-          const jwt = raw.startsWith('Bearer ') ? raw.slice(7) : raw;
-          return { Authorization: `Bearer ${jwt}` };
-        };
-        
         setBidHistory(prev => {
           const updated = [newBidRecord, ...prev];
           return updated.slice(0, 5); // 최대 5개만 유지
@@ -492,14 +492,24 @@ const AuctionDetail = () => {
       console.log('Bid Amount:', bidAmount);
       
       const baseURL = import.meta.env.VITE_API_BASE;
+      const raw = localStorage.getItem('jwtToken');            // 'Bearer xxx' 또는 'xxx' 또는 null
+      const jwt = raw?.replace(/^Bearer\s+/,'');               // 앞의 'Bearer ' 있으면 제거
+      const h = { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' };
+
+      console.log('[AUTH] raw =', raw);
+      console.log('[AUTH] jwt =', jwt ? jwt.slice(0, 30) + '...' : '(없음)');
+      console.log('[AUTH] header =', h.Authorization ? h.Authorization.slice(0, 30) + '...' : '(없음)');
+      
       const response = await axios.post(`${baseURL}/auction/${postId}/bids`, {
         postId: parseInt(postId,10),
         bidderId: Number(currentUserId),
         bidAmount: Number(bidAmount)
       }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type' : 'application/json'
+          // 'Authorization': `Bearer ${token}`,
+          // 'Content-Type' : 'application/json'
+          ...authHeader(),
+          'Content-Type': 'application/json',
         }
       });
 
@@ -764,12 +774,13 @@ const AuctionDetail = () => {
     
     setDeleteLoading(true);
     try {
-      const token = localStorage.getItem('jwtToken');
-      const response = await axios.delete(`http://192.168.10.138:4989/auction/delete/${postId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        data: { password }
+      const baseURL = import.meta.env.VITE_API_BASE;
+
+      const response = await axios.delete(
+      `${baseURL}/auction/delete/${postId}`,
+      {
+        headers: { ...authHeader() }, // 인증 필요 시
+        data: { password },
       });
       
       if (response.status === 200) {
@@ -792,39 +803,47 @@ const AuctionDetail = () => {
 
   // 결제 완료 후 처리
   const handlePaymentComplete = async () => {
-    setShowPaymentModal(false);
-    setIsProcessingPayment(false);
-    
-    // 결제 완료 후 다시 입찰 시도
-    try {
-      const token = localStorage.getItem('jwtToken');
-      const response = await axios.post(`http://192.168.10.138:4989/auction/${postId}/bids`, {
-        postId: parseInt(postId),
-        bidderId: userInfo.memberId,
-        bidAmount: bidAmount
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+ setShowPaymentModal(false);
+  setIsProcessingPayment(false);
 
-      setBidMessage('보증금 결제가 완료되었고, 입찰이 성공했습니다!');
-      setBidMessageType('success');
-      setBidAmount(0);
-      
-      // 경매 정보 새로고침
-      const refreshResponse = await axios.get(`http://192.168.10.138:4989/auction/detail/${postId}`);
-      setAuctionDetail(refreshResponse.data);
-      
-      // 최고가 정보 새로고침
-      const highestBidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${postId}`);
-      setHighestBid(highestBidResponse.data);
-      
-    } catch (error) {
-      console.error('입찰 실패:', error);
-      setBidMessage('보증금은 결제되었지만 입찰에 실패했습니다. 다시 시도해주세요.');
-      setBidMessageType('error');
-    }
+  try {
+    const baseURL = import.meta.env.VITE_API_BASE;
+
+    const headers = { ...authHeader(), 'Content-Type': 'application/json' };
+
+    // 결제 이후 실제 입찰 재시도
+    const response = await axios.post(
+      `${baseURL}/auction/${postId}/bids`,
+      {
+        postId: parseInt(postId, 10),
+        bidderId: userInfo?.memberId,
+        bidAmount: bidAmount,
+      },
+      { headers }
+    );
+
+    setBidMessage('보증금 결제가 완료되었고, 입찰이 성공했습니다!');
+    setBidMessageType('success');
+    setBidAmount(0);
+
+    // 경매 정보/최고가 동시 새로고침
+    const [refreshResponse, highestBidResponse] = await Promise.all([
+      axios.get(`${baseURL}/auction/detail/${postId}`),
+      axios.get(`${baseURL}/auction/highest-bid/${postId}`),
+    ]);
+    setAuctionDetail(refreshResponse.data);
+    setHighestBid(highestBidResponse.data);
+  } catch (error) {
+    console.error('입찰 실패:', error);
+    const status = error.response?.status;
+    const data = error.response?.data;
+    const msg =
+      data?.message ||
+      data?.error ||
+      '보증금은 결제되었지만 입찰에 실패했습니다. 다시 시도해주세요.';
+    setBidMessage(msg);
+    setBidMessageType('error');
+  }
   };
 
   // 결제 취소 처리
@@ -1132,7 +1151,7 @@ const AuctionDetail = () => {
           {/* 타이머 섹션 */}
           <div className="timer-section-overlay">
             <div className="timer-title">
-``              남은 시간 (경매 마감까지)
+              남은 시간 (경매 마감까지)
             </div>
             <div className="timer-display">{timeRemaining}</div>
           </div>
