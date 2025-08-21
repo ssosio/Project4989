@@ -189,6 +189,8 @@ public class AuctionService implements AuctionServiceInter {
 		                    // DB 상태 REFUNDED
 		                    auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUNDED");
 		                } catch (Exception ex) {
+		                	//실패 상태 기록
+		                	auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUND_FAILED");
 		                    // 환불 실패는 로그만 남기고 다음 대상 처리 (재시도 큐/알림 붙이면 더 좋음)
 		                    System.err.println("환불 실패 guaranteeId=" + loser.getGuaranteeId() + " : " + ex.getMessage());
 		                }
@@ -367,6 +369,7 @@ public class AuctionService implements AuctionServiceInter {
 	    dto.setAmount(BigDecimal.valueOf(pay.getAmount()));
 	    dto.setImpUid(impUid);
 	    dto.setMerchantUid(pay.getMerchantUid());
+	    dto.setStatus("PAID");
 	    auctionMapper.insertGuarantee(dto);
 	}
 	
@@ -411,6 +414,7 @@ public class AuctionService implements AuctionServiceInter {
 		dto.setMemberId(memberId);
 		dto.setAmount(amount);
 		dto.setImpUid(impUid);
+		dto.setStatus("PAID");
 		auctionMapper.insertGuarantee(dto);
 	}
 	

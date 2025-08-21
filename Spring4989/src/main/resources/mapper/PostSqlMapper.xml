@@ -4,28 +4,15 @@
 	<insert id="insertPost" parameterType="posts" useGeneratedKeys="true"
 		keyProperty="postId">
 		INSERT INTO
-		posts(member_id,title,price,trade_type,auction_end_time,created_at,post_type,content)
+		posts(member_id,title,price,trade_type,auction_end_time,created_at,updated_at,post_type,content)
 		VALUES(#{memberId},#{title},#{price},#{tradeType},
 		CASE
 		WHEN #{tradeType} = 'AUCTION'
 		THEN DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR)
 		ELSE NULL END, CONVERT_TZ(NOW(), 'UTC',
+		'Asia/Seoul'), CONVERT_TZ(NOW(), 'UTC',
 		'Asia/Seoul'),#{postType},#{content})
 	</insert>
-	<!-- <select id="getAllPostData" resultType="posts">
-		SELECT p.*, 
-		       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1
-		LIMIT 1) as mainPhotoUrl
-		FROM posts p 
-		ORDER BY p.post_id DESC
-	</select> -->
-	<!-- <select id="getPostData" resultType="posts" parameterType="Long">
-		SELECT p.*, 
-		       (SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1
-		LIMIT 1) as mainPhotoUrl
-		FROM posts p 
-		where post_id=#{postId}
-	</select> -->
 
 	<!-- 상세리스트 -->
 	<select id="getPostData" resultType="map" parameterType="long">
@@ -33,6 +20,7 @@
 		p.post_id AS postId,
 		p.member_id AS memberId,
 		p.title AS title,
+		p.content AS content,
 		p.price AS price,
 		p.trade_type AS tradeType,
 		p.status AS status,
@@ -66,6 +54,7 @@
 		p.title AS title,
 		p.price AS price,
 		p.post_type AS postType,
+		p.trade_type AS tradeType,
 		p.created_at AS createdAt,
 		p.view_count AS viewCount,
 		p.status AS status,
@@ -122,15 +111,21 @@
 
 	<!-- 수정 -->
 	<!-- 게시글 공통 수정 -->
-	<update id="updatePost" parameterType="posts"> UPDATE posts <set>
-			<if test="title != null">title = #{title},</if>
-      <if test="price != null">price = #{price},</if>
-      <if test="content != null">content = #{content},</if>
-      <if test="tradeType != null">trade_type = #{tradeType},</if>
-
-      <if test="postType != null">post_type = #{postType},</if> updated_at
-		= CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul') </set> WHERE post_id =
-		#{postId} </update>
+	
+	<update id="updatePost" parameterType="posts"> 
+    UPDATE posts 
+    <set>
+        <if test="title != null">title = #{title},</if>
+        <if test="price != null">price = #{price},</if>
+        <if test="content != null">content = #{content},</if>
+        <if test="tradeType != null">trade_type = #{tradeType},</if>
+        <if test="status != null">status = #{status},</if>
+        <if test="postType != null">post_type = #{postType},</if>
+        updated_at = CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
+    </set> 
+    WHERE post_id = #{postId} 
+</update>
+	
 
 	<!-- 자동차 수정 -->
 	<update id="updateCar" parameterType="car"> UPDATE cars <set>
@@ -186,15 +181,325 @@
 	<!-- 신고 -->
 	<insert id="insertReport" parameterType="report">
 		INSERT INTO reports
-		(reporter_id, target_type, target_id, reason, status, created_at)
+		(reporter_id, target_type, target_post_id, target_member_id, reason, status, created_at)
 		VALUES
 		(#{reporterId},
 		#{targetType},
-		#{targetId},
+		#{targetPostId},
+		#{targetMemberId},
 		#{reason},
 		#{status},
 		CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'))
 	</insert>
+	
+	<!-- 검색 -->
+	
+	<!-- PostsDto 안에 car/estate/item 필드가 있고, 각 DTO가 CarDto/RealEstateDto/UsedItemDto 라고 가정 -->
+<resultMap id="PostsWithDetailsMap" type="boot.sagu.dto.PostsDto">
+  <!-- 공통 -->
+  <id     property="postId"   column="post_id"/>
+  <result property="postType" column="post_type"/>
+  <result property="title"    column="title"/>
+  <result property="price"    column="price"/>
+  <result property="tradeType" column="trade_type"/>
+  <result property="content"  column="content"/>
+
+  <!-- CARS -->
+  <association property="car" javaType="boot.sagu.dto.CarDto" columnPrefix="c_">
+    <id     property="postId"         column="post_id"/>
+    <result property="brand"          column="brand"/>
+    <result property="model"          column="model"/>
+    <result property="year"           column="year"/>
+    <result property="mileage"        column="mileage"/>
+    <result property="fuelType"       column="fuel_type"/>
+    <result property="transmission"   column="transmission"/>
+    <result property="detail_location" column="detail_location"/>
+  </association>
+
+  <!-- ESTATE -->
+  <association property="estate" javaType="boot.sagu.dto.RealEstateDto" columnPrefix="re_">
+    <id     property="postId"         column="post_id"/>
+    <result property="propertyType"   column="property_type"/>
+    <result property="area"           column="area"/>
+    <result property="rooms"          column="rooms"/>
+    <result property="floor"          column="floor"/>
+    <result property="dealType"       column="deal_type"/>
+    <result property="detail_location" column="detail_location"/>
+  </association>
+
+  <!-- ITEMS -->
+  <association property="item" javaType="boot.sagu.dto.ItemDto" columnPrefix="ui_">
+    <id     property="postId"         column="post_id"/>
+    <result property="category"       column="category"/>
+    <result property="conditions"     column="conditions"/>
+    <result property="detail_location" column="detail_location"/>
+  </association>
+</resultMap>
+
+<select id="searchAll" resultMap="PostsWithDetailsMap">
+  <bind name="kw" value="keyword != null ? keyword.trim() : ''"/>
+  SELECT
+    -- 공통
+    p.post_id      AS postId,
+    p.post_type     AS postType,
+    p.title        AS title,
+    p.price        AS price,
+    p.trade_type    AS tradeType,
+    p.content      AS content,
+    p.status      AS status,
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(p.status)
+      WHEN 'ON_SALE' THEN '판매중'
+      WHEN 'SOLD' THEN '판매완료'
+      WHEN 'RESERVED' THEN '예약중'
+      ELSE p.status
+    END AS statusKo,
+    CASE UPPER(p.status)
+      WHEN 'SALE' THEN 'on sale'
+      WHEN 'SOLD' THEN 'sold out'
+      WHEN 'RESERVED' THEN 'reserved'
+      ELSE p.status
+    END AS statusEn,
+    CASE UPPER(p.trade_type)
+      WHEN 'SALE' THEN '판매'
+      WHEN 'AUCTION' THEN '경매'
+      WHEN 'SHARE' THEN '나눔'
+      ELSE p.trade_type
+    END AS trade_typeKo,
+    CASE UPPER(p.trade_type)
+      WHEN 'SALE' THEN 'sale'
+      WHEN 'AUCTION' THEN 'auction'
+      WHEN 'SHARE' THEN 'share'
+      ELSE p.trade_type
+    END AS trade_typeEn,
+    CASE UPPER(p.post_type)
+      WHEN 'ITEMS' THEN '중고물품'
+      WHEN 'CARS' THEN '자동차'
+      WHEN 'REAL_ESTATES' THEN '부동산'
+      ELSE p.post_type
+    END AS post_typeKo,
+    CASE UPPER(p.post_type)
+      WHEN 'ITEMS' THEN 'items'
+      WHEN 'CARS' THEN 'cars'
+      WHEN 'REAL_ESTATES' THEN 'realestates'
+      ELSE p.post_type
+    END AS post_typeEn
+
+    -- cars (c_)
+    c.post_id       AS c_postId,
+    c.brand         AS c_brand,
+    c.model         AS c_model,
+    c.year          AS c_year,
+    c.mileage       AS c_mileage,
+    c.fuel_type      AS c_fuelType,
+    c.transmission  AS c_transmission,
+    c.location      AS c_location,
+    c.detail_location AS c_detail_location,
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(c.brand)
+      WHEN 'kia' THEN '기아'
+      WHEN 'hyundai' THEN '현대'
+      WHEN 'benz' THEN '벤츠'
+      WHEN 'audi' THEN '아우디'
+      WHEN 'bmw' THEN '비엠더블유'
+      ELSE c.brand
+    END AS brandKo,
+    CASE UPPER(c.brand)
+      WHEN 'kia' THEN 'KIA'
+      WHEN 'hyundai' THEN 'HYUNDAI'
+      WHEN 'benz' THEN 'BENZ'
+      WHEN 'audi' THEN 'AUDI'
+      WHEN 'bmw' THEN 'BMW'
+      ELSE c.brand
+    END AS brandEn,
+    CASE UPPER(c.fuel_type)
+      WHEN 'gasoline' THEN '휘발유'
+      WHEN 'diesel' THEN '경유'
+      WHEN 'electric' THEN '전기'
+      ELSE c.fuel_type
+    END AS fuel_typeKo,
+    CASE UPPER(c.fuel_type)
+      WHEN 'gasoline' THEN 'GASOLINE'
+      WHEN 'diesel' THEN 'DIESEL'
+      WHEN 'electric' THEN 'ELECTRIC'
+      ELSE c.fuel_type
+    END AS fuel_typeEn,
+    CASE UPPER(c.transmission)
+      WHEN 'auto' THEN '수동'
+      WHEN 'stick' THEN '자동'
+      ELSE c.transmission
+    END AS transmissionKo,
+    CASE UPPER(c.transmission)
+      WHEN 'auto' THEN 'AUTO'
+      WHEN 'stick' THEN 'STICK'
+      ELSE c.transmission
+    END AS transmissionEn,
+
+    -- real_estate (re_)
+    re.post_id        AS re_postId,
+    re.property_type   AS re_propertyType,
+    re.area           AS re_area,
+    re.rooms          AS re_rooms,
+    re.floor          AS re_floor,
+    re.deal_type       AS re_dealType,
+    re.location        AS re_location,
+    re.detail_location AS re_detail_location,
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(re.property_type)
+      WHEN 'apt' THEN '아파트'
+      WHEN 'studio' THEN '오피스텔'
+      WHEN 'oneroom' THEN '원룸'
+      WHEN 'tworoom' THEN '투룸'
+      ELSE re.property_type
+    END AS property_typeKo,
+    CASE UPPER(re.property_type)
+      WHEN 'apt' THEN 'apartment'
+      WHEN 'studio' THEN 'STUDIO'
+      WHEN 'oneroom' THEN 'ONEROOM'
+      WHEN 'tworoom' THEN 'TWOROOM'
+      ELSE re.property_type
+    END AS property_typeEn,
+    CASE UPPER(re.deal_type)
+      WHEN 'lease' THEN '전세'
+      WHEN 'rent' THEN '월세'
+      WHEN 'leaseAndrent' THEN '전월세'
+      WHEN 'buy' THEN '매매'
+      ELSE re.deal_type
+    END AS deal_typeKo,
+    CASE UPPER(re.deal_type)
+      WHEN 'lease' THEN 'LEASE'
+      WHEN 'rent' THEN 'RENT'
+      WHEN 'leaseAndrent' THEN 'LEASEANDRENT'
+      WHEN 'buy' THEN 'BUY'
+      ELSE re.deal_type
+    END AS deal_typeEn,
+
+    -- used_items (ui_)
+    ui.post_id        AS ui_postId,
+    ui.category_id       AS ui_categoryId,
+    ui.conditions     AS ui_conditions,
+    ui.location      AS ui_location,
+    ui.detail_location AS ui_detail_location
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(ui.conditions)
+      WHEN 'best' THEN '상'
+      WHEN 'good' THEN '중'
+      WHEN 'bad' THEN '하'
+      ELSE ui.conditions
+    END AS conditionsKo,
+    CASE UPPER(ui.conditions)
+      WHEN 'best' THEN 'BEST'
+      WHEN 'good' THEN 'GOOD'
+      WHEN 'bad' THEN 'BAD'
+      ELSE ui.conditions
+    END AS conditionsEn,
+    
+    -- categories (cg_)
+    cg.category_id        AS cg_categoryId,
+    cg.name       AS cg_name
+
+  FROM posts p
+  LEFT JOIN cars c         ON c.post_id = p.post_id     AND p.post_type = 'CARS'
+  LEFT JOIN real_estate re ON re.post_id = p.post_id    AND p.post_type = 'ESTATE'
+  LEFT JOIN used_items ui  ON ui.post_id = p.post_id    AND p.post_type = 'ITEMS'
+  
+  FROM categories cg
+  LEFT JOIN used_items ui  ON ui.category_id = cg.category_id
+  
+  FROM regions rg
+  LEFT JOIN cars c         ON c.location = rg.region_id     
+  LEFT JOIN real_estate re ON re.location = p.region_id    
+  LEFT JOIN used_items ui  ON ui.location = p.region_id     
+
+  <where>
+    <!-- postType 필터: ALL(또는 null)이면 스킵 -->
+    <if test="postType != null and postType != '' and postType != 'ALL'">
+      p.post_type = #{postType}
+    </if>
+
+    <!-- 키워드 OR 매칭 (비었으면 전체 허용할지 정책 선택) -->
+    <if test="kw != ''">
+      <if test="postType != null and postType != '' and postType != 'ALL'">AND</if>
+      (
+        -- posts
+        LOWER(p.title)       LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.content)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.trade_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.post_type)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(p.price AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+
+        -- cars
+        OR LOWER(c.brand)        LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.model)        LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.year    AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.mileage AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.fuel_type)     LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.transmission) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+
+        -- estate
+        OR LOWER(re.property_type)   LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.area  AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.rooms AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.floor AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.deal_type)        LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.detail_location)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+
+        -- items
+        OR LOWER(ui.category)       LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.conditions)     LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+      )
+    </if>
+  </where>
+
+  ORDER BY p.post_id DESC
+  LIMIT #{size} OFFSET #{offset}
+</select>
+
+<select id="countSearchAll" resultType="int">
+  <bind name="kw" value="keyword != null ? keyword.trim() : ''"/>
+  SELECT COUNT(*)
+  FROM posts p
+  LEFT JOIN cars c         ON c.post_id = p.post_id     AND p.post_type = 'CARS'
+  LEFT JOIN real_estate re ON re.post_id = p.post_id    AND p.post_type = 'ESTATE'
+  LEFT JOIN used_items ui  ON ui.post_id = p.post_id    AND p.post_type = 'ITEMS'
+  <where>
+    <if test="postType != null and postType != '' and postType != 'ALL'">
+      p.post_type = #{postType}
+    </if>
+    <if test="kw != ''">
+      <if test="postType != null and postType != '' and postType != 'ALL'">AND</if>
+      ( 
+        LOWER(p.title) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.content) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.trade_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(p.post_type)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(p.price AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.brand) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.model) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.year AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(c.mileage AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.fuel_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.transmission) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(c.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.property_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.area  AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.rooms AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(CAST(re.floor AS CHAR)) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.deal_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(re.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.category) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.conditions) LIKE CONCAT('%', LOWER(#{kw}), '%')
+        OR LOWER(ui.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
+      )
+    </if>
+  </where>
+</select>
 
 
 </mapper>

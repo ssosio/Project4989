@@ -157,10 +157,10 @@ public class ChatMessageController {
 		        return ResponseEntity.badRequest().build();
 		    }
 		
-	    System.out.println("[DEBUG] markAsRead 호출됨, chatRoomId: " + chatRoomId + ", memberId: " + memberId);
+	   // System.out.println("[DEBUG] markAsRead 호출됨, chatRoomId: " + chatRoomId + ", memberId: " + memberId);
 	    try {
 	        chatMessageService.markMessagesAsRead(chatRoomId, memberId);
-	        System.out.println("[DEBUG] markMessagesAsRead 실행 완료");
+	        //System.out.println("[DEBUG] markMessagesAsRead 실행 완료");
 	        return ResponseEntity.ok().build();
 	    } catch (Exception e) {
 	        System.err.println("[ERROR] markAsRead 예외 발생:");
@@ -186,29 +186,43 @@ public class ChatMessageController {
      * @MessageMapping으로 프론트엔드에서 보낸 '읽음' 상태 메시지를 처리합니다.
      * 클라이언트가 /app/chat.readMessageStatus 로 메시지를 보내면 이 메서드가 실행됩니다.
      */
-    @MessageMapping("/chat.readMessageStatus")
-    public void handleReadMessage(WebSocketMessageDto message) {
-        
-        try {
-            // 1. 읽음 처리 로직 호출
-            chatMessageService.markMessagesAsRead(message.getChatRoomId(), message.getSenderId());
+	@MessageMapping("/chat.readMessageStatus")
+	public void handleReadMessage(WebSocketMessageDto message) {
+	    try {
+	        // 1. 읽음 처리 로직 호출
+	        chatMessageService.markMessagesAsRead(message.getChatRoomId(), message.getSenderId());
 
-            // 2. ChatService의 새로운 메서드를 사용하여 채팅방 멤버 ID를 가져옵니다.
-            List<Long> memberIdsInRoom = chatService.getMemberIdsInChatRoom(message.getChatRoomId());
+	        // 2. 채팅방에 속한 모든 멤버 ID를 가져옵니다.
+	        List<Long> memberIdsInRoom = chatService.getMemberIdsInChatRoom(message.getChatRoomId());
+	        
+	        // 3. '읽음' 메시지를 보낸 사람(sender)이 아닌 다른 사람(상대방)을 찾습니다.
+	        Long receiverId = null;
+	        for (Long memberId : memberIdsInRoom) {
+	            if (!memberId.equals(message.getSenderId())) {
+	                receiverId = memberId;
+	                break;
+	            }
+	        }
+	        
+	        if (receiverId != null) {
+	            // 4. 프론트엔드로 보낼 '읽음 업데이트' 메시지를 생성합니다.
+	            // 이 메시지에는 'READ_UPDATE' 타입과 발신자 ID가 포함되어야 합니다.
+	            WebSocketMessageDto readUpdateMessage = new WebSocketMessageDto();
+	            readUpdateMessage.setType("READ_UPDATE");
+	            readUpdateMessage.setSenderId(message.getSenderId()); // 메시지를 읽은 사람(상대방)의 ID
+	            readUpdateMessage.setChatRoomId(message.getChatRoomId());
+	            
+	            // 5. '읽음' 신호를 받은 상대방에게만 메시지를 보냅니다.
+	            // 이제 프론트엔드는 이 메시지를 받으면 is_read 상태를 업데이트합니다.
+	            messagingTemplate.convertAndSend(
+	                "/topic/chat/" + message.getChatRoomId(),
+	                readUpdateMessage
+	            );
+	        }
 
-            // 3. 채팅방에 속한 모든 멤버에게 읽음 처리 알림을 보냅니다.
-            for (Long memberId : memberIdsInRoom) {
-                // 프론트엔드가 구독하는 "/user/{memberId}/queue/read" 채널로 메시지를 전송합니다.
-                // 이 메시지를 받은 프론트엔드는 chatRoomId를 기반으로 unreadCount를 0으로 업데이트합니다.
-                messagingTemplate.convertAndSendToUser(
-                    String.valueOf(memberId), 
-                    "/queue/read", 
-                    message
-                );
-            }
-
-        } catch (Exception e) {
-        }
-    }
+	    } catch (Exception e) {
+	    	// 에러 처리
+	    }
+	}
 	
 }

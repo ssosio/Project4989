@@ -44,7 +44,7 @@ public interface AuctionMapper {
 	//보증금 상태관리
 	public int updateGuaranteeStatus(@Param("guaranteedId")long guaranteeId,@Param("status") String status);
 	//경매 시작가
-	public int getStartPrice(@Param("postId") long postId);
+	public int getStartPrice(@Param("postId") Long postId);
 	
 
 	// 경매 삭제

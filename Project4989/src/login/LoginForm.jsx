@@ -27,7 +27,7 @@ function LoginForm({ onLoginSuccess }) {
     e.preventDefault();
     try {
       // 백엔드 로그인 API 호출
-      const response = await axios.post('http://localhost:4989/login', formData);
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/login`, formData);
       // 서버로부터 받은 토큰 추출
       const { token } = response.data;
 
@@ -72,11 +72,11 @@ function LoginForm({ onLoginSuccess }) {
         </div>
 
         {/* 소셜로그인 */}
-        <button type='button' onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/kakao'}>
+        <button type='button' onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE}/oauth2/authorization/kakao`}>
           카카오로 로그인
         </button>
         <br />
-        <button type='button' onClick={() => window.location.href = 'http://localhost:4989/oauth2/authorization/google'}>
+        <button type='button' onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE}/oauth2/authorization/google`}>
           구글로 로그인
         </button>
 

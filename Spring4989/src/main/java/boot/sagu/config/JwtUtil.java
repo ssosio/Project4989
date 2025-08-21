@@ -70,6 +70,7 @@ public class JwtUtil {
         claims.put("nickname", member.getNickname());
         claims.put("loginid", member.getLoginId());
         claims.put("memberId", member.getMemberId());
+        claims.put("role", member.getRole());
         claims.put("profileImageUrl", member.getProfileImageUrl());
         // 필요하다면 다른 정보도 추가 가능
         // claims.put("role", member.getRole()); 
@@ -79,7 +80,7 @@ public class JwtUtil {
                 .subject(member.getLoginId()) // 토큰의 주체는 loginId로 설정
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
+                .signWith(getSigningKey(),Jwts.SIG.HS384)
                 .compact();
     }
     //토큰에서 닉네임을 추출하는 헬퍼 메서드

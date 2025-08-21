@@ -4,19 +4,24 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
 import DetailChat from '../chat/detailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
+import './gooddetail.css';
 
 const GoodsDetail = () => {
   // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
   const { userInfo } = useContext(AuthContext);
-  const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
+  // const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
+
+  const token =
+    userInfo?.token ??
+    localStorage.getItem("jwtToken");
 
   const [open, setOpen] = useState(false);
-  const [reportContent, setReportContent] = useState('');
+  const [reportReason, setReportReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [chatRoom, setChatRoom] = useState(null); // 💡 chatRoom 상태 추가
 
-  const location=useLocation();
+  const location = useLocation();
   const { search } = location;
   const query = new URLSearchParams(search);
   const postId = query.get("postId");
@@ -27,12 +32,18 @@ const GoodsDetail = () => {
   const [estate, setEstate] = useState(null);
   const [photos, setPhotos] = useState(null);
 
-   const [count,setCount]=useState(0);
-  const [favorited,setFavorited]=useState(false);
+  const [count, setCount] = useState(0);
+  const [favorited, setFavorited] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  const [reportType, setReportType] = useState(''); // '', 'POST', 'MEMBER'
+  const [targetId, setTargetId] = useState(null);
+  const authorId = post?.memberId;
 
 
   const navi = useNavigate();
- 
+
+
   // 상단 state 모음 근처에 추가
   const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
 
@@ -45,26 +56,79 @@ const GoodsDetail = () => {
     // 토큰이 있으면 헤더에 포함하고, 없으면 빈 객체를 사용합니다.
     const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-    // 모든 API 호출을 Promise.all로 병렬 처리합니다.
+    // 모든 API 호출을 Promise.allSettled로 병렬 처리하여 일부 실패해도 다른 데이터는 로드
     const fetchPostData = axios.get(`http://localhost:4989/post/detail?postId=${postId}`, { headers });
     const fetchGoodsData = axios.get(`http://localhost:4989/post/itemdetail?postId=${postId}`, { headers });
     const fetchCarsData = axios.get(`http://localhost:4989/post/cardetail?postId=${postId}`, { headers });
     const fetchEstateData = axios.get(`http://localhost:4989/post/estatedetail?postId=${postId}`, { headers });
 
-    Promise.all([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
-      .then(([postRes, goodsRes, carsRes, estateRes]) => {
-        setPost(postRes.data);
-        setGoods(goodsRes.data);
-        setCars(carsRes.data);
-        setEstate(estateRes.data);
+    Promise.allSettled([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
+      .then((results) => {
+        const [postResult, goodsResult, carsResult, estateResult] = results;
+        
+        console.log("✅ API 응답 결과:", {
+          post: postResult.status,
+          goods: goodsResult.status,
+          cars: carsResult.status,
+          estate: estateResult.status
+        });
 
-        const photoList = Array.isArray(postRes.data.photos)
-          ? postRes.data.photos
-          : JSON.parse(postRes.data.photos || "[]");
-        setPhotos(photoList);
+        // Post 데이터 처리
+        if (postResult.status === 'fulfilled') {
+          const postData = postResult.value.data;
+          console.log("✅ Post 데이터 로드 성공:", postData);
+          
+          // post 데이터의 content 필드 확인
+          console.log("📝 Post content 확인:", {
+            content: postData.content,
+            hasContent: !!postData.content,
+            contentType: typeof postData.content,
+            contentLength: postData.content ? postData.content.length : 0
+          });
+
+          setPost(postData);
+
+          const photoList = Array.isArray(postData.photos)
+            ? postData.photos
+            : JSON.parse(postData.photos || "[]");
+          setPhotos(photoList);
+        } else {
+          console.error("❌ Post 데이터 로드 실패:", postResult.reason);
+        }
+
+        // Goods 데이터 처리
+        if (goodsResult.status === 'fulfilled') {
+          setGoods(goodsResult.value.data);
+        } else {
+          console.error("❌ Goods 데이터 로드 실패:", goodsResult.reason);
+        }
+
+        // Cars 데이터 처리
+        if (carsResult.status === 'fulfilled') {
+          setCars(carsResult.value.data);
+        } else {
+          console.error("❌ Cars 데이터 로드 실패:", carsResult.reason);
+        }
+
+        // Estate 데이터 처리
+        if (estateResult.status === 'fulfilled') {
+          setEstate(estateResult.value.data);
+        } else {
+          console.error("❌ Estate 데이터 로드 실패:", estateResult.reason);
+        }
       })
       .catch(err => {
         console.error("데이터 로딩 중 에러:", err);
+        console.error("에러 상세 정보:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
+        
+        // 에러 발생 시에도 기본 데이터라도 설정
+        if (err.response?.data) {
+          console.log("에러 응답에서 받은 데이터:", err.response.data);
+        }
       });
 
     // 💡 localStorage 감지 이벤트 리스너는 이제 필요 없습니다.
@@ -84,71 +148,71 @@ const GoodsDetail = () => {
   }, [postId]);
 
   //좋아요갯수
-  useEffect(()=>{
+  useEffect(() => {
     axios.get(`http://localhost:4989/post/count?postId=${postId}`)
-    .then(({ data }) => setCount(Number(data.count) || 0))
-    .catch(err=> console.log(err));
-  },[postId]);
+      .then(({ data }) => setCount(Number(data.count) || 0))
+      .catch(err => console.log(err));
+  }, [postId]);
 
   // 내가 좋아요 눌렀는지 (로그인시에만 호출)
-// useEffect(() => {
-//   if (!postId || !userInfo?.memberId) return;
-//   axios
-//     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
-//     .then(({ data }) => setFavorited(Boolean(data.favorited)))
-//     .catch(() => setFavorited(false));
-// }, [postId, userInfo]);
+  // useEffect(() => {
+  //   if (!postId || !userInfo?.memberId) return;
+  //   axios
+  //     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
+  //     .then(({ data }) => setFavorited(Boolean(data.favorited)))
+  //     .catch(() => setFavorited(false));
+  // }, [postId, userInfo]);
 
-// 내가 좋아요 눌렀는지 (로그인시에만 호출)
-useEffect(() => {
-  if (!postId || !userInfo?.memberId) return;
+  // 내가 좋아요 눌렀는지 (로그인시에만 호출)
+  useEffect(() => {
+    if (!postId || !userInfo?.memberId) return;
 
-  console.group('[checkfav] 요청 시작');
-  console.log('postId:', postId, 'memberId:', userInfo.memberId);
+    console.group('[checkfav] 요청 시작');
+    console.log('postId:', postId, 'memberId:', userInfo.memberId);
 
-  axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
-    .then(({ data, status }) => {
-      console.log('HTTP status:', status);
-      console.log('response data:', data);
-      const value = !!data?.favorited;
-      console.log('parsed favorited:', value);
-      setFavorited(value);
-    })
-    .catch((err) => {
-      console.error('요청 실패:', {
-        status: err.response?.status,
-        data: err.response?.data,
-        message: err.message,
-      });
-      setFavorited(false);
-    })
-    .finally(() => console.groupEnd());
-}, [postId, userInfo]);
+    axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
+      .then(({ data, status }) => {
+        console.log('HTTP status:', status);
+        console.log('response data:', data);
+        const value = !!data?.favorited;
+        console.log('parsed favorited:', value);
+        setFavorited(value);
+      })
+      .catch((err) => {
+        console.error('요청 실패:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message,
+        });
+        setFavorited(false);
+      })
+      .finally(() => console.groupEnd());
+  }, [postId, userInfo]);
 
 
 
   //좋아요 토글
   const onToggle = async () => {
-  if (!userInfo?.memberId) {
-    alert('로그인이 필요합니다.');
-    return;
-  }
-  try {
-    const { data } = await axios.post(
-      `http://localhost:4989/post/toggle`,
-      null,                           
-      { params: { postId } }          
-    );
-    setFavorited(Boolean(data.favorited));         
-    setCount(Number(data.count) || 0);              
-  } catch (e) {
-    console.error(e);
-    alert('잠시 후 다시 시도해주세요.');
-  }
-};
+    if (!userInfo?.memberId) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    try {
+      const { data } = await axios.post(
+        `http://localhost:4989/post/toggle`,
+        null,
+        { params: { postId } }
+      );
+      setFavorited(Boolean(data.favorited));
+      setCount(Number(data.count) || 0);
+    } catch (e) {
+      console.error(e);
+      alert('잠시 후 다시 시도해주세요.');
+    }
+  };
 
 
-// 게시글 삭제
+  // 게시글 삭제
   const handleDeletePost = async () => {
     if (!postId) return;
 
@@ -191,25 +255,6 @@ useEffect(() => {
     }
   };
 
-const handleSubmitReport = async () => {
-    if (!reportContent.trim()) return;
-    try {
-      setSubmitting(true);
-      await axios.post('http://localhost:4989/post/report', {
-        postId,
-        content: reportContent.trim(),
-      });
-      alert('보냈습니다!');
-      setReportContent('');
-      setOpen(false);
-    } catch (e) {
-      console.error(e);
-      alert('전송 실패');
-    } finally {
-      setSubmitting(false);
-    }
-  
-  };
 
   const handleChatToggle = async () => {
     // 채팅창이 이미 열려 있다면, 닫아주는 로직을 실행합니다.
@@ -272,127 +317,453 @@ const handleSubmitReport = async () => {
   };
 
 
-  
+  // const handleSubmitReport = async () => {
+  //     if (!reportReason.trim()) return;
+  //     try {
+  //       setSubmitting(true);
+  //       await axios.post('http://localhost:4989/post/report', {
+  //         postId,
+  //         reason: reportReason.trim(),
+  //       });
+  //       alert('보냈습니다!');
+  //       setReportReason('');
+  //       setOpen(false);
+  //     } catch (e) {
+  //       console.error(e);
+  //       alert('전송 실패');
+  //     } finally {
+  //       setSubmitting(false);
+  //     }
+
+  //   };
+
+  const handleChangeType = (type) => {
+    setReportType(type);
+    setTargetId(type === 'POST' ? Number(postId) :
+      type === 'MEMBER' ? Number(authorId) : null);
+    console.log(authorId);
+    console.log(postId);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportReason.trim()) return;
+    if (!token || token === "null" || token === "undefined") {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    // 선택에 따라 targetId 결정
+    // const targetId =
+    //   reportType === 'POST'   ? Number(postId) :
+    //   reportType === 'MEMBER' ? Number(authorId) :
+    //   null;
+
+    if (!targetId) { alert('대상 정보를 찾을 수 없습니다.'); return; }
+
+    try {
+      setSubmitting(true);
+
+      const fd = new FormData();
+      fd.append('targetType', reportType);          // ✅ 선택값 반영
+      if (reportType === "POST") fd.append("targetPostId", targetId);
+      if (reportType === "MEMBER") fd.append("targetMemberId", targetId);
+      fd.append('reason', reportReason.trim());
+      fd.append('status', 'PENDING');
+
+      console.log(reportType);
+      console.log(targetId);
+      console.log(reportReason);
+
+      await axios.post('http://localhost:4989/post/report', fd, {
+        headers: { Authorization: `Bearer ${token}` }, // Content-Type 자동
+      });
+
+      alert('보냈습니다!');
+      setReportReason('');
+      setReportType('');
+      setOpen(false);
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data || '전송 실패');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // 탭별 기본 경로 (from이 없을 때용)
+  const getFallbackListPath = () => {
+    switch (post?.postType) {
+      case 'CARS':
+        return '/cars';
+      case 'REAL_ESTATES':
+        return '/real_estate';
+      case 'ITEMS':
+      default:
+        return '/goods';
+    }
+  };
+
+  // 목록 복귀 핸들러
+  const handleGoBackToList = () => {
+    const { from, focusId } = location.state || {};
+    // 1) 리스트에서 들어온 경우: from(URL에 ?page 포함)으로 되돌리면서 클릭 카드로 포커스
+    if (from) {
+      navi(from, { state: { focusId: focusId ?? Number(postId) } });
+      return;
+    }
+    // 2) 외부에서 바로 상세로 들어온 경우: 탭 기본 경로로 이동(페이지는 기본 1), 그래도 카드 포커스 시도
+    navi(getFallbackListPath(), { state: { focusId: Number(postId) } });
+  };
+
+  // 사진 슬라이드 관련 함수들
+  const nextPhoto = () => {
+    if (photos && photos.length > 0) {
+      setCurrentPhotoIndex((prevIndex) => 
+        prevIndex === photos.length - 1 ? 0 : prevIndex + 1
+      );
+    }
+  };
+
+  const prevPhoto = () => {
+    if (photos && photos.length > 0) {
+      setCurrentPhotoIndex((prevIndex) => 
+        prevIndex === 0 ? photos.length - 1 : prevIndex - 1
+      );
+    }
+  };
+
+  // const goToPhoto = (index) => {
+  //   setCurrentPhotoIndex(index);
+  // };
 
 
 
-
-  if (!post) return <div>로딩 중...</div>;
+  if (!post) return <div className="loading-container">로딩 중...</div>;
 
   return (
-    <div>
-      <h2>{post.title}</h2>
-      <p>작성자: {post.nickname}</p>
-      
-      <p>가격: {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}</p>
-      <p>작성일: {post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
-      <p>location: </p>
-      <p>조회수: {post.viewCount}</p>
-      <p>거래상태 :{post.status==='ON_SALE'?'판매중':post.status==='RESERVED'?'예약':'판매완료'}</p>
-      <button onClick={onToggle} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-      <span style={{ fontSize: 20 }}>{favorited ? "❤️" : "🤍"}</span>
-      <span>{count}</span>
-    </button>
-      
-      <h3>사진 목록</h3>
-      {photos.length > 0 ? (
-        photos.map(photo => (
-          <img
-            key={photo.photoId}
-            src={`http://localhost:4989/save/${photo.photoUrl}`}
-            alt=""
-            style={{ width: "150px", marginRight: "8px" }}
-          />
-        ))
-      ) : (
-        <p>사진 없음</p>
-      )}
-      {post.postType === 'ITEMS' && (
-        <>
-        <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
-      <p>상태: {goods.conditions ==='best'?'상':goods.conditions ==='good'?'중':'하'}</p>
-      <p>분류: {goods.categoryId === 1
-      ? '전자제품'
-      : goods.categoryId === 2
-      ? '의류'
-      : '가구'}</p>
-      </>
-      )}
-      {post.postType === 'CARS' && (
-        <>
-          <p>판매유형: {post.tradeType==='SALE'?'판매':post.tradeType==='AUCTION'?'경매':'나눔'}</p>
-          <p>브랜드: {cars.brand}</p>
-          <p>모델: {cars.model}</p>
-          <p>연식: {cars.year}</p>
-          <p>주행거리: {cars.mileage}</p>
-          <p>연료: {cars.fuelType}</p>
-          <p>변속기: {cars.transmission}</p>
-        </>
-      )}
-      {post.postType === 'REAL_ESTATES' && (
-        <>
-          <p>매물종류: {estate.propertyType === 'apt' ? '아파트' : estate.propertyType === 'studio' ? '오피스텔' : estate.propertyType === 'oneroom' ? '원룸' : '투룸'}</p>
-          <p>면적: {estate.area} ㎡</p>
-          <p>방 개수: {estate.rooms} 개</p>
-          <p>층: {estate.floor} 층</p>
-          <p>거래유형: {estate.dealType === 'lease' ? '전세' : estate.dealType === 'rent' ? '월세' : estate.dealType === 'leaseAndrent' ? '전월세' : '매매'}</p>
-        </>
-      )}
-      <div style={{ width: '300px' }}>
-        {post.content}
-      </div>
-
-      
-
-      {/* 신고 모달 추가 */}
-      
-
-      {/* 작성자 본인에게만 보이는 수정 버튼 */}
-        {userInfo ? (
-          <>
-          <div>
-            <button
-              type="button"
-              onClick={() => navi(`/board/update?postId=${postId}`)}  // 라우트는 실제 매칭 경로로
-            >
-              수정
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDeletePost}
-              disabled={deleting}
-              style={{ color: 'white', background: '#d23f3f' }}
-            >
-              {deleting ? '삭제 중...' : '삭제'}
-            </button>
+    <div className="gooddetail-page">
+      <div className="gooddetail-container">
+        {/* 메인 콘텐츠 영역 - 2단 레이아웃 */}
+        <div className="gooddetail-main">
+          {/* 왼쪽 이미지 영역 */}
+          <div className="gooddetail-gallery">
+            <h3 className="gooddetail-gallery-title">사진 목록</h3>
+            {photos && photos.length > 0 ? (
+              <div className="gooddetail-slider">
+                <div className="gooddetail-slider-container">
+                  <img
+                    src={`http://localhost:4989/postphoto/${photos[currentPhotoIndex].photoUrl}`}
+                    alt=""
+                    className="gooddetail-slider-photo"
+                  />
+                  
+                  {/* 이전 버튼 */}
+                  {photos.length > 1 && (
+                    <button 
+                      className="gooddetail-slider-btn gooddetail-slider-btn-prev"
+                      onClick={prevPhoto}
+                      aria-label="이전 사진"
+                    >
+                      ‹
+                    </button>
+                  )}
+                  
+                  {/* 다음 버튼 */}
+                  {photos.length > 1 && (
+                    <button 
+                      className="gooddetail-slider-btn gooddetail-slider-btn-next"
+                      onClick={nextPhoto}
+                      aria-label="다음 사진"
+                    >
+                      ›
+                    </button>
+                  )}
+                </div>
+                
+                {/* 사진 인디케이터 */}
+                {/* {photos.length > 1 && (
+                  <div className="gooddetail-slider-indicators">
+                    {photos.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`gooddetail-slider-indicator ${index === currentPhotoIndex ? 'active' : ''}`}
+                        onClick={() => goToPhoto(index)}
+                        aria-label={`${index + 1}번째 사진으로 이동`}
+                      />
+                    ))}
+                  </div>
+                )} */}
+                
+                {/* 사진 카운터 */}
+                <div className="gooddetail-slider-counter">
+                  {currentPhotoIndex + 1} / {photos.length}
+                </div>
+              </div>
+            ) : (
+              <div className="gooddetail-no-photos">
+                <p>등록된 사진이 없습니다</p>
+              </div>
+            )}
           </div>
-           {/* 로그인 상태일 때만 보이는 '대화' 버튼 */}
-          <div><button onClick={handleChatToggle}>대화</button></div>
-          
-          <div>
-          <button onClick={() => setOpen(true)}>신고/문의</button>
-        <ReportModal
-        open={open}
-        onClose={() => setOpen(false)}
-        content={reportContent}
-        onChange={(e) => setReportContent(e.target.value)}
-        onSubmit={handleSubmitReport}
-        submitting={submitting}
-      />
-      </div>
-        </>
-      ) : (
-        <>
-          {/* 비로그인 상태일 때의 버튼들 */}
-          <button onClick={() => alert('로그인 후 이용 가능합니다.')}>대화</button>
-        </>
-      )}
+
+          {/* 오른쪽 상품 정보 영역 */}
+          <div className="gooddetail-info-section">
+            {/* 상품 헤더 정보 */}
+            <div className="gooddetail-header">
+              <h1 className="gooddetail-title">{post.title}</h1>
+              
+              {/* 가격 섹션 */}
+              <div className="gooddetail-price">
+                <div className="gooddetail-price-value">
+                  {post.price ? new Intl.NumberFormat().format(post.price) + '원' : '가격 미정'}
+                </div>
+              </div>
+            </div>
+
+            {/* 상호작용 메트릭스 - 번개장터 스타일 */}
+            <div className="gooddetail-metrics">
+              <div className="gooddetail-metrics-left">
+                <div className="gooddetail-metric-item">
+                  <span className="gooddetail-metric-icon">❤️</span>
+                  <span>{count}</span>
+                </div>
+                <div className="gooddetail-metric-item">
+                  <span className="gooddetail-metric-icon">👁️</span>
+                  <span>{post.viewCount}</span>
+                </div>
+                <div className="gooddetail-metric-item">
+                  <span className="gooddetail-metric-icon">🕐</span>
+                  <span>{post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' }) : ''}</span>
+                </div>
+              </div>
+              <div className="gooddetail-metrics-right">
+                  {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
+                <button className="gooddetail-report-btn" onClick={() => setOpen(true)}>
+                신고/문의
+              </button>
+      )
+    }
+              </div>
+            </div>
+
+            {/* 상품 상태 및 배송 정보 */}
+            <div className="gooddetail-product-info">
+              <div className="gooddetail-info-row">
+                <span className="gooddetail-info-label">상품상태</span>
+                <span className="gooddetail-info-value">
+                  <span className={`gooddetail-status ${post.status === 'ON_SALE' ? 'on-sale' : post.status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                    {post.status === 'ON_SALE' ? '새 상품' : post.status === 'RESERVED' ? '예약중' : '판매완료'}
+                  </span>
+                </span>
+              </div>
+              <div className="gooddetail-info-row">
+                <span className="gooddetail-info-label">배송비</span>
+                <span className="gooddetail-info-value">무료배송</span>
+              </div>
+            </div>
+
+            {/* 액션 버튼들 - 번개장터 스타일 */}
+            <div className="gooddetail-action-buttons">
+              <button onClick={onToggle} className="gooddetail-like-btn">
+                <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
+                <span>찜 {count}</span>
+              </button>
+                {/* 대화 */}
+          {userInfo && userInfo.memberId === post.memberId ? (
+            <>
+              <button className="gooddetail-chat-btn"
+                onClick={handleChatToggle}
+              >
+                대화
+              </button>
+            </>
+          ) : (
+            <>
+              {/* 비로그인 상태일 때의 버튼들 */}
+              <button className="gooddetail-chat-btn"
+                onClick={() => alert('로그인 후 이용 가능합니다.')}
+              >
+                대화
+              </button>
+            </>
+          )}
+
+          {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
+          {userInfo && userInfo.memberId === post.memberId && (
+            <>
+            <button
+                type="button"
+                className="gooddetail-btn"
+                onClick={() => navi(`/board/update?postId=${postId}`)}
+              >
+                수정
+              </button>
+
+              <button
+                type="button"
+                className="gooddetail-btn danger"
+                onClick={handleDeletePost}
+                disabled={deleting}
+              >
+                {deleting ? '삭제 중...' : '삭제'}
+              </button>
+            </>
+          )}
+
+          <button 
+            className="gooddetail-btn secondary"
+            onClick={handleGoBackToList}
+          >
+            목록
+          </button>
+            </div>
+
+            {/* 메타 정보 */}
+            <div className="gooddetail-meta">
+              <div className="gooddetail-meta-item">
+                <strong>작성자:</strong> {post.nickname}
+              </div>
+              <div className="gooddetail-meta-item">
+                <strong>작성일:</strong> {post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : ''}
+              </div>
+              {/* 수정일 표시 - updatedAt이 있고 createdAt과 다를 때만 표시 */}
+              {post.updatedAt && post.updatedAt !== post.createdAt && (
+                <div className="gooddetail-meta-item gooddetail-updated-item">
+                  <strong>수정일:</strong> {new Date(post.updatedAt).toLocaleString('ko-KR')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 상품 정보와 설명 영역 - 2단 레이아웃 */}
+        <div className="gooddetail-detail-section">
+          {/* 왼쪽 - 상품 설명 */}
+          <div className="gooddetail-content-section">
+            <h3 className="gooddetail-content-title">상품설명</h3>
+            <div className="gooddetail-content-text">
+              {post.content && post.content.trim() ? (
+                post.content
+              ) : (
+                <div style={{ color: '#999', fontStyle: 'italic' }}>
+                  상품 설명이 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 오른쪽 - 상품 정보 */}
+          <div className="gooddetail-info-section-detail">
+            <h3 className="gooddetail-info-title">상품정보</h3>
+            <div className="gooddetail-info-grid">
+              <div className="gooddetail-info-item">
+                <div className="gooddetail-info-label">판매유형</div>
+                <div className="gooddetail-info-value">
+                  {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}
+                </div>
+              </div>
+              
+              {post.postType === 'ITEMS' && goods && (
+                <>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">상품상태</div>
+                    <div className="gooddetail-info-value">
+                      {goods.conditions === 'best' ? '상' : goods.conditions === 'good' ? '중' : '하'}
+                    </div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">분류</div>
+                    <div className="gooddetail-info-value">
+                      {goods.categoryId === 1 ? '전자제품' : goods.categoryId === 2 ? '의류' : '가구'}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {post.postType === 'CARS' && cars && (
+                <>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">브랜드</div>
+                    <div className="gooddetail-info-value">{cars.brand}</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">모델</div>
+                    <div className="gooddetail-info-value">{cars.model}</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">연식</div>
+                    <div className="gooddetail-info-value">{cars.year}</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">주행거리</div>
+                    <div className="gooddetail-info-value">{cars.mileage}</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">연료</div>
+                    <div className="gooddetail-info-value">{cars.fuelType}</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">변속기</div>
+                    <div className="gooddetail-info-value">{cars.transmission}</div>
+                  </div>
+                </>
+              )}
+              
+              {post.postType === 'REAL_ESTATES' && estate && (
+                <>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">매물종류</div>
+                    <div className="gooddetail-info-value">
+                      {estate.propertyType === 'apt' ? '아파트' : estate.propertyType === 'studio' ? '오피스텔' : estate.propertyType === 'oneroom' ? '원룸' : '투룸'}
+                    </div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">면적</div>
+                    <div className="gooddetail-info-value">{estate.area} ㎡</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">방 개수</div>
+                    <div className="gooddetail-info-value">{estate.rooms} 개</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">층</div>
+                    <div className="gooddetail-info-value">{estate.floor} 층</div>
+                  </div>
+                  <div className="gooddetail-info-item">
+                    <div className="gooddetail-info-label">거래유형</div>
+                    <div className="gooddetail-info-value">
+                      {estate.dealType === 'lease' ? '전세' : estate.dealType === 'rent' ? '월세' : estate.dealType === 'leaseAndrent' ? '전월세' : '매매'}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+
 
       
-         
+
+        
+
+        {/* 신고 모달 */}
+        <ReportModal
+          open={open}
+          onClose={() => setOpen(false)}
+          reason={reportReason}
+          onChangeReason={(e) => setReportReason(e.target.value)}
+          reportType={reportType}
+          onChangeType={handleChangeType}
+          onSubmit={handleSubmitReport}
+          submitting={submitting}
+        />
+
+
+
       {/* DetailChat 컴포넌트 렌더링 */}
       {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+      </div>
     </div>
   );
 };

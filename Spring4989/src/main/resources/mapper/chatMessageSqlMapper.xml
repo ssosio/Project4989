@@ -90,5 +90,13 @@
     INSERT INTO chatmessage (chat_room_id, sender_id, message_type, message_content)
     VALUES (#{chatRoomId}, #{senderId}, #{messageType}, #{messageContent})
 </insert>
+
+<select id="getUnreadMessageCountByChatRoom" parameterType="java.util.Map" resultType="int">
+        SELECT COUNT(message_id)
+        FROM chatmessage
+        WHERE chat_room_id = #{chatRoomId}
+          AND sender_id != #{memberId}
+          AND is_read = 0
+    </select>
     
 </mapper>

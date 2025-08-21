@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
-import './post.css';
+import './update.css';
 
 const UpdatePost = () => {
 
@@ -17,6 +17,8 @@ const UpdatePost = () => {
     const [price,setPrice]=useState('');
     const [content,setContent]=useState('');
     const [photoPreview,setPhotoPreview]=useState([]);
+
+    const [status,setStatus]=useState('');
 
     const [locationVal, setLocationVal] = useState('');
 
@@ -95,6 +97,8 @@ const UpdatePost = () => {
         setTitle(p.title || '');
         setPrice(p.price ?? '');
         setContent(p.content || '');
+        setStatus(p.status || '');
+
         setLocationVal(p.location || '');
 
         // subtype
@@ -120,12 +124,31 @@ const UpdatePost = () => {
           // parent/child는 필요시 별도 API로 역추적
         }
 
-        // 사진
-        const photos = data.photos || p.photos || [];
-        setExistingPhotos(Array.isArray(photos) ? photos : []);
-        // 대표 기본값 (있다면)
-        const main = (Array.isArray(photos) ? photos : []).find(ph => ph.isMain === 1 || ph.isMain === true);
+        // 사진 처리
+        let photos = data.photos || p.photos || [];
+        
+        // photos가 문자열인 경우 JSON 파싱 시도
+        if (typeof photos === 'string') {
+          try {
+            photos = JSON.parse(photos);
+          } catch (e) {
+            console.warn('사진 데이터 파싱 실패:', e);
+            photos = [];
+          }
+        }
+        
+        // photos가 배열이 아니면 빈 배열로 설정
+        if (!Array.isArray(photos)) {
+          photos = [];
+        }
+        
+        console.log('로드된 사진 데이터:', photos);
+        setExistingPhotos(photos);
+        
+        // 대표 사진 찾기
+        const main = photos.find(ph => ph.isMain === 1 || ph.isMain === true || ph.isMain === '1');
         setMainPhotoId(main ? main.photoId : null);
+        console.log('대표 사진 ID:', main ? main.photoId : null);
       })
       .catch(err => console.error(err));
   }, [postId]);
@@ -140,11 +163,18 @@ const UpdatePost = () => {
 
     // 기존 사진 삭제 토글
   const toggleDeletePhoto = (photoId) => {
-    setDeletePhotoIds(prev =>
-      prev.includes(photoId) ? prev.filter(id => id !== photoId) : [...prev, photoId]
-    );
+    console.log('사진 삭제 토글:', photoId);
+    setDeletePhotoIds(prev => {
+      const newIds = prev.includes(photoId) 
+        ? prev.filter(id => id !== photoId) 
+        : [...prev, photoId];
+      console.log('삭제 예정 사진 IDs:', newIds);
+      return newIds;
+    });
+    
     // 삭제로 체크한 사진이 대표로 선택되어 있으면 대표 선택 해제
     if (mainPhotoId === photoId) {
+      console.log('대표 사진이 삭제 예정이므로 대표 선택 해제');
       setMainPhotoId(null);
     }
   };
@@ -153,6 +183,12 @@ const UpdatePost = () => {
     if (val !== undefined && val !== null && `${val}`.trim() !== '') {
       fd.append(key, val);
     }
+  };
+
+  // 대표 사진 선택 핸들러
+  const handleMainPhotoSelect = (photoId) => {
+    console.log('대표 사진 선택:', photoId);
+    setMainPhotoId(photoId);
   };
 
   const submitUpdate = () => {
@@ -169,6 +205,7 @@ const UpdatePost = () => {
     appendIf(fd, 'postType', postType);
     appendIf(fd, 'content', content);
     appendIf(fd, 'price', price);
+    appendIf(fd, 'status', status);
     appendIf(fd, 'location', locationVal);
 
     if (postType !== 'REAL_ESTATES') {
@@ -217,7 +254,8 @@ const UpdatePost = () => {
     axios.post('http://localhost:4989/post/update', fd, { headers })
       .then(() => {
         alert('수정 성공');
-        navi('/goods'); // 또는 상세로
+        // 수정 후 상세 페이지로 이동하여 업데이트된 시간 확인
+        navi(`/board/GoodsDetail?postId=${postId}`);
       })
       .catch(err => {
         console.error('에러 상세:', err.response?.data || err);
@@ -231,27 +269,25 @@ const UpdatePost = () => {
 
 
     return (
-         <div className="post-page">
-      <div className="post-container">
+         <div className="update-page">
+      <div className="update-container">
         {/* 헤더 섹션 */}
-        <div className="post-header">
-          <h1 className="post-title">물품 수정</h1>
-          <p className="post-subtitle">판매하고 싶은 물품을 수정해보세요</p>
+        <div className="update-header">
+          <h1 className="update-title">물품 수정</h1>
+          <p className="update-subtitle">판매하고 싶은 물품을 수정해보세요</p>
         </div>
 
         {/* 폼 컨테이너 */}
-        <div className="post-form-container">
-          <table className="post-form-table">
+        <div className="update-form-container">
+          <table className="update-form-table">
             <tr>
                 <td>
                     <label>물건타입
-                    <select name="postType" id="" value={postType} onChange={(e)=>{
-                        setPostType(e.target.value);
-                    }}>
-                        <option value="" disabled selected>물건타입을 선택해 주세요</option>
-                        <option value="ITEMS" selected>중고물품</option>
-                        <option value="CARS">자동차</option>
-                        <option value="REAL_ESTATES">부동산</option>
+                    <select name="postType" id="" value={postType} disabled>
+                        <option value="" disabled  hidden>물건타입을 선택해 주세요</option>
+                        <option value="ITEMS"  hidden>중고물품</option>
+                        <option value="CARS" hidden>자동차</option>
+                        <option value="REAL_ESTATES" hidden>부동산</option>
                     </select>
                     </label>
                 </td>
@@ -397,8 +433,26 @@ const UpdatePost = () => {
                             }}>
                                 <option value="" disabled selected>판매타입을 선택해 주세요</option>
                                 <option value="SALE">판매</option>
-                                <option value="AUCTION">경매</option>
+                                <option value="AUCTION" hidden>경매</option>
                                 <option value="SHARE">나눔</option>
+                            </select>
+                            </label>
+                        </td>
+                    </tr>
+                    )
+                }
+                {
+                    (postType==='ITEMS'||postType==='CARS'||postType==='REAL_ESTATES') &&(
+                    <tr className="conditional-section">
+                        <td>
+                            <label>거래상태
+                            <select name="status" id="" value={status} onChange={(e)=>{
+                            setStatus(e.target.value);
+                            }}>
+                                <option value="" disabled selected>거래상태를 선택해 주세요</option>
+                                <option value="ON_SALE">판매중</option>
+                                <option value="RESERVED">예약</option>
+                                <option value="SOLD">판매완료</option>
                             </select>
                             </label>
                         </td>
@@ -475,40 +529,48 @@ const UpdatePost = () => {
             </tr>
             
               {/* 기존 사진 목록 (삭제/대표 선택) */}
-              <tr>
-                <td>
-                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                    {existingPhotos.map((ph) => (
-                      <div key={ph.photoId} style={{ textAlign: 'center' }}>
-                        <img
-                          src={`http://localhost:4989/save/${ph.photoUrl}`}
-                          alt=""
-                          className="photo-preview"
-                          style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
-                        />
-                        <div style={{ marginTop: 6 }}>
-                          <label style={{ display: 'block' }}>
-                            <input
-                              type="checkbox"
-                              checked={deletePhotoIds.includes(ph.photoId)}
-                              onChange={() => toggleDeletePhoto(ph.photoId)}
-                            /> 삭제
-                          </label>
-                          <label style={{ display: 'block' }}>
-                            <input
-                              type="radio"
-                              name="mainPhoto"
-                              checked={mainPhotoId === ph.photoId}
-                              onChange={() => setMainPhotoId(ph.photoId)}
-                              disabled={deletePhotoIds.includes(ph.photoId)}
-                            /> 대표
-                          </label>
+              {existingPhotos.length > 0 && (
+                <tr>
+                  <td>
+                    <label>기존 사진 관리</label>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+                      {existingPhotos.map((ph) => (
+                        <div key={ph.photoId} style={{ textAlign: 'center' }}>
+                          <img
+                            src={`http://localhost:4989/postphoto/${ph.photoUrl}`}
+                            alt=""
+                            className="photo-preview"
+                            style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
+                            onError={(e) => {
+                              console.warn('이미지 로드 실패:', ph.photoUrl);
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                          <div style={{ marginTop: 6 }}>
+                            <label style={{ display: 'block', fontSize: '12px' }}>
+                              <input
+                                type="checkbox"
+                                checked={deletePhotoIds.includes(ph.photoId)}
+                                onChange={() => toggleDeletePhoto(ph.photoId)}
+                              /> 삭제
+                            </label>
+                            <label style={{ display: 'block', fontSize: '12px' }}>
+                              <input
+                                type="radio"
+                                name="mainPhoto"
+                                checked={mainPhotoId === ph.photoId}
+                                onChange={() => handleMainPhotoSelect(ph.photoId)}
+                                disabled={deletePhotoIds.includes(ph.photoId)}
+                              /> 대표
+                            </label>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </td>
-              </tr>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              )}
+              
 
               {/* 새 사진 추가 */}
               <tr>
@@ -529,9 +591,9 @@ const UpdatePost = () => {
               </tr>
           </table>
 
-          <div className="post-button-container">
-            <button type="button" className="post-submit-btn" onClick={submitUpdate}>수정</button>
-            <button type="button" className="post-list-btn" onClick={clickList}>목록</button>
+          <div className="update-button-container">
+            <button type="button" className="update-submit-btn" onClick={submitUpdate}>수정</button>
+            <button type="button" className="update-list-btn" onClick={clickList}>목록</button>
           </div>
         </div>
       </div>
