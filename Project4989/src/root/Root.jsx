@@ -47,27 +47,27 @@ const Root = () => {
   }, []);
 
   // axios 응답 인터셉터 설정 - 401 에러 시 자동 로그아웃
-  useEffect(() => {
-    const responseInterceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          console.log('인증 만료, 자동 로그아웃');
-          localStorage.removeItem('jwtToken');
-          delete axios.defaults.headers.common['Authorization'];
-          setUserInfo(null);
-          // 필요시 로그인 페이지로 리다이렉트
-          // window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
+  // useEffect(() => {
+  //   const responseInterceptor = axios.interceptors.response.use(
+  //     (response) => response,
+  //     (error) => {
+  //       if (error.response?.status === 401) {
+  //         console.log('인증 만료, 자동 로그아웃');
+  //         localStorage.removeItem('jwtToken');
+  //         delete axios.defaults.headers.common['Authorization'];
+  //         setUserInfo(null);
+  //         // 필요시 로그인 페이지로 리다이렉트
+  //         // window.location.href = '/login';
+  //       }
+  //       return Promise.reject(error);
+  //     }
+  //   );
 
-    // 컴포넌트 언마운트 시 인터셉터 제거
-    return () => {
-      axios.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
+  //   // 컴포넌트 언마운트 시 인터셉터 제거
+  //   return () => {
+  //     axios.interceptors.response.eject(responseInterceptor);
+  //   };
+  // }, []);
 
   // 로그인 성공 시 LoginForm에서 호출될 함수
   const handleLoginSuccess = (userData) => {

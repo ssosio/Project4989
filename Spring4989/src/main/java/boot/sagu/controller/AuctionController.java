@@ -3,6 +3,7 @@ package boot.sagu.controller;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
+import boot.sagu.dto.PortOneConfirmRequest;
 import boot.sagu.dto.PortOneWebhookPayloadDTO;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
@@ -323,82 +325,100 @@ public class AuctionController {
 		@RequestBody AuctionDto body,
 		@RequestHeader(value = "Authorization", required = false) String token
 	) {
-		try {
-			System.out.println("=== 입찰 요청 로그 ===");
-			System.out.println("PostId: " + postId);
-			System.out.println("Body: " + body);
-			System.out.println("Token: " + token);
-			
-			body.setPostId(postId);
-			
-			// JWT 토큰에서 사용자 ID 추출
-			Long memberId = null;
-			if (token != null && token.startsWith("Bearer ")) {
-				try {
-					String loginId = jwtUtil.extractUsername(token.replace("Bearer ", ""));
-					System.out.println("Extracted loginId: " + loginId);
-					// loginId를 memberId로 변환하는 로직 필요
-					// 임시로 body에서 가져온 bidderId 사용
-					memberId = body.getBidderId();
-					System.out.println("Using memberId from body: " + memberId);
-				} catch (Exception e) {
-					System.out.println("JWT 파싱 에러: " + e.getMessage());
-					return ResponseEntity.status(401).body(Map.of(
-						"status", "ERROR",
-						"message", "유효하지 않은 토큰입니다."
-					));
-				}
-			} else {
-				System.out.println("토큰이 없거나 Bearer 형식이 아님");
-			}
-			
-			if (memberId == null) {
-				return ResponseEntity.status(401).body(Map.of(
-					"status", "ERROR",
-					"message", "로그인이 필요합니다."
-				));
-			}
-			
-			body.setBidderId(memberId);
-			
-			// 보증금 결제가 필요한지 확인
-			String res = auctionService.placeBidWithGuarantee(body);
-			
-			if (res.startsWith("[NEED_GUARANTEE]")) {
-				// 보증금 결제 필요 - 포트원 결제 정보 생성
-				long bidderId = body.getBidderId();
-				int startPrice = auctionService.getStartPrice(postId);
-				int guaranteeAmount = Math.max(1, (int)Math.round(startPrice * 0.1));
-				String merchantUid = "guarantee_" + postId + "_" + bidderId;
-				
-				// 포트원 서비스를 통해 결제 준비 (위변조 방지)
-				portOneService.preparePaymentForAuction(merchantUid, guaranteeAmount, "경매 보증금");
-				
-				Map<String, Object> response = new HashMap<>();
-				response.put("status", "NEED_GUARANTEE");
-				response.put("guaranteeAmount", guaranteeAmount);
-				response.put("merchantUid", merchantUid);
-				response.put("message", "보증금 결제가 필요합니다. 결제를 진행해주세요.");
-				
-				return ResponseEntity.status(402).body(response);
-			}
-			
-			// 보증금이 이미 납부된 경우 또는 입찰 성공
-			return ResponseEntity.ok(Map.of("status", "OK", "message", res));
-			
-		} catch (Exception e) {
-			Map<String, Object> errorResponse = new HashMap<>();
-			errorResponse.put("status", "ERROR");
-			errorResponse.put("message", "입찰 처리 중 오류가 발생했습니다: " + e.getMessage());
-			
-			return ResponseEntity.badRequest().body(errorResponse);
-		}
+		// === 1) 기본 검증 ===
+	    if (body == null) {
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status", "ERROR",
+	            "message", "요청 바디가 비어 있습니다."
+	        ));
+	    }
+	    if (body.getBidAmount() == null || body.getBidAmount().signum() <= 0) {
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status", "ERROR",
+	            "message", "입찰 금액이 유효하지 않습니다."
+	        ));
+	    }
+
+	    // 경로의 postId를 신뢰
+	    body.setPostId(postId);
+
+	    // === 2) JWT 파싱 (가능하면 토큰으로 사용자 식별) ===
+	    Long memberId = null;
+	    if (token != null && token.startsWith("Bearer ")) {
+	        try {
+	            String jwt = token.substring(7);
+	            String loginId = jwtUtil.extractUsername(jwt);
+	            // TODO: loginId -> memberId 매핑 (예: memberService.findIdByLoginId(loginId))
+	            // 임시: 바디에서 넘어온 bidderId 사용(프론트가 넣어줌)
+	            if (body.getBidderId() != 0L) {
+	                memberId = body.getBidderId();
+	            }
+	            // 매핑 가능하면 위 라인 대신 실제 조회 값 대입
+	            // memberId = memberService.findIdByLoginId(loginId);
+	        } catch (Exception e) {
+	            return ResponseEntity.status(401).body(Map.of(
+	                "status", "ERROR",
+	                "message", "유효하지 않은 토큰입니다."
+	            ));
+	        }
+	    }
+	    if (memberId == null || memberId <= 0) {
+	        return ResponseEntity.status(401).body(Map.of(
+	            "status", "ERROR",
+	            "message", "로그인이 필요합니다."
+	        ));
+	    }
+	    body.setBidderId(memberId);
+
+	    // 서버에서 입찰 시각 세팅(프론트에서 bidTime 보내지 않음)
+	    body.setBidTime(new Timestamp(System.currentTimeMillis()));
+
+	    // === 3) 비즈니스 로직 ===
+	    try {
+	        // placeBidWithGuarantee는 문자열로 상태를 반환한다고 가정
+	        String res = auctionService.placeBidWithGuarantee(body);
+
+	        if (res != null && res.startsWith("[NEED_GUARANTEE]")) {
+	            int startPrice = auctionService.getStartPrice(postId);
+	            int guaranteeAmount = Math.max(1, (int) Math.round(startPrice * 0.1));
+	            String merchantUid = "guarantee_" + postId + "_" + memberId;
+
+	            // 결제 준비(위변조 방지)
+	            portOneService.ensurePreparedForAuction(merchantUid, guaranteeAmount, "경매 보증금");
+
+	            return ResponseEntity.status(402).body(Map.of(
+	                "status", "NEED_GUARANTEE",
+	                "guaranteeAmount", guaranteeAmount,
+	                "merchantUid", merchantUid,
+	                "message", "보증금 결제가 필요합니다. 결제를 진행해주세요."
+	            ));
+	        }
+
+	        // 보증금 이미 납부 또는 입찰 성공
+	        return ResponseEntity.ok(Map.of(
+	            "status", "OK",
+	            "message", (res == null || res.isBlank()) ? "입찰이 완료되었습니다." : res
+	        ));
+
+	    } catch (IllegalArgumentException iae) {
+	        // 서비스에서 유효성 실패를 명시적으로 던졌을 때
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status", "ERROR",
+	            "message", iae.getMessage()
+	        ));
+	    } catch (Exception e) {
+	        // 기타 예외는 상세 메시지 포함(디버깅 편의)
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status", "ERROR",
+	            "message", "입찰 처리 중 오류: " + e.getClass().getSimpleName() + " - " + (e.getMessage() == null ? "" : e.getMessage())
+	        ));
+	    }
 	}
 		//이미 납부했으면 바로 입찰 처리
 
 
 	  // 포트원 웹훅(결제 성공 검증 → 보증금 저장)
-    @PostMapping("/api/auction/portone/webhook")
+    @PostMapping("/api/auctions/portone/webhook")
     public ResponseEntity<String> portoneWebhook(@RequestBody PortOneWebhookPayloadDTO p) {
         // postId/memberId는 merchant_uid 규칙(guarantee_{postId}_{memberId})에서 파싱하거나,
         // 프론트 custom_data로 넘겨 받도록 설계하세요.
@@ -422,6 +442,32 @@ public class AuctionController {
     ) {
         auctionService.finalizeWinnerGuarantee(postId, winnerId, action);
         return ResponseEntity.ok(Map.of("status", "OK"));
+    }
+    
+    @PostMapping(value = "/api/auctions/portone/confirm", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> confirmPayment(@RequestBody PortOneConfirmRequest req,
+                                            @RequestHeader("Authorization") String bearer) {
+        try {
+            // (선택) 토큰과 요청 memberId 일치 여부를 체크하고 싶으면 여기서 확인
+            String jwt = bearer.replace("Bearer ", "");
+            String loginId = jwtUtil.extractUsername(jwt);
+            // TODO: loginId -> memberId 매핑해서 req.getMemberId()와 일치 확인 가능하면 더 안전
+
+            // ✅ Service 수정 없이, 웹훅에서 쓰던 메서드를 재사용
+            auctionService.handlePortOneWebhook(
+                req.getPostId(),
+                req.getMemberId(),
+                req.getImpUid(),
+                req.getMerchantUid()
+            );
+
+            return ResponseEntity.ok(Map.of("status", "OK"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "message", "결제 검증 실패: " + e.getMessage()
+            ));
+        }
     }
 
 }

@@ -188,4 +188,5 @@
     
     WHERE cr.chat_room_id = #{chatRoomId}
 </select>
+
 </mapper>

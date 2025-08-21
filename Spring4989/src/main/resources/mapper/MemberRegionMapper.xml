@@ -4,7 +4,7 @@
 
 <mapper namespace="boot.sagu.mapper.MemberRegionMapper">
     <insert id="insertMemberRegion" parameterType="boot.sagu.dto.MemberRegionDto">
-        INSERT INTO member_regions (member_id, region_id, is_primary, created_at)
+        INSERT INTO member_regions (member_id, region_id, is_primary,created_at)
         VALUES (#{memberId}, #{regionId}, #{isPrimary}, NOW())
     </insert>
 

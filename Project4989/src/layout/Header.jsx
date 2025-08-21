@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
@@ -10,6 +10,7 @@ import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineR
 import ChatMain from '../chat/ChatMain';
 import './Header.css';
 import axios from 'axios';
+import NotificationMain from '../chat/NotificationMain';
 
 // --- Styled Components (디자인을 위한 코드) ---
 const TossSearch = styled('div')(({ theme }) => ({
@@ -59,6 +60,7 @@ export const Header = () => {
   const { userInfo, handleLogout } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0); // 👈 읽지 않은 메시지 개수를 저장할 상태
   const navi = useNavigate();
 
@@ -70,10 +72,28 @@ export const Header = () => {
   const handleChatClose = () => {
     setChatDrawerOpen(false);
   };
-  const handleUnreadCountChange = (count) => {
-    console.log("Header에서 새로운 읽지 않은 메시지 개수 수신:", count);
-    setUnreadMessageCount(count);
+  const handleNotificationClick = () => {
+    setNotificationDrawerOpen(true);
   };
+  const handleNotificationClose = () => {
+    setNotificationDrawerOpen(false);
+  };
+  // ✅ 수정: useCallback을 사용하여 함수를 메모이제이션
+  const handleUnreadCountChange = useCallback((count) => {
+    // 불필요한 상태 업데이트를 막기 위해 현재 값과 다른지 확인
+    setUnreadMessageCount(prevCount => {
+      if (prevCount !== count) {
+        console.log("Header에서 새로운 읽지 않은 메시지 개수 수신:", count);
+        return count;
+      }
+      return prevCount; // 값이 같으면 상태를 업데이트하지 않아 재렌더링을 막음
+    });
+  }, []); // 💡 빈 의존성 배열을 넣어 컴포넌트가 처음 마운트될 때만 함수가 생성되도록 함
+
+  // 💡 참고: 기존의 useEffect는 ChatMain으로 이동되었으므로 주석 처리하거나 제거 가능
+  // useEffect(() => {
+  //     ... (이 코드는 ChatMain에서 처리)
+  // }, [userInfo]);
   useEffect(() => {
     console.log("Header received userInfo:", userInfo);
   }, [userInfo]);
@@ -209,7 +229,7 @@ export const Header = () => {
                   transform: 'translateY(-2px)',
                   boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
                 }
-              }}>
+              }} onClick={handleNotificationClick}>
                 <Badge badgeContent={2} color="primary" sx={{
                   '& .MuiBadge-badge': {
                     background: '#4A90E2',
@@ -356,6 +376,10 @@ export const Header = () => {
         open={chatDrawerOpen}
         onClose={handleChatClose}
         onUnreadCountChange={handleUnreadCountChange}
+      />
+      <NotificationMain
+        open={notificationDrawerOpen}
+        onClose={handleNotificationClose}
       />
     </AppBar>
   );

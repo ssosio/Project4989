@@ -80,7 +80,7 @@ public class JwtUtil {
                 .subject(member.getLoginId()) // 토큰의 주체는 loginId로 설정
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
+                .signWith(getSigningKey(),Jwts.SIG.HS384)
                 .compact();
     }
     //토큰에서 닉네임을 추출하는 헬퍼 메서드
