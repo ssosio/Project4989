@@ -1,8 +1,9 @@
+// src/main/java/boot/sagu/config/SecurityConfig.java
 package boot.sagu.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,138 +15,130 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import boot.sagu.dto.MemberDto;
-import boot.sagu.service.CustomOAuth2UserService;
-import boot.sagu.service.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
 
+import boot.sagu.service.CustomOAuth2UserService;
+import boot.sagu.service.CustomUserDetailsService;
+import boot.sagu.dto.MemberDto;
+// ⬇️ 네 프로젝트의 CustomUserDetails 실제 경로로 바꿔주세요
+import boot.sagu.config.CustomUserDetails;
+
+@RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private CustomOAuth2UserService customOAuth2UserService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private CustomUserDetailsService customUserDetailsService;
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
+        return cfg.getAuthenticationManager();
     }
 
-    // 소셜 로그인 성공 시 JWT를 생성하고 프론트엔드로 리다이렉트하는 핸들러
+    // JWT 발급 → /auth/callback?token=...
     @Bean
     public AuthenticationSuccessHandler oAuth2LoginSuccessHandler() {
         return (request, response, authentication) -> {
-            // OAuth2 인증 과정에서 생성된 CustomUserDetails 객체를 가져옵니다.
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             MemberDto member = userDetails.getMember();
-
-            // JWT 토큰을 생성합니다.
-            String token = jwtUtil.generateToken(member);
-
-            // 사용자를 프론트엔드의 특정 경로로 리다이렉트시키면서 토큰을 쿼리 파라미터로 전달합니다.
-            // React에서는 이 경로에서 토큰을 받아 localStorage에 저장하게 됩니다.
+            String token = jwtUtil.generateToken(member); // ← 네 JwtUtil 시그니처에 맞게 유지
             response.sendRedirect("http://localhost:5173/auth/callback?token=" + token);
         };
     }
 
-    
-    //크로스오리진 대체
+    // CORS (헤더 와일드카드 + Authorization 노출) — 유지/보강
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-    	 CorsConfiguration configuration = new CorsConfiguration();
-    	    configuration.setAllowedOrigins(
-    	        java.util.List.of("http://localhost:5173", "http://192.168.10.136:5173")
-    	    );
-    	    configuration.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
-    	    configuration.setAllowedHeaders(java.util.List.of("*"));
-    	    configuration.setAllowCredentials(true);
-    	    
-    	    configuration.addExposedHeader("Authorization");
-
-    	    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    	    source.registerCorsConfiguration("/**", configuration);
-    	    return source;
+        CorsConfiguration c = new CorsConfiguration();
+        c.setAllowedOrigins(java.util.List.of(
+            "http://localhost:5173",
+            "http://192.168.10.136:5173",
+            "http://192.168.10.138:5173"
+        ));
+        c.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
+        c.setAllowedHeaders(java.util.List.of("*"));
+        c.setAllowCredentials(true);
+        c.addExposedHeader("Authorization");
+        UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
+        s.registerCorsConfiguration("/**", c);
+        return s;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(withDefaults()) // CORS 설정 추가
-            // CSRF 보호 기능 비활성화
+            .cors(withDefaults())
             .csrf(csrf -> csrf.disable())
-            
-            // 세션을 사용하지 않는 STATELESS 방식으로 설정 (JWT 사용을 위함)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // HTTP 요청에 대한 접근 권한 설정
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
             .authorizeHttpRequests(authz -> authz
-                // 마이페이지 관련 API는 인증이 필요함 (JWT 토큰 검증) - 가장 먼저 설정
+                //  프리플라이트 허용(간헐적 401 예방)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // 인증 필요한 경로
                 .requestMatchers(HttpMethod.GET ,"/member/**").authenticated()
                 // 채팅 관련 API는 인증 없이 접근 가능
-                .requestMatchers("/chat/**", "/chat/rooms/**", "/chat/rooms", "/unread-count/**", "/api/chat/**","/room/create-with-message","/room/enter","/estate/**").permitAll()
-                // 기타 공개 경로들
-            	.requestMatchers("/ws/**").permitAll()
-            	.requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
-            	.requestMatchers("/api/auctions/portone/webhook").permitAll()
             	.requestMatchers("/api/notifications/**").permitAll()
-            	.requestMatchers("/ws/**","/post/**").permitAll()
-                // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
+                .requestMatchers("/submit").authenticated()
+                .requestMatchers("/auction/*/bids", "/auction/delete/**").authenticated()
+
+                // 결제: webhook 공개, confirm은 인증 필요(명시)
+                .requestMatchers(HttpMethod.POST, "/api/auctions/portone/webhook").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auctions/portone/confirm").authenticated()
+
+                // 공개 경로
+                .requestMatchers("/chat/**", "/chat/rooms/**", "/chat/rooms",
+                                 "/unread-count/**", "/api/chat/**",
+                                 "/room/create-with-message", "/room/enter", "/estate/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
-                // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
                 .requestMatchers("/api/region/**","/api/member-region/**").permitAll()
-                .requestMatchers("/submit").authenticated()
-                // 경매 조회용 API는 인증 불필요
-                .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()
-                // 경매 방 인원수 관련 API는 인증 불필요
-                .requestMatchers("/auction/room/**").permitAll()
-                .requestMatchers("/auction/photos/	**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
 
-                // 경매 삭제 API는 인증 필요
-                .requestMatchers("/auction/delete/**").authenticated()
-                // 그 외의 모든 요청은 반드시 인증을 거쳐야 함
+                // 경매 조회/방(공개)
+                .requestMatchers("/auction",
+                                 "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**",
+                                 "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**",
+                                 "/auction/bid-history/**", "/auction/room/**").permitAll()
+                
+                .requestMatchers("/error").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
+
+                // 그 외 모두 인증
                 .anyRequest().authenticated()
             )
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint((request, response, authException) -> {
-                    // 상세한 디버깅을 위한 로그 추가
-                    System.out.println("=== Security Exception Details ===");
-                    System.out.println("Request URI: " + request.getRequestURI());
-                    System.out.println("Request Method: " + request.getMethod());
-                    System.out.println("Authorization Header: " + request.getHeader("Authorization"));
-                    System.out.println("Error: " + authException.getMessage());
-                    System.out.println("Error Type: " + authException.getClass().getSimpleName());
-                    System.out.println("================================");
-                    
-                    response.setContentType("application/json;charset=UTF-8");
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("{\"error\": \"Unauthorized\"}");
-                })
-            )
-            .addFilterAfter(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
-            
-            // OAuth2 로그인 설정
-            .oauth2Login(oauth2 -> oauth2
-                // 로그인 성공 후 사용자 정보를 처리할 서비스를 등록
-                .userInfoEndpoint(userInfo -> userInfo
-                    .userService(customOAuth2UserService)
-                )
-                // 로그인 성공 시 실행될 핸들러를 등록
-                .successHandler(oAuth2LoginSuccessHandler())
-            );
-        
-            
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
+                System.out.println("=== Security Exception Details ===");
+                System.out.println("Request URI: " + req.getRequestURI());
+                System.out.println("Request Method: " + req.getMethod());
+                System.out.println("Authorization Header: " + req.getHeader("Authorization"));
+                System.out.println("Error: " + e.getMessage());
+                System.out.println("Error Type: " + e.getClass().getSimpleName());
+                System.out.println("================================");
+                res.setContentType("application/json;charset=UTF-8");
+                res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                res.getWriter().write("{\"error\": \"Unauthorized\"}");
+            }));
+
+        // JWT 필터는 표준 위치: UsernamePasswordAuthenticationFilter “앞”
+        http.addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService),
+                UsernamePasswordAuthenticationFilter.class);
+
+        // 구글 로그인
+        http.oauth2Login(oauth2 -> oauth2
+            .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+            .successHandler(oAuth2LoginSuccessHandler())
+        );
+
         return http.build();
     }
 }
