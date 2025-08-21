@@ -145,6 +145,30 @@ public class ChatService implements ChatServiceInter{
 	    	// Map 객체를 생성하는 대신, 두 인자를 직접 매퍼로 전달
 	    	return chatmapper.getChatRoomById(chatRoomId, memberId);
 	    }
+
+	    @Override
+	    public Long getRecipientId(Long chatRoomId, Long senderId) {
+	        // 채팅방 ID를 기반으로 판매자와 구매자 ID를 가져옵니다.
+	        Map<String, Long> ids = chatmapper.getSellerAndBuyerIds(chatRoomId);
+
+	        if (ids == null) {
+	            return null; // 채팅방 정보가 없으면 null 반환
+	        }
+
+	        Long sellerId = ids.get("seller_id");
+	        Long buyerId = ids.get("buyer_id");
+
+	        // 메시지를 보낸 사람(senderId)이 판매자이면, 수신자는 구매자입니다.
+	        if (senderId.equals(sellerId)) {
+	            return buyerId;
+	        }
+	        // 메시지를 보낸 사람(senderId)이 구매자이면, 수신자는 판매자입니다.
+	        else if (senderId.equals(buyerId)) {
+	            return sellerId;
+	        }
+
+	        return null; // 예외적인 경우
+	    }
 }
 
 	

@@ -10,6 +10,7 @@ import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineR
 import ChatMain from '../chat/ChatMain';
 import './Header.css';
 import axios from 'axios';
+import NotificationMain from '../chat/NotificationMain';
 
 // --- Styled Components (디자인을 위한 코드) ---
 const TossSearch = styled('div')(({ theme }) => ({
@@ -59,6 +60,7 @@ export const Header = () => {
   const { userInfo, handleLogout } = useContext(AuthContext);
   const [anchorEl, setAnchorEl] = useState(null);
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0); // 👈 읽지 않은 메시지 개수를 저장할 상태
   const navi = useNavigate();
 
@@ -69,6 +71,12 @@ export const Header = () => {
   };
   const handleChatClose = () => {
     setChatDrawerOpen(false);
+  };
+  const handleNotificationClick = () => {
+    setNotificationDrawerOpen(true);
+  };
+  const handleNotificationClose = () => {
+    setNotificationDrawerOpen(false);
   };
   // ✅ 수정: useCallback을 사용하여 함수를 메모이제이션
   const handleUnreadCountChange = useCallback((count) => {
@@ -221,7 +229,7 @@ export const Header = () => {
                   transform: 'translateY(-2px)',
                   boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
                 }
-              }}>
+              }} onClick={handleNotificationClick}>
                 <Badge badgeContent={2} color="primary" sx={{
                   '& .MuiBadge-badge': {
                     background: '#4A90E2',
@@ -362,6 +370,10 @@ export const Header = () => {
         open={chatDrawerOpen}
         onClose={handleChatClose}
         onUnreadCountChange={handleUnreadCountChange}
+      />
+      <NotificationMain
+        open={notificationDrawerOpen}
+        onClose={handleNotificationClose}
       />
     </AppBar>
   );

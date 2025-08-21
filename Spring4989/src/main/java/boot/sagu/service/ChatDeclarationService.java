@@ -2,11 +2,14 @@ package boot.sagu.service;
 
 import boot.sagu.dto.ChatDeclarationDto;
 import boot.sagu.mapper.ChatDeclarationMapper;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ChatDeclarationService {
+public class ChatDeclarationService implements ChatDeclarationServiceInter{
 
 	@Autowired
     private final ChatDeclarationMapper chatDeclarationMapper;
@@ -18,4 +21,9 @@ public class ChatDeclarationService {
     public void insertDeclaration(ChatDeclarationDto dto) {
         chatDeclarationMapper.insertDeclaration(dto);
     }
+
+	@Override
+	public List<ChatDeclarationDto> getChatDeclarationsForMember(long memberId) {
+		return chatDeclarationMapper.getChatDeclarationsForMember(memberId);
+	}
 }

@@ -42,4 +42,7 @@ public interface ChatMessageMapper {
 	public int getUnreadMessageCount(@Param("memberId") Long memberId);
 	 
 	public void insertFirstChatMessage(Map<String, Object> params);
+	
+	public int getUnreadMessageCountByChatRoom(@Param("chatRoomId") Long chatRoomId, @Param("memberId") Long memberId);
+	
 }

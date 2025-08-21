@@ -97,6 +97,7 @@ public class SecurityConfig {
             	.requestMatchers("/ws/**").permitAll()
             	.requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
             	.requestMatchers("/api/auctions/portone/webhook").permitAll()
+            	.requestMatchers("/api/notifications/**").permitAll()
             	.requestMatchers("/ws/**","/post/**").permitAll()
                 // '/signup', '/login', 소셜로그인 관련 경로, 이미지 경로는 인증 없이 누구나 접근 가능
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()

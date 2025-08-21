@@ -18,4 +18,20 @@
 			now()
 		)
 	</insert>
+	
+	 <select id="getChatDeclarationsForMember" resultType="boot.sagu.dto.ChatDeclarationDto" parameterType="long">
+        SELECT
+          declaration_id AS declarationId,
+        declaration_chat_room_id AS declarationChatRoomId,
+        declaration_memberid AS declarationMemberId,
+        declaration_opposite_memberid AS declarationOppositeMemberId,
+        declaration_type AS declarationType,
+        declaration_content AS reportedChatContent,
+        declaration_time AS createdAt,
+        is_read AS isRead
+        FROM chatdeclaration
+        WHERE declaration_opposite_memberid = #{memberId}
+        ORDER BY declaration_time DESC
+    </select>
+    
 </mapper>

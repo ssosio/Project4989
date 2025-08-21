@@ -1,5 +1,7 @@
 package boot.sagu.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 
 import boot.sagu.dto.ChatDeclarationDto;
@@ -8,4 +10,7 @@ import boot.sagu.dto.ChatDeclarationDto;
 public interface ChatDeclarationMapper {
 
 	public void insertDeclaration(ChatDeclarationDto dto);
+	
+	public List<ChatDeclarationDto> getChatDeclarationsForMember(long memberId);
+	
 }
