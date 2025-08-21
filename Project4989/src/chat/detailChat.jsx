@@ -292,13 +292,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 declaration_content: reportDetail
             };
             const response = await axios.post(
-                `http://${SERVER_IP}:${SERVER_PORT}/api/notifications/submit`,
+                `http://${SERVER_IP}:${SERVER_PORT}/submit`,
                 reportData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
             if (response.status === 200 || response.status === 201) {
                 // 커스텀 모달로 변경 필요
-                alert('신고가 접수되었습니다. 감사합니다.');
+                console.log('신고가 접수되었습니다. 감사합니다.');
                 handleReportModalClose();
             } else {
                 // 커스텀 모달로 변경 필요
@@ -378,8 +378,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
                 const sentMessage = response.data;
+                // 🔔 실시간 업데이트: 이미지 전송 즉시 ChatMain에 반영
                 if (onUpdateLastMessage) {
-                    onUpdateLastMessage(chatRoomId, "사진", 'image', sentMessage.createdAt);
+                    const currentTime = sentMessage.createdAt || new Date().toISOString();
+                    onUpdateLastMessage(chatRoomId, "사진", 'image', currentTime);
+
+                    // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
+                    if (onMarkAsRead) {
+                        onMarkAsRead(chatRoomId);
+                    }
                 }
             }
             setSelectedImages([]);
@@ -420,8 +427,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 body: JSON.stringify(webSocketMessage),
             });
 
+            // 🔔 실시간 업데이트: 메시지 전송 즉시 ChatMain에 반영
             if (onUpdateLastMessage) {
-                onUpdateLastMessage(chatRoomId, message, 'text', new Date().toISOString());
+                const currentTime = new Date().toISOString();
+                onUpdateLastMessage(chatRoomId, message, 'text', currentTime);
+
+                // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
+                if (onMarkAsRead) {
+                    onMarkAsRead(chatRoomId);
+                }
             }
 
             // 🔧 추가: 메시지 전송 후 스크롤 처리
@@ -719,7 +733,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         fontSize: '16px'
                     }}>
                         {otherUserInfo?.profileImage ? (
-                            <img src={otherUserInfo.profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={'http://localhost:4989' + otherUserInfo.profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             otherUserInfo?.nickname?.charAt(0) || 'U'
                         )}

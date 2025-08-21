@@ -81,7 +81,7 @@ public class ChatMessageService implements ChatMessageServiceInter{
 	@Override
 	@Transactional
     public void markMessagesAsRead(Long chatRoomId, Long memberId) {
-		 System.out.println("[DEBUG] markMessagesAsRead 시작, chatRoomId: " + chatRoomId + ", memberId: " + memberId);
+		System.out.println("[DEBUG] markMessagesAsRead 시작, chatRoomId: " + chatRoomId + ", memberId: " + memberId);
 		    chatMessageMapper.markMessagesAsRead(chatRoomId, memberId);
 		 System.out.println("[DEBUG] markMessagesAsRead 쿼리 실행 완료");
     }
