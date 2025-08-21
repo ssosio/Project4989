@@ -335,19 +335,64 @@ public class PostsService implements PostsServiceInter {
 	}
 	
 	//검색
-	public List<PostsDto> searchAll(String keyword, String postType, int page, int size) {
+	public List<PostsDto> searchAll(Map<String, Object> searchParams) {
+        // 파라미터 추출 및 정리
+        String keyword = (String) searchParams.get("keyword");
+        String postType = (String) searchParams.get("postType");
+        String status = (String) searchParams.get("status");
+        String tradeType = (String) searchParams.get("tradeType");
+        Integer minPrice = (Integer) searchParams.get("minPrice");
+        Integer maxPrice = (Integer) searchParams.get("maxPrice");
+        Integer minYear = (Integer) searchParams.get("minYear");
+        Integer maxYear = (Integer) searchParams.get("maxYear");
+        Integer minArea = (Integer) searchParams.get("minArea");
+        Integer maxArea = (Integer) searchParams.get("maxArea");
+        String categoryId = (String) searchParams.get("categoryId");
+        String sortBy = (String) searchParams.get("sortBy");
+        String sortOrder = (String) searchParams.get("sortOrder");
+        Integer page = (Integer) searchParams.get("page");
+        Integer size = (Integer) searchParams.get("size");
+        
+        // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
         String pt = (postType == null || postType.isBlank()) ? "ALL" : postType.trim().toUpperCase();
-        int p = Math.max(1, page);
-        int s = Math.max(1, size);
+        String st = (status == null || status.isBlank()) ? "ALL" : status.trim().toUpperCase();
+        String tt = (tradeType == null || tradeType.isBlank()) ? "ALL" : tradeType.trim().toUpperCase();
+        String cat = (categoryId == null || categoryId.isBlank()) ? "ALL" : categoryId.trim();
+        String sb = (sortBy == null || sortBy.isBlank()) ? "" : sortBy.trim();
+        String so = (sortOrder == null || sortOrder.isBlank()) ? "" : sortOrder.trim();
+        
+        int p = Math.max(1, page != null ? page : 1);
+        int s = Math.max(1, size != null ? size : 12);
         int offset = (p - 1) * s;
-        return postMapper.searchAll(kw, pt, s, offset);
+        
+        return postMapper.searchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
+        		minArea, maxArea, cat, sb, so, s, offset);
     }
 
-    public int countSearchAll(String keyword, String postType) {
+    public int countSearchAll(Map<String, Object> searchParams) {
+        // 파라미터 추출 및 정리
+        String keyword = (String) searchParams.get("keyword");
+        String postType = (String) searchParams.get("postType");
+        String status = (String) searchParams.get("status");
+        String tradeType = (String) searchParams.get("tradeType");
+        Integer minPrice = (Integer) searchParams.get("minPrice");
+        Integer maxPrice = (Integer) searchParams.get("maxPrice");
+        Integer minYear = (Integer) searchParams.get("minYear");
+        Integer maxYear = (Integer) searchParams.get("maxYear");
+        Integer minArea = (Integer) searchParams.get("minArea");
+        Integer maxArea = (Integer) searchParams.get("maxArea");
+        String categoryId = (String) searchParams.get("categoryId");
+        
+        // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
         String pt = (postType == null || postType.isBlank()) ? "ALL" : postType.trim().toUpperCase();
-        return postMapper.countSearchAll(kw, pt);
+        String st = (status == null || status.isBlank()) ? "ALL" : status.trim().toUpperCase();
+        String tt = (tradeType == null || tradeType.isBlank()) ? "ALL" : tradeType.trim().toUpperCase();
+        String cat = (categoryId == null || categoryId.isBlank()) ? "ALL" : categoryId.trim();
+        
+        return postMapper.countSearchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
+        		minArea, maxArea, cat);
     }
 	
 }

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -35,6 +36,7 @@ import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/post")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
 public class PostsController {
 	
 	@Autowired
@@ -64,6 +66,99 @@ public class PostsController {
 	@GetMapping("/list")
 	public List<Map<String, Object>> list() {
 	    return postService.getPostListWithNick();
+	}
+	
+	@GetMapping("/search")
+	public ResponseEntity<Map<String, Object>> search(
+			@RequestParam(value = "keyword", required = false) String keyword,
+			@RequestParam(value = "postType", required = false) String postType,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "tradeType", required = false) String tradeType,
+			@RequestParam(value = "minPrice", required = false) Integer minPrice,
+			@RequestParam(value = "maxPrice", required = false) Integer maxPrice,
+			@RequestParam(value = "minYear", required = false) Integer minYear,
+			@RequestParam(value = "maxYear", required = false) Integer maxYear,
+			@RequestParam(value = "minArea", required = false) Integer minArea,
+			@RequestParam(value = "maxArea", required = false) Integer maxArea,
+			@RequestParam(value = "categoryId", required = false) String categoryId,
+			@RequestParam(value = "sortBy", required = false) String sortBy,
+			@RequestParam(value = "sortOrder", required = false) String sortOrder,
+			@RequestParam(value = "page", defaultValue = "1") int page,
+			@RequestParam(value = "size", defaultValue = "12") int size) {
+		
+		try {
+			// 검색 파라미터를 Map으로 구성
+			Map<String, Object> searchParams = new HashMap<>();
+			searchParams.put("keyword", keyword);
+			searchParams.put("postType", postType);
+			searchParams.put("status", status);
+			searchParams.put("tradeType", tradeType);
+			searchParams.put("minPrice", minPrice);
+			searchParams.put("maxPrice", maxPrice);
+			searchParams.put("minYear", minYear);
+			searchParams.put("maxYear", maxYear);
+			searchParams.put("minArea", minArea);
+			searchParams.put("maxArea", maxArea);
+			searchParams.put("categoryId", categoryId);
+			searchParams.put("sortBy", sortBy);
+			searchParams.put("sortOrder", sortOrder);
+			searchParams.put("page", page);
+			searchParams.put("size", size);
+			
+			List<PostsDto> searchResults = postService.searchAll(searchParams);
+			int totalCount = postService.countSearchAll(searchParams);
+			
+			Map<String, Object> response = new HashMap<>();
+			response.put("content", searchResults);
+			response.put("totalElements", totalCount);
+			response.put("currentPage", page);
+			response.put("size", size);
+			response.put("totalPages", (int) Math.ceil((double) totalCount / size));
+			
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			Map<String, Object> errorResponse = new HashMap<>();
+			errorResponse.put("error", "검색 중 오류가 발생했습니다: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+		}
+	}
+	
+	// 테스트용 간단한 검색 엔드포인트
+	@GetMapping("/search-simple")
+	public ResponseEntity<Map<String, Object>> searchSimple(
+			@RequestParam(value = "keyword", required = false) String keyword,
+			@RequestParam(value = "page", defaultValue = "1") int page,
+			@RequestParam(value = "size", defaultValue = "12") int size) {
+		
+		try {
+			// 간단한 검색 파라미터를 Map으로 구성
+			Map<String, Object> searchParams = new HashMap<>();
+			searchParams.put("keyword", keyword);
+			searchParams.put("postType", "ALL");
+			searchParams.put("status", "ALL");
+			searchParams.put("tradeType", "ALL");
+			searchParams.put("categoryId", "ALL");
+			searchParams.put("sortBy", "");
+			searchParams.put("sortOrder", "");
+			searchParams.put("page", page);
+			searchParams.put("size", size);
+			
+			List<PostsDto> searchResults = postService.searchAll(searchParams);
+			int totalCount = postService.countSearchAll(searchParams);
+			
+			Map<String, Object> response = new HashMap<>();
+			response.put("content", searchResults);
+			response.put("totalElements", totalCount);
+			response.put("currentPage", page);
+			response.put("size", size);
+			response.put("totalPages", (int) Math.ceil((double) totalCount / size));
+			
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			Map<String, Object> errorResponse = new HashMap<>();
+			errorResponse.put("error", "검색 중 오류가 발생했습니다: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+		}
 	}
 	
 	@PostMapping("/upload")
@@ -215,23 +310,6 @@ public class PostsController {
 	    return ResponseEntity.ok().build();
 	}
 	
-	//검색
-	 @GetMapping("/search")
-	    public Map<String, Object> search(
-	        @RequestParam String keyword,
-	        @RequestParam(defaultValue = "ALL") String postType, // ALL/CARS/ESTATE/ITEMS
-	        @RequestParam(defaultValue = "1") int page,
-	        @RequestParam(defaultValue = "10") int size
-	    ) {
-	        List<PostsDto> rows = postService.searchAll(keyword, postType, page, size);
-	        int total = postService.countSearchAll(keyword, postType);
 
-	        Map<String, Object> resp = new HashMap<>();
-	        resp.put("rows", rows);
-	        resp.put("total", total);
-	        resp.put("page", page);
-	        resp.put("size", size);
-	        return resp;
-	    }
 	
 }

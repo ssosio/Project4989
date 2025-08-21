@@ -247,13 +247,13 @@ useEffect(() => {
         </div>
 
         {/* search */}
-        <button
+        {/* <button
                 type="button"
                 className="gooddetail-btn"
                 onClick={() => navi(`/board/search`)}
               >
                 search
-              </button>
+              </button> */}
 
         {/* 메인 컨텐츠 영역 */}
         <div className="goods-main-content">
