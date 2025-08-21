@@ -247,6 +247,45 @@
     p.price        AS price,
     p.trade_type    AS tradeType,
     p.content      AS content,
+    p.status      AS status,
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(p.status)
+      WHEN 'ON_SALE' THEN '판매중'
+      WHEN 'SOLD' THEN '판매완료'
+      WHEN 'RESERVED' THEN '예약중'
+      ELSE p.status
+    END AS statusKo,
+    CASE UPPER(p.status)
+      WHEN 'SALE' THEN 'on sale'
+      WHEN 'SOLD' THEN 'sold out'
+      WHEN 'RESERVED' THEN 'reserved'
+      ELSE p.status
+    END AS statusEn,
+    CASE UPPER(p.trade_type)
+      WHEN 'SALE' THEN '판매'
+      WHEN 'AUCTION' THEN '경매'
+      WHEN 'SHARE' THEN '나눔'
+      ELSE p.trade_type
+    END AS trade_typeKo,
+    CASE UPPER(p.trade_type)
+      WHEN 'SALE' THEN 'sale'
+      WHEN 'AUCTION' THEN 'auction'
+      WHEN 'SHARE' THEN 'share'
+      ELSE p.trade_type
+    END AS trade_typeEn,
+    CASE UPPER(p.post_type)
+      WHEN 'ITEMS' THEN '중고물품'
+      WHEN 'CARS' THEN '자동차'
+      WHEN 'REAL_ESTATES' THEN '부동산'
+      ELSE p.post_type
+    END AS post_typeKo,
+    CASE UPPER(p.post_type)
+      WHEN 'ITEMS' THEN 'items'
+      WHEN 'CARS' THEN 'cars'
+      WHEN 'REAL_ESTATES' THEN 'realestates'
+      ELSE p.post_type
+    END AS post_typeEn
 
     -- cars (c_)
     c.post_id       AS c_postId,
@@ -256,7 +295,48 @@
     c.mileage       AS c_mileage,
     c.fuel_type      AS c_fuelType,
     c.transmission  AS c_transmission,
+    c.location      AS c_location,
     c.detail_location AS c_detail_location,
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(c.brand)
+      WHEN 'kia' THEN '기아'
+      WHEN 'hyundai' THEN '현대'
+      WHEN 'benz' THEN '벤츠'
+      WHEN 'audi' THEN '아우디'
+      WHEN 'bmw' THEN '비엠더블유'
+      ELSE c.brand
+    END AS brandKo,
+    CASE UPPER(c.brand)
+      WHEN 'kia' THEN 'KIA'
+      WHEN 'hyundai' THEN 'HYUNDAI'
+      WHEN 'benz' THEN 'BENZ'
+      WHEN 'audi' THEN 'AUDI'
+      WHEN 'bmw' THEN 'BMW'
+      ELSE c.brand
+    END AS brandEn,
+    CASE UPPER(c.fuel_type)
+      WHEN 'gasoline' THEN '휘발유'
+      WHEN 'diesel' THEN '경유'
+      WHEN 'electric' THEN '전기'
+      ELSE c.fuel_type
+    END AS fuel_typeKo,
+    CASE UPPER(c.fuel_type)
+      WHEN 'gasoline' THEN 'GASOLINE'
+      WHEN 'diesel' THEN 'DIESEL'
+      WHEN 'electric' THEN 'ELECTRIC'
+      ELSE c.fuel_type
+    END AS fuel_typeEn,
+    CASE UPPER(c.transmission)
+      WHEN 'auto' THEN '수동'
+      WHEN 'stick' THEN '자동'
+      ELSE c.transmission
+    END AS transmissionKo,
+    CASE UPPER(c.transmission)
+      WHEN 'auto' THEN 'AUTO'
+      WHEN 'stick' THEN 'STICK'
+      ELSE c.transmission
+    END AS transmissionEn,
 
     -- real_estate (re_)
     re.post_id        AS re_postId,
@@ -265,18 +345,76 @@
     re.rooms          AS re_rooms,
     re.floor          AS re_floor,
     re.deal_type       AS re_dealType,
+    re.location        AS re_location,
     re.detail_location AS re_detail_location,
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(re.property_type)
+      WHEN 'apt' THEN '아파트'
+      WHEN 'studio' THEN '오피스텔'
+      WHEN 'oneroom' THEN '원룸'
+      WHEN 'tworoom' THEN '투룸'
+      ELSE re.property_type
+    END AS property_typeKo,
+    CASE UPPER(re.property_type)
+      WHEN 'apt' THEN 'apartment'
+      WHEN 'studio' THEN 'STUDIO'
+      WHEN 'oneroom' THEN 'ONEROOM'
+      WHEN 'tworoom' THEN 'TWOROOM'
+      ELSE re.property_type
+    END AS property_typeEn,
+    CASE UPPER(re.deal_type)
+      WHEN 'lease' THEN '전세'
+      WHEN 'rent' THEN '월세'
+      WHEN 'leaseAndrent' THEN '전월세'
+      WHEN 'buy' THEN '매매'
+      ELSE re.deal_type
+    END AS deal_typeKo,
+    CASE UPPER(re.deal_type)
+      WHEN 'lease' THEN 'LEASE'
+      WHEN 'rent' THEN 'RENT'
+      WHEN 'leaseAndrent' THEN 'LEASEANDRENT'
+      WHEN 'buy' THEN 'BUY'
+      ELSE re.deal_type
+    END AS deal_typeEn,
 
     -- used_items (ui_)
     ui.post_id        AS ui_postId,
-    ui.category       AS ui_category,
+    ui.category_id       AS ui_categoryId,
     ui.conditions     AS ui_conditions,
+    ui.location      AS ui_location,
     ui.detail_location AS ui_detail_location
+    
+    /* 상태 한국어/영어 라벨 */
+    CASE UPPER(ui.conditions)
+      WHEN 'best' THEN '상'
+      WHEN 'good' THEN '중'
+      WHEN 'bad' THEN '하'
+      ELSE ui.conditions
+    END AS conditionsKo,
+    CASE UPPER(ui.conditions)
+      WHEN 'best' THEN 'BEST'
+      WHEN 'good' THEN 'GOOD'
+      WHEN 'bad' THEN 'BAD'
+      ELSE ui.conditions
+    END AS conditionsEn,
+    
+    -- categories (cg_)
+    cg.category_id        AS cg_categoryId,
+    cg.name       AS cg_name
 
   FROM posts p
   LEFT JOIN cars c         ON c.post_id = p.post_id     AND p.post_type = 'CARS'
   LEFT JOIN real_estate re ON re.post_id = p.post_id    AND p.post_type = 'ESTATE'
   LEFT JOIN used_items ui  ON ui.post_id = p.post_id    AND p.post_type = 'ITEMS'
+  
+  FROM categories cg
+  LEFT JOIN used_items ui  ON ui.category_id = cg.category_id
+  
+  FROM regions rg
+  LEFT JOIN cars c         ON c.location = rg.region_id     
+  LEFT JOIN real_estate re ON re.location = p.region_id    
+  LEFT JOIN used_items ui  ON ui.location = p.region_id     
 
   <where>
     <!-- postType 필터: ALL(또는 null)이면 스킵 -->

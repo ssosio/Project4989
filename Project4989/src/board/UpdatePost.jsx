@@ -433,7 +433,7 @@ const UpdatePost = () => {
                             }}>
                                 <option value="" disabled selected>판매타입을 선택해 주세요</option>
                                 <option value="SALE">판매</option>
-                                <option value="AUCTION">경매</option>
+                                <option value="AUCTION" hidden>경매</option>
                                 <option value="SHARE">나눔</option>
                             </select>
                             </label>

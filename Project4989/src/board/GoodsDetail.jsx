@@ -432,9 +432,9 @@ const GoodsDetail = () => {
     }
   };
 
-  const goToPhoto = (index) => {
-    setCurrentPhotoIndex(index);
-  };
+  // const goToPhoto = (index) => {
+  //   setCurrentPhotoIndex(index);
+  // };
 
 
 
@@ -481,7 +481,7 @@ const GoodsDetail = () => {
                 </div>
                 
                 {/* 사진 인디케이터 */}
-                {photos.length > 1 && (
+                {/* {photos.length > 1 && (
                   <div className="gooddetail-slider-indicators">
                     {photos.map((_, index) => (
                       <button
@@ -492,7 +492,7 @@ const GoodsDetail = () => {
                       />
                     ))}
                   </div>
-                )}
+                )} */}
                 
                 {/* 사진 카운터 */}
                 <div className="gooddetail-slider-counter">
@@ -537,9 +537,12 @@ const GoodsDetail = () => {
                 </div>
               </div>
               <div className="gooddetail-metrics-right">
+                  {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
                 <button className="gooddetail-report-btn" onClick={() => setOpen(true)}>
-                  신고하기
-                </button>
+                신고/문의
+              </button>
+      )
+    }
               </div>
             </div>
 
@@ -565,15 +568,54 @@ const GoodsDetail = () => {
                 <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
                 <span>찜 {count}</span>
               </button>
-              <button className="gooddetail-chat-btn" onClick={handleChatToggle}>
-                번개톡
+                {/* 대화 */}
+          {userInfo && userInfo.memberId === post.memberId ? (
+            <>
+              <button className="gooddetail-chat-btn"
+                onClick={handleChatToggle}
+              >
+                대화
               </button>
-              <button className="gooddetail-buy-btn">
-                바로구매
+            </>
+          ) : (
+            <>
+              {/* 비로그인 상태일 때의 버튼들 */}
+              <button className="gooddetail-chat-btn"
+                onClick={() => alert('로그인 후 이용 가능합니다.')}
+              >
+                대화
               </button>
-            </div>
-            <div className="gooddetail-safe-payment">
-              안전결제 수수료 없이 구매하세요
+            </>
+          )}
+
+          {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
+          {userInfo && userInfo.memberId === post.memberId && (
+            <>
+            <button
+                type="button"
+                className="gooddetail-btn"
+                onClick={() => navi(`/board/update?postId=${postId}`)}
+              >
+                수정
+              </button>
+
+              <button
+                type="button"
+                className="gooddetail-btn danger"
+                onClick={handleDeletePost}
+                disabled={deleting}
+              >
+                {deleting ? '삭제 중...' : '삭제'}
+              </button>
+            </>
+          )}
+
+          <button 
+            className="gooddetail-btn secondary"
+            onClick={handleGoBackToList}
+          >
+            목록
+          </button>
             </div>
 
             {/* 메타 정보 */}
@@ -703,66 +745,7 @@ const GoodsDetail = () => {
 
       
 
-        {/* 버튼 액션 섹션 */}
-        <div className="gooddetail-actions">
-          {/* 신고 모달 추가 */}
-      {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
-        <button 
-                className="gooddetail-btn secondary"
-                onClick={() => setOpen(true)}
-              >
-                신고/문의
-              </button>
-      )
-    }
-          {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
-          {userInfo && userInfo.memberId === post.memberId ? (
-            <>
-              <button
-                type="button"
-                className="gooddetail-btn"
-                onClick={() => navi(`/board/update?postId=${postId}`)}
-              >
-                수정
-              </button>
-
-              <button
-                type="button"
-                className="gooddetail-btn danger"
-                onClick={handleDeletePost}
-                disabled={deleting}
-              >
-                {deleting ? '삭제 중...' : '삭제'}
-              </button>
-
-              <button 
-                className="gooddetail-btn"
-                onClick={handleChatToggle}
-              >
-                대화
-              </button>
-
-              
-            </>
-          ) : (
-            <>
-              {/* 비로그인 상태일 때의 버튼들 */}
-              <button 
-                className="gooddetail-btn"
-                onClick={() => alert('로그인 후 이용 가능합니다.')}
-              >
-                대화
-              </button>
-            </>
-          )}
-
-          <button 
-            className="gooddetail-btn secondary"
-            onClick={handleGoBackToList}
-          >
-            목록
-          </button>
-        </div>
+        
 
         {/* 신고 모달 */}
         <ReportModal
