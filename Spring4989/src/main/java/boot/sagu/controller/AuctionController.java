@@ -178,9 +178,9 @@ public class AuctionController {
 
  	//
 	@PostMapping("/{postID}/bid")
-	public ResponseEntity<?> placeBId(@PathVariable Long postId,
-									@RequestParam Long memberId,
-									@RequestParam int bidAmount){
+	public ResponseEntity<?> placeBId(@PathVariable("postID") Long postId,
+									@RequestParam("memberId") Long memberId,
+									@RequestParam("bidAmount") int bidAmount){
 		
 		if(!auctionService.isGuaranteePaid(postId, memberId)) {
 			int startPrice = auctionService.getStartPrice(postId);
@@ -449,7 +449,7 @@ public class AuctionController {
     
     //수동 종료(운영/관리자용)
     @PostMapping("/auction/{postId}/end")
-    public ResponseEntity<?> end(@PathVariable long postId) {
+    public ResponseEntity<?> end(@PathVariable("postId") long postId) {
         String msg = auctionService.endAuction(postId);
         return ResponseEntity.ok(Map.of("message", msg));
     }
@@ -457,9 +457,9 @@ public class AuctionController {
     //낙찰 거래 최종처리(정상완료 환불 or 노쇼 몰수)
     @PostMapping("/auction/{postId}/winner/{winnerId}/finalize")
     public ResponseEntity<?> finalizeWinner(
-            @PathVariable long postId,
-            @PathVariable long winnerId,
-            @RequestParam String action // "REFUND" or "FORFEIT"
+            @PathVariable("postId") long postId,
+            @PathVariable("winnerId") long winnerId,
+            @RequestParam("action") String action // "REFUND" or "FORFEIT"
     ) {
         auctionService.finalizeWinnerGuarantee(postId, winnerId, action);
         return ResponseEntity.ok(Map.of("status", "OK"));
@@ -491,183 +491,112 @@ public class AuctionController {
         }
     }
 
+    // ==================================마이페이지 판매 내역 관련 API==================================
+    
+    // 내 게시글 타입별 개수 조회
+    @GetMapping("/auction/my-posts-counts/{memberId}")
+    public ResponseEntity<Map<String, Object>> getMyPostsCounts(@PathVariable("memberId") int memberId) {
+        try {
+            Map<String, Object> counts = auctionService.getMyPostsCounts(memberId);
+            return ResponseEntity.ok(counts);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "게시글 개수 조회 실패: " + e.getMessage()
+            ));
+        }
+    }
+    
+    // 내 게시글 목록 조회 (페이징 포함)
+    @GetMapping("/auction/my-posts/{memberId}")
+    public ResponseEntity<Map<String, Object>> getMyPosts(
+            @PathVariable("memberId") int memberId,
+            @RequestParam(value = "type", required = false, defaultValue = "all") String type,
+            @RequestParam(value = "status", required = false, defaultValue = "all") String status,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "20") int size
+    ) {
+        try {
+            int offset = (page - 1) * size;
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("memberId", memberId);
+            params.put("type", type);
+            params.put("status", status);
+            params.put("offset", offset);
+            params.put("limit", size);
+            
+            List<PostsDto> posts = auctionService.getMyPosts(params);
+            int totalCount = auctionService.getMyPostsTotalCount(params);
+            int totalPages = (int) Math.ceil((double) totalCount / size);
+            
+            // 상태별 카운트 조회
+            Map<String, Object> statusCounts = auctionService.getMyPostsStatusCounts(params);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("posts", posts);
+            response.put("totalCount", totalCount);
+            response.put("totalPages", totalPages);
+            response.put("currentPage", page);
+            response.put("pageSize", size);
+            response.put("statusCounts", statusCounts);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "게시글 조회 실패: " + e.getMessage()
+            ));
+        }
+    }
 
-	// 내 게시글 타입별 개수 조회 (위쪽 필터용)
-	@GetMapping("/auction/my-posts-counts/{memberId}")
-	public ResponseEntity<Map<String, Object>> getMyPostsCounts(
-			@PathVariable("memberId") long memberId,
-			@RequestHeader(value = "Authorization", required = false) String token
-	) {
-		try {
-			// JWT token validation (self-check)
-			if (token != null && token.startsWith("Bearer ")) {
-				String jwtToken = token.substring(7);
-				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
-				if (tokenMemberId != memberId) {
-					return ResponseEntity.status(403).build(); // Only self can view
-				}
-			}
-			
-			System.out.println("내 게시글 개수 조회 요청: memberId=" + memberId);
-			
-			Map<String, Object> counts = auctionService.getMyPostsCounts(memberId);
-			
-			System.out.println("내 게시글 개수 조회 성공: " + counts);
-			return ResponseEntity.ok(counts);
-		} catch (Exception e) {
-			System.out.println("내 게시글 개수 조회 실패: " + e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(500).build();
-		}
-	}
+    // ==================================마이페이지 입찰 내역 관련 API==================================
+    
+    // 내 입찰 기록 개수 조회
+    @GetMapping("/auction/my-bids-counts/{memberId}")
+    public ResponseEntity<Map<String, Object>> getMyBidsCounts(@PathVariable("memberId") int memberId) {
+        try {
+            Map<String, Object> counts = auctionService.getMyBidsStatusCounts(memberId);
+            int totalCount = auctionService.getMyBidsTotalCount(memberId);
+            counts.put("total", totalCount);
+            return ResponseEntity.ok(counts);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "입찰 기록 개수 조회 실패: " + e.getMessage()
+            ));
+        }
+    }
+    
+    // 내 입찰 기록 목록 조회 (페이징 포함)
+    @GetMapping("/auction/my-bids/{memberId}")
+    public ResponseEntity<Map<String, Object>> getMyBids(
+            @PathVariable("memberId") int memberId,
+            @RequestParam(value = "status", required = false, defaultValue = "all") String status,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "20") int size
+    ) {
+        try {
+            int offset = (page - 1) * size;
+            
+            List<Map<String, Object>> bids = auctionService.getMyBids(memberId, status, offset, size);
+            int totalCount = auctionService.getMyBidsTotalCount(memberId);
+            int totalPages = (int) Math.ceil((double) totalCount / size);
+            
+            // 상태별 카운트 조회
+            Map<String, Object> statusCounts = auctionService.getMyBidsStatusCounts(memberId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("bids", bids);
+            response.put("totalCount", totalCount);
+            response.put("totalPages", totalPages);
+            response.put("currentPage", page);
+            response.put("pageSize", size);
+            response.put("statusCounts", statusCounts);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "입찰 기록 조회 실패: " + e.getMessage()
+            ));
+        }
+    }
 
-	// 내 게시글 조회 (마이페이지 거래내역용)
-	@GetMapping("/auction/my-posts/{memberId}")
-	public ResponseEntity<List<Map<String, Object>>> getMyPosts(
-			@PathVariable("memberId") long memberId,
-			@RequestParam(value = "type", required = false) String type, // all, auction, general, giveaway
-			@RequestParam(value = "status", required = false) String status, // all, active, reserved, completed, bidding, cancelled
-			@RequestHeader(value = "Authorization", required = false) String token
-	) {
-		try {
-			// JWT token validation (self-check)
-			if (token != null && token.startsWith("Bearer ")) {
-				String jwtToken = token.substring(7);
-				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
-				if (tokenMemberId != memberId) {
-					return ResponseEntity.status(403).build(); // Only self can view
-				}
-			}
-			
-			System.out.println("내 게시글 조회 요청: memberId=" + memberId + ", type=" + type + ", status=" + status);
-			
-			List<Map<String, Object>> myPosts = auctionService.getMyPosts(memberId, type, status);
-			
-			System.out.println("내 게시글 조회 성공: " + myPosts.size() + "개 게시글");
-			return ResponseEntity.ok(myPosts);
-		} catch (Exception e) {
-			System.out.println("내 게시글 조회 실패: " + e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(500).build();
-		}
-	}
-
-	// 경매 게시글만 조회
-	@GetMapping("/auction/my-auction-posts/{memberId}")
-	public ResponseEntity<List<Map<String, Object>>> getMyAuctionPosts(
-			@PathVariable("memberId") long memberId,
-			@RequestParam(value = "status", required = false) String status,
-			@RequestHeader(value = "Authorization", required = false) String token
-	) {
-		try {
-			// JWT token validation (self-check)
-			if (token != null && token.startsWith("Bearer ")) {
-				String jwtToken = token.substring(7);
-				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
-				if (tokenMemberId != memberId) {
-					return ResponseEntity.status(403).build();
-				}
-			}
-			
-			System.out.println("내 경매 게시글 조회 요청: memberId=" + memberId + ", status=" + status);
-			
-			List<Map<String, Object>> auctionPosts = auctionService.getMyAuctionPosts(memberId, status);
-			
-			System.out.println("내 경매 게시글 조회 성공: " + auctionPosts.size() + "개 게시글");
-			return ResponseEntity.ok(auctionPosts);
-		} catch (Exception e) {
-			System.out.println("내 경매 게시글 조회 실패: " + e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(500).build();
-		}
-	}
-
-	// 일반거래 게시글만 조회
-	@GetMapping("/auction/my-general-posts/{memberId}")
-	public ResponseEntity<List<Map<String, Object>>> getMyGeneralPosts(
-			@PathVariable("memberId") long memberId,
-			@RequestParam(value = "status", required = false) String status,
-			@RequestHeader(value = "Authorization", required = false) String token
-	) {
-		try {
-			// JWT token validation (self-check)
-			if (token != null && token.startsWith("Bearer ")) {
-				String jwtToken = token.substring(7);
-				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
-				if (tokenMemberId != memberId) {
-					return ResponseEntity.status(403).build();
-				}
-			}
-			
-			System.out.println("내 일반거래 게시글 조회 요청: memberId=" + memberId + ", status=" + status);
-			
-			List<Map<String, Object>> generalPosts = auctionService.getMyGeneralPosts(memberId, status);
-			
-			System.out.println("내 일반거래 게시글 조회 성공: " + generalPosts.size() + "개 게시글");
-			return ResponseEntity.ok(generalPosts);
-		} catch (Exception e) {
-			System.out.println("내 일반거래 게시글 조회 실패: " + e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(500).build();
-		}
-	}
-
-	// 나눔 게시글만 조회
-	@GetMapping("/auction/my-giveaway-posts/{memberId}")
-	public ResponseEntity<List<Map<String, Object>>> getMyGiveawayPosts(
-			@PathVariable("memberId") long memberId,
-			@RequestParam(value = "status", required = false) String status,
-			@RequestHeader(value = "Authorization", required = false) String token
-	) {
-		try {
-			// JWT token validation (self-check)
-			if (token != null && token.startsWith("Bearer ")) {
-				String jwtToken = token.substring(7);
-				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
-				if (tokenMemberId != memberId) {
-					return ResponseEntity.status(403).build();
-				}
-			}
-			
-			System.out.println("내 나눔 게시글 조회 요청: memberId=" + memberId + ", status=" + status);
-			
-			List<Map<String, Object>> giveawayPosts = auctionService.getMyGiveawayPosts(memberId, status);
-			
-			System.out.println("내 나눔 게시글 조회 성공: " + giveawayPosts.size() + "개 게시글");
-			return ResponseEntity.ok(giveawayPosts);
-		} catch (Exception e) {
-			System.out.println("내 나눔 게시글 조회 실패: " + e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(500).build();
-		}
-	}
-
-	// 유찰 게시글만 조회 (경매에서만 발생)
-	@GetMapping("/auction/my-cancelled-auction-posts/{memberId}")
-	public ResponseEntity<List<Map<String, Object>>> getMyCancelledAuctionPosts(
-			@PathVariable("memberId") long memberId,
-			@RequestHeader(value = "Authorization", required = false) String token
-	) {
-		try {
-			// JWT token validation (self-check)
-			if (token != null && token.startsWith("Bearer ")) {
-				String jwtToken = token.substring(7);
-				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
-				if (tokenMemberId != memberId) {
-					return ResponseEntity.status(403).build();
-				}
-			}
-			
-			System.out.println("내 유찰 게시글 조회 요청: memberId=" + memberId);
-			
-			List<Map<String, Object>> cancelledPosts = auctionService.getMyCancelledAuctionPosts(memberId);
-			
-			System.out.println("내 유찰 게시글 조회 성공: " + cancelledPosts.size() + "개 게시글");
-			return ResponseEntity.ok(cancelledPosts);
-		} catch (Exception e) {
-			System.out.println("내 유찰 게시글 조회 실패: " + e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(500).build();
-		}
-	}
 }

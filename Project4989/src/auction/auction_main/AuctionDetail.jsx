@@ -52,9 +52,9 @@ const AuctionDetail = () => {
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  const SERVER_IP = '192.168.10.138';
+  const SERVER_IP = 'localhost';
   const SERVER_PORT = '4989';
-  const BASE = import.meta.env.VITE_API_BASE; // 예: http://192.168.10.138:4989
+  const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4989'; // 예: http://localhost:4989
 
   // 시간 차이 계산
   const getTimeAgo = (bidTime) => {
