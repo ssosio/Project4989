@@ -733,7 +733,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         fontSize: '16px'
                     }}>
                         {otherUserInfo?.profileImage ? (
-                            <img src={'http://localhost:4989' + otherUserInfo.profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={otherUserInfo.profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             otherUserInfo?.nickname?.charAt(0) || 'U'
                         )}
@@ -743,6 +743,24 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
                             {otherUserInfo?.nickname || 'Unknown'}
                         </Typography>
+                        {/* 물품 제목 표시 */}
+                        {chatRoom?.postTitle && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: '#4A90E2',
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    mt: 0.5,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    maxWidth: 250
+                                }}
+                            >
+                                🛍️ {chatRoom.postTitle}
+                            </Typography>
+                        )}
                     </Box>
 
                     <IconButton onClick={toggleSearch}>

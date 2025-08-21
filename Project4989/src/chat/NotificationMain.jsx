@@ -54,7 +54,7 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
     const [notifications, setNotifications] = useState([]);
     const { userInfo, token } = useContext(AuthContext);
     const SERVER_IP = '192.168.10.136';
-    const SERVER_PORT = '4989';
+    const SERVER_PORT = '8080';
 
     // 시간 포맷팅 함수 (채팅에서 가져온 그대로 사용)
     const formatTime = (dateString) => {
