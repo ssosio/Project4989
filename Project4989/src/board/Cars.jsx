@@ -341,7 +341,17 @@ const Cars = () => {
           <h1 className="cars-title">자동차 목록</h1>
           <p className="cars-subtitle">다양한 자동차를 찾아보세요</p>
           {/* 등록 버튼 */}
-            <button type="button" className="cars-register-btn" onClick={() => navi('/board/post')}>
+            <button type="button" className="cars-register-btn" onClick={() => {
+              // 로그인 상태 체크
+              const token = localStorage.getItem('jwtToken');
+              if (!token || token === 'undefined' || token === 'null') {
+                alert('로그인이 필요한 서비스입니다.');
+                navi('/login');
+                return;
+              }
+              // 로그인 상태면 등록 페이지로 이동
+              navi('/board/post');
+            }}>
               자동차 등록하기
             </button>
         </div>
@@ -507,7 +517,17 @@ const Cars = () => {
               <div className="cars-empty">
                 <div className="cars-empty-icon">🚗</div>
                 <div className="cars-empty-text">조건에 맞는 자동차가 없습니다</div>
-                <button className="cars-empty-btn" onClick={() => navi('/board/post')}>
+                <button className="cars-empty-btn" onClick={() => {
+                  // 로그인 상태 체크
+                  const token = localStorage.getItem('jwtToken');
+                  if (!token || token === 'undefined' || token === 'null') {
+                    alert('로그인이 필요한 서비스입니다.');
+                    navi('/login');
+                    return;
+                  }
+                  // 로그인 상태면 등록 페이지로 이동
+                  navi('/board/post');
+                }}>
                   첫 번째 자동차 등록하기
                 </button>
               </div>

@@ -284,7 +284,17 @@ const Real_estate = () => {
         <div className="real-estate-header">
           <h1 className="real-estate-title">부동산 목록</h1>
           <p className="real-estate-subtitle">다양한 부동산을 찾아보세요</p>
-          <button type='button' className="real-estate-register-btn" onClick={() => navi("/board/post")}>
+          <button type='button' className="real-estate-register-btn" onClick={() => {
+            // 로그인 상태 체크
+            const token = localStorage.getItem('jwtToken');
+            if (!token || token === 'undefined' || token === 'null') {
+              alert('로그인이 필요한 서비스입니다.');
+              navi('/login');
+              return;
+            }
+            // 로그인 상태면 등록 페이지로 이동
+            navi("/board/post");
+          }}>
               부동산 등록하기
             </button>
         </div>
@@ -455,7 +465,17 @@ const Real_estate = () => {
               <div className="real-estate-empty">
                 <div className="real-estate-empty-icon">🏠</div>
                 <div className="real-estate-empty-text">조건에 맞는 부동산이 없습니다</div>
-                <button className="real-estate-empty-btn" onClick={() => navi("/board/post")}>
+                <button className="real-estate-empty-btn" onClick={() => {
+                  // 로그인 상태 체크
+                  const token = localStorage.getItem('jwtToken');
+                  if (!token || token === 'undefined' || token === 'null') {
+                    alert('로그인이 필요한 서비스입니다.');
+                    navi('/login');
+                    return;
+                  }
+                  // 로그인 상태면 등록 페이지로 이동
+                  navi("/board/post");
+                }}>
                   첫 번째 부동산 등록하기
                 </button>
               </div>

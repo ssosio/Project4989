@@ -239,6 +239,14 @@ useEffect(() => {
               type='button'
               className="goods-register-btn"
               onClick={() => {
+                // 로그인 상태 체크
+                const token = localStorage.getItem('jwtToken');
+                if (!token || token === 'undefined' || token === 'null') {
+                  alert('로그인이 필요한 서비스입니다.');
+                  navi('/login');
+                  return;
+                }
+                // 로그인 상태면 등록 페이지로 이동
                 navi("/board/post");
               }}
             >
