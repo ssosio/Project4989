@@ -256,11 +256,298 @@
 		WHERE post_id = #{postId}
 	</update>
 	
-	<!-- 보증금 단건 조회 -->
+		<!-- 보증금 단건 조회 -->
 	<select id="findGuarantee" resultType="boot.sagu.dto.AuctionGuaranteeDTO">
 	  SELECT * FROM auction_guarantees
 	  WHERE post_id = #{postId} AND member_id = #{memberId}
 	  LIMIT 1
+	</select>
+
+	<!-- 내 게시글 타입별 개수 조회 (위쪽 필터용) -->
+	<select id="getMyPostsCounts" resultType="map">
+		SELECT 
+			COUNT(*) as total,
+			SUM(CASE WHEN trade_type = 'AUCTION' THEN 1 ELSE 0 END) as auction,
+			SUM(CASE WHEN trade_type = 'SALE' THEN 1 ELSE 0 END) as general,
+			SUM(CASE WHEN trade_type = 'SHARE' THEN 1 ELSE 0 END) as giveaway,
+			SUM(CASE WHEN trade_type = 'AUCTION' AND status = 'SOLD' AND winner_id IS NULL THEN 1 ELSE 0 END) as cancelled
+		FROM posts 
+		WHERE member_id = #{memberId}
+	</select>
+
+	<!-- 내 게시글 조회 (마이페이지 거래내역용) -->
+	<select id="getMyPosts" resultType="map">
+		<![CDATA[
+		SELECT 
+			p.post_id as postId,
+			p.title,
+			p.content as description,
+			p.price,
+			p.trade_type as tradeType,
+			p.status,
+			p.auction_end_time as endTime,
+			p.view_count as viewCount,
+			p.created_at as postDate,
+			p.updated_at as updatedAt,
+			p.winner_id as winnerId,
+			m.nickname as seller,
+			(SELECT CONCAT('/save/', photo_url) 
+			 FROM post_photos 
+			 WHERE post_id = p.post_id AND is_main = 1 
+			 LIMIT 1) as image,
+
+			CASE 
+				WHEN p.trade_type = 'AUCTION' THEN 'auction'
+				WHEN p.trade_type = 'SHARE' THEN 'giveaway'
+				ELSE 'general'
+			END as type,
+			CASE 
+				WHEN p.trade_type = 'AUCTION' AND p.status = 'ON_SALE' AND p.auction_end_time > NOW() THEN 'active'
+				WHEN p.trade_type = 'AUCTION' AND p.status = 'ON_SALE' AND p.auction_end_time <= NOW() AND p.winner_id IS NULL THEN 'cancelled'
+				WHEN p.trade_type = 'AUCTION' AND p.status = 'SOLD' THEN 'completed'
+				WHEN p.trade_type = 'AUCTION' AND p.status = 'RESERVED' THEN 'reserved'
+				WHEN p.trade_type != 'AUCTION' AND p.status = 'ON_SALE' THEN 'active'
+				WHEN p.trade_type != 'AUCTION' AND p.status = 'SOLD' THEN 'completed'
+				WHEN p.trade_type != 'AUCTION' AND p.status = 'RESERVED' THEN 'reserved'
+				ELSE 'cancelled'
+			END as postStatus,
+			CASE WHEN p.trade_type = 'AUCTION' THEN 
+				(SELECT COUNT(*) FROM auction_bids WHERE post_id = p.post_id)
+			ELSE 0 END as biddersCount,
+			CASE WHEN p.trade_type = 'AUCTION' THEN 
+				(SELECT IFNULL(MAX(bid_amount), p.price) FROM auction_bids WHERE post_id = p.post_id)
+			ELSE p.price END as currentPrice,
+			CASE WHEN p.winner_id IS NOT NULL THEN 
+				(SELECT nickname FROM members WHERE member_id = p.winner_id)
+			ELSE NULL END as buyerName,
+			CASE WHEN p.trade_type = 'AUCTION' AND p.auction_end_time < NOW() THEN false
+				 WHEN p.trade_type = 'AUCTION' THEN true
+				 ELSE NULL END as isActive
+		FROM posts p
+		JOIN members m ON p.member_id = m.member_id
+		WHERE p.member_id = #{memberId}
+		]]>
+		<if test="type != null and type != 'all'">
+			<choose>
+				<when test="type == 'auction'">
+					AND p.trade_type = 'AUCTION'
+				</when>
+				<when test="type == 'general'">
+					AND p.trade_type = 'SALE'
+				</when>
+				<when test="type == 'giveaway'">
+					AND p.trade_type = 'SHARE'
+				</when>
+			</choose>
+		</if>
+		<if test="status != null and status != 'all'">
+			<choose>
+				<when test="status == 'active'">
+					AND ((p.trade_type = 'AUCTION' AND p.status = 'ON_SALE' AND p.auction_end_time &gt; NOW()) OR (p.trade_type != 'AUCTION' AND p.status = 'ON_SALE'))
+				</when>
+				<when test="status == 'reserved'">
+					AND p.status = 'RESERVED'
+				</when>
+				<when test="status == 'completed'">
+					AND p.status = 'SOLD'
+				</when>
+				<when test="status == 'bidding'">
+					AND p.trade_type = 'AUCTION' AND p.auction_end_time &gt; NOW() AND p.status = 'ON_SALE'
+				</when>
+				<when test="status == 'cancelled'">
+					AND (p.trade_type = 'AUCTION' AND p.auction_end_time &lt;= NOW() AND p.winner_id IS NULL)
+				</when>
+			</choose>
+		</if>
+		ORDER BY p.created_at DESC
+	</select>
+
+	<!-- 경매 게시글만 조회 -->
+	<select id="getMyAuctionPosts" resultType="map">
+		<![CDATA[
+		SELECT 
+			p.post_id as postId,
+			p.title,
+			p.content as description,
+			p.price,
+			p.trade_type as tradeType,
+			p.status,
+			p.auction_end_time as endTime,
+			p.view_count as viewCount,
+			p.created_at as createdAt,
+			p.updated_at as updatedAt,
+			p.winner_id as winnerId,
+			m.nickname as seller,
+			(SELECT CONCAT('/save/', photo_url) 
+			 FROM post_photos 
+			 WHERE post_id = p.post_id AND is_main = 1 
+			 LIMIT 1) as image,
+			'auction' as type,
+			CASE 
+				WHEN p.status = 'ON_SALE' AND p.auction_end_time > NOW() THEN 'active'
+				WHEN p.status = 'ON_SALE' AND p.auction_end_time <= NOW() AND p.winner_id IS NULL THEN 'cancelled'
+				WHEN p.status = 'SOLD' THEN 'completed'
+				WHEN p.status = 'RESERVED' THEN 'reserved'
+				ELSE 'cancelled'
+			END as postStatus,
+			(SELECT COUNT(*) FROM auction_bids WHERE post_id = p.post_id) as biddersCount,
+			(SELECT IFNULL(MAX(bid_amount), p.price) FROM auction_bids WHERE post_id = p.post_id) as currentPrice,
+			CASE WHEN p.winner_id IS NOT NULL THEN 
+				(SELECT nickname FROM members WHERE member_id = p.winner_id)
+			ELSE NULL END as buyerName,
+			CASE WHEN p.auction_end_time < NOW() THEN false ELSE true END as isActive
+		FROM posts p
+		JOIN members m ON p.member_id = m.member_id
+		WHERE p.member_id = #{memberId} AND p.trade_type = 'AUCTION'
+		]]>
+		<if test="status != null and status != 'all'">
+			<choose>
+				<when test="status == 'active'">
+					AND p.status = 'ON_SALE' AND p.auction_end_time &gt; NOW()
+				</when>
+				<when test="status == 'reserved'">
+					AND p.status = 'RESERVED'
+				</when>
+				<when test="status == 'completed'">
+					AND p.status = 'SOLD'
+				</when>
+				<when test="status == 'bidding'">
+					AND p.auction_end_time &gt; NOW() AND p.status = 'ON_SALE'
+				</when>
+				<when test="status == 'cancelled'">
+					AND p.auction_end_time &lt;= NOW() AND p.winner_id IS NULL
+				</when>
+			</choose>
+		</if>
+		ORDER BY p.created_at DESC
+	</select>
+
+	<!-- 일반거래 게시글만 조회 -->
+	<select id="getMyGeneralPosts" resultType="map">
+		<![CDATA[
+		SELECT 
+			p.post_id as postId,
+			p.title,
+			p.content as description,
+			p.price,
+			p.trade_type as tradeType,
+			p.status,
+			p.view_count as viewCount,
+			p.created_at as createdAt,
+			p.updated_at as updatedAt,
+			m.nickname as seller,
+			(SELECT CONCAT('/save/', photo_url) 
+			 FROM post_photos 
+			 WHERE post_id = p.post_id AND is_main = 1 
+			 LIMIT 1) as image,
+			'general' as type,
+			CASE 
+				WHEN p.status = 'ON_SALE' THEN 'active'
+				WHEN p.status = 'SOLD' THEN 'completed'
+				WHEN p.status = 'RESERVED' THEN 'reserved'
+				ELSE 'active'
+			END as postStatus,
+			p.price as currentPrice
+		FROM posts p
+		JOIN members m ON p.member_id = m.member_id
+		WHERE p.member_id = #{memberId} AND p.trade_type = 'SALE'
+		]]>
+		<if test="status != null and status != 'all'">
+			<choose>
+				<when test="status == 'active'">
+					AND p.status = 'ON_SALE'
+				</when>
+				<when test="status == 'reserved'">
+					AND p.status = 'RESERVED'
+				</when>
+				<when test="status == 'completed'">
+					AND p.status = 'SOLD'
+				</when>
+			</choose>
+		</if>
+		ORDER BY p.created_at DESC
+	</select>
+
+	<!-- 나눔 게시글만 조회 -->
+	<select id="getMyGiveawayPosts" resultType="map">
+		<![CDATA[
+		SELECT 
+			p.post_id as postId,
+			p.title,
+			p.content as description,
+			p.price,
+			p.trade_type as tradeType,
+			p.status,
+			p.view_count as viewCount,
+			p.created_at as createdAt,
+			p.updated_at as updatedAt,
+			m.nickname as seller,
+			(SELECT CONCAT('/save/', photo_url) 
+			 FROM post_photos 
+			 WHERE post_id = p.post_id AND is_main = 1 
+			 LIMIT 1) as image,
+			'giveaway' as type,
+			CASE 
+				WHEN p.status = 'ON_SALE' THEN 'active'
+				WHEN p.status = 'SOLD' THEN 'completed'
+				WHEN p.status = 'RESERVED' THEN 'reserved'
+				ELSE 'active'
+			END as postStatus,
+			'무료' as currentPrice
+		FROM posts p
+		JOIN members m ON p.member_id = m.member_id
+		WHERE p.member_id = #{memberId} AND p.trade_type = 'SHARE'
+		]]>
+		<if test="status != null and status != 'all'">
+			<choose>
+				<when test="status == 'active'">
+					AND p.status = 'ON_SALE'
+				</when>
+				<when test="status == 'reserved'">
+					AND p.status = 'RESERVED'
+				</when>
+				<when test="status == 'completed'">
+					AND p.status = 'SOLD'
+				</when>
+			</choose>
+		</if>
+		ORDER BY p.created_at DESC
+	</select>
+
+	<!-- 유찰 게시글만 조회 (경매에서만 발생) -->
+	<select id="getMyCancelledAuctionPosts" resultType="map">
+		<![CDATA[
+		SELECT 
+			p.post_id as postId,
+			p.title,
+			p.content as description,
+			p.price,
+			p.trade_type as tradeType,
+			p.status,
+			p.auction_end_time as endTime,
+			p.view_count as viewCount,
+			p.created_at as createdAt,
+			p.updated_at as updatedAt,
+			p.winner_id as winnerId,
+			m.nickname as seller,
+			(SELECT CONCAT('/save/', photo_url) 
+			 FROM post_photos 
+			 WHERE post_id = p.post_id AND is_main = 1 
+			 LIMIT 1) as image,
+			'auction' as type,
+			'cancelled' as postStatus,
+			(SELECT COUNT(*) FROM auction_bids WHERE post_id = p.post_id) as biddersCount,
+			(SELECT IFNULL(MAX(bid_amount), p.price) FROM auction_bids WHERE post_id = p.post_id) as currentPrice,
+			NULL as buyerName,
+			false as isActive
+		FROM posts p
+		JOIN members m ON p.member_id = m.member_id
+		WHERE p.member_id = #{memberId} 
+		AND p.trade_type = 'AUCTION' 
+		AND p.status = 'SOLD' 
+		AND p.winner_id IS NULL
+		ORDER BY p.created_at DESC
+		]]>
 	</select>
 	
 </mapper> 

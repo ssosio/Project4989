@@ -33,7 +33,10 @@ import {
   Share as ShareIcon,
   Sort as SortIcon,
   FilterList as FilterIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Gavel as GavelIcon,
+  Store as StoreIcon,
+  AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
 
 const WishlistSection = ({ userInfo }) => {
@@ -44,83 +47,134 @@ const WishlistSection = ({ userInfo }) => {
   const [priceFilter, setPriceFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(true);
+  const [typeFilter, setTypeFilter] = useState('all'); // all, auction, general
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
   // 가상의 위시리스트 데이터 (실제로는 API에서 가져와야 함)
   useEffect(() => {
     const mockWishlist = [
+      // 경매 상품들
       {
         id: 1,
-        productName: 'Apple MacBook Pro 16인치',
-        price: 3500000,
-        originalPrice: 3800000,
-        category: '전자기기',
-        image: 'https://placehold.co/300x200/007AFF/FFFFFF?text=MacBook+Pro',
+        productName: '2023년식 현대 아반떼 CN7 (경매)',
+        price: 15500000,
+        originalPrice: 18000000,
+        currentPrice: 15500000,
+        category: '중고차',
+        image: 'https://placehold.co/300x200/007AFF/FFFFFF?text=아반떼+경매',
         isAvailable: true,
         addedDate: '2024-01-15',
-        seller: '애플스토어',
-        description: 'M3 Pro 칩 탑재, 16GB 통합 메모리, 512GB SSD'
+        seller: '개인판매자',
+        description: '무사고 차량, 정기점검 완료, 실주행 3만km',
+        type: 'auction', // 경매 글
+        endTime: '2024-08-20T15:00:00',
+        biddersCount: 12,
+        isActive: true
       },
       {
         id: 2,
-        productName: 'Nike Air Jordan 1 Retro High',
-        price: 250000,
-        originalPrice: 250000,
-        category: '신발',
-        image: 'https://placehold.co/300x200/000000/FFFFFF?text=Air+Jordan+1',
+        productName: 'Apple MacBook Pro 16인치 M3 (경매)',
+        price: 3200000,
+        originalPrice: 3800000,
+        currentPrice: 3200000,
+        category: '전자기기',
+        image: 'https://placehold.co/300x200/000000/FFFFFF?text=MacBook+경매',
         isAvailable: true,
         addedDate: '2024-01-18',
-        seller: '나이키 공식몰',
-        description: '클래식한 디자인, 프리미엄 가죽 소재'
+        seller: '애플스토어',
+        description: 'M3 Pro 칩, 16GB 메모리, 512GB SSD, 새상품급',
+        type: 'auction', // 경매 글
+        endTime: '2024-08-19T20:30:00',
+        biddersCount: 8,
+        isActive: true
       },
       {
         id: 3,
-        productName: 'Sony WH-1000XM5 헤드폰',
-        price: 450000,
-        originalPrice: 500000,
-        category: '전자기기',
-        image: 'https://placehold.co/300x200/000000/FFFFFF?text=Sony+WH-1000XM5',
-        isAvailable: false,
+        productName: 'Rolex Submariner 시계 (경매)',
+        price: 12500000,
+        originalPrice: 15000000,
+        currentPrice: 12500000,
+        category: '시계',
+        image: 'https://placehold.co/300x200/FFD700/000000?text=Rolex+경매',
+        isAvailable: true,
         addedDate: '2024-01-20',
-        seller: '소니코리아',
-        description: '업계 최고 수준의 노이즈 캔슬링, 30시간 배터리'
+        seller: '명품시계매장',
+        description: '정품 인증서 포함, A/S 가능, 컬렉션용',
+        type: 'auction', // 경매 글
+        endTime: '2024-08-17T14:00:00',
+        biddersCount: 18,
+        isActive: false // 종료된 경매
       },
+      // 일반 상품들
       {
         id: 4,
-        productName: 'Starbucks Reserve 커피 세트',
-        price: 120000,
-        originalPrice: 150000,
-        category: '식품',
-        image: 'https://placehold.co/300x200/006241/FFFFFF?text=Coffee+Set',
+        productName: 'Nike Air Jordan 1 Retro High (일반)',
+        price: 250000,
+        originalPrice: 280000,
+        category: '신발',
+        image: 'https://placehold.co/300x200/DC143C/FFFFFF?text=Jordan+일반',
         isAvailable: true,
         addedDate: '2024-01-22',
-        seller: '스타벅스',
-        description: '프리미엄 원두 5종, 전용 그라인더 포함'
+        seller: '나이키 공식몰',
+        description: '클래식한 디자인, 프리미엄 가죽 소재',
+        type: 'general' // 일반 상품글
       },
       {
         id: 5,
-        productName: 'Adidas Ultraboost 22',
-        price: 280000,
-        originalPrice: 320000,
-        category: '신발',
-        image: 'https://placehold.co/300x200/000000/FFFFFF?text=Ultraboost+22',
-        isAvailable: true,
+        productName: 'Sony WH-1000XM5 헤드폰 (일반)',
+        price: 450000,
+        originalPrice: 500000,
+        category: '전자기기',
+        image: 'https://placehold.co/300x200/000000/FFFFFF?text=Sony+일반',
+        isAvailable: false,
         addedDate: '2024-01-25',
-        seller: '아디다스',
-        description: '부스터 중창, 프라임니트 어퍼, 가벼운 착용감'
+        seller: '소니코리아',
+        description: '업계 최고 수준의 노이즈 캔슬링, 30시간 배터리',
+        type: 'general' // 일반 상품글
       },
       {
         id: 6,
-        productName: 'Samsung Galaxy Watch 6',
+        productName: 'Starbucks Reserve 커피 세트 (일반)',
+        price: 120000,
+        originalPrice: 150000,
+        category: '식품',
+        image: 'https://placehold.co/300x200/006241/FFFFFF?text=Coffee+일반',
+        isAvailable: true,
+        addedDate: '2024-01-28',
+        seller: '스타벅스',
+        description: '프리미엄 원두 5종, 전용 그라인더 포함',
+        type: 'general' // 일반 상품글
+      },
+      {
+        id: 7,
+        productName: 'Samsung Galaxy Watch 6 (일반)',
         price: 350000,
         originalPrice: 400000,
         category: '전자기기',
-        image: 'https://placehold.co/300x200/1428A0/FFFFFF?text=Galaxy+Watch+6',
+        image: 'https://placehold.co/300x200/1428A0/FFFFFF?text=Watch+일반',
         isAvailable: true,
-        addedDate: '2024-01-28',
+        addedDate: '2024-01-30',
         seller: '삼성전자',
-        description: '44mm, LTE 모델, 심박수 모니터링, GPS'
+        description: '44mm, LTE 모델, 심박수 모니터링, GPS',
+        type: 'general' // 일반 상품글
+      },
+      {
+        id: 8,
+        productName: 'BMW 520i 2022년식 (경매)',
+        price: 42000000,
+        originalPrice: 55000000,
+        currentPrice: 42000000,
+        category: '중고차',
+        image: 'https://placehold.co/300x200/0066CC/FFFFFF?text=BMW+경매',
+        isAvailable: true,
+        addedDate: '2024-02-01',
+        seller: 'BMW 코리아',
+        description: '무사고 차량, 풀옵션, 정품 네비게이션',
+        type: 'auction', // 경매 글
+        endTime: '2024-08-21T16:00:00',
+        biddersCount: 25,
+        isActive: true
       }
     ];
     setWishlist(mockWishlist);
@@ -137,6 +191,9 @@ const WishlistSection = ({ userInfo }) => {
       // 카테고리 필터
       const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
       
+      // 타입 필터 (경매/일반)
+      const matchesType = typeFilter === 'all' || item.type === typeFilter;
+      
       // 가격 필터
       let matchesPrice = true;
       if (priceFilter === 'under100k') matchesPrice = item.price < 100000;
@@ -147,7 +204,7 @@ const WishlistSection = ({ userInfo }) => {
       // 재고 상태 필터
       const matchesAvailability = !showOnlyAvailable || item.isAvailable;
       
-      return matchesSearch && matchesCategory && matchesPrice && matchesAvailability;
+      return matchesSearch && matchesCategory && matchesType && matchesPrice && matchesAvailability;
     });
 
     // 정렬 적용
@@ -169,7 +226,7 @@ const WishlistSection = ({ userInfo }) => {
     });
 
     setFilteredWishlist(filtered);
-  }, [wishlist, searchTerm, categoryFilter, priceFilter, sortBy, showOnlyAvailable]);
+  }, [wishlist, searchTerm, categoryFilter, typeFilter, priceFilter, sortBy, showOnlyAvailable]);
 
   // 위시리스트에서 제거
   const handleRemoveFromWishlist = (itemId) => {
@@ -238,7 +295,27 @@ const WishlistSection = ({ userInfo }) => {
           </Grid>
           <Grid item xs={6} sm={3}>
             <Card sx={{ textAlign: 'center', p: 2 }}>
+              <Typography variant="h6" color="warning.main">
+                {wishlist.filter(item => item.type === 'auction').length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                경매 상품
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ textAlign: 'center', p: 2 }}>
               <Typography variant="h6" color="success.main">
+                {wishlist.filter(item => item.type === 'general').length}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                일반 상품
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Card sx={{ textAlign: 'center', p: 2 }}>
+              <Typography variant="h6" color="info.main">
                 {wishlist.filter(item => item.isAvailable).length}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -246,27 +323,34 @@ const WishlistSection = ({ userInfo }) => {
               </Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h6" color="warning.main">
-                {wishlist.filter(item => item.originalPrice > item.price).length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                할인 상품
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h6" color="info.main">
-                {formatPrice(wishlist.reduce((sum, item) => sum + item.price, 0))}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                총 가격
-              </Typography>
-            </Card>
-          </Grid>
         </Grid>
+      </Box>
+
+      {/* 타입 필터 버튼 */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        <Button
+          variant={typeFilter === 'all' ? 'contained' : 'outlined'}
+          onClick={() => setTypeFilter('all')}
+          startIcon={<FilterIcon />}
+        >
+          전체 ({wishlist.length})
+        </Button>
+        <Button
+          variant={typeFilter === 'auction' ? 'contained' : 'outlined'}
+          color="warning"
+          onClick={() => setTypeFilter('auction')}
+          startIcon={<GavelIcon />}
+        >
+          경매만 보기 ({wishlist.filter(item => item.type === 'auction').length})
+        </Button>
+        <Button
+          variant={typeFilter === 'general' ? 'contained' : 'outlined'}
+          color="success"
+          onClick={() => setTypeFilter('general')}
+          startIcon={<StoreIcon />}
+        >
+          일반상품만 보기 ({wishlist.filter(item => item.type === 'general').length})
+        </Button>
       </Box>
 
       {/* 검색 및 필터 */}
@@ -413,6 +497,24 @@ const WishlistCard = ({
 }) => {
   const hasDiscount = item.originalPrice > item.price;
   const discountPercentage = hasDiscount ? getDiscountPercentage(item.originalPrice, item.price) : 0;
+  
+  // 경매 상품 남은 시간 계산
+  const getTimeRemaining = (endTime) => {
+    if (!endTime) return '';
+    const now = new Date();
+    const end = new Date(endTime);
+    const diff = end - now;
+    
+    if (diff <= 0) return '종료됨';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `${days}일 ${hours}시간`;
+    if (hours > 0) return `${hours}시간 ${minutes}분`;
+    return `${minutes}분`;
+  };
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -426,7 +528,21 @@ const WishlistCard = ({
           sx={{ objectFit: 'cover' }}
         />
         
-        {/* 할인 배지 */}
+        {/* 상품 타입 배지 */}
+        <Chip
+          label={item.type === 'auction' ? '경매' : '일반'}
+          color={item.type === 'auction' ? 'warning' : 'success'}
+          size="small"
+          icon={item.type === 'auction' ? <GavelIcon /> : <StoreIcon />}
+          sx={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            fontWeight: 'bold'
+          }}
+        />
+        
+        {/* 할인 배지 (할인이 있는 경우) */}
         {hasDiscount && (
           <Chip
             label={`${discountPercentage}% 할인`}
@@ -434,7 +550,7 @@ const WishlistCard = ({
             size="small"
             sx={{
               position: 'absolute',
-              top: 8,
+              top: item.type === 'auction' ? 48 : 8,
               left: 8,
               fontWeight: 'bold'
             }}
@@ -453,6 +569,28 @@ const WishlistCard = ({
             fontWeight: 'bold'
           }}
         />
+        
+        {/* 경매 남은 시간 (경매 상품이고 진행중인 경우) */}
+        {item.type === 'auction' && item.endTime && item.isActive && (
+          <Box sx={{
+            position: 'absolute',
+            bottom: 8,
+            left: 8,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}>
+            <AccessTimeIcon fontSize="small" />
+            <Typography variant="caption" fontWeight="bold">
+              {getTimeRemaining(item.endTime)}
+            </Typography>
+          </Box>
+        )}
         
         {/* 액션 버튼들 */}
         <Box sx={{
@@ -513,6 +651,13 @@ const WishlistCard = ({
           판매자: {item.seller}
         </Typography>
         
+        {/* 경매 상품 추가 정보 */}
+        {item.type === 'auction' && (
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            참여자: {item.biddersCount}명 | 상태: {item.isActive ? '진행중' : '종료'}
+          </Typography>
+        )}
+        
         <Typography variant="body2" color="text.secondary" gutterBottom>
           추가일: {formatDate(item.addedDate)}
         </Typography>
@@ -532,15 +677,28 @@ const WishlistCard = ({
 
           {/* 액션 버튼 */}
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="contained"
-              startIcon={<ShoppingCartIcon />}
-              fullWidth
-              disabled={!item.isAvailable}
-              onClick={() => onAddToCart(item)}
-            >
-              {item.isAvailable ? '장바구니' : '품절'}
-            </Button>
+            {item.type === 'auction' ? (
+              <Button
+                variant="contained"
+                color="warning"
+                startIcon={<GavelIcon />}
+                fullWidth
+                disabled={!item.isActive}
+                onClick={() => onView(item)}
+              >
+                {item.isActive ? '경매 참여' : '경매 종료'}
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                startIcon={<ShoppingCartIcon />}
+                fullWidth
+                disabled={!item.isAvailable}
+                onClick={() => onAddToCart(item)}
+              >
+                {item.isAvailable ? '장바구니' : '품절'}
+              </Button>
+            )}
           </Box>
         </Box>
       </CardContent>
