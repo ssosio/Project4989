@@ -285,6 +285,12 @@ export const Header = () => {
                   navi('/mypage');
                   handleClose();
                 }}>마이페이지</MenuItem>
+                {userInfo.role === 'ROLE_ADMIN' && (
+                  <MenuItem onClick={() => {
+                    navi('/admin');
+                    handleClose();
+                  }}>관리자페이지</MenuItem>
+                )}
                 <MenuItem onClick={() => {
                   handleLogout();
                   handleClose();

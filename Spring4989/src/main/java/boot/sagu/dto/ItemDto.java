@@ -8,12 +8,12 @@ import lombok.Data;
 @Alias("item")
 public class ItemDto {
 
-	private Long itemId;
-	private Long postId;
-	private int categoryId;
-	private String conditions;
-	private int location;
-	private String detail_location;
-	private double latitude;
-	private double longitude;
+   private Long itemId;
+   private Long postId;
+   private int categoryId;
+   private String conditions;
+   private int location;
+   private String detail_location;
+   private double latitude;
+   private double longitude;
 }

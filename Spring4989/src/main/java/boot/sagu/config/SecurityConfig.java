@@ -102,6 +102,14 @@ public class SecurityConfig {
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid").permitAll()
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
+                .requestMatchers("/api/region/**","/api/member-region/register").permitAll()
+                .requestMatchers("/api/member-region/addresses/**").authenticated()
+                .requestMatchers("/submit").authenticated()
+                // 경매 조회용 API는 인증 불필요
+                .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()
+                // 경매 방 인원수 관련 API는 인증 불필요
+                .requestMatchers("/auction/room/**").permitAll()
+                .requestMatchers("/auction/photos/	**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
                 .requestMatchers("/api/region/**","/api/member-region/**").permitAll()
 
                 // 경매 조회/방(공개)

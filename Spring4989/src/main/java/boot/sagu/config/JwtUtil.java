@@ -70,6 +70,7 @@ public class JwtUtil {
         claims.put("nickname", member.getNickname());
         claims.put("loginid", member.getLoginId());
         claims.put("memberId", member.getMemberId());
+        claims.put("role", member.getRole());
         claims.put("profileImageUrl", member.getProfileImageUrl());
         // 필요하다면 다른 정보도 추가 가능
         // claims.put("role", member.getRole()); 

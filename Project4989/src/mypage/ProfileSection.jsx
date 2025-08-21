@@ -39,6 +39,7 @@ const ProfileSection = ({ userInfo }) => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true); // 주소 목록 로딩 상태
 
   // 주소 목록 상태 추가
   const [addresses, setAddresses] = useState([
@@ -78,6 +79,7 @@ const ProfileSection = ({ userInfo }) => {
   // 컴포넌트 마운트 시 사용자 정보 가져오기
   useEffect(() => {
     fetchUserProfile();
+    fetchMemberAddresses(); // 컴포넌트 마운트 시 주소 목록 로드
   }, []);
 
   // 토큰 유효성 검사 및 자동 로그아웃 처리
@@ -156,6 +158,48 @@ const ProfileSection = ({ userInfo }) => {
       }
 
       setMessage({ type: 'error', text: '프로필 정보를 가져오는데 실패했습니다.' });
+    }
+  };
+
+  // 주소 목록 불러오기 (DB 연동)
+  const fetchMemberAddresses = async () => {
+    try {
+      setIsLoadingAddresses(true);
+      const token = localStorage.getItem('jwtToken');
+      
+      if (!token) {
+        console.log('No token found for address fetch!');
+        return;
+      }
+
+      const response = await axios.get(`http://localhost:4989/api/member-region/addresses?loginId=${userInfo.loginId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('API 응답 원본 데이터:', response.data);
+      
+      // API 응답을 UI에 맞게 변환 (동까지만 표시)
+      const formattedAddresses = response.data.map(item => ({
+        id: item.member_region_id,
+        address: `${item.province} ${item.city || ''} ${item.district || ''} ${item.town}`.trim(),
+        memberRegionId: item.member_region_id,
+        regionId: item.region_id,
+        isPrimary: item.is_primary === 1 || item.is_primary === true
+      }));
+      
+      console.log('변환된 주소 데이터:', formattedAddresses);
+      console.log('is_primary 값들:', response.data.map(item => ({ id: item.member_region_id, is_primary: item.is_primary, isPrimary: item.is_primary === 1 })));
+      
+      setAddresses(formattedAddresses);
+      console.log('주소 목록 로드 성공:', formattedAddresses);
+    } catch (error) {
+      console.error('주소 목록 조회 실패:', error);
+      if (handleAuthError(error)) return;
+      setMessage({ type: 'error', text: '주소 목록을 불러오는데 실패했습니다.' });
+    } finally {
+      setIsLoadingAddresses(false);
     }
   };
 
@@ -380,30 +424,6 @@ const ProfileSection = ({ userInfo }) => {
     }
   };
 
-  // 역할을 한국어로 변환하는 함수
-  const formatRole = (role) => {
-    switch (role) {
-      case 'ROLE_USER':
-        return '일반 회원';
-      case 'ROLE_ADMIN':
-        return '관리자';
-      default:
-        return '일반 회원';
-    }
-  };
-
-  // 상태를 한국어로 변환하는 함수
-  const formatStatus = (status) => {
-    switch (status) {
-      case 'ACTIVE':
-        return '활성 회원';
-      case 'BANNED':
-        return '정지 회원';
-      default:
-        return '활성 회원';
-    }
-  };
-
   // 프로필 이미지 변경
   const handleProfileImageChange = async (event) => {
     const file = event.target.files[0];
@@ -466,11 +486,37 @@ const ProfileSection = ({ userInfo }) => {
     }
   };
 
-  // 주소 삭제 함수
-  const handleDeleteAddress = (addressId) => {
-    if (window.confirm('정말로 이 주소를 삭제하시겠습니까?')) {
-      setAddresses(prev => prev.filter(addr => addr.id !== addressId));
-      // TODO: API 호출로 실제 삭제 처리
+  // 주소 삭제 함수 (DB 연동)
+  const handleDeleteAddress = async (addressId) => {
+    if (!window.confirm('정말로 이 주소를 삭제하시겠습니까?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        setMessage({ type: 'error', text: '로그인이 필요합니다.' });
+        return;
+      }
+
+      // member_regions 테이블에서 해당 주소 삭제
+      await axios.delete(`http://localhost:4989/api/member-region/addresses/${addressId}?loginId=${userInfo.loginId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // 성공 시 주소 목록 새로고침 (DB에서 최신 상태 가져오기)
+      fetchMemberAddresses();
+      
+      setMessage({ type: 'success', text: '주소가 삭제되었습니다.' });
+      
+      // 성공 메시지 3초 후 제거
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error) {
+      console.error('주소 삭제 실패:', error);
+      if (handleAuthError(error)) return;
+      setMessage({ type: 'error', text: '주소 삭제에 실패했습니다.' });
     }
   };
 
@@ -479,8 +525,52 @@ const ProfileSection = ({ userInfo }) => {
     setIsModalOpen(true);
   };
 
+  // 주소 추가 완료 후 콜백
+  const handleAddressAdded = () => {
+    // 주소 목록 새로고침
+    fetchMemberAddresses();
+  };
+  
+  // 일반주소를 기본주소로 변경
+  const handleSetAsPrimary = async (addressId) => {
+    if (!window.confirm('이 주소를 기본주소로 변경하시겠습니까?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        setMessage({ type: 'error', text: '로그인이 필요합니다.' });
+        return;
+      }
+      
+      const response = await axios.put(
+        `http://localhost:4989/api/member-region/addresses/${addressId}/set-primary?loginId=${userInfo.loginId}`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      if (response.status === 200) {
+        setMessage({ type: 'success', text: '기본주소가 성공적으로 변경되었습니다.' });
+        // 주소 목록 새로고침
+        fetchMemberAddresses();
+        
+        // 성공 메시지 3초 후 제거
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      }
+    } catch (error) {
+      console.error('기본주소 변경 실패:', error);
+      if (handleAuthError(error)) return;
+      setMessage({ type: 'error', text: '기본주소 변경에 실패했습니다.' });
+    }
+  };
+
   return (
-    <Box>
+    <Box sx={{ width: '100%', maxWidth: 'none' }}>
       {/* 메시지 표시 */}
       {message.text && (
         <Alert severity={message.type} sx={{ mb: 2 }}>
@@ -488,10 +578,10 @@ const ProfileSection = ({ userInfo }) => {
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={4} sx={{ width: '100%' }}>
         {/* 프로필 이미지 및 기본 정보 */}
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ width: '100%', minWidth: '180px' }}>
             <CardContent sx={{ textAlign: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
@@ -499,7 +589,7 @@ const ProfileSection = ({ userInfo }) => {
                   sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
                   onError={(e) => {
                     console.log('Avatar image load error:', e);
-                    e.target.src = 'https://placehold.co/150x150';
+                    e.target.src = 'https://placehold.co/120x120';
                   }}
                 />
                 <input
@@ -535,13 +625,13 @@ const ProfileSection = ({ userInfo }) => {
 
               <Box sx={{ mt: 2 }}>
                 <Chip
-                  label={formatStatus(profileData.status)}
+                  label={profileData.status === 'ACTIVE' ? '활성 회원' : '정지 회원'}
                   color={profileData.status === 'ACTIVE' ? 'success' : 'error'}
                   size="small"
                   sx={{ mr: 1 }}
                 />
                 <Chip
-                  label={formatRole(profileData.role)}
+                  label={profileData.role === 'ROLE_ADMIN' ? '관리자' : '일반 회원'}
                   variant="outlined"
                   size="small"
                   color={profileData.role === 'ROLE_ADMIN' ? 'error' : 'primary'}
@@ -553,7 +643,7 @@ const ProfileSection = ({ userInfo }) => {
 
         {/* 상세 정보 및 수정 폼 */}
         <Grid item xs={12} md={8}>
-          <Card>
+          <Card sx={{ width: '100%', minWidth: '1100px' }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">회원 정보</Typography>
@@ -651,65 +741,149 @@ const ProfileSection = ({ userInfo }) => {
               {/* 주소 목록 섹션 추가 */}
               <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="h6" gutterBottom>
-                  등록된 주소
+                  주소 설정
                 </Typography>
 
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{ width: '100%' }}>
                   {/* 기존 주소들 */}
-                  {addresses.map((address) => (
-                    <Grid item xs={12} sm={6} md={4} key={address.id}>
+                  {isLoadingAddresses ? (
+                    <Grid item xs={12} sm={6} md={4}>
                       <Paper
-                        elevation={2}
+                        elevation={1}
                         sx={{
                           p: 2,
-                          position: 'relative',
                           border: '1px solid #e0e0e0',
                           borderRadius: 2,
-                          backgroundColor: 'white',
+                          backgroundColor: '#fafafa',
                           minHeight: '80px',
                           display: 'flex',
                           alignItems: 'center',
-                          '&:hover': {
-                            boxShadow: 4,
-                            borderColor: '#1976d2'
-                          }
+                          justifyContent: 'center'
                         }}
                       >
-                        {/* 삭제 버튼 (우측 상단) */}
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteAddress(address.id)}
-                          sx={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            color: '#999',
-                            backgroundColor: '#f5f5f5',
-                            '&:hover': {
-                              color: '#d32f2f',
-                              backgroundColor: '#ffebee'
-                            }
-                          }}
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-
-                        {/* 주소 내용 - 동까지만 표시 */}
-                        <Box sx={{ pr: 3, flex: 1 }}>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 500,
-                              color: '#333',
-                              lineHeight: 1.4
-                            }}
-                          >
-                            {address.address}
-                          </Typography>
-                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          주소 목록을 불러오는 중입니다...
+                        </Typography>
                       </Paper>
                     </Grid>
-                  ))}
+                  ) : addresses.length === 0 ? (
+                    <Grid item xs={12} sm={6} md={4}>
+                      <Paper
+                        elevation={1}
+                        sx={{
+                          p: 2,
+                          border: '1px solid #e0e0e0',
+                          borderRadius: 2,
+                          backgroundColor: '#fafafa',
+                          minHeight: '80px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          등록된 주소가 없습니다
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ) : (
+                    addresses.map((address) => (
+                      <Grid item xs={12} sm={6} md={4} key={address.id}>
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            p: 2,
+                            position: 'relative',
+                            border: address.isPrimary ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                            borderRadius: 2,
+                            backgroundColor: address.isPrimary ? '#f3f8ff' : 'white',
+                            minHeight: '80px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            cursor: address.isPrimary ? 'default' : 'pointer',
+                            '&:hover': {
+                              boxShadow: 4,
+                              borderColor: address.isPrimary ? '#1976d2' : '#1976d2'
+                            }
+                          }}
+                          onClick={() => !address.isPrimary && handleSetAsPrimary(address.id)}
+                        >
+                          {/* 기본주소 배지 (좌측 상단) */}
+                          {address.isPrimary && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 4,
+                                left: 4,
+                                backgroundColor: '#1976d2',
+                                color: 'white',
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              기본주소
+                            </Box>
+                          )}
+
+                          {/* 삭제 버튼 (우측 상단) */}
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation(); // 클릭 이벤트 전파 방지
+                              handleDeleteAddress(address.id);
+                            }}
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              color: '#999',
+                              backgroundColor: '#f5f5f5',
+                              '&:hover': {
+                                color: '#d32f2f',
+                                backgroundColor: '#ffebee'
+                              }
+                            }}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+
+                          {/* 주소 내용 - 동까지만 표시 */}
+                          <Box sx={{ 
+                            pr: 3, 
+                            flex: 1, 
+                            mt: address.isPrimary ? 2.5 : 0 
+                          }}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: address.isPrimary ? 600 : 500,
+                                color: address.isPrimary ? '#1976d2' : '#333',
+                                lineHeight: 1.4
+                              }}
+                            >
+                              {address.address}
+                            </Typography>
+                            {!address.isPrimary && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: '#666',
+                                  fontSize: '0.75rem',
+                                  mt: 0.5,
+                                  display: 'block'
+                                }}
+                              >
+                                클릭하여 기본주소로 설정
+                              </Typography>
+                            )}
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    ))
+                  )}
 
                   {/* 새 주소 추가 버튼 */}
                   <Grid item xs={12} sm={6} md={4}>
@@ -867,7 +1041,7 @@ const ProfileSection = ({ userInfo }) => {
           <Button onClick={() => setIsSmsDialogOpen(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
-      {isModalOpen && <TestModal onClose={handleCloseModal} />}
+      {isModalOpen && <TestModal onClose={handleCloseModal} onAddressAdded={handleAddressAdded} />}
     </Box>
 
   );
