@@ -13,4 +13,7 @@ public interface ChatDeclarationMapper {
 	
 	public List<ChatDeclarationDto> getChatDeclarationsForMember(long memberId);
 	
+	public List<ChatDeclarationDto> getAllDeclarations();
+	
+	public int countDeclarations();
 }

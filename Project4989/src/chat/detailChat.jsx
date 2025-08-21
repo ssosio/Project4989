@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
     Box,
     Dialog,
@@ -132,39 +132,33 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         setSelectedMessageId(null);
     };
 
-    const handleSearchChange = (e) => {
-        const q = e.target.value;
-        setSearchQuery(q);
-    };
-
-
-    useEffect(() => {
-        if (!searchQuery || !searchQuery.trim()) {
+    const performSearch = useCallback((query) => {
+        if (!query || !query.trim()) {
             setSearchResults([]);
             setCurrentResultIndex(0);
             return;
         }
-        const qLower = searchQuery.toLowerCase();
+        const qLower = query.toLowerCase();
         const results = messages.filter(msg =>
             msg?.message_type === 'text' &&
             msg?.message_content &&
             msg.message_content.toLowerCase().includes(qLower)
         );
         setSearchResults(results);
-        setCurrentResultIndex(0);
+        setCurrentResultIndex(0); // 새로운 검색 시에만 초기화
 
+        // 첫 번째 결과로 스크롤
         if (results.length > 0) {
-            const firstId = results[0].message_id;
-            setTimeout(() => {
-                if (messageRefs.current[firstId]) {
-                    messageRefs.current[firstId].scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                }
-            }, 100);
+            setTimeout(() => scrollToMessage(results[0].message_id), 100);
         }
-    }, [searchQuery, messages]);
+    }, [messages]); // 메시지 목록이 업데이트될 때만 함수를 재생성
+
+    const handleSearchChange = (e) => {
+        const q = e.target.value;
+        setSearchQuery(q);
+        performSearch(q);
+    };
+
 
     // ⭐ 수정된 useEffect: 초기 메시지 로드 후 한 번만 스크롤합니다.
     useEffect(() => {
@@ -298,13 +292,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 declaration_content: reportDetail
             };
             const response = await axios.post(
-                `http://${SERVER_IP}:${SERVER_PORT}/submit`,
+                `http://${SERVER_IP}:${SERVER_PORT}/api/notifications/submit`,
                 reportData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
             if (response.status === 200 || response.status === 201) {
                 // 커스텀 모달로 변경 필요
-                console.log('신고가 접수되었습니다. 감사합니다.');
+                alert('신고가 접수되었습니다. 감사합니다.');
                 handleReportModalClose();
             } else {
                 // 커스텀 모달로 변경 필요
@@ -414,20 +408,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             message_type: 'text',
         };
 
-        // 🔧 추가: 낙관적 업데이트로 메시지를 먼저 화면에 표시
-        const newMessage = {
-            message_id: Date.now(),
-            chat_room_id: chatRoomId,
-            sender_id: userInfo.memberId,
-            message_type: 'text',
-            message_content: message,
-            created_at: new Date().toISOString(),
-            is_read: 1,
-            status: 'sending'
-        };
-
-        // 메시지를 먼저 상태에 추가
-        setMessages(prevMessages => [...prevMessages, newMessage]);
+        // 🔧 수정: 낙관적 업데이트 제거하여 중복 출력 방지
+        // 메시지 전송만 하고, 서버 응답을 기다림
 
         // 입력창 비우기
         setMessage('');
@@ -442,7 +424,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 onUpdateLastMessage(chatRoomId, message, 'text', new Date().toISOString());
             }
 
-            // 🔧 제거: useEffect에서 자동으로 스크롤 처리하므로 여기서는 불필요
+            // 🔧 추가: 메시지 전송 후 스크롤 처리
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
 
         } catch (error) {
             console.error('텍스트 메시지 전송 실패:', error);
@@ -633,7 +618,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         };
     }, [open, chatRoomId, userInfo?.memberId]);
 
-    // 🔧 추가: 메시지가 추가될 때마다 자동 스크롤 (본인이 보낸 메시지일 때만)
+    // 🔧 수정: 본인이 보낸 메시지일 때만 자동 스크롤
     useEffect(() => {
         if (messages.length > 0) {
             const lastMessage = messages[messages.length - 1];
@@ -641,7 +626,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 // 본인이 보낸 메시지일 때만 스크롤
                 setTimeout(() => {
                     scrollToBottom();
-                }, 50);
+                }, 100);
             }
         }
     }, [messages.length, userInfo?.memberId]);

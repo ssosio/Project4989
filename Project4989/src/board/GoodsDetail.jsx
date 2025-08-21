@@ -65,7 +65,7 @@ const GoodsDetail = () => {
     Promise.allSettled([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
       .then((results) => {
         const [postResult, goodsResult, carsResult, estateResult] = results;
-        
+
         console.log("✅ API 응답 결과:", {
           post: postResult.status,
           goods: goodsResult.status,
@@ -77,7 +77,7 @@ const GoodsDetail = () => {
         if (postResult.status === 'fulfilled') {
           const postData = postResult.value.data;
           console.log("✅ Post 데이터 로드 성공:", postData);
-          
+
           // post 데이터의 content 필드 확인
           console.log("📝 Post content 확인:", {
             content: postData.content,
@@ -124,7 +124,7 @@ const GoodsDetail = () => {
           response: err.response?.data,
           status: err.response?.status
         });
-        
+
         // 에러 발생 시에도 기본 데이터라도 설정
         if (err.response?.data) {
           console.log("에러 응답에서 받은 데이터:", err.response.data);
@@ -418,7 +418,7 @@ const GoodsDetail = () => {
   // 사진 슬라이드 관련 함수들
   const nextPhoto = () => {
     if (photos && photos.length > 0) {
-      setCurrentPhotoIndex((prevIndex) => 
+      setCurrentPhotoIndex((prevIndex) =>
         prevIndex === photos.length - 1 ? 0 : prevIndex + 1
       );
     }
@@ -426,7 +426,7 @@ const GoodsDetail = () => {
 
   const prevPhoto = () => {
     if (photos && photos.length > 0) {
-      setCurrentPhotoIndex((prevIndex) => 
+      setCurrentPhotoIndex((prevIndex) =>
         prevIndex === 0 ? photos.length - 1 : prevIndex - 1
       );
     }
@@ -456,10 +456,10 @@ const GoodsDetail = () => {
                     alt=""
                     className="gooddetail-slider-photo"
                   />
-                  
+
                   {/* 이전 버튼 */}
                   {photos.length > 1 && (
-                    <button 
+                    <button
                       className="gooddetail-slider-btn gooddetail-slider-btn-prev"
                       onClick={prevPhoto}
                       aria-label="이전 사진"
@@ -467,10 +467,10 @@ const GoodsDetail = () => {
                       ‹
                     </button>
                   )}
-                  
+
                   {/* 다음 버튼 */}
                   {photos.length > 1 && (
-                    <button 
+                    <button
                       className="gooddetail-slider-btn gooddetail-slider-btn-next"
                       onClick={nextPhoto}
                       aria-label="다음 사진"
@@ -479,7 +479,7 @@ const GoodsDetail = () => {
                     </button>
                   )}
                 </div>
-                
+
                 {/* 사진 인디케이터 */}
                 {/* {photos.length > 1 && (
                   <div className="gooddetail-slider-indicators">
@@ -493,7 +493,7 @@ const GoodsDetail = () => {
                     ))}
                   </div>
                 )} */}
-                
+
                 {/* 사진 카운터 */}
                 <div className="gooddetail-slider-counter">
                   {currentPhotoIndex + 1} / {photos.length}
@@ -511,7 +511,7 @@ const GoodsDetail = () => {
             {/* 상품 헤더 정보 */}
             <div className="gooddetail-header">
               <h1 className="gooddetail-title">{post.title}</h1>
-              
+
               {/* 가격 섹션 */}
               <div className="gooddetail-price">
                 <div className="gooddetail-price-value">
@@ -537,12 +537,12 @@ const GoodsDetail = () => {
                 </div>
               </div>
               <div className="gooddetail-metrics-right">
-                  {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
-                <button className="gooddetail-report-btn" onClick={() => setOpen(true)}>
-                신고/문의
-              </button>
-      )
-    }
+                {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
+                  <button className="gooddetail-report-btn" onClick={() => setOpen(true)}>
+                    신고/문의
+                  </button>
+                )
+                }
               </div>
             </div>
 
@@ -568,54 +568,47 @@ const GoodsDetail = () => {
                 <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
                 <span>찜 {count}</span>
               </button>
-                {/* 대화 */}
-          {userInfo && userInfo.memberId === post.memberId ? (
-            <>
-              <button className="gooddetail-chat-btn"
-                onClick={handleChatToggle}
-              >
-                대화
-              </button>
-            </>
-          ) : (
-            <>
-              {/* 비로그인 상태일 때의 버튼들 */}
-              <button className="gooddetail-chat-btn"
-                onClick={() => alert('로그인 후 이용 가능합니다.')}
-              >
-                대화
-              </button>
-            </>
-          )}
+              {/* 대화 */}
+              {/* 대화 버튼: 로그인 상태일 때만 'handleChatToggle' 실행 */}
+              {userInfo ? (
+                <button className="gooddetail-chat-btn" onClick={handleChatToggle}>
+                  대화
+                </button>
+              ) : (
+                // 비로그인 상태일 때
+                <button className="gooddetail-chat-btn" onClick={() => alert('로그인 후 이용 가능합니다.')}>
+                  대화
+                </button>
+              )}
 
-          {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
-          {userInfo && userInfo.memberId === post.memberId && (
-            <>
-            <button
-                type="button"
-                className="gooddetail-btn"
-                onClick={() => navi(`/board/update?postId=${postId}`)}
-              >
-                수정
-              </button>
+              {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
+              {userInfo && userInfo.memberId === post.memberId && (
+                <>
+                  <button
+                    type="button"
+                    className="gooddetail-btn"
+                    onClick={() => navi(`/board/update?postId=${postId}`)}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    type="button"
+                    className="gooddetail-btn danger"
+                    onClick={handleDeletePost}
+                    disabled={deleting}
+                  >
+                    {deleting ? '삭제 중...' : '삭제'}
+                  </button>
+                </>
+              )}
 
               <button
-                type="button"
-                className="gooddetail-btn danger"
-                onClick={handleDeletePost}
-                disabled={deleting}
+                className="gooddetail-btn secondary"
+                onClick={handleGoBackToList}
               >
-                {deleting ? '삭제 중...' : '삭제'}
+                목록
               </button>
-            </>
-          )}
-
-          <button 
-            className="gooddetail-btn secondary"
-            onClick={handleGoBackToList}
-          >
-            목록
-          </button>
             </div>
 
             {/* 메타 정보 */}
@@ -662,7 +655,7 @@ const GoodsDetail = () => {
                   {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}
                 </div>
               </div>
-              
+
               {post.postType === 'ITEMS' && goods && (
                 <>
                   <div className="gooddetail-info-item">
@@ -679,7 +672,7 @@ const GoodsDetail = () => {
                   </div>
                 </>
               )}
-              
+
               {post.postType === 'CARS' && cars && (
                 <>
                   <div className="gooddetail-info-item">
@@ -708,7 +701,7 @@ const GoodsDetail = () => {
                   </div>
                 </>
               )}
-              
+
               {post.postType === 'REAL_ESTATES' && estate && (
                 <>
                   <div className="gooddetail-info-item">
@@ -743,9 +736,9 @@ const GoodsDetail = () => {
 
 
 
-      
 
-        
+
+
 
         {/* 신고 모달 */}
         <ReportModal
@@ -761,8 +754,8 @@ const GoodsDetail = () => {
 
 
 
-      {/* DetailChat 컴포넌트 렌더링 */}
-      {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+        {/* DetailChat 컴포넌트 렌더링 */}
+        {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
       </div>
     </div>
   );

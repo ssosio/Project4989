@@ -293,7 +293,7 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                                                         fontSize: '20px'
                                                     }}>
                                                         {otherUserProfileImage ? (
-                                                            <img src={otherUserProfileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            <img src={'http://localhost:4989' + otherUserProfileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                         ) : (
                                                             otherUserNickname?.charAt(0) || 'U'
                                                         )}

@@ -26,4 +26,16 @@ public class ChatDeclarationService implements ChatDeclarationServiceInter{
 	public List<ChatDeclarationDto> getChatDeclarationsForMember(long memberId) {
 		return chatDeclarationMapper.getChatDeclarationsForMember(memberId);
 	}
+
+	@Override
+	public List<ChatDeclarationDto> getAllDeclarations() {
+		// TODO Auto-generated method stub
+		return chatDeclarationMapper.getAllDeclarations();
+	}
+
+	@Override
+	public int countDeclarations() {
+		// TODO Auto-generated method stub
+		return chatDeclarationMapper.countDeclarations();
+	}
 }

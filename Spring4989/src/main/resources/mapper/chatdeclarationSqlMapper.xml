@@ -34,4 +34,12 @@
         ORDER BY declaration_time DESC
     </select>
     
+    <select id="getAllDeclarations" resultType="boot.sagu.dto.ChatDeclarationDto">
+    	select * from chatdeclaration order by declaration_id desc
+    </select>
+    
+    <select id="countDeclarations" resultType="int">
+    	select count(*) from chatdeclaration
+    </select>
+    
 </mapper>
