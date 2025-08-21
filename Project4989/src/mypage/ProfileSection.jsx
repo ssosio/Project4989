@@ -15,18 +15,22 @@ import {
   Alert,
   Divider,
   IconButton,
-  Chip
+  Chip,
+  Paper
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
   PhotoCamera as PhotoCameraIcon,
-  Lock as LockIcon
+  Lock as LockIcon,
+  Close as CloseIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import TestModal from '../chat/AddMemberAddress.jsx';
 
 const ProfileSection = ({ userInfo }) => {
   const { handleLogout, updateUserInfo } = useContext(AuthContext);
@@ -34,7 +38,16 @@ const ProfileSection = ({ userInfo }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 주소 목록 상태 추가
+  const [addresses, setAddresses] = useState([
+    // 임시 데이터 (나중에 API에서 가져올 예정) - 동까지만 표시
+    { id: 1, address: '서울시 강남구 압구정동' },
+    { id: 2, address: '서울시 서초구 서초동' },
+    { id: 3, address: '부산시 해운대구 우동' }
+  ]);
+
   // 프로필 정보 상태
   const [profileData, setProfileData] = useState({
     nickname: userInfo.nickname || '',
@@ -42,14 +55,14 @@ const ProfileSection = ({ userInfo }) => {
     phoneNumber: '',
     profileImageUrl: userInfo.profileImageUrl || ''
   });
-  
+
   // 비밀번호 변경 상태
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  
+
   // SMS 인증 상태
   const [smsData, setSmsData] = useState({
     phoneNumber: '',
@@ -57,7 +70,7 @@ const ProfileSection = ({ userInfo }) => {
     isCodeSent: false,
     isVerified: false
   });
-  
+
   // 에러 및 성공 메시지
   const [message, setMessage] = useState({ type: '', text: '' });
   const [passwordError, setPasswordError] = useState('');
@@ -103,45 +116,45 @@ const ProfileSection = ({ userInfo }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
-             const userData = response.data;
-      
-                     setProfileData({
-          nickname: userData.nickname || '',
-          email: userData.email || '',
-          phoneNumber: userData.phoneNumber || '',
-          createdAt: userData.createdAt || '',
-          role: userData.role || '',
-          status: userData.status || '',
-          tier: userData.tier || '',
-          profileImageUrl: userData.profileImageUrl || ''
-        });
-        
-        // userInfo도 업데이트하여 초기 로딩 시에도 이미지가 표시되도록 함
-        if (userData.profileImageUrl && userData.profileImageUrl !== userInfo.profileImageUrl) {
-          const updatedUserInfo = {
-            ...userInfo,
-            profileImageUrl: userData.profileImageUrl
-          };
-          updateUserInfo(updatedUserInfo);
-        }
-        
-        // 디버깅을 위한 로그
-        console.log('Profile data updated:', {
-          profileData: userData,
-          profileImageUrl: userData.profileImageUrl,
-          fullUrl: userData.profileImageUrl ? `http://localhost:4989${userData.profileImageUrl}` : 'No URL',
-          role: userData.role,
-          status: userData.status
-        });
+
+      const userData = response.data;
+
+      setProfileData({
+        nickname: userData.nickname || '',
+        email: userData.email || '',
+        phoneNumber: userData.phoneNumber || '',
+        createdAt: userData.createdAt || '',
+        role: userData.role || '',
+        status: userData.status || '',
+        tier: userData.tier || '',
+        profileImageUrl: userData.profileImageUrl || ''
+      });
+
+      // userInfo도 업데이트하여 초기 로딩 시에도 이미지가 표시되도록 함
+      if (userData.profileImageUrl && userData.profileImageUrl !== userInfo.profileImageUrl) {
+        const updatedUserInfo = {
+          ...userInfo,
+          profileImageUrl: userData.profileImageUrl
+        };
+        updateUserInfo(updatedUserInfo);
+      }
+
+      // 디버깅을 위한 로그
+      console.log('Profile data updated:', {
+        profileData: userData,
+        profileImageUrl: userData.profileImageUrl,
+        fullUrl: userData.profileImageUrl ? `http://localhost:4989${userData.profileImageUrl}` : 'No URL',
+        role: userData.role,
+        status: userData.status
+      });
     } catch (error) {
       console.error('프로필 정보를 가져오는데 실패했습니다:', error);
-      
+
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
-      
+
       setMessage({ type: 'error', text: '프로필 정보를 가져오는데 실패했습니다.' });
     }
   };
@@ -153,6 +166,14 @@ const ProfileSection = ({ userInfo }) => {
       fetchUserProfile();
     }
     setIsEditing(!isEditing);
+  };
+
+  const handleAddressRegistrationClick = () => {
+    setIsModalOpen(true); // 3. 버튼 클릭 시 모달 상태를 true로 변경합니다.
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false); // 4. 모달을 닫는 함수를 만듭니다.
   };
 
   // 프로필 정보 저장
@@ -169,20 +190,20 @@ const ProfileSection = ({ userInfo }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       setMessage({ type: 'success', text: '프로필이 성공적으로 수정되었습니다.' });
       setIsEditing(false);
-      
+
       // 성공 메시지 3초 후 제거
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       console.error('프로필 수정에 실패했습니다:', error);
-      
+
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
-      
+
       setMessage({ type: 'error', text: '프로필 수정에 실패했습니다.' });
     }
   };
@@ -223,24 +244,24 @@ const ProfileSection = ({ userInfo }) => {
         return;
       }
 
-      await axios.post('http://localhost:4989/sms/send', { 
-        phoneNumber: smsData.phoneNumber 
+      await axios.post('http://localhost:4989/sms/send', {
+        phoneNumber: smsData.phoneNumber
       }, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       setSmsData(prev => ({ ...prev, isCodeSent: true }));
       setMessage({ type: 'success', text: '인증번호가 발송되었습니다. (서버 콘솔을 확인하세요)' });
     } catch (error) {
       console.error('SMS 발송 실패:', error);
-      
+
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
-      
+
       setMessage({ type: 'error', text: '인증번호 발송에 실패했습니다.' });
     }
   };
@@ -254,25 +275,25 @@ const ProfileSection = ({ userInfo }) => {
         return;
       }
 
-      await axios.post('http://localhost:4989/sms/verify', { 
-        phoneNumber: smsData.phoneNumber, 
-        code: smsData.verificationCode 
+      await axios.post('http://localhost:4989/sms/verify', {
+        phoneNumber: smsData.phoneNumber,
+        code: smsData.verificationCode
       }, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       setSmsData(prev => ({ ...prev, isVerified: true }));
       setMessage({ type: 'success', text: '인증이 완료되었습니다!' });
     } catch (error) {
       console.error('SMS 인증 실패:', error);
-      
+
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
-      
+
       setMessage({ type: 'error', text: '인증번호가 올바르지 않습니다.' });
     }
   };
@@ -312,7 +333,7 @@ const ProfileSection = ({ userInfo }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       setMessage({ type: 'success', text: '비밀번호가 성공적으로 변경되었습니다.' });
       setIsPasswordDialogOpen(false);
       setPasswordData({
@@ -321,17 +342,17 @@ const ProfileSection = ({ userInfo }) => {
         confirmPassword: ''
       });
       setPasswordError('');
-      
+
       // 성공 메시지 3초 후 제거
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       console.error('비밀번호 변경 실패:', error);
-      
+
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
-      
+
       if (error.response?.status === 401) {
         setPasswordError('현재 비밀번호가 올바르지 않습니다.');
       } else {
@@ -343,15 +364,15 @@ const ProfileSection = ({ userInfo }) => {
   // 가입일 포맷팅 함수
   const formatJoinDate = (timestamp) => {
     if (!timestamp) return '정보 없음';
-    
+
     try {
       const date = new Date(timestamp);
       if (isNaN(date.getTime())) return '정보 없음';
-      
+
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      
+
       return `${year}년 ${month}월 ${day}일`;
     } catch (error) {
       console.error('날짜 포맷팅 오류:', error);
@@ -387,62 +408,75 @@ const ProfileSection = ({ userInfo }) => {
   const handleProfileImageChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     // 파일 유효성 검사
     if (!file.type.startsWith('image/')) {
       setMessage({ type: 'error', text: '이미지 파일만 선택 가능합니다.' });
       return;
     }
-    
+
     if (file.size > 5 * 1024 * 1024) { // 5MB 제한
       setMessage({ type: 'error', text: '파일 크기는 5MB 이하여야 합니다.' });
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('jwtToken');
       if (!token) {
         setMessage({ type: 'error', text: '로그인이 필요합니다.' });
         return;
       }
-      
+
       // FormData 생성
       const formData = new FormData();
       formData.append('profileImageFile', file);
-      
+
       const response = await axios.put(`http://localhost:4989/member/profile-image?loginId=${userInfo.loginId}`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
-      
-                     if (response.data.imageUrl) {
-          // 프로필 이미지 URL 업데이트
-          setProfileData(prev => ({ ...prev, profileImageUrl: response.data.imageUrl }));
-          
-          // userInfo도 업데이트하여 헤더에 즉시 반영
-          const updatedUserInfo = {
-            ...userInfo,
-            profileImageUrl: response.data.imageUrl
-          };
-          updateUserInfo(updatedUserInfo);
-          
-          setMessage({ type: 'success', text: '프로필 사진이 성공적으로 변경되었습니다.' });
-          
-          // 성공 메시지 3초 후 제거
-          setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-        }
+
+      if (response.data.imageUrl) {
+        // 프로필 이미지 URL 업데이트
+        setProfileData(prev => ({ ...prev, profileImageUrl: response.data.imageUrl }));
+
+        // userInfo도 업데이트하여 헤더에 즉시 반영
+        const updatedUserInfo = {
+          ...userInfo,
+          profileImageUrl: response.data.imageUrl
+        };
+        updateUserInfo(updatedUserInfo);
+
+        setMessage({ type: 'success', text: '프로필 사진이 성공적으로 변경되었습니다.' });
+
+        // 성공 메시지 3초 후 제거
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      }
     } catch (error) {
       console.error('프로필 사진 변경 실패:', error);
-      
+
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
-      
+
       setMessage({ type: 'error', text: '프로필 사진 변경에 실패했습니다.' });
     }
+  };
+
+  // 주소 삭제 함수
+  const handleDeleteAddress = (addressId) => {
+    if (window.confirm('정말로 이 주소를 삭제하시겠습니까?')) {
+      setAddresses(prev => prev.filter(addr => addr.id !== addressId));
+      // TODO: API 호출로 실제 삭제 처리
+    }
+  };
+
+  // 새 주소 추가 함수
+  const handleAddNewAddress = () => {
+    setIsModalOpen(true);
   };
 
   return (
@@ -460,14 +494,14 @@ const ProfileSection = ({ userInfo }) => {
           <Card>
             <CardContent sx={{ textAlign: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
-                                 <Avatar
-                   src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}` : 'https://placehold.co/150x150')}
-                   sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
-                   onError={(e) => {
-                     console.log('Avatar image load error:', e);
-                     e.target.src = 'https://placehold.co/150x150';
-                   }}
-                 />
+                <Avatar
+                  src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}` : 'https://placehold.co/150x150')}
+                  sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+                  onError={(e) => {
+                    console.log('Avatar image load error:', e);
+                    e.target.src = 'https://placehold.co/150x150';
+                  }}
+                />
                 <input
                   accept="image/*"
                   style={{ display: 'none' }}
@@ -491,24 +525,24 @@ const ProfileSection = ({ userInfo }) => {
                   </IconButton>
                 </label>
               </Box>
-              
+
               <Typography variant="h6" gutterBottom>
                 {userInfo.nickname}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 {userInfo.loginId}
               </Typography>
-              
+
               <Box sx={{ mt: 2 }}>
-                <Chip 
-                  label={formatStatus(profileData.status)} 
-                  color={profileData.status === 'ACTIVE' ? 'success' : 'error'} 
-                  size="small" 
+                <Chip
+                  label={formatStatus(profileData.status)}
+                  color={profileData.status === 'ACTIVE' ? 'success' : 'error'}
+                  size="small"
                   sx={{ mr: 1 }}
                 />
-                <Chip 
-                  label={formatRole(profileData.role)} 
-                  variant="outlined" 
+                <Chip
+                  label={formatRole(profileData.role)}
+                  variant="outlined"
                   size="small"
                   color={profileData.role === 'ROLE_ADMIN' ? 'error' : 'primary'}
                 />
@@ -525,13 +559,24 @@ const ProfileSection = ({ userInfo }) => {
                 <Typography variant="h6">회원 정보</Typography>
                 <Box>
                   {!isEditing ? (
-                    <Button
-                      startIcon={<EditIcon />}
-                      variant="outlined"
-                      onClick={handleEditToggle}
-                    >
-                      수정
-                    </Button>
+                    <Box>
+                      <Button
+                        startIcon={<EditIcon />}
+                        variant="outlined"
+                        onClick={handleEditToggle}
+                        sx={{ mr: 2 }}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        startIcon={<LockIcon />}
+                        variant="outlined"
+                        color="primary"
+                        onClick={handlePasswordDialogOpen}
+                      >
+                        비밀번호 변경
+                      </Button>
+                    </Box>
                   ) : (
                     <Box>
                       <Button
@@ -567,7 +612,7 @@ const ProfileSection = ({ userInfo }) => {
                     margin="normal"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -579,7 +624,7 @@ const ProfileSection = ({ userInfo }) => {
                     type="email"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -591,7 +636,7 @@ const ProfileSection = ({ userInfo }) => {
                     type="tel"
                   />
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -603,16 +648,102 @@ const ProfileSection = ({ userInfo }) => {
                 </Grid>
               </Grid>
 
-              {/* 비밀번호 변경 버튼 */}
+              {/* 주소 목록 섹션 추가 */}
               <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                <Button
-                  startIcon={<LockIcon />}
-                  variant="outlined"
-                  color="primary"
-                  onClick={handlePasswordDialogOpen}
-                >
-                  비밀번호 변경
-                </Button>
+                <Typography variant="h6" gutterBottom>
+                  등록된 주소
+                </Typography>
+
+                <Grid container spacing={2}>
+                  {/* 기존 주소들 */}
+                  {addresses.map((address) => (
+                    <Grid item xs={12} sm={6} md={4} key={address.id}>
+                      <Paper
+                        elevation={2}
+                        sx={{
+                          p: 2,
+                          position: 'relative',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: 2,
+                          backgroundColor: 'white',
+                          minHeight: '80px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          '&:hover': {
+                            boxShadow: 4,
+                            borderColor: '#1976d2'
+                          }
+                        }}
+                      >
+                        {/* 삭제 버튼 (우측 상단) */}
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteAddress(address.id)}
+                          sx={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            color: '#999',
+                            backgroundColor: '#f5f5f5',
+                            '&:hover': {
+                              color: '#d32f2f',
+                              backgroundColor: '#ffebee'
+                            }
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+
+                        {/* 주소 내용 - 동까지만 표시 */}
+                        <Box sx={{ pr: 3, flex: 1 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 500,
+                              color: '#333',
+                              lineHeight: 1.4
+                            }}
+                          >
+                            {address.address}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  ))}
+
+                  {/* 새 주소 추가 버튼 */}
+                  <Grid item xs={12} sm={6} md={4}>
+                    <Paper
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        border: '2px dashed #ddd',
+                        borderRadius: 2,
+                        backgroundColor: '#fafafa',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minHeight: '80px',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderColor: '#1976d2',
+                          backgroundColor: '#f3f8ff',
+                          transform: 'translateY(-2px)',
+                          boxShadow: 2
+                        }
+                      }}
+                      onClick={handleAddNewAddress}
+                    >
+                      <Box sx={{ textAlign: 'center' }}>
+                        <AddIcon sx={{ fontSize: 28, color: '#666', mb: 1 }} />
+                        <Typography variant="body2" color="text.secondary">
+                          새 주소 추가
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                </Grid>
               </Box>
             </CardContent>
           </Card>
@@ -626,7 +757,7 @@ const ProfileSection = ({ userInfo }) => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             보안을 위해 SMS 인증이 필요합니다.
           </Typography>
-          
+
           <Button
             variant="contained"
             onClick={handleSmsDialogOpen}
@@ -662,7 +793,7 @@ const ProfileSection = ({ userInfo }) => {
                 onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 margin="normal"
               />
-              
+
               {passwordError && (
                 <Alert severity="error" sx={{ mt: 1 }}>
                   {passwordError}
@@ -694,7 +825,7 @@ const ProfileSection = ({ userInfo }) => {
             type="tel"
             disabled={smsData.isCodeSent}
           />
-          
+
           {!smsData.isCodeSent ? (
             <Button
               fullWidth
@@ -714,7 +845,7 @@ const ProfileSection = ({ userInfo }) => {
                 margin="normal"
                 placeholder="6자리 인증번호를 입력하세요"
               />
-              
+
               {!smsData.isVerified ? (
                 <Button
                   fullWidth
@@ -736,7 +867,9 @@ const ProfileSection = ({ userInfo }) => {
           <Button onClick={() => setIsSmsDialogOpen(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
+      {isModalOpen && <TestModal onClose={handleCloseModal} />}
     </Box>
+
   );
 };
 

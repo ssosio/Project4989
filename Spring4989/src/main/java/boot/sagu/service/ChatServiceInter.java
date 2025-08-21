@@ -28,6 +28,8 @@ public Long findChatroomByProductIdAndBuyerId(Long productId, Long buyerId);
 // 첫 메시지 전송 시 채팅방과 메시지를 함께 생성하는 로직
 public void createChatRoomAndSendMessage(ChatDto chatDto, ChatMessageDto messageDto);
 
-public Map<String, Object> getChatRoomById(@Param("chatRoomId") Long chatRoomId, @Param("memberId") Long memberId);
+public Long getRecipientId(Long chatRoomId, Long senderId);
+
+public Map<String, Object> getChatRoomById(Long chatRoomId, Long memberId);
 
 }

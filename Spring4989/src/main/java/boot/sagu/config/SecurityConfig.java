@@ -84,6 +84,8 @@ public class SecurityConfig {
 
                 // 인증 필요한 경로
                 .requestMatchers(HttpMethod.GET ,"/member/**").authenticated()
+                // 채팅 관련 API는 인증 없이 접근 가능
+            	.requestMatchers("/api/notifications/**").permitAll()
                 .requestMatchers("/submit").authenticated()
                 .requestMatchers("/auction/*/bids", "/auction/delete/**").authenticated()
 

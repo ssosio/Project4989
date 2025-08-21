@@ -26,4 +26,5 @@ public interface ChatMessageServiceInter {
 	public int getUnreadMessageCount(Long memberId);
 
 	public void insertFirstChatMessage(Map<String, Object> params);
+
 }

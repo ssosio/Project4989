@@ -92,6 +92,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     const [currentResultIndex, setCurrentResultIndex] = useState(0);
     const messageRefs = useRef({});
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const isInitialScrollDone = useRef(false);
 
     const chatRoomId = chatRoom?.chatRoomId;
     const SERVER_IP = '192.168.10.136';
@@ -136,6 +137,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         setSearchQuery(q);
     };
 
+
     useEffect(() => {
         if (!searchQuery || !searchQuery.trim()) {
             setSearchResults([]);
@@ -163,6 +165,44 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             }, 100);
         }
     }, [searchQuery, messages]);
+
+    // ⭐ 수정된 useEffect: 초기 메시지 로드 후 한 번만 스크롤합니다.
+    useEffect(() => {
+        if (!open || !chatRoomId || !userInfo) {
+            // 채팅방 닫힘 또는 필수 정보가 없을 때 상태 초기화 및 연결 해제
+            if (stompClient && stompClient.active) {
+                try {
+                    const leaveMessage = {
+                        type: 'LEAVE',
+                        chatRoomId: chatRoomId,
+                        senderId: userInfo?.memberId,
+                        timestamp: new Date().toISOString(),
+                    };
+                    stompClient.publish({
+                        destination: '/app/chat.leaveRoom',
+                        body: JSON.stringify(leaveMessage),
+                    });
+                } catch (e) {
+                    console.error("LEAVE 메시지 전송 실패:", e);
+                }
+                stompClient.deactivate();
+            }
+            setStompClient(null);
+            setMessages([]);
+            setOtherUserInfo(null);
+            setLoading(false);
+            setMessage('');
+            selectedImages.forEach(image => URL.revokeObjectURL(image.preview));
+            setSelectedImages([]);
+            // ⭐ 초기 스크롤 플래그 초기화
+            isInitialScrollDone.current = false;
+            return;
+        } // <-- 이 중괄호가 빠져 있었습니다.
+
+        // 이 아래에 나머지 로직을 이어서 작성하시면 됩니다.
+        // ...
+    }, [open, chatRoomId, userInfo?.memberId]);
+
 
     const handleDeleteMessage = async () => {
         handleMessageMenuClose();
@@ -307,7 +347,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     };
     const scrollToBottom = () => {
         if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            const container = messagesContainerRef.current;
+            // 🔧 수정: 더 안정적인 스크롤 처리
+            requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+            });
         }
     };
 
@@ -361,6 +405,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             console.error("STOMP 클라이언트가 연결되지 않았습니다.");
             return;
         }
+
         const webSocketMessage = {
             type: 'CHAT',
             chat_room_id: chatRoomId,
@@ -368,15 +413,37 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             message_content: message,
             message_type: 'text',
         };
+
+        // 🔧 추가: 낙관적 업데이트로 메시지를 먼저 화면에 표시
+        const newMessage = {
+            message_id: Date.now(),
+            chat_room_id: chatRoomId,
+            sender_id: userInfo.memberId,
+            message_type: 'text',
+            message_content: message,
+            created_at: new Date().toISOString(),
+            is_read: 1,
+            status: 'sending'
+        };
+
+        // 메시지를 먼저 상태에 추가
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+
+        // 입력창 비우기
+        setMessage('');
+
         try {
             stompClient.publish({
                 destination: '/app/chat.sendMessage',
                 body: JSON.stringify(webSocketMessage),
             });
+
             if (onUpdateLastMessage) {
                 onUpdateLastMessage(chatRoomId, message, 'text', new Date().toISOString());
             }
-            setMessage('');
+
+            // 🔧 제거: useEffect에서 자동으로 스크롤 처리하므로 여기서는 불필요
+
         } catch (error) {
             console.error('텍스트 메시지 전송 실패:', error);
         }
@@ -455,6 +522,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 setOtherUserInfo(null);
             } finally {
                 setLoading(false);
+                // ⭐ 추가: 초기 로딩이 완료되고 아직 스크롤하지 않았다면
+                if (!isInitialScrollDone.current) {
+                    // 메시지가 모두 로드된 후 스크롤이 되도록 setTimeout 사용
+                    setTimeout(() => {
+                        scrollToBottom();
+                        // ⭐ 스크롤 완료 플래그를 true로 설정
+                        isInitialScrollDone.current = true;
+                    }, 100);
+                }
             }
         };
 
@@ -488,10 +564,14 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     }
                 } else if (receivedMessage.type === 'READ_UPDATE') {
                     setMessages(prevMessages =>
-                        prevMessages.map(msg => ({
-                            ...msg,
-                            is_read: msg.is_read === 0 && msg.sender_id === userInfo.memberId ? 1 : msg.is_read,
-                        }))
+                        prevMessages.map(msg => {
+                            // 동시에 해당 메시지가 내가 보낸 메시지(msg.sender_id)일 경우
+                            if (String(receivedMessage.senderId) !== String(userInfo.memberId) &&
+                                String(msg.sender_id) === String(userInfo.memberId)) {
+                                return { ...msg, is_read: 1 };
+                            }
+                            return msg;
+                        })
                     );
                 } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
                     const convertedMessage = {
@@ -553,10 +633,18 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         };
     }, [open, chatRoomId, userInfo?.memberId]);
 
-    // 메시지가 바뀔 때마다 맨 아래로 스크롤
+    // 🔧 추가: 메시지가 추가될 때마다 자동 스크롤 (본인이 보낸 메시지일 때만)
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+        if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage && String(lastMessage.sender_id) === String(userInfo?.memberId)) {
+                // 본인이 보낸 메시지일 때만 스크롤
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 50);
+            }
+        }
+    }, [messages.length, userInfo?.memberId]);
 
     // 수정: 컴포넌트가 열릴 때 읽음 처리를 요청하는 별도의 useEffect
     useEffect(() => {

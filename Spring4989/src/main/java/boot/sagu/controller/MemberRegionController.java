@@ -25,11 +25,6 @@ public class MemberRegionController {
 
         try {
             // 해당 회원의 기존 주소 중 is_primary의 최댓값을 조회
-            int maxIsPrimary = memberRegionMapper.findMaxIsPrimaryByMemberId(requestDto.getMemberId());
-
-            // 새로운 is_primary 값을 계산 (최댓값 + 1)
-            int newIsPrimary = maxIsPrimary + 1;
-            requestDto.setIsPrimary(newIsPrimary);
 
             // 데이터베이스에 저장
             memberRegionMapper.insertMemberRegion(requestDto);

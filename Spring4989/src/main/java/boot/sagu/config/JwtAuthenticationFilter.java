@@ -103,6 +103,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/chat/") ||
                requestURI.startsWith("/api/chat/") ||
                requestURI.startsWith("/save/") ||
+               requestURI.startsWith("/api/notifications/") ||
                requestURI.startsWith("/api/auth") ||
                requestURI.equals("/api/auctions/portone/webhook") ||
                requestURI.startsWith("/api/auth") ||     // ← refresh 포함

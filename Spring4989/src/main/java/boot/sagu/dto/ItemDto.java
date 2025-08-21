@@ -15,5 +15,5 @@ public class ItemDto {
 	private int location;
 	private String detail_location;
 	private double latitude;
-	private double logitude;
+	private double longitude;
 }
