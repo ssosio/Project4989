@@ -2,8 +2,9 @@ import axios from 'axios';
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
-import DetailChat from '../chat/detailChat';
+import DetailChat from '../chat/DetailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
+import BuyerSelectionModal from '../components/BuyerSelectionModal';
 import './gooddetail.css';
 
 const GoodsDetail = () => {
@@ -46,6 +47,8 @@ const GoodsDetail = () => {
 
   // 상단 state 모음 근처에 추가
   const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false); // ✅ 판매 상태 업데이트 진행 상태
+  const [showBuyerModal, setShowBuyerModal] = useState(false); // ✅ 거래자 선택 모달 상태
 
   // 💡 수정된 useEffect: userInfo 또는 postId가 변경될 때 API를 다시 호출하도록 변경
   useEffect(() => {
@@ -415,6 +418,55 @@ const GoodsDetail = () => {
     navi(getFallbackListPath(), { state: { focusId: Number(postId) } });
   };
 
+  // 판매 상태 변경 핸들러
+  const handleStatusChange = async (newStatus) => {
+    if (!userInfo || !post || Number(userInfo.memberId) !== Number(post.memberId)) {
+      alert('권한이 없습니다.');
+      return;
+    }
+
+    if (newStatus === post.status) {
+      return; // 같은 상태면 변경하지 않음
+    }
+
+    // 판매완료 선택 시 거래자 선택 모달 열기
+    if (newStatus === 'SOLD') {
+      setShowBuyerModal(true);
+      return;
+    }
+
+    // 일반 상태 변경 (판매중, 예약중)
+    setIsUpdatingStatus(true);
+    try {
+      const response = await axios.put(
+        `http://localhost:4989/post/updateStatus?postId=${postId}&status=${newStatus}`,
+        null,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.data.success) {
+        setPost(prev => ({ ...prev, status: newStatus }));
+        alert('판매 상태가 변경되었습니다.');
+      } else {
+        alert('상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('판매 상태 변경 실패:', error);
+      alert('상태 변경 중 오류가 발생했습니다.');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // 거래자 선택 완료 핸들러
+  const handleBuyerSelectionComplete = () => {
+    // 상태를 SOLD로 업데이트하고 페이지 새로고침
+    setPost(prev => ({ ...prev, status: 'SOLD' }));
+    setShowBuyerModal(false);
+  };
+
   // 사진 슬라이드 관련 함수들
   const nextPhoto = () => {
     if (photos && photos.length > 0) {
@@ -568,25 +620,17 @@ const GoodsDetail = () => {
                 <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
                 <span>찜 {count}</span>
               </button>
-                {/* 대화 */}
-          {userInfo && userInfo.memberId === post.memberId ? (
-            <>
-              <button className="gooddetail-chat-btn"
-                onClick={handleChatToggle}
-              >
-                대화
-              </button>
-            </>
-          ) : (
-            <>
-              {/* 비로그인 상태일 때의 버튼들 */}
-              <button className="gooddetail-chat-btn"
-                onClick={() => alert('로그인 후 이용 가능합니다.')}
-              >
-                대화
-              </button>
-            </>
-          )}
+                {/* 대화 버튼: 로그인 상태일 때만 'handleChatToggle' 실행 */}
+              {userInfo ? (
+                <button className="gooddetail-chat-btn" onClick={handleChatToggle}>
+                  대화
+                </button>
+              ) : (
+                // 비로그인 상태일 때
+                <button className="gooddetail-chat-btn" onClick={() => alert('로그인 후 이용 가능합니다.')}>
+                  대화
+                </button>
+              )}
 
           {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
           {userInfo && userInfo.memberId === post.memberId && (
@@ -616,6 +660,29 @@ const GoodsDetail = () => {
           >
             목록
           </button>
+
+          {/* 작성자 본인만 볼 수 있는 판매 상태 선택 */}
+          {userInfo && userInfo.memberId === post.memberId && (
+            <div className="gooddetail-status-selector">
+              <label htmlFor="status-select" className="gooddetail-status-label">
+                판매 상태 변경:
+              </label>
+              <select
+                id="status-select"
+                className="gooddetail-status-select"
+                value={post.status || 'ON_SALE'}
+                onChange={(e) => handleStatusChange(e.target.value)}
+                disabled={isUpdatingStatus}
+              >
+                <option value="ON_SALE">판매중</option>
+                <option value="RESERVED">예약중</option>
+                <option value="SOLD">판매완료</option>
+              </select>
+              {isUpdatingStatus && (
+                <span className="gooddetail-status-updating">업데이트 중...</span>
+              )}
+            </div>
+          )}
             </div>
 
             {/* 메타 정보 */}
@@ -761,11 +828,20 @@ const GoodsDetail = () => {
 
 
 
-      {/* DetailChat 컴포넌트 렌더링 */}
-      {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+              {/* DetailChat 컴포넌트 렌더링 */}
+        {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+        
+        {/* 거래자 선택 모달 */}
+        <BuyerSelectionModal
+          open={showBuyerModal}
+          onClose={() => setShowBuyerModal(false)}
+          postId={postId}
+          token={token}
+          onComplete={handleBuyerSelectionComplete}
+        />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default GoodsDetail;

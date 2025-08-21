@@ -414,20 +414,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             message_type: 'text',
         };
 
-        // 🔧 추가: 낙관적 업데이트로 메시지를 먼저 화면에 표시
-        const newMessage = {
-            message_id: Date.now(),
-            chat_room_id: chatRoomId,
-            sender_id: userInfo.memberId,
-            message_type: 'text',
-            message_content: message,
-            created_at: new Date().toISOString(),
-            is_read: 1,
-            status: 'sending'
-        };
-
-        // 메시지를 먼저 상태에 추가
-        setMessages(prevMessages => [...prevMessages, newMessage]);
+        // 🔧 수정: 낙관적 업데이트 제거하여 중복 출력 방지
+        // 메시지 전송만 하고, 서버 응답을 기다림
 
         // 입력창 비우기
         setMessage('');
@@ -442,7 +430,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 onUpdateLastMessage(chatRoomId, message, 'text', new Date().toISOString());
             }
 
-            // 🔧 제거: useEffect에서 자동으로 스크롤 처리하므로 여기서는 불필요
+            // 🔧 추가: 메시지 전송 후 스크롤 처리
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
 
         } catch (error) {
             console.error('텍스트 메시지 전송 실패:', error);
@@ -633,7 +624,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         };
     }, [open, chatRoomId, userInfo?.memberId]);
 
-    // 🔧 추가: 메시지가 추가될 때마다 자동 스크롤 (본인이 보낸 메시지일 때만)
+    // 🔧 수정: 본인이 보낸 메시지일 때만 자동 스크롤
     useEffect(() => {
         if (messages.length > 0) {
             const lastMessage = messages[messages.length - 1];
@@ -641,7 +632,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 // 본인이 보낸 메시지일 때만 스크롤
                 setTimeout(() => {
                     scrollToBottom();
-                }, 50);
+                }, 100);
             }
         }
     }, [messages.length, userInfo?.memberId]);

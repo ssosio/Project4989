@@ -61,4 +61,13 @@ public interface PostsMapperInter {
 		  int countSearchAll(@Param("keyword") String keyword,
 		                     @Param("postType") String postType);
 	
+	// 판매 상태 변경
+	int updatePostStatus(@Param("postId") Long postId, @Param("status") String status);
+	
+	// 판매 상태 변경 (거래자 포함)
+	int updatePostStatusWithBuyer(@Param("postId") Long postId, @Param("status") String status, @Param("buyerId") Long buyerId);
+	
+	// 채팅방 참여자 조회
+	List<Map<String, Object>> getChatParticipants(@Param("postId") Long postId);
+	
 }

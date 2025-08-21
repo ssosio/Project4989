@@ -553,5 +553,42 @@
 		</where>
 	</select>
 
+	<!-- 판매 상태 변경 -->
+	<update id="updatePostStatus">
+		UPDATE posts 
+		SET status = #{status},
+		    updated_at = CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
+		WHERE post_id = #{postId}
+	</update>
+
+	<!-- 판매 상태 변경 (거래자 포함) -->
+	<update id="updatePostStatusWithBuyer">
+		UPDATE posts 
+		SET status = #{status},
+		    buyer_id = #{buyerId},
+		    updated_at = CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
+		WHERE post_id = #{postId}
+	</update>
+
+	<!-- 채팅방 참여자 조회 -->
+	<select id="getChatParticipants" resultType="map">
+		SELECT DISTINCT
+		    m.member_id AS memberId,
+		    m.nickname AS nickname,
+		    m.profile_image_url AS profileImage,
+		    cr.chat_room_id AS chatRoomId,
+		    COUNT(cm.message_id) AS messageCount,
+		    MAX(cm.created_at) AS lastMessageTime
+		FROM chatroom cr
+		INNER JOIN members m ON (m.member_id = cr.buyer_id)
+		LEFT JOIN chatmessage cm ON cm.chat_room_id = cr.chat_room_id 
+		    AND cm.sender_id = m.member_id
+		WHERE cr.product_id = #{postId}
+		    AND cr.buyer_exit_status = 0
+		    AND cr.seller_exit_status = 0
+		GROUP BY m.member_id, m.nickname, m.profile_image_url, cr.chat_room_id
+		HAVING messageCount > 0
+		ORDER BY lastMessageTime DESC
+	</select>
 
 </mapper>
