@@ -235,13 +235,13 @@ useEffect(() => {
         </div>
 
         {/* search */}
-        <button
+        {/* <button
                 type="button"
                 className="gooddetail-btn"
                 onClick={() => navi(`/board/search`)}
               >
                 search
-              </button>
+              </button> */}
 
         {/* ✅ 라디오 필터 UI */}
         <div className="goods-filters">
