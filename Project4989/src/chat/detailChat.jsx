@@ -384,8 +384,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
                 const sentMessage = response.data;
+                // 🔔 실시간 업데이트: 이미지 전송 즉시 ChatMain에 반영
                 if (onUpdateLastMessage) {
-                    onUpdateLastMessage(chatRoomId, "사진", 'image', sentMessage.createdAt);
+                    const currentTime = sentMessage.createdAt || new Date().toISOString();
+                    onUpdateLastMessage(chatRoomId, "사진", 'image', currentTime);
+                    
+                    // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
+                    if (onMarkAsRead) {
+                        onMarkAsRead(chatRoomId);
+                    }
                 }
             }
             setSelectedImages([]);
@@ -426,8 +433,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 body: JSON.stringify(webSocketMessage),
             });
 
+            // 🔔 실시간 업데이트: 메시지 전송 즉시 ChatMain에 반영
             if (onUpdateLastMessage) {
-                onUpdateLastMessage(chatRoomId, message, 'text', new Date().toISOString());
+                const currentTime = new Date().toISOString();
+                onUpdateLastMessage(chatRoomId, message, 'text', currentTime);
+                
+                // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
+                if (onMarkAsRead) {
+                    onMarkAsRead(chatRoomId);
+                }
             }
 
             // 🔧 추가: 메시지 전송 후 스크롤 처리
