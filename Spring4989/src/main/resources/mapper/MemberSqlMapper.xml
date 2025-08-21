@@ -86,4 +86,9 @@
 		WHERE login_id = #{loginId}
 	</update>
 	
+	<!-- loginId로 memberId 조회 -->
+	<select id="findMemberIdByLoginId" parameterType="String" resultType="Integer">
+		SELECT member_id FROM members WHERE login_id = #{loginId}
+	</select>
+	
 </mapper>

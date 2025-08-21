@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import useKakaoLoader from './useKakaoLoader.jsx';
 import styled from 'styled-components';
 import { Typography } from '@mui/material';
-import TestModal from './AddMemberAddress.jsx';
 
 // 스타일 컴포넌트는 이전과 동일합니다.
 const SearchContainer = styled.div`
@@ -85,7 +84,6 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
     const [address, setAddress] = useState('');
     const [places, setPlaces] = useState([]);
     const [marker, setMarker] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false); // 2. 모달 상태를 추가합니다.
     // 👈 useLocation 훅을 사용하여 현재 경로를 가져옵니다.
 
     // 1. 지도 초기화 (이전과 동일)
@@ -137,14 +135,6 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
 
         map.panTo(centerLatLng);
     }, [map, center, radius]);
-
-    const handleAddressRegistrationClick = () => {
-        setIsModalOpen(true); // 3. 버튼 클릭 시 모달 상태를 true로 변경합니다.
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false); // 4. 모달을 닫는 함수를 만듭니다.
-    };
 
     // 3. ✨ [수정됨] 주소 검색 기능 (Geocoder 사용)
     const handleKeywordSearch = (keyword) => {
@@ -279,10 +269,6 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
                     <SearchButton type="button" onClick={handleDbRegister}>추가</SearchButton>
                 )}
 
-                {/* 3. '주소등록' 버튼은 mode가 'post'가 아닐 때만 보입니다. */}
-                {mode !== 'post' && (
-                    <SearchButton type="button" onClick={handleAddressRegistrationClick}>주소등록</SearchButton>
-                )}
                 {places.length > 0 && (
                     <ResultsContainer>
                         {/* ✨ [수정됨] Geocoder 결과 표시 */}
@@ -314,20 +300,6 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
                 </RadiusControl>
             </MapContainer>
 
-            {/* {center && (
-                <div style={{ marginTop: '20px', fontSize: '16px' }}>
-                    <strong>현재 지도 중심 좌표:</strong>
-                    <br />
-                    위도 (lat): {center.lat}
-                    <br />
-                    경도 (lng): {center.lng}
-                    <br />
-                    반경: {radius}m
-                </div>
-            )} */}
-
-            {/* 5. isModalOpen 상태가 true일 때만 TestModal을 렌더링합니다. */}
-            {isModalOpen && <TestModal onClose={handleCloseModal} />}
         </div>
     );
 };

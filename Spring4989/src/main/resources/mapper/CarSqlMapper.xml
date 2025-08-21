@@ -2,7 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="boot.sagu.mapper.CarMapperInter">
 	<insert id="insertCar" parameterType="car">
-		insert into cars(post_id,brand,model,year,mileage,fuel_type,transmission,location) values(#{postId},#{brand},#{model},#{year},#{mileage},#{fuelType},#{transmission},#{location})
+		insert into cars(post_id,brand,model,year,mileage,fuel_type,transmission,location,detail_location,latitude,longitude) values
+		(#{postId},#{brand},#{model},#{year},#{mileage},#{fuelType},#{transmission},#{location},#{detail_location},#{latitude},#{longitude})
 	</insert>
 	<select id="getAllCarData" resultType="car">
 		SELECT c.*, 

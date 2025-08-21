@@ -7,9 +7,11 @@ function SignupForm() {
   const [formData, setFormData] = useState({
     loginId: '',
     password: '',
+    confirmPassword: '', // 비밀번호 확인 필드 추가
     nickname: ''
   });
   const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState(''); // 비밀번호 확인 에러 추가
   const [idCheckMessage,setIdCheckMessage]= useState('');
   const [email, setEmail] = useState({ localPart: '', domain: '' });
   const [emailDomain, setEmailDomain] = useState('');
@@ -47,6 +49,17 @@ function SignupForm() {
       setPasswordError(''); // 유효하면 에러 메시지 없음
     }
   }, [formData.password]);
+
+  // 비밀번호 확인 검증 로직 추가
+  useEffect(() => {
+    const { password, confirmPassword } = formData;
+    
+    if (confirmPassword && password !== confirmPassword) {
+      setConfirmPasswordError('비밀번호가 일치하지 않습니다.');
+    } else if (confirmPassword && password === confirmPassword) {
+      setConfirmPasswordError(''); // 일치하면 에러 메시지 없음
+    }
+  }, [formData.password, formData.confirmPassword]);
 
   // 아이디 입력란에서 포커스가 벗어났을 때 실행될 함수
   const handleIdBlur = async () => {
@@ -114,6 +127,12 @@ function SignupForm() {
   const handleSubmit = async (e) => {
       e.preventDefault();
       
+      // 비밀번호 확인 검증
+      if (formData.password !== formData.confirmPassword) {
+        alert('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      
       const signupData = new FormData();
       
       // ✨ DTO의 각 필드를 개별적으로 FormData에 추가
@@ -168,11 +187,20 @@ function SignupForm() {
           {/* 중복 확인 메시지 표시 */}
           {idCheckMessage && <p style={{ color: idCheckMessage.color, fontSize: '12px', margin: '5px 0 0' }}>{idCheckMessage.text}</p>}
         </div>
+        
         <div style={{ marginBottom: '15px' }}>
           <label>비밀번호</label>
           <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
           {passwordError && <p style={{ color: 'red', fontSize: '12px' }}>{passwordError}</p>}
         </div>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label>비밀번호 확인</label>
+          <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
+          {confirmPasswordError && <p style={{ color: 'red', fontSize: '12px' }}>{confirmPasswordError}</p>}
+          {formData.confirmPassword && !confirmPasswordError && <p style={{ color: 'green', fontSize: '12px' }}>✅ 비밀번호가 일치합니다.</p>}
+        </div>
+        
         <div style={{ marginBottom: '15px' }}>
           <label>닉네임</label>
           <input type="text" name="nickname" value={formData.nickname} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>

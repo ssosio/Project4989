@@ -8,7 +8,7 @@ const Goods = () => {
   const navi=useNavigate('');
   const location = useLocation();
 
-  const [postList,setPostList]=useState([]);
+  const [postList, setPostList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -284,10 +284,10 @@ useEffect(() => {
         </div>
 
         {/* 등록 버튼 */}
-        <button 
-          type='button' 
-          className="goods-register-btn" 
-          onClick={()=>{
+        <button
+          type='button'
+          className="goods-register-btn"
+          onClick={() => {
             navi("/board/post");
           }}
         >
@@ -309,9 +309,9 @@ useEffect(() => {
   }>
                   <div className="goods-image">
                     {p.mainPhotoUrl ? (
-                      <img 
-                        src={photoUrl + p.mainPhotoUrl} 
-                        alt={p.title} 
+                      <img
+                        src={photoUrl + p.mainPhotoUrl}
+                        alt={p.title}
                       />
                     ) : (
                       <div className="goods-image-placeholder">

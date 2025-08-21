@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     	if ("dev".equals(activeProfile)) {
             // 개발 환경: 절대 경로 사용 (실시간 반영)
             registry.addResourceHandler("/save/**")
-                    .addResourceLocations("file:src/main/resources/static/save/");
+                    .addResourceLocations("file:src/main/resources/static/save/"); 
             
             registry.addResourceHandler("/chatsave/**")
                     .addResourceLocations("file:src/main/resources/static/chatsave/");

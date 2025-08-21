@@ -129,7 +129,7 @@ const RegisterButton = styled.button`
 `;
 
 // `onClose` 함수를 props로 받습니다.
-const AddMemberAddress = ({ onClose, onAddressSelect, mode = "member" }) => {
+const AddMemberAddress = ({ onClose, onAddressSelect, onAddressAdded, mode = "member" }) => {
     const { userInfo } = useContext(AuthContext);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -210,6 +210,7 @@ const AddMemberAddress = ({ onClose, onAddressSelect, mode = "member" }) => {
                 if (response.ok) {
                     alert('주소 정보가 성공적으로 등록되었습니다.');
                     onClose();
+                    if (onAddressAdded) onAddressAdded(); // 주소 추가 완료 후 콜백 호출
                 } else {
                     const errorMessage = await response.text();
                     alert(errorMessage);
