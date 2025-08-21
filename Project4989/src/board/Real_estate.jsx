@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
 import './real_estate.css';
+import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const ESTATE_DETAIL_URL = 'http://localhost:4989/post/estatedetail';
 const LIST_URL = 'http://localhost:4989/post/list';
@@ -469,7 +470,7 @@ const Real_estate = () => {
             onClick={scrollToTop}
             title="최상단으로 이동"
           >
-            <FaChevronUp />
+            <KeyboardArrowUpRoundedIcon />
           </button>
         )}
       </div>

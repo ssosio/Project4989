@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
 import './cars.css';
+import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const CAR_DETAIL_URL = 'http://localhost:4989/post/cardetail'; // 필요시 수정
 const LIST_URL = 'http://localhost:4989/post/list';
@@ -517,7 +518,7 @@ const Cars = () => {
         {/* 최상단 버튼 */}
         {showScrollTop && (
           <button className="scroll-to-top-btn" onClick={scrollToTop} title="최상단으로 이동">
-            <FaChevronUp />
+            <KeyboardArrowUpRoundedIcon />
           </button>
         )}
       </div>
