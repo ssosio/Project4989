@@ -11,7 +11,6 @@
 		THEN DATE_ADD(CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul'), INTERVAL 24 HOUR)
 		ELSE NULL END, CONVERT_TZ(NOW(), 'UTC',
 		'Asia/Seoul'), CONVERT_TZ(NOW(), 'UTC',
-		'Asia/Seoul'),CONVERT_TZ(NOW(), 'UTC',
 		'Asia/Seoul'),#{postType},#{content})
 	</insert>
 
