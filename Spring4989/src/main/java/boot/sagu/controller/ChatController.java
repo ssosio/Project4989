@@ -62,7 +62,7 @@ public class ChatController {
 		return result;
 	}
 	
-	@GetMapping("/chat/rooms")
+		@GetMapping("/chat/rooms")
 	public ResponseEntity<?> getChatRoomsWithLastMessage(@RequestParam(name = "memberId") Long memberId) {
 	    try {
 	        List<Map<String, Object>> chatRooms = chatservice.getChatRoomsWithLastMessage(memberId);
@@ -71,7 +71,7 @@ public class ChatController {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 	                .body("채팅방 목록을 가져오는데 실패했습니다: " + e.getMessage());
 	    	}
-	
+
 }
 	  @PostMapping("/chat/uploadImage")
 	    public ResponseEntity<?> uploadChatImage(@RequestPart("file") MultipartFile file,

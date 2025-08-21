@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
     Box,
     Dialog,
@@ -132,39 +132,33 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         setSelectedMessageId(null);
     };
 
-    const handleSearchChange = (e) => {
-        const q = e.target.value;
-        setSearchQuery(q);
-    };
-
-
-    useEffect(() => {
-        if (!searchQuery || !searchQuery.trim()) {
+    const performSearch = useCallback((query) => {
+        if (!query || !query.trim()) {
             setSearchResults([]);
             setCurrentResultIndex(0);
             return;
         }
-        const qLower = searchQuery.toLowerCase();
+        const qLower = query.toLowerCase();
         const results = messages.filter(msg =>
             msg?.message_type === 'text' &&
             msg?.message_content &&
             msg.message_content.toLowerCase().includes(qLower)
         );
         setSearchResults(results);
-        setCurrentResultIndex(0);
+        setCurrentResultIndex(0); // 새로운 검색 시에만 초기화
 
+        // 첫 번째 결과로 스크롤
         if (results.length > 0) {
-            const firstId = results[0].message_id;
-            setTimeout(() => {
-                if (messageRefs.current[firstId]) {
-                    messageRefs.current[firstId].scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                }
-            }, 100);
+            setTimeout(() => scrollToMessage(results[0].message_id), 100);
         }
-    }, [searchQuery, messages]);
+    }, [messages]); // 메시지 목록이 업데이트될 때만 함수를 재생성
+
+    const handleSearchChange = (e) => {
+        const q = e.target.value;
+        setSearchQuery(q);
+        performSearch(q);
+    };
+
 
     // ⭐ 수정된 useEffect: 초기 메시지 로드 후 한 번만 스크롤합니다.
     useEffect(() => {
@@ -388,7 +382,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 if (onUpdateLastMessage) {
                     const currentTime = sentMessage.createdAt || new Date().toISOString();
                     onUpdateLastMessage(chatRoomId, "사진", 'image', currentTime);
-                    
+
                     // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
                     if (onMarkAsRead) {
                         onMarkAsRead(chatRoomId);
@@ -437,7 +431,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             if (onUpdateLastMessage) {
                 const currentTime = new Date().toISOString();
                 onUpdateLastMessage(chatRoomId, message, 'text', currentTime);
-                
+
                 // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
                 if (onMarkAsRead) {
                     onMarkAsRead(chatRoomId);
@@ -749,6 +743,24 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
                             {otherUserInfo?.nickname || 'Unknown'}
                         </Typography>
+                        {/* 물품 제목 표시 */}
+                        {chatRoom?.postTitle && (
+                            <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                    color: '#4A90E2', 
+                                    fontSize: '13px', 
+                                    fontWeight: 500,
+                                    mt: 0.5,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    maxWidth: 250
+                                }}
+                            >
+                                🛍️ {chatRoom.postTitle}
+                            </Typography>
+                        )}
                     </Box>
 
                     <IconButton onClick={toggleSearch}>

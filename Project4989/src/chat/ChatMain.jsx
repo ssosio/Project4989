@@ -79,16 +79,16 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
 
     const calculateAndNotifyUnreadCount = (list) => {
         const totalUnreadCount = list.reduce((sum, room) => sum + (room.unreadCount || 0), 0);
-        // console.log('📊 총 읽지 않은 메시지 개수:', totalUnreadCount, '채팅방 목록:', list.length);
+
         
         if (onUnreadCountChange) {
-            // console.log('📤 Header에 읽지 않은 메시지 개수 전달:', totalUnreadCount);
+
             // 🔧 React 경고 해결: setTimeout으로 렌더링 사이클과 분리
             setTimeout(() => {
                 onUnreadCountChange(totalUnreadCount);
             }, 0);
         } else {
-            // console.log('❌ onUnreadCountChange 콜백이 없음');
+
         }
     };
 
@@ -153,18 +153,18 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
         let url = `http://${SERVER_IP}:${SERVER_PORT}/chat/rooms?memberId=${userInfo.memberId}`;
         axios.get(url)
             .then(res => {
-                if (Array.isArray(res.data)) {
-                    const sortedChatRooms = res.data.sort((a, b) => {
-                        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-                        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-                        return timeB - timeA;
-                    });
-                    setChatList(sortedChatRooms);
-                    calculateAndNotifyUnreadCount(sortedChatRooms);
-                } else {
-                    setChatList([]);
-                    calculateAndNotifyUnreadCount([]);
-                }
+                                    if (Array.isArray(res.data)) {
+                        const sortedChatRooms = res.data.sort((a, b) => {
+                            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+                            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+                            return timeB - timeA;
+                        });
+                        setChatList(sortedChatRooms);
+                        calculateAndNotifyUnreadCount(sortedChatRooms);
+                    } else {
+                        setChatList([]);
+                        calculateAndNotifyUnreadCount([]);
+                    }
             })
             .catch(error => {
                 // console.error("채팅방 목록 가져오기 실패:", error);
@@ -189,13 +189,13 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
         });
 
         client.onConnect = () => {
-            // console.log('🔌 STOMP 연결 성공 - 사용자 ID:', userInfo.memberId);
+
             setStompClient(client);
-            // console.log('📡 STOMP 구독 시작 - 경로:', `/user/${userInfo.memberId}/queue/chat-rooms`);
+
             client.subscribe(`/user/${userInfo.memberId}/queue/chat-rooms`, message => {
-                // console.log('📨 원본 메시지 수신:', message);
+
                 const chatRoomUpdate = JSON.parse(message.body);
-                // console.log('🔔 실시간 채팅방 업데이트 수신:', chatRoomUpdate);
+
                 
                 setChatList(prevList => {
                     const existingIndex = prevList.findIndex(room => room.chatRoomId === chatRoomUpdate.chatRoomId);
@@ -236,11 +236,11 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
             });
 
             // 읽음 처리 실시간 업데이트
-            // console.log('📡 STOMP 읽음 처리 구독 시작 - 경로:', `/user/${userInfo.memberId}/queue/read`);
+
             client.subscribe(`/user/${userInfo.memberId}/queue/read`, message => {
-                // console.log('📨 읽음 처리 원본 메시지 수신:', message);
+
                 const readUpdate = JSON.parse(message.body);
-                // console.log('📖 읽음 처리 업데이트 수신:', readUpdate);
+
                 
                 setChatList(prevList => {
                     const newList = prevList.map(room => {
@@ -254,29 +254,29 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                 });
             });
 
-                        // 🔍 디버깅용: 모든 메시지 수신 구독
-            // console.log('🔍 디버깅용: 모든 메시지 수신 구독 시작');
+
+
             client.subscribe('/topic/debug', message => {
-                // console.log('🔍 디버깅 메시지 수신:', message);
+
             });
 
-            // 🔍 디버깅용: 사용자별 큐 테스트
+
             client.subscribe(`/user/${userInfo.memberId}/queue/*`, message => {
-                // console.log('🔍 사용자 큐 메시지 수신 (와일드카드):', message);
+
             });
 
-            // 🔍 디버깅용: 모든 토픽 메시지 수신
+
             client.subscribe('/topic/*', message => {
-                // console.log('🔍 토픽 메시지 수신:', message);
+
                 
                 try {
                     // 메시지 본문 파싱
                     const messageBody = message.body;
-                    // console.log('📨 토픽 메시지 본문:', messageBody);
+
                     
                     if (messageBody) {
                         const chatData = JSON.parse(messageBody);
-                        // console.log('🔔 파싱된 채팅 데이터:', chatData);
+
                         
                         // 🔧 snake_case를 camelCase로 변환
                         const normalizedData = {
@@ -287,11 +287,11 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                             messageType: chatData.message_type,
                             createdAt: chatData.created_at
                         };
-                        // console.log('🔄 정규화된 데이터:', normalizedData);
+
                         
                         // 채팅방 업데이트 처리
                         if (normalizedData.type === 'CHAT' && normalizedData.chatRoomId) {
-                            // console.log('✅ 채팅방 업데이트 처리 시작');
+
                             
                                                          setChatList(prevList => {
                                  const existingIndex = prevList.findIndex(room => room.chatRoomId === normalizedData.chatRoomId);
@@ -344,18 +344,18 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
         }
             });
 
-            // 🔍 디버깅용: 모든 큐 메시지 수신
+
             client.subscribe('/queue/*', message => {
-                // console.log('🔍 큐 메시지 수신:', message);
+
             });
         };
 
         client.onStompError = (frame) => {
-            // console.error('❌ STOMP 브로커 오류:', frame);
+
         };
 
         client.onDisconnect = () => {
-            // console.log('🔌 STOMP 연결 해제됨');
+
         };
 
         client.onWebSocketError = (error) => {
@@ -480,6 +480,24 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                                                         {formatTime(room.lastMessageTime)}
                                                     </Typography>
                                                 </Box>
+                                                {/* 물품 제목 표시 */}
+                                                {room.postTitle && (
+                                                    <Typography 
+                                                        variant="body2" 
+                                                        sx={{ 
+                                                            color: '#4A90E2', 
+                                                            fontSize: '13px', 
+                                                            fontWeight: 500,
+                                                            mb: 0.5,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            maxWidth: 200
+                                                        }}
+                                                    >
+                                                        🛍️ {room.postTitle}
+                                                    </Typography>
+                                                )}
                                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                     <Typography
                                                         variant="body2"
