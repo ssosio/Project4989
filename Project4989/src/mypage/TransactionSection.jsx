@@ -1,423 +1,1542 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
+  Typography,
+  Button,
+  Chip,
   Grid,
   Card,
   CardContent,
-  CardMedia,
-  Typography,
-  Chip,
-  Tabs,
-  Tab,
-  Button,
-  Rating,
-  Divider,
-  Avatar,
-  IconButton,
-  Badge
+  CardActions,
+  CircularProgress,
+  Alert,
+  Badge,
+  Divider
 } from '@mui/material';
 import {
-  ShoppingCart as ShoppingCartIcon,
-  LocalShipping as LocalShippingIcon,
-  CheckCircle as CheckCircleIcon,
-  Star as StarIcon,
+  Store as StoreIcon,
+  Gavel as AuctionIcon,
+  CardGiftcard as GiftIcon,
+  Visibility as ViewIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
   Chat as ChatIcon,
-  Visibility as VisibilityIcon
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckIcon,
+  Cancel as CancelIcon,
+  MonetizationOn as MoneyIcon
 } from '@mui/icons-material';
-
-// 탭 패널 컴포넌트
-function TabPanel({ children, value, index, ...other }) {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`transaction-tabpanel-${index}`}
-      aria-labelledby={`transaction-tab-${index}`}
-      {...other}
-    >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
-    </div>
-  );
-}
+import axios from 'axios';
 
 const TransactionSection = ({ userInfo }) => {
-  const [tabValue, setTabValue] = useState(0);
-  const [transactions, setTransactions] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [myPosts, setMyPosts] = useState([]);
+  const [allPostsForStatusCounts, setAllPostsForStatusCounts] = useState([]); // 상태별 필터 개수 계산용 (항상 전체 게시글)
 
-  // 거래 상태별 색상 및 아이콘
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'pending':
-        return { color: 'warning', icon: <ShoppingCartIcon />, label: '결제 대기' };
-      case 'paid':
-        return { color: 'info', icon: <LocalShippingIcon />, label: '배송 준비중' };
-      case 'shipped':
-        return { color: 'primary', icon: <LocalShippingIcon />, label: '배송중' };
-      case 'delivered':
-        return { color: 'success', icon: <CheckCircleIcon />, label: '배송 완료' };
-      case 'completed':
-        return { color: 'success', icon: <CheckCircleIcon />, label: '거래 완료' };
-      case 'cancelled':
-        return { color: 'error', icon: <CheckCircleIcon />, label: '취소됨' };
-      default:
-        return { color: 'default', icon: <ShoppingCartIcon />, label: '알 수 없음' };
-    }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [counts, setCounts] = useState({
+    total: 0,
+    auction: 0,
+    general: 0,
+    giveaway: 0,
+    cancelled: 0
+  });
+
+  // 로컬스토리지에서 토큰 가져오기
+  const getAuthToken = () => {
+    return localStorage.getItem('jwtToken');
   };
 
-  // 가상의 거래 데이터 (실제로는 API에서 가져와야 함)
-  useEffect(() => {
-    // 실제 구현 시에는 API 호출
-    const mockTransactions = [
-      {
-        id: 1,
-        productName: 'Apple iPhone 15 Pro',
-        price: 1500000,
-        status: 'completed',
-        date: '2024-01-15',
-        seller: '애플스토어',
-        image: 'https://placehold.co/300x200/007AFF/FFFFFF?text=iPhone+15+Pro',
-        rating: 5,
-        review: '정말 좋은 제품이에요! 배송도 빠르고 품질도 훌륭합니다.',
-        category: '전자기기'
-      },
-      {
-        id: 2,
-        productName: 'Nike Air Max 270',
-        price: 180000,
-        status: 'shipped',
-        date: '2024-01-20',
-        seller: '나이키 공식몰',
-        image: 'https://placehold.co/300x200/000000/FFFFFF?text=Nike+Air+Max',
-        rating: null,
-        review: null,
-        category: '신발'
-      },
-      {
-        id: 3,
-        productName: 'Samsung 65인치 QLED TV',
-        price: 2800000,
-        status: 'delivered',
-        date: '2024-01-18',
-        seller: '삼성전자',
-        image: 'https://placehold.co/300x200/1428A0/FFFFFF?text=QLED+TV',
-        rating: 4,
-        review: '화질이 정말 좋아요. 다만 가격이 좀 비싸네요.',
-        category: '가전제품'
-      },
-      {
-        id: 4,
-        productName: 'Starbucks 커피머신',
-        price: 450000,
-        status: 'paid',
-        date: '2024-01-22',
-        seller: '스타벅스',
-        image: 'https://placehold.co/300x200/006241/FFFFFF?text=Coffee+Machine',
-        rating: null,
-        review: null,
-        category: '가전제품'
-      },
-      {
-        id: 5,
-        productName: 'Adidas 운동복 세트',
-        price: 120000,
-        status: 'cancelled',
-        date: '2024-01-19',
-        seller: '아디다스',
-        image: 'https://placehold.co/300x200/000000/FFFFFF?text=Adidas+Set',
-        rating: null,
-        review: null,
-        category: '의류'
+  // 내 게시글 타입별 개수 조회 (위쪽 필터용 - 고정)
+  const fetchMyPostsCounts = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token || !userInfo?.memberId) {
+        return;
       }
-    ];
-    setTransactions(mockTransactions);
-  }, []);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
+      const response = await axios.get(
+        `http://192.168.10.138:4989/auction/my-posts-counts/${userInfo.memberId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-  // 탭별 거래 필터링
-  const getFilteredTransactions = () => {
-    switch (tabValue) {
-      case 0: // 전체
-        return transactions;
-      case 1: // 진행중
-        return transactions.filter(t => ['pending', 'paid', 'shipped'].includes(t.status));
-      case 2: // 완료
-        return transactions.filter(t => ['completed', 'delivered'].includes(t.status));
-      case 3: // 취소
-        return transactions.filter(t => t.status === 'cancelled');
-      default:
-        return transactions;
+      console.log('내 게시글 개수 조회 성공:', response.data);
+      setCounts(response.data);
+    } catch (error) {
+      console.error('내 게시글 개수 조회 실패:', error);
     }
   };
 
-  const filteredTransactions = getFilteredTransactions();
+
+
+  // 내 게시글 데이터 가져오기 (3개 API를 따로 호출)
+  const fetchMyPosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!userInfo?.memberId) {
+        setError('인증 정보가 없습니다.');
+        return;
+      }
+
+      const token = getAuthToken();
+      if (!token) {
+        setError('인증 토큰이 없습니다.');
+        return;
+      }
+
+      let allPosts = [];
+      let allPostsForCounts = []; // 상태별 필터 개수 계산용 (항상 전체 게시글)
+
+      // 경매 게시글은 항상 가져오기 (유찰 개수 계산용)
+      try {
+        const allAuctionResponse = await axios.get(
+          `http://192.168.10.138:4989/auction/my-auction-posts/${userInfo.memberId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+
+        
+        // 타입 필터에 따라 해당하는 게시글만 가져오기
+        if (typeFilter === 'all' || typeFilter === 'auction') {
+          // 유찰 상태일 때는 경매에서만 유찰 게시글 가져오기
+          if (statusFilter === 'cancelled') {
+            const cancelledResponse = await axios.get(
+              `http://192.168.10.138:4989/auction/my-cancelled-auction-posts/${userInfo.memberId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            allPosts = [...allPosts, ...cancelledResponse.data];
+          } else {
+            const auctionResponse = await axios.get(
+              `http://192.168.10.138:4989/auction/my-auction-posts/${userInfo.memberId}`,
+              {
+                params: {
+                  status: statusFilter === 'all' ? null : statusFilter
+                },
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            allPosts = [...allPosts, ...auctionResponse.data];
+          }
+          
+          allPostsForCounts = [...allPostsForCounts, ...allAuctionResponse.data];
+        }
+      } catch (error) {
+        console.error('경매 게시글 조회 실패:', error);
+      }
+      
+      // 일반거래 게시글 가져오기 (타입 필터가 'all' 또는 'general'일 때만, 유찰이 아닐 때만)
+      if ((typeFilter === 'all' || typeFilter === 'general') && statusFilter !== 'cancelled') {
+        try {
+          const generalResponse = await axios.get(
+            `http://192.168.10.138:4989/auction/my-general-posts/${userInfo.memberId}`,
+            {
+              params: {
+                status: statusFilter === 'all' ? null : statusFilter
+              },
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          allPosts = [...allPosts, ...generalResponse.data];
+          
+          // 전체 일반거래 게시글도 가져오기 (개수 계산용)
+          const allGeneralResponse = await axios.get(
+            `http://192.168.10.138:4989/auction/my-general-posts/${userInfo.memberId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          allPostsForCounts = [...allPostsForCounts, ...allGeneralResponse.data];
+        } catch (error) {
+          console.error('일반거래 게시글 조회 실패:', error);
+        }
+      }
+      
+      // 나눔 게시글 가져오기 (타입 필터가 'all' 또는 'giveaway'일 때만, 유찰이 아닐 때만)
+      if ((typeFilter === 'all' || typeFilter === 'giveaway') && statusFilter !== 'cancelled') {
+        try {
+          const giveawayResponse = await axios.get(
+            `http://192.168.10.138:4989/auction/my-giveaway-posts/${userInfo.memberId}`,
+            {
+              params: {
+                status: statusFilter === 'all' ? null : statusFilter
+              },
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          allPosts = [...allPosts, ...giveawayResponse.data];
+          
+          // 전체 나눔 게시글도 가져오기 (개수 계산용)
+          const allGiveawayResponse = await axios.get(
+            `http://192.168.10.138:4989/auction/my-giveaway-posts/${userInfo.memberId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          allPostsForCounts = [...allPostsForCounts, ...allGiveawayResponse.data];
+        } catch (error) {
+          console.error('나눔 게시글 조회 실패:', error);
+        }
+      }
+      
+
+
+      // 작성일 순으로 정렬 (최신순)
+      allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      allPostsForCounts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      console.log('내 게시글 조회 성공:', allPosts);
+      setMyPosts(allPosts);
+      
+             // 상태별 필터 개수 계산용으로 항상 전체 게시글 저장 (타입 필터와 관계없이 고정)
+       setAllPostsForStatusCounts(allPostsForCounts);      
+
+    } catch (error) {
+      console.error('내 게시글 조회 실패:', error);
+      setError('게시글을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userInfo?.memberId) {
+      fetchMyPostsCounts(); // 위쪽 필터 숫자 고정
+      fetchMyPosts(); // 실제 게시글 목록
+    }
+  }, [userInfo]);
+
+  useEffect(() => {
+    if (userInfo?.memberId) {
+      // 타입 필터가 변경되면 상태 필터를 'all'로 리셋하고 해당 타입의 전체 게시글 조회
+      if (statusFilter !== 'all') {
+        setStatusFilter('all');
+      } else {
+        fetchMyPosts(); // 실제 게시글 목록 갱신
+      }
+    }
+  }, [typeFilter]);
+
+  useEffect(() => {
+    if (userInfo?.memberId) {
+      fetchMyPosts(); // 상태 필터 변경 시에만 게시글 목록 갱신
+    }
+  }, [statusFilter]);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box>
-      {/* 거래내역 제목 및 통계 */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          거래내역
-        </Typography>
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h6" color="primary">
-                {transactions.filter(t => ['pending', 'paid', 'shipped'].includes(t.status)).length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                진행중
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h6" color="success.main">
-                {transactions.filter(t => ['completed', 'delivered'].includes(t.status)).length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                완료
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h6" color="error">
-                {transactions.filter(t => t.status === 'cancelled').length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                취소
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Card sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h6" color="info.main">
-                {transactions.length}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                전체
-              </Typography>
-            </Card>
-          </Grid>
-        </Grid>
-      </Box>
+    <Box sx={{ p: 3 }}>
+             {/* 헤더 */}
+       <Typography variant="h4" gutterBottom fontWeight="bold">
+         판매 내역
+       </Typography>
+      
+             {/* 타입별 버튼 (대형 버튼) */}
+       <Box sx={{ mb: 4 }}>
+         <Grid container spacing={2}>
+           <Grid item xs={12} sm={3}>
+             <Button
+               variant={typeFilter === 'all' ? 'contained' : 'outlined'}
+               fullWidth
+               size="large"
+               sx={{ 
+                 py: 3, 
+                 fontSize: '1.1rem', 
+                 fontWeight: 'bold',
+                 minHeight: '80px',
+                 flexDirection: 'column',
+                 gap: 0.5
+               }}
+               onClick={() => setTypeFilter('all')}
+             >
+                              <Box sx={{ fontSize: '1.3rem', fontWeight: 'bold' }}>전체</Box>
+               <Box sx={{ 
+                 fontSize: '1.5rem', 
+                 fontWeight: 'bold', 
+                 color: typeFilter === 'all' ? 'white' : 'text.primary' 
+               }}>{counts.total}개</Box>
+             </Button>
+           </Grid>
+           <Grid item xs={12} sm={3}>
+             <Button
+               variant={typeFilter === 'auction' ? 'contained' : 'outlined'}
+               color="error"
+               fullWidth
+               size="large"
+               sx={{ 
+                 py: 3, 
+                 fontSize: '1.1rem',
+                 fontWeight: 'bold',
+                 minHeight: '80px',
+                 flexDirection: 'column',
+                 gap: 0.5
+               }}
+               onClick={() => setTypeFilter('auction')}
+             >
+               <Box sx={{ fontSize: '1.3rem', fontWeight: 'bold' }}>경매</Box>
+               <Box sx={{ 
+                 fontSize: '1.5rem', 
+                 fontWeight: 'bold', 
+                 color: typeFilter === 'auction' ? 'white' : 'error.main' 
+               }}>{counts.auction}개</Box>
+             </Button>
+           </Grid>
+           <Grid item xs={12} sm={3}>
+             <Button
+               variant={typeFilter === 'general' ? 'contained' : 'outlined'}
+               color="primary"
+               fullWidth
+               size="large"
+               sx={{ 
+                 py: 3, 
+                 fontSize: '1.1rem', 
+                 fontWeight: 'bold',
+                 minHeight: '80px',
+                 flexDirection: 'column',
+                 gap: 0.5
+               }}
+               onClick={() => setTypeFilter('general')}
+             >
+               <Box sx={{ fontSize: '1.3rem', fontWeight: 'bold' }}>일반거래</Box>
+               <Box sx={{ 
+                 fontSize: '1.5rem', 
+                 fontWeight: 'bold', 
+                 color: typeFilter === 'general' ? 'white' : 'primary.main' 
+               }}>{counts.general}개</Box>
+             </Button>
+           </Grid>
+           <Grid item xs={12} sm={3}>
+             <Button
+               variant={typeFilter === 'giveaway' ? 'contained' : 'outlined'}
+               color="success"
+               fullWidth
+               size="large"
+               sx={{ 
+                 py: 3, 
+                 fontSize: '1.1rem', 
+                 fontWeight: 'bold',
+                 minHeight: '80px',
+                 flexDirection: 'column',
+                 gap: 0.5
+               }}
+               onClick={() => setTypeFilter('giveaway')}
+             >
+               <Box sx={{ fontSize: '1.3rem', fontWeight: 'bold' }}>나눔</Box>
+               <Box sx={{ 
+                 fontSize: '1.5rem', 
+                 fontWeight: 'bold', 
+                 color: typeFilter === 'giveaway' ? 'white' : 'success.main' 
+               }}>{counts.giveaway}개</Box>
+             </Button>
+           </Grid>
+         </Grid>
+       </Box>
 
-      {/* 탭 네비게이션 */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange} 
-          aria-label="거래내역 탭"
-          sx={{
-            '& .MuiTab-root': {
-              fontSize: '1rem',
-              fontWeight: 500,
-              minHeight: 48,
-            }
-          }}
-        >
-          <Tab label={`전체 (${transactions.length})`} />
-          <Tab label={`진행중 (${transactions.filter(t => ['pending', 'paid', 'shipped'].includes(t.status)).length})`} />
-          <Tab label={`완료 (${transactions.filter(t => ['completed', 'delivered'].includes(t.status)).length})`} />
-          <Tab label={`취소 (${transactions.filter(t => t.status === 'cancelled').length})`} />
-        </Tabs>
-      </Box>
+             {/* 상태별 필터 (Chip) */}
+       <Box sx={{ mb: 3 }}>
+         <Typography variant="h6" gutterBottom>
+           상태별 필터
+         </Typography>
+         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                       <Button
+              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+              color="primary"
+              onClick={() => setStatusFilter('all')}
+              sx={{ 
+                minWidth: '100px',
+                minHeight: '70px',
+                flexDirection: 'column',
+                gap: 0.5,
+                py: 1.5
+              }}
+            >
+              <Box sx={{ 
+                fontSize: '1rem', 
+                fontWeight: 'bold',
+                color: statusFilter === 'all' ? 'white' : 'text.primary'
+              }}>전체</Box>
+                             <Box sx={{ 
+                 fontSize: '1.2rem', 
+                 fontWeight: 'bold', 
+                 color: statusFilter === 'all' ? 'white' : 'text.primary' 
+                               }}>{allPostsForStatusCounts.length}개</Box>
+            </Button>
+           
+                       <Button
+              variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+              color="info"
+              onClick={() => setStatusFilter('active')}
+              sx={{ 
+                minWidth: '100px',
+                minHeight: '70px',
+                flexDirection: 'column',
+                gap: 0.5,
+                py: 1.5
+              }}
+            >
+              <Box sx={{ fontSize: '1rem', fontWeight: 'bold' }}>판매중</Box>
+                             <Box sx={{ 
+                 fontSize: '1.2rem', 
+                 fontWeight: 'bold', 
+                 color: statusFilter === 'active' ? 'white' : 'info.main' 
+                               }}>{allPostsForStatusCounts.filter(post => post.postStatus === 'active').length}개</Box>
+            </Button>
+           
+                       <Button
+              variant={statusFilter === 'reserved' ? 'contained' : 'outlined'}
+              color="warning"
+              onClick={() => setStatusFilter('reserved')}
+              sx={{ 
+                minWidth: '100px',
+                minHeight: '70px',
+                flexDirection: 'column',
+                gap: 0.5,
+                py: 1.5
+              }}
+            >
+              <Box sx={{ fontSize: '1rem', fontWeight: 'bold' }}>예약중</Box>
+                                                           <Box sx={{ 
+                  fontSize: '1.2rem', 
+                  fontWeight: 'bold', 
+                  color: statusFilter === 'reserved' ? 'white' : 'warning.main' 
+                                 }}>{allPostsForStatusCounts.filter(post => post.postStatus === 'reserved').length}개</Box>
+            </Button>
+            
+            <Button
+              variant={statusFilter === 'completed' ? 'contained' : 'outlined'}
+              color="success"
+              onClick={() => setStatusFilter('completed')}
+              sx={{ 
+                minWidth: '100px',
+                minHeight: '70px',
+                flexDirection: 'column',
+                gap: 0.5,
+                py: 1.5
+              }}
+            >
+              <Box sx={{ fontSize: '1rem', fontWeight: 'bold' }}>거래완료</Box>
+                             <Box sx={{ 
+                 fontSize: '1rem', 
+                 fontWeight: 'bold', 
+                 color: statusFilter === 'completed' ? 'white' : 'success.main' 
+                               }}>{allPostsForStatusCounts.filter(post => post.postStatus === 'completed').length}개</Box>
+            </Button>
+            
+                         <Button
+               variant={statusFilter === 'cancelled' ? 'contained' : 'outlined'}
+               color="error"
+               onClick={() => setStatusFilter('cancelled')}
+               sx={{ 
+                 minWidth: '100px',
+                 minHeight: '70px',
+                 flexDirection: 'column',
+                 gap: 0.5,
+                 py: 1.5
+               }}
+             >
+               <Box sx={{ fontSize: '1rem', fontWeight: 'bold' }}>유찰</Box>
+                                               <Box sx={{ 
+                   fontSize: '1.2rem', 
+                   fontWeight: 'bold', 
+                   color: statusFilter === 'cancelled' ? 'white' : 'error.main' 
+                                   }}>{allPostsForStatusCounts.filter(post => post.postStatus === 'cancelled').length}개</Box>
+             </Button>
+         </Box>
+       </Box>
 
-      {/* 탭 컨텐츠 */}
-      <TabPanel value={tabValue} index={0}>
-        <TransactionList transactions={filteredTransactions} />
-      </TabPanel>
-      
-      <TabPanel value={tabValue} index={1}>
-        <TransactionList transactions={filteredTransactions} />
-      </TabPanel>
-      
-      <TabPanel value={tabValue} index={2}>
-        <TransactionList transactions={filteredTransactions} />
-      </TabPanel>
-      
-      <TabPanel value={tabValue} index={3}>
-        <TransactionList transactions={filteredTransactions} />
-      </TabPanel>
+      <Divider sx={{ mb: 3 }} />
+
+      {/* 게시글 목록 */}
+      <MyPostsList posts={myPosts} />
     </Box>
   );
 };
 
-// 거래 아이템 리스트 컴포넌트
-const TransactionList = ({ transactions }) => {
-  if (transactions.length === 0) {
+// 게시글 목록 컴포넌트
+const MyPostsList = ({ posts }) => {
+  if (posts.length === 0) {
     return (
-      <Box sx={{ textAlign: 'center', py: 8 }}>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          거래내역이 없습니다
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          새로운 상품을 구매해보세요!
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <Typography variant="h6" color="text.secondary">
+          게시글이 없습니다.
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Grid container spacing={3}>
-      {transactions.map((transaction) => (
-        <Grid item xs={12} key={transaction.id}>
-          <TransactionCard transaction={transaction} />
+    <Grid 
+      container 
+      spacing={2}
+      sx={{ 
+        justifyContent: 'center',
+        alignItems: 'stretch'
+      }}
+    >
+      {posts.map((post) => (
+        <Grid 
+          item 
+          xs={12} 
+          sm={6} 
+          lg={4} 
+          key={post.postId}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center'
+          }}
+        >
+          {post.type === 'auction' && <AuctionCard post={post} />}
+          {post.type === 'general' && <GeneralCard post={post} />}
+          {post.type === 'giveaway' && <GiveawayCard post={post} />}
         </Grid>
       ))}
     </Grid>
   );
 };
 
-// 개별 거래 카드 컴포넌트
-const TransactionCard = ({ transaction }) => {
-  const statusInfo = getStatusInfo(transaction.status);
-  
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('ko-KR').format(price) + '원';
+// 경매 카드 컴포넌트
+const AuctionCard = ({ post }) => {
+  const typeInfo = getTypeInfo(post.type);
+  const statusInfo = getStatusInfo(post.postStatus, post.type);
+
+  const handleView = () => {
+    window.location.href = `/auction/detail/${post.postId}`;
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const handleEdit = () => {
+    console.log('수정:', post.postId);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      console.log('삭제:', post.postId);
+    }
+  };
+
+  const handleChat = () => {
+    console.log('채팅:', post.postId);
   };
 
   return (
-    <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
-      {/* 상품 이미지 */}
-      <CardMedia
-        component="img"
-        sx={{ 
-          width: { xs: '100%', md: 200 }, 
-          height: { xs: 200, md: 200 },
-          objectFit: 'cover'
-        }}
-        image={transaction.image}
-        alt={transaction.productName}
-      />
-      
-      {/* 상품 정보 */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <CardContent sx={{ flex: '1 0 auto' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Box>
-              <Typography variant="h6" component="h3" gutterBottom>
-                {transaction.productName}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                판매자: {transaction.seller}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                카테고리: {transaction.category}
-              </Typography>
-            </Box>
-            
-            <Box sx={{ textAlign: 'right' }}>
-              <Typography variant="h6" color="primary" gutterBottom>
-                {formatPrice(transaction.price)}
-              </Typography>
-              <Chip
-                icon={statusInfo.icon}
-                label={statusInfo.label}
-                color={statusInfo.color}
-                size="small"
-                sx={{ mb: 1 }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                {formatDate(transaction.date)}
-              </Typography>
-            </Box>
-          </Box>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* 리뷰 및 액션 버튼 */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Box>
-              {transaction.rating ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Rating value={transaction.rating} readOnly size="small" />
-                  <Typography variant="body2" color="text.secondary">
-                    ({transaction.rating}/5)
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  아직 리뷰가 없습니다
-                </Typography>
-              )}
-              
-              {transaction.review && (
-                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                  "{transaction.review}"
-                </Typography>
-              )}
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {transaction.status === 'delivered' && !transaction.rating && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<StarIcon />}
-                >
-                  리뷰 작성
-                </Button>
-              )}
-              
-              {transaction.status === 'shipped' && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<VisibilityIcon />}
-                >
-                  배송 조회
-                </Button>
-              )}
-              
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<ChatIcon />}
-              >
-                문의하기
-              </Button>
-            </Box>
-          </Box>
-        </CardContent>
+    <Card 
+      sx={{ 
+        height: '480px',
+        width: '100%',
+        maxWidth: '380px',
+        minWidth: '300px',
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: 2,
+        '&:hover': { 
+          boxShadow: 8,
+          transform: 'translateY(-2px)',
+          transition: 'all 0.3s ease'
+        },
+        borderRadius: 3,
+        overflow: 'hidden'
+      }}
+    >
+      {/* 이미지 */}
+      <Box sx={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', flexShrink: 0 }}>
+        <img
+          src={post.image ? `http://192.168.10.138:4989${post.image}` : '/default-image.png'}
+          alt={post.title}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+        {/* 타입 배지 */}
+        <Chip
+          label={typeInfo.label}
+          color={typeInfo.color}
+          size="small"
+          sx={{ 
+            position: 'absolute', 
+            top: 12, 
+            left: 12,
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            height: '24px'
+          }}
+        />
+        {/* 상태 배지 */}
+        <Chip
+          label={statusInfo.label}
+          color={statusInfo.color}
+          size="small"
+          sx={{ 
+            position: 'absolute', 
+            top: 12, 
+            right: 12,
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            height: '24px'
+          }}
+        />
       </Box>
+
+      <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* 제목 */}
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            lineHeight: 1.3,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            height: '2.6rem',
+            mb: 1,
+            flexShrink: 0
+          }}
+        >
+          {post.title}
+        </Typography>
+
+        {/* 카테고리 */}
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            fontSize: '0.8rem',
+            mb: 1,
+            fontWeight: 500,
+            height: '1.2rem',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}
+        >
+          {post.category}
+        </Typography>
+
+        {/* 가격 정보 - 스크롤 가능한 영역 */}
+        <Box sx={{ 
+          mb: 2, 
+          flex: 1, 
+          overflow: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '4px'
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '2px'
+          }
+        }}>
+          {/* 시작가 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.75rem', fontWeight: 500, minWidth: '50px' }}
+            >
+              시작가:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="primary" 
+              fontWeight="bold"
+              sx={{ 
+                fontSize: '0.9rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100px'
+              }}
+            >
+              {formatPrice(post.price)}
+            </Typography>
+          </Box>
+
+          {/* 현재가/낙찰가 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.75rem', fontWeight: 500, minWidth: '50px' }}
+            >
+              {post.postStatus === 'completed' ? '낙찰가:' : '현재가:'}
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="primary" 
+              fontWeight="bold"
+              sx={{ 
+                fontSize: '0.9rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100px'
+              }}
+            >
+              {formatPrice(post.currentPrice)}
+            </Typography>
+          </Box>
+
+          {/* 입찰자 */}
+          {post.biddersCount > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: '0.75rem', fontWeight: 500, minWidth: '50px' }}
+              >
+                입찰자:
+              </Typography>
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ 
+                  fontSize: '0.75rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100px'
+                }}
+              >
+                {post.biddersCount}명
+              </Typography>
+            </Box>
+          )}
+
+          {/* 종료시간 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              종료:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '120px'
+              }}
+            >
+              {post.endTime ? formatDate(post.endTime) : '-'}
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* 추가 정보 */}
+        <Box sx={{ mt: 'auto', flexShrink: 0 }}>
+          {/* 조회수 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              조회:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '60px'
+              }}
+            >
+              {post.viewCount}
+            </Typography>
+          </Box>
+
+          {/* 작성일 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              작성일:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '120px'
+              }}
+            >
+              {formatDate(post.createdAt)}
+            </Typography>
+          </Box>
+        </Box>
+      </CardContent>
+
+      <Divider />
+
+      <CardActions sx={{ p: 1.5, justifyContent: 'space-between', bgcolor: 'grey.50' }}>
+        <Button 
+          startIcon={<ViewIcon />} 
+          size="small" 
+          onClick={handleView}
+          sx={{ 
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            px: 1.5,
+            py: 0.5,
+            minWidth: '60px'
+          }}
+        >
+          보기
+        </Button>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {post.postStatus === 'active' && (
+            <Button 
+              startIcon={<EditIcon />} 
+              size="small" 
+              onClick={handleEdit}
+              sx={{ 
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                px: 1.5,
+                py: 0.5,
+                minWidth: '60px'
+              }}
+            >
+              수정
+            </Button>
+          )}
+          <Button 
+            startIcon={<DeleteIcon />} 
+            size="small" 
+            color="error"
+            onClick={handleDelete}
+            sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5,
+              minWidth: '60px'
+            }}
+          >
+            삭제
+          </Button>
+          <Button 
+            startIcon={<ChatIcon />} 
+            size="small" 
+            color="info"
+            onClick={handleChat}
+            sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5,
+              minWidth: '60px'
+            }}
+          >
+            채팅
+          </Button>
+        </Box>
+      </CardActions>
     </Card>
   );
 };
 
-// getStatusInfo 함수를 컴포넌트 외부로 이동
-const getStatusInfo = (status) => {
-  switch (status) {
-    case 'pending':
-      return { color: 'warning', icon: <ShoppingCartIcon />, label: '결제 대기' };
-    case 'paid':
-      return { color: 'info', icon: <LocalShippingIcon />, label: '배송 준비중' };
-    case 'shipped':
-      return { color: 'primary', icon: <LocalShippingIcon />, label: '배송중' };
-    case 'delivered':
-      return { color: 'success', icon: <CheckCircleIcon />, label: '배송 완료' };
-    case 'completed':
-      return { color: 'success', icon: <CheckCircleIcon />, label: '거래 완료' };
-    case 'cancelled':
-      return { color: 'error', icon: <CheckCircleIcon />, label: '취소됨' };
+// 일반거래 카드 컴포넌트
+const GeneralCard = ({ post }) => {
+  const typeInfo = getTypeInfo(post.type);
+  const statusInfo = getStatusInfo(post.postStatus, post.type);
+
+  const handleView = () => {
+    window.location.href = `/board/detail/${post.postId}`;
+  };
+
+  const handleEdit = () => {
+    console.log('수정:', post.postId);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      console.log('삭제:', post.postId);
+    }
+  };
+
+  const handleChat = () => {
+    console.log('채팅:', post.postId);
+  };
+
+  return (
+    <Card 
+      sx={{ 
+        height: '480px',
+        width: '100%',
+        maxWidth: '380px',
+        minWidth: '300px',
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: 2,
+        '&:hover': { 
+          boxShadow: 8,
+          transform: 'translateY(-2px)',
+          transition: 'all 0.3s ease'
+        },
+        borderRadius: 3,
+        overflow: 'hidden'
+      }}
+    >
+      {/* 이미지 */}
+      <Box sx={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', flexShrink: 0 }}>
+        <img
+          src={post.image ? `http://192.168.10.138:4989${post.image}` : '/default-image.png'}
+          alt={post.title}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+        {/* 타입 배지 */}
+        <Chip
+          label={typeInfo.label}
+          color={typeInfo.color}
+          size="small"
+          sx={{ 
+            position: 'absolute', 
+            top: 12, 
+            left: 12,
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            height: '24px'
+          }}
+        />
+        {/* 상태 배지 */}
+        <Chip
+          label={statusInfo.label}
+          color={statusInfo.color}
+          size="small"
+          sx={{ 
+            position: 'absolute', 
+            top: 12, 
+            right: 12,
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            height: '24px'
+          }}
+        />
+      </Box>
+
+      <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* 제목 */}
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            lineHeight: 1.3,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            height: '2.6rem',
+            mb: 1,
+            flexShrink: 0
+          }}
+        >
+          {post.title}
+        </Typography>
+
+        {/* 카테고리 */}
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            fontSize: '0.8rem',
+            mb: 1,
+            fontWeight: 500,
+            height: '1.2rem',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}
+        >
+          {post.category}
+        </Typography>
+
+        {/* 가격 정보 - 스크롤 가능한 영역 */}
+        <Box sx={{ 
+          mb: 2, 
+          flex: 1, 
+          overflow: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '4px'
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '2px'
+          }
+        }}>
+          {/* 가격 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.75rem', fontWeight: 500, minWidth: '50px' }}
+            >
+              가격:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="primary" 
+              fontWeight="bold"
+              sx={{ 
+                fontSize: '0.9rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100px'
+              }}
+            >
+              {formatPrice(post.price)}
+            </Typography>
+          </Box>
+
+          {/* 빈 공간 채우기 */}
+          <Box sx={{ height: '5rem' }} />
+        </Box>
+
+        {/* 추가 정보 */}
+        <Box sx={{ mt: 'auto', flexShrink: 0 }}>
+          {/* 조회수 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              조회:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '60px'
+              }}
+            >
+              {post.viewCount}
+            </Typography>
+          </Box>
+
+          {/* 작성일 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              작성일:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '120px'
+              }}
+            >
+              {formatDate(post.createdAt || post.postDate)}
+            </Typography>
+          </Box>
+        </Box>
+      </CardContent>
+
+      <Divider />
+
+      <CardActions sx={{ p: 1.5, justifyContent: 'space-between', bgcolor: 'grey.50' }}>
+        <Button 
+          startIcon={<ViewIcon />} 
+          size="small" 
+          onClick={handleView}
+          sx={{ 
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            px: 1.5,
+            py: 0.5,
+            minWidth: '60px'
+          }}
+        >
+          보기
+        </Button>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {post.postStatus === 'active' && (
+            <Button 
+              startIcon={<EditIcon />} 
+              size="small" 
+              onClick={handleEdit}
+              sx={{ 
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                px: 1.5,
+                py: 0.5,
+                minWidth: '60px'
+              }}
+            >
+              수정
+            </Button>
+          )}
+          <Button 
+            startIcon={<DeleteIcon />} 
+            size="small" 
+            color="error"
+            onClick={handleDelete}
+            sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5,
+              minWidth: '60px'
+            }}
+          >
+            삭제
+          </Button>
+          <Button 
+            startIcon={<ChatIcon />} 
+            size="small" 
+            color="info"
+            onClick={handleChat}
+            sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5,
+              minWidth: '60px'
+            }}
+          >
+            채팅
+          </Button>
+        </Box>
+      </CardActions>
+    </Card>
+  );
+};
+
+// 나눔 카드 컴포넌트
+const GiveawayCard = ({ post }) => {
+  const typeInfo = getTypeInfo(post.type);
+  const statusInfo = getStatusInfo(post.postStatus, post.type);
+
+  const handleView = () => {
+    window.location.href = `/board/detail/${post.postId}`;
+  };
+
+  const handleEdit = () => {
+    console.log('수정:', post.postId);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      console.log('삭제:', post.postId);
+    }
+  };
+
+  const handleChat = () => {
+    console.log('채팅:', post.postId);
+  };
+
+  return (
+    <Card 
+      sx={{ 
+        height: '480px',
+        width: '100%',
+        maxWidth: '380px',
+        minWidth: '300px',
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: 2,
+        '&:hover': { 
+          boxShadow: 8,
+          transform: 'translateY(-2px)',
+          transition: 'all 0.3s ease'
+        },
+        borderRadius: 3,
+        overflow: 'hidden'
+      }}
+    >
+      {/* 이미지 */}
+      <Box sx={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', flexShrink: 0 }}>
+        <img
+          src={post.image ? `http://192.168.10.138:4989${post.image}` : '/default-image.png'}
+          alt={post.title}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
+        {/* 타입 배지 */}
+        <Chip
+          label={typeInfo.label}
+          color={typeInfo.color}
+          size="small"
+          sx={{ 
+            position: 'absolute', 
+            top: 12, 
+            left: 12,
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            height: '24px'
+          }}
+        />
+        {/* 상태 배지 */}
+        <Chip
+          label={statusInfo.label}
+          color={statusInfo.color}
+          size="small"
+          sx={{ 
+            position: 'absolute', 
+            top: 12, 
+            right: 12,
+            fontWeight: 'bold',
+            fontSize: '0.75rem',
+            height: '24px'
+          }}
+        />
+      </Box>
+
+      <CardContent sx={{ flexGrow: 1, p: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* 제목 */}
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            lineHeight: 1.3,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            height: '2.6rem',
+            mb: 1,
+            flexShrink: 0
+          }}
+        >
+          {post.title}
+        </Typography>
+
+        {/* 카테고리 */}
+        <Typography 
+          variant="body2" 
+          color="text.secondary" 
+          sx={{ 
+            fontSize: '0.8rem',
+            mb: 1,
+            fontWeight: 500,
+            height: '1.2rem',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}
+        >
+          {post.category}
+        </Typography>
+
+        {/* 가격 정보 - 스크롤 가능한 영역 */}
+        <Box sx={{ 
+          mb: 2, 
+          flex: 1, 
+          overflow: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '4px'
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(0,0,0,0.2)',
+            borderRadius: '2px'
+          }
+        }}>
+          {/* 가격 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.75rem', fontWeight: 500, minWidth: '50px' }}
+            >
+              가격:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="primary" 
+              fontWeight="bold"
+              sx={{ 
+                fontSize: '0.9rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100px'
+              }}
+            >
+              무료
+            </Typography>
+          </Box>
+
+          {/* 빈 공간 채우기 */}
+          <Box sx={{ height: '5rem' }} />
+        </Box>
+
+        {/* 추가 정보 */}
+        <Box sx={{ mt: 'auto', flexShrink: 0 }}>
+          {/* 조회수 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              조회:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '60px'
+              }}
+            >
+              {post.viewCount}
+            </Typography>
+          </Box>
+
+          {/* 작성일 */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: '0.7rem', fontWeight: 500, minWidth: '35px' }}
+            >
+              작성일:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ 
+                fontSize: '0.7rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '120px'
+              }}
+            >
+              {formatDate(post.createdAt || post.postDate)}
+            </Typography>
+          </Box>
+        </Box>
+      </CardContent>
+
+      <Divider />
+
+      <CardActions sx={{ p: 1.5, justifyContent: 'space-between', bgcolor: 'grey.50' }}>
+        <Button 
+          startIcon={<ViewIcon />} 
+          size="small" 
+          onClick={handleView}
+          sx={{ 
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            px: 1.5,
+            py: 0.5,
+            minWidth: '60px'
+          }}
+        >
+          보기
+        </Button>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          {post.postStatus === 'active' && (
+            <Button 
+              startIcon={<EditIcon />} 
+              size="small" 
+              onClick={handleEdit}
+              sx={{ 
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                px: 1.5,
+                py: 0.5,
+                minWidth: '60px'
+              }}
+            >
+              수정
+            </Button>
+          )}
+          <Button 
+            startIcon={<DeleteIcon />} 
+            size="small" 
+            color="error"
+            onClick={handleDelete}
+            sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5,
+              minWidth: '60px'
+            }}
+          >
+            삭제
+          </Button>
+          <Button 
+            startIcon={<ChatIcon />} 
+            size="small" 
+            color="info"
+            onClick={handleChat}
+            sx={{ 
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              px: 1.5,
+              py: 0.5,
+              minWidth: '60px'
+            }}
+          >
+            채팅
+          </Button>
+        </Box>
+      </CardActions>
+    </Card>
+  );
+};
+
+// 유틸리티 함수들을 컴포넌트 외부로 이동
+const getTypeInfo = (type) => {
+  switch (type) {
+    case 'auction':
+      return { label: '경매', icon: <AuctionIcon />, color: 'error' };
+    case 'general':
+      return { label: '일반거래', icon: <StoreIcon />, color: 'primary' };
+    case 'giveaway':
+      return { label: '나눔', icon: <GiftIcon />, color: 'success' };
     default:
-      return { color: 'default', icon: <ShoppingCartIcon />, label: '알 수 없음' };
+      return { label: '기타', icon: <StoreIcon />, color: 'default' };
   }
+};
+
+const getStatusInfo = (status, type) => {
+  switch (status) {
+    case 'active':
+      return type === 'auction' 
+        ? { label: '입찰중', icon: <ScheduleIcon />, color: 'warning' }
+        : { label: '판매중', icon: <StoreIcon />, color: 'info' };
+    case 'reserved':
+      return { label: '예약중', icon: <ScheduleIcon />, color: 'warning' };
+    case 'completed':
+      return { label: '거래완료', icon: <CheckIcon />, color: 'success' };
+    case 'cancelled':
+      return { label: '유찰', icon: <CancelIcon />, color: 'error' };
+    default:
+      return { label: '알 수 없음', icon: <StoreIcon />, color: 'default' };
+  }
+};
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat('ko-KR').format(price) + '원';
+};
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 export default TransactionSection;

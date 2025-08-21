@@ -3,6 +3,7 @@ import { Box, Tabs, Tab, Typography, Container, Paper } from '@mui/material';
 import { AuthContext } from '../context/AuthContext';
 import ProfileSection from './ProfileSection';
 import TransactionSection from './TransactionSection';
+import BiddingSection from './BiddingSection';
 import WishlistSection from './WishlistSection';
 
 // 탭 패널 컴포넌트
@@ -76,8 +77,9 @@ const MyPageMain = () => {
             }}
           >
             <Tab label="회원정보" />
-            <Tab label="거래내역" />
-            <Tab label="위시리스트" />
+            <Tab label="판매 내역" />
+            <Tab label="입찰중" />
+            <Tab label="찜한 상품" />
           </Tabs>
         </Box>
 
@@ -91,6 +93,10 @@ const MyPageMain = () => {
         </TabPanel>
         
         <TabPanel value={tabValue} index={2}>
+          <BiddingSection userInfo={userInfo} />
+        </TabPanel>
+        
+        <TabPanel value={tabValue} index={3}>
           <WishlistSection userInfo={userInfo} />
         </TabPanel>
       </Paper>

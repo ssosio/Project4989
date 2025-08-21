@@ -340,7 +340,7 @@ public class AuctionController {
  	// 입찰 시도
 	@PostMapping("/auction/{postId}/bids")
 	public ResponseEntity<?> placeBid(
-		@PathVariable long postId,
+		@PathVariable("postId") long postId,
 		@RequestBody AuctionDto body,
 		@RequestHeader(value = "Authorization", required = false) String token
 	) {
@@ -445,4 +445,183 @@ public class AuctionController {
         return ResponseEntity.ok(Map.of("status", "OK"));
     }
 
+
+	// 내 게시글 타입별 개수 조회 (위쪽 필터용)
+	@GetMapping("/auction/my-posts-counts/{memberId}")
+	public ResponseEntity<Map<String, Object>> getMyPostsCounts(
+			@PathVariable("memberId") long memberId,
+			@RequestHeader(value = "Authorization", required = false) String token
+	) {
+		try {
+			// JWT token validation (self-check)
+			if (token != null && token.startsWith("Bearer ")) {
+				String jwtToken = token.substring(7);
+				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
+				if (tokenMemberId != memberId) {
+					return ResponseEntity.status(403).build(); // Only self can view
+				}
+			}
+			
+			System.out.println("내 게시글 개수 조회 요청: memberId=" + memberId);
+			
+			Map<String, Object> counts = auctionService.getMyPostsCounts(memberId);
+			
+			System.out.println("내 게시글 개수 조회 성공: " + counts);
+			return ResponseEntity.ok(counts);
+		} catch (Exception e) {
+			System.out.println("내 게시글 개수 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	// 내 게시글 조회 (마이페이지 거래내역용)
+	@GetMapping("/auction/my-posts/{memberId}")
+	public ResponseEntity<List<Map<String, Object>>> getMyPosts(
+			@PathVariable("memberId") long memberId,
+			@RequestParam(value = "type", required = false) String type, // all, auction, general, giveaway
+			@RequestParam(value = "status", required = false) String status, // all, active, reserved, completed, bidding, cancelled
+			@RequestHeader(value = "Authorization", required = false) String token
+	) {
+		try {
+			// JWT token validation (self-check)
+			if (token != null && token.startsWith("Bearer ")) {
+				String jwtToken = token.substring(7);
+				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
+				if (tokenMemberId != memberId) {
+					return ResponseEntity.status(403).build(); // Only self can view
+				}
+			}
+			
+			System.out.println("내 게시글 조회 요청: memberId=" + memberId + ", type=" + type + ", status=" + status);
+			
+			List<Map<String, Object>> myPosts = auctionService.getMyPosts(memberId, type, status);
+			
+			System.out.println("내 게시글 조회 성공: " + myPosts.size() + "개 게시글");
+			return ResponseEntity.ok(myPosts);
+		} catch (Exception e) {
+			System.out.println("내 게시글 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	// 경매 게시글만 조회
+	@GetMapping("/auction/my-auction-posts/{memberId}")
+	public ResponseEntity<List<Map<String, Object>>> getMyAuctionPosts(
+			@PathVariable("memberId") long memberId,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestHeader(value = "Authorization", required = false) String token
+	) {
+		try {
+			// JWT token validation (self-check)
+			if (token != null && token.startsWith("Bearer ")) {
+				String jwtToken = token.substring(7);
+				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
+				if (tokenMemberId != memberId) {
+					return ResponseEntity.status(403).build();
+				}
+			}
+			
+			System.out.println("내 경매 게시글 조회 요청: memberId=" + memberId + ", status=" + status);
+			
+			List<Map<String, Object>> auctionPosts = auctionService.getMyAuctionPosts(memberId, status);
+			
+			System.out.println("내 경매 게시글 조회 성공: " + auctionPosts.size() + "개 게시글");
+			return ResponseEntity.ok(auctionPosts);
+		} catch (Exception e) {
+			System.out.println("내 경매 게시글 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	// 일반거래 게시글만 조회
+	@GetMapping("/auction/my-general-posts/{memberId}")
+	public ResponseEntity<List<Map<String, Object>>> getMyGeneralPosts(
+			@PathVariable("memberId") long memberId,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestHeader(value = "Authorization", required = false) String token
+	) {
+		try {
+			// JWT token validation (self-check)
+			if (token != null && token.startsWith("Bearer ")) {
+				String jwtToken = token.substring(7);
+				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
+				if (tokenMemberId != memberId) {
+					return ResponseEntity.status(403).build();
+				}
+			}
+			
+			System.out.println("내 일반거래 게시글 조회 요청: memberId=" + memberId + ", status=" + status);
+			
+			List<Map<String, Object>> generalPosts = auctionService.getMyGeneralPosts(memberId, status);
+			
+			System.out.println("내 일반거래 게시글 조회 성공: " + generalPosts.size() + "개 게시글");
+			return ResponseEntity.ok(generalPosts);
+		} catch (Exception e) {
+			System.out.println("내 일반거래 게시글 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	// 나눔 게시글만 조회
+	@GetMapping("/auction/my-giveaway-posts/{memberId}")
+	public ResponseEntity<List<Map<String, Object>>> getMyGiveawayPosts(
+			@PathVariable("memberId") long memberId,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestHeader(value = "Authorization", required = false) String token
+	) {
+		try {
+			// JWT token validation (self-check)
+			if (token != null && token.startsWith("Bearer ")) {
+				String jwtToken = token.substring(7);
+				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
+				if (tokenMemberId != memberId) {
+					return ResponseEntity.status(403).build();
+				}
+			}
+			
+			System.out.println("내 나눔 게시글 조회 요청: memberId=" + memberId + ", status=" + status);
+			
+			List<Map<String, Object>> giveawayPosts = auctionService.getMyGiveawayPosts(memberId, status);
+			
+			System.out.println("내 나눔 게시글 조회 성공: " + giveawayPosts.size() + "개 게시글");
+			return ResponseEntity.ok(giveawayPosts);
+		} catch (Exception e) {
+			System.out.println("내 나눔 게시글 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).build();
+		}
+	}
+
+	// 유찰 게시글만 조회 (경매에서만 발생)
+	@GetMapping("/auction/my-cancelled-auction-posts/{memberId}")
+	public ResponseEntity<List<Map<String, Object>>> getMyCancelledAuctionPosts(
+			@PathVariable("memberId") long memberId,
+			@RequestHeader(value = "Authorization", required = false) String token
+	) {
+		try {
+			// JWT token validation (self-check)
+			if (token != null && token.startsWith("Bearer ")) {
+				String jwtToken = token.substring(7);
+				long tokenMemberId = jwtUtil.extractMemberId(jwtToken);
+				if (tokenMemberId != memberId) {
+					return ResponseEntity.status(403).build();
+				}
+			}
+			
+			System.out.println("내 유찰 게시글 조회 요청: memberId=" + memberId);
+			
+			List<Map<String, Object>> cancelledPosts = auctionService.getMyCancelledAuctionPosts(memberId);
+			
+			System.out.println("내 유찰 게시글 조회 성공: " + cancelledPosts.size() + "개 게시글");
+			return ResponseEntity.ok(cancelledPosts);
+		} catch (Exception e) {
+			System.out.println("내 유찰 게시글 조회 실패: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(500).build();
+		}
+	}
 }

@@ -75,4 +75,27 @@ public interface AuctionMapper {
 	public AuctionGuaranteeDTO findGuarantee(@Param("postId") long postId,
 	                                  @Param("memberId") long memberId);
 
+	// 내 게시글 타입별 개수 조회 (위쪽 필터용)
+	public Map<String, Object> getMyPostsCounts(@Param("memberId") long memberId);
+
+	// 내 게시글 조회 (마이페이지 거래내역용)
+	public List<Map<String, Object>> getMyPosts(@Param("memberId") long memberId, 
+	                                           @Param("type") String type, 
+	                                           @Param("status") String status);
+
+	// 경매 게시글만 조회
+	public List<Map<String, Object>> getMyAuctionPosts(@Param("memberId") long memberId,
+												@Param("status") String status);
+
+	// 일반거래 게시글만 조회
+	public List<Map<String, Object>> getMyGeneralPosts(@Param("memberId") long memberId,
+												@Param("status") String status);
+
+	// 나눔 게시글만 조회
+	public List<Map<String, Object>> getMyGiveawayPosts(@Param("memberId") long memberId,
+												 @Param("status") String status);
+
+	// 유찰 게시글만 조회 (경매에서만 발생)
+	public List<Map<String, Object>> getMyCancelledAuctionPosts(@Param("memberId") long memberId);
+
 }
