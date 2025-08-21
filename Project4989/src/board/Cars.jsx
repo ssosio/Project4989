@@ -1,6 +1,7 @@
 import axios from 'axios';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FaChevronUp } from 'react-icons/fa';
 import './cars.css';
 
 const CAR_DETAIL_URL = 'http://localhost:4989/post/cardetail'; // 필요시 수정
@@ -338,178 +339,185 @@ const Cars = () => {
         <div className="cars-header">
           <h1 className="cars-title">자동차 목록</h1>
           <p className="cars-subtitle">다양한 자동차를 찾아보세요</p>
-        </div>
-
-        {/* ✅ 라디오 필터 UI */}
-        <div className="cars-filters">
-
-          <div className="filter-group">
-            <div className="filter-label">상태</div>
-            <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
-            <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
-            <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
-            <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-label">브랜드</div>
-            <label><input type="radio" name="brand" value="ALL" checked={filters.brand === 'ALL'} onChange={onChangeBrand} /> 전체</label>
-            <label><input type="radio" name="brand" value="kia" checked={filters.brand === 'kia'} onChange={onChangeBrand} /> 기아</label>
-            <label><input type="radio" name="brand" value="hyundai" checked={filters.brand === 'hyundai'} onChange={onChangeBrand} /> 현대</label>
-            <label><input type="radio" name="brand" value="benz" checked={filters.brand === 'benz'} onChange={onChangeBrand} /> 벤츠</label>
-            <label><input type="radio" name="brand" value="audi" checked={filters.brand === 'audi'} onChange={onChangeBrand} /> 아우디</label>
-            <label><input type="radio" name="brand" value="bmw" checked={filters.brand === 'bmw'} onChange={onChangeBrand} /> BMW</label>
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-label">연식</div>
-            <label><input type="radio" name="year" value="ALL" checked={filters.year === 'ALL'} onChange={onChangeYear} /> 전체</label>
-            <label><input type="radio" name="year" value="5년" checked={filters.year === '5년'} onChange={onChangeYear} /> 5년</label>
-            <label><input type="radio" name="year" value="10년" checked={filters.year === '10년'} onChange={onChangeYear} /> 10년</label>
-            <label><input type="radio" name="year" value="15년" checked={filters.year === '15년'} onChange={onChangeYear} /> 15년</label>
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-label">주행거리</div>
-            {MILEAGE_RANGES.map((r) => (
-              <label key={`mileage-${r.key}`}>
-                <input type="radio" name="mileage" value={r.key} checked={filters.mileage === r.key} onChange={onChangeMileage} />
-                {r.label}
-              </label>
-            ))}
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-label">연료</div>
-            <label><input type="radio" name="fuelType" value="ALL" checked={filters.fuelType === 'ALL'} onChange={onChangeFuel} /> 전체</label>
-            <label><input type="radio" name="fuelType" value="gasoline" checked={filters.fuelType === 'gasoline'} onChange={onChangeFuel} /> 휘발유</label>
-            <label><input type="radio" name="fuelType" value="diesel" checked={filters.fuelType === 'diesel'} onChange={onChangeFuel} /> 경유</label>
-            <label><input type="radio" name="fuelType" value="electric" checked={filters.fuelType === 'electric'} onChange={onChangeFuel} /> 전기</label>
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-label">변속기</div>
-            <label><input type="radio" name="transmission" value="ALL" checked={filters.transmission === 'ALL'} onChange={onChangeTrans} /> 전체</label>
-            <label><input type="radio" name="transmission" value="auto" checked={filters.transmission === 'auto'} onChange={onChangeTrans} /> 오토</label>
-            <label><input type="radio" name="transmission" value="stick" checked={filters.transmission === 'stick'} onChange={onChangeTrans} /> 수동</label>
-          </div>
-
-          {/* 필터 초기화 버튼 */}
-          <div className="filter-reset-container">
-            <button 
-              type="button" 
-              className="filter-reset-btn" 
-              onClick={resetFilters}
-              title="모든 필터 초기화"
-            >
-              필터 초기화
+          {/* 등록 버튼 */}
+            <button type="button" className="cars-register-btn" onClick={() => navi('/board/post')}>
+              자동차 등록하기
             </button>
-          </div>
-
         </div>
 
-        {/* 등록 버튼 */}
-        <button type="button" className="cars-register-btn" onClick={() => navi('/board/post')}>
-          자동차 등록하기
-        </button>
-
-        {/* 목록 */}
-        {filteredCars.length > 0 ? (
-          <>
-            <div className="cars-grid">
-              {currentItems.map((p) => (
-                <div
-                  id={`post-${p.postId}`}
-                  key={p.postId}
-                  className="cars-card"
-                  onClick={() =>
-                    navi(`/board/GoodsDetail?postId=${p.postId}`, {
-                      state: { from: `${location.pathname}${location.search || ''}`, page: currentPage, focusId: p.postId },
-                    })
-                  }
+        {/* 메인 컨텐츠 영역 */}
+        <div className="cars-main-content">
+          {/* 왼쪽 사이드바 - 필터 */}
+          <div className="cars-sidebar">
+            <div className="cars-filters">
+              {/* 필터 초기화 버튼 */}
+              <div className="filter-reset-container">
+                <button 
+                  type="button" 
+                  className="filter-reset-btn" 
+                  onClick={resetFilters}
+                  title="모든 필터 초기화"
                 >
-                  <div className="cars-image">
-                    {p.mainPhotoUrl ? <img src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} /> : <div className="cars-image-placeholder">이미지 없음</div>}
-                  </div>
-                  <div className="cars-info">
-                    <h3 className="cars-title-text">{p.title}</h3>
-                    <div className="cars-price">{p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}</div>
-                    <div className="cars-member">판매자: {p.nickname}</div>
-                    <div>조회수: {p.viewCount}</div>
-                    <div className="cars-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
-                    
-                    {/* 상태 및 차량 정보 배지 */}
-                    <div className="cars-status">
-                      <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
-                        {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
-                      </span>
-                      {p._brand && (
-                        <span className="trade-type-badge">
-                          {p._brand}
-                        </span>
-                      )}
-                      {p._year && (
-                        <span className="trade-type-badge">
-                          {p._year}년
-                        </span>
-                      )}
-                      {p._fuel && (
-                        <span className="trade-type-badge">
-                          {p._fuel === 'GASOLINE' ? '가솔린' : p._fuel === 'DIESEL' ? '디젤' : p._fuel === 'ELECTRIC' ? '전기' : p._fuel}
-                        </span>
-                      )}
-                      {p._trans && (
-                        <span className="trade-type-badge">
-                          {p._trans === 'AUTOMATIC' ? '오토' : p._trans === 'MANUAL' ? '수동' : p._trans}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 페이지네이션 */}
-            <div className="cars-pagination">
-              <div className="cars-page-info">
-                총 {filteredCars.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredCars.length)}개 표시
+                  필터 초기화
+                </button>
               </div>
 
-              {totalPages > 1 ? (
-                <>
-                  <button className="cars-page-btn cars-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>
-                    이전
-                  </button>
-                  <div className="cars-page-numbers">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button key={page} className={`cars-page-number ${currentPage === page ? 'active' : ''}`} onClick={() => handlePageChange(page)}>
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-                  <button className="cars-page-btn cars-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>
-                    다음
-                  </button>
-                </>
-              ) : (
-                <div className="cars-page-single">페이지 1 / 1</div>
-              )}
+              <div className="filter-group">
+                <div className="filter-label">상태</div>
+                <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
+                <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
+                <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
+                <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">브랜드</div>
+                <label><input type="radio" name="brand" value="ALL" checked={filters.brand === 'ALL'} onChange={onChangeBrand} /> 전체</label>
+                <label><input type="radio" name="brand" value="kia" checked={filters.brand === 'kia'} onChange={onChangeBrand} /> 기아</label>
+                <label><input type="radio" name="brand" value="hyundai" checked={filters.brand === 'hyundai'} onChange={onChangeBrand} /> 현대</label>
+                <label><input type="radio" name="brand" value="benz" checked={filters.brand === 'benz'} onChange={onChangeBrand} /> 벤츠</label>
+                <label><input type="radio" name="brand" value="audi" checked={filters.brand === 'audi'} onChange={onChangeBrand} /> 아우디</label>
+                <label><input type="radio" name="brand" value="bmw" checked={filters.brand === 'bmw'} onChange={onChangeBrand} /> BMW</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">연식</div>
+                <label><input type="radio" name="year" value="ALL" checked={filters.year === 'ALL'} onChange={onChangeYear} /> 전체</label>
+                <label><input type="radio" name="year" value="5년" checked={filters.year === '5년'} onChange={onChangeYear} /> 5년</label>
+                <label><input type="radio" name="year" value="10년" checked={filters.year === '10년'} onChange={onChangeYear} /> 10년</label>
+                <label><input type="radio" name="year" value="15년" checked={filters.year === '15년'} onChange={onChangeYear} /> 15년</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">주행거리</div>
+                {MILEAGE_RANGES.map((r) => (
+                  <label key={`mileage-${r.key}`}>
+                    <input type="radio" name="mileage" value={r.key} checked={filters.mileage === r.key} onChange={onChangeMileage} />
+                    {r.label}
+                  </label>
+                ))}
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">연료</div>
+                <label><input type="radio" name="fuelType" value="ALL" checked={filters.fuelType === 'ALL'} onChange={onChangeFuel} /> 전체</label>
+                <label><input type="radio" name="fuelType" value="gasoline" checked={filters.fuelType === 'gasoline'} onChange={onChangeFuel} /> 휘발유</label>
+                <label><input type="radio" name="fuelType" value="diesel" checked={filters.fuelType === 'diesel'} onChange={onChangeFuel} /> 경유</label>
+                <label><input type="radio" name="fuelType" value="electric" checked={filters.fuelType === 'electric'} onChange={onChangeFuel} /> 전기</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">변속기</div>
+                <label><input type="radio" name="transmission" value="ALL" checked={filters.transmission === 'ALL'} onChange={onChangeTrans} /> 전체</label>
+                <label><input type="radio" name="transmission" value="auto" checked={filters.transmission === 'auto'} onChange={onChangeTrans} /> 오토</label>
+                <label><input type="radio" name="transmission" value="stick" checked={filters.transmission === 'stick'} onChange={onChangeTrans} /> 수동</label>
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="cars-empty">
-            <div className="cars-empty-icon">🚗</div>
-            <div className="cars-empty-text">조건에 맞는 자동차가 없습니다</div>
-            <button className="cars-empty-btn" onClick={() => navi('/board/post')}>
-              첫 번째 자동차 등록하기
-            </button>
           </div>
-        )}
+
+          {/* 오른쪽 메인 컨텐츠 */}
+          <div className="cars-content">
+            
+
+            {/* 목록 */}
+            {filteredCars.length > 0 ? (
+              <>
+                <div className="cars-grid">
+                  {currentItems.map((p) => (
+                    <div
+                      id={`post-${p.postId}`}
+                      key={p.postId}
+                      className="cars-card"
+                      onClick={() =>
+                        navi(`/board/GoodsDetail?postId=${p.postId}`, {
+                          state: { from: `${location.pathname}${location.search || ''}`, page: currentPage, focusId: p.postId },
+                        })
+                      }
+                    >
+                      <div className="cars-image">
+                        {p.mainPhotoUrl ? <img src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} /> : <div className="cars-image-placeholder">이미지 없음</div>}
+                      </div>
+                      <div className="cars-info">
+                        <h3 className="cars-title-text">{p.title}</h3>
+                        <div className="cars-price">{p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}</div>
+                        <div className="cars-member">판매자: {p.nickname}</div>
+                        <div>조회수: {p.viewCount}</div>
+                        <div className="cars-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+                        
+                        {/* 상태 및 차량 정보 배지 */}
+                        <div className="cars-status">
+                          <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                            {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
+                          </span>
+                          {p._brand && (
+                            <span className="trade-type-badge">
+                              {p._brand}
+                            </span>
+                          )}
+                          {p._year && (
+                            <span className="trade-type-badge">
+                              {p._year}년
+                            </span>
+                          )}
+                          {p._fuel && (
+                            <span className="trade-type-badge">
+                              {p._fuel === 'GASOLINE' ? '가솔린' : p._fuel === 'DIESEL' ? '디젤' : p._fuel === 'ELECTRIC' ? '전기' : p._fuel}
+                            </span>
+                          )}
+                          {p._trans && (
+                            <span className="trade-type-badge">
+                              {p._trans === 'AUTOMATIC' ? '오토' : p._trans === 'MANUAL' ? '수동' : p._trans}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 페이지네이션 */}
+                <div className="cars-pagination">
+                  <div className="cars-page-info">
+                    총 {filteredCars.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredCars.length)}개 표시
+                  </div>
+
+                  {totalPages > 1 ? (
+                    <>
+                      <button className="cars-page-btn cars-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>
+                        이전
+                      </button>
+                      <div className="cars-page-numbers">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button key={page} className={`cars-page-number ${currentPage === page ? 'active' : ''}`} onClick={() => handlePageChange(page)}>
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button className="cars-page-btn cars-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                        다음
+                      </button>
+                    </>
+                  ) : (
+                    <div className="cars-page-single">페이지 1 / 1</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="cars-empty">
+                <div className="cars-empty-icon">🚗</div>
+                <div className="cars-empty-text">조건에 맞는 자동차가 없습니다</div>
+                <button className="cars-empty-btn" onClick={() => navi('/board/post')}>
+                  첫 번째 자동차 등록하기
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* 최상단 버튼 */}
         {showScrollTop && (
           <button className="scroll-to-top-btn" onClick={scrollToTop} title="최상단으로 이동">
-            ↑
+            <FaChevronUp />
           </button>
         )}
       </div>

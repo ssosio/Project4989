@@ -51,6 +51,9 @@ const GoodsDetail = () => {
   useEffect(() => {
     if (!postId) return;
 
+    // 페이지 로드 시 스크롤을 맨 위로 이동
+    window.scrollTo(0, 0);
+
     console.log("✅ useEffect 실행됨. postId:", postId, "현재 userInfo:", userInfo);
 
     // 토큰이 있으면 헤더에 포함하고, 없으면 빈 객체를 사용합니다.
@@ -448,62 +451,73 @@ const GoodsDetail = () => {
           {/* 왼쪽 이미지 영역 */}
           <div className="gooddetail-gallery">
             <h3 className="gooddetail-gallery-title">사진 목록</h3>
-            {photos && photos.length > 0 ? (
-              <div className="gooddetail-slider">
-                <div className="gooddetail-slider-container">
-                  <img
-                    src={`http://localhost:4989/postphoto/${photos[currentPhotoIndex].photoUrl}`}
-                    alt=""
-                    className="gooddetail-slider-photo"
-                  />
-                  
-                  {/* 이전 버튼 */}
-                  {photos.length > 1 && (
-                    <button 
-                      className="gooddetail-slider-btn gooddetail-slider-btn-prev"
-                      onClick={prevPhoto}
-                      aria-label="이전 사진"
-                    >
-                      ‹
-                    </button>
-                  )}
-                  
-                  {/* 다음 버튼 */}
-                  {photos.length > 1 && (
-                    <button 
-                      className="gooddetail-slider-btn gooddetail-slider-btn-next"
-                      onClick={nextPhoto}
-                      aria-label="다음 사진"
-                    >
-                      ›
-                    </button>
-                  )}
-                </div>
-                
-                {/* 사진 인디케이터 */}
-                {/* {photos.length > 1 && (
-                  <div className="gooddetail-slider-indicators">
-                    {photos.map((_, index) => (
-                      <button
-                        key={index}
-                        className={`gooddetail-slider-indicator ${index === currentPhotoIndex ? 'active' : ''}`}
-                        onClick={() => goToPhoto(index)}
-                        aria-label={`${index + 1}번째 사진으로 이동`}
-                      />
-                    ))}
+            <div className="gooddetail-slider">
+              {photos && photos.length > 0 && photos[currentPhotoIndex]?.photoUrl && photos[currentPhotoIndex].photoUrl !== 'null' ? (
+                <>
+                  <div className="gooddetail-slider-container">
+                    <img
+                      src={`http://localhost:4989/postphoto/${photos[currentPhotoIndex].photoUrl}`}
+                      alt=""
+                      className="gooddetail-slider-photo"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    
+                    {/* 이미지 로드 실패 시 표시할 이미지 없음 메시지 */}
+                    <div className="gooddetail-no-photos" style={{ display: 'none' }}>
+                      <p>등록된 사진이 없습니다</p>
+                    </div>
+                    
+                    {/* 이전 버튼 */}
+                    {photos.length > 1 && (
+                      <button 
+                        className="gooddetail-slider-btn gooddetail-slider-btn-prev"
+                        onClick={prevPhoto}
+                        aria-label="이전 사진"
+                      >
+                        ‹
+                      </button>
+                    )}
+                    
+                    {/* 다음 버튼 */}
+                    {photos.length > 1 && (
+                      <button 
+                        className="gooddetail-slider-btn gooddetail-slider-btn-next"
+                        onClick={nextPhoto}
+                        aria-label="다음 사진"
+                      >
+                        ›
+                      </button>
+                    )}
                   </div>
-                )} */}
-                
-                {/* 사진 카운터 */}
-                <div className="gooddetail-slider-counter">
-                  {currentPhotoIndex + 1} / {photos.length}
+                  
+                  {/* 사진 인디케이터 */}
+                  {/* {photos.length > 1 && (
+                    <div className="gooddetail-slider-indicators">
+                      {photos.map((_, index) => (
+                        <button
+                          key={index}
+                          className={`gooddetail-slider-indicator ${index === currentPhotoIndex ? 'active' : ''}`}
+                          onClick={() => goToPhoto(index)}
+                          aria-label={`${index + 1}번째 사진으로 이동`}
+                        />
+                      ))}
+                    </div>
+                  )} */}
+                  
+                  {/* 사진 카운터 */}
+                  <div className="gooddetail-slider-counter">
+                    {currentPhotoIndex + 1} / {photos.length}
+                  </div>
+                </>
+              ) : (
+                <div className="gooddetail-no-photos">
+                  <p>등록된 사진이 없습니다</p>
                 </div>
-              </div>
-            ) : (
-              <div className="gooddetail-no-photos">
-                <p>등록된 사진이 없습니다</p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* 오른쪽 상품 정보 영역 */}
