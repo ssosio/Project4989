@@ -31,6 +31,7 @@ const Root = () => {
           loginId: decodedToken.sub,
           memberId: decodedToken.memberId,
           nickname: decodedToken.nickname,
+          role:decodedToken.role,
           profileImageUrl: decodedToken.profileImageUrl,
         });
         // 새로고침 후에도 모든 axios 요청 헤더에 토큰을 포함시킵니다.

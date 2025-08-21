@@ -30,4 +30,7 @@ public interface MemberMapper {
     // 마이페이지 관련 메서드들
     public void updateProfile(MemberDto member);
     public void updateProfileImage(@Param("loginId") String loginId, @Param("profileImageUrl") String profileImageUrl);
+    
+    // loginId로 memberId 조회
+    public Integer findMemberIdByLoginId(@Param("loginId") String loginId);
 }

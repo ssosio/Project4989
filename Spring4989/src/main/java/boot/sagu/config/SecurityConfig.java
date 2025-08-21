@@ -103,7 +103,8 @@ public class SecurityConfig {
                 // SMS 인증 및 아이디/비밀번호 찾기 관련 API는 인증 없이 접근 가능
                 .requestMatchers("/sms/**", "/find-id", "/verify-for-password-reset", "/reset-password").permitAll()
                 .requestMatchers("/chatsave/**","/read").permitAll()
-                .requestMatchers("/api/region/**","/api/member-region/**").permitAll()
+                .requestMatchers("/api/region/**","/api/member-region/register").permitAll()
+                .requestMatchers("/api/member-region/addresses/**").authenticated()
                 .requestMatchers("/submit").authenticated()
                 // 경매 조회용 API는 인증 불필요
                 .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()

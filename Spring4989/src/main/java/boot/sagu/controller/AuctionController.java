@@ -319,7 +319,7 @@ public class AuctionController {
  	// 입찰 시도
 	@PostMapping("/auction/{postId}/bids")
 	public ResponseEntity<?> placeBid(
-		@PathVariable long postId,
+		@PathVariable("postId") long postId,
 		@RequestBody AuctionDto body,
 		@RequestHeader(value = "Authorization", required = false) String token
 	) {
