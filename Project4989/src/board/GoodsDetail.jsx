@@ -661,28 +661,36 @@ const GoodsDetail = () => {
             목록
           </button>
 
-          {/* 작성자 본인만 볼 수 있는 판매 상태 선택 */}
-          {userInfo && userInfo.memberId === post.memberId && (
-            <div className="gooddetail-status-selector">
-              <label htmlFor="status-select" className="gooddetail-status-label">
-                판매 상태 변경:
-              </label>
-              <select
-                id="status-select"
-                className="gooddetail-status-select"
-                value={post.status || 'ON_SALE'}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                disabled={isUpdatingStatus}
-              >
-                <option value="ON_SALE">판매중</option>
-                <option value="RESERVED">예약중</option>
-                <option value="SOLD">판매완료</option>
-              </select>
-              {isUpdatingStatus && (
-                <span className="gooddetail-status-updating">업데이트 중...</span>
-              )}
-            </div>
-          )}
+                      {/* 작성자 본인만 볼 수 있는 판매 상태 선택 */}
+            {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
+                <div className="gooddetail-status-selector">
+                    <label htmlFor="status-select" className="gooddetail-status-label">
+                        판매 상태 변경:
+                    </label>
+                    <select
+                        id="status-select"
+                        className="gooddetail-status-select"
+                        value={post.status || 'ON_SALE'}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        disabled={isUpdatingStatus}
+                    >
+                        <option value="ON_SALE">판매중</option>
+                        <option value="RESERVED">예약중</option>
+                        <option value="SOLD">판매완료</option>
+                    </select>
+                    {isUpdatingStatus && (
+                        <span className="gooddetail-status-updating">업데이트 중...</span>
+                    )}
+                </div>
+            )}
+            
+            {/* 판매완료 상태일 때 표시할 메시지 */}
+            {userInfo && userInfo.memberId === post.memberId && post.status === 'SOLD' && (
+                <div className="gooddetail-status-completed">
+                    <span className="gooddetail-status-completed-icon">✅</span>
+                    <span className="gooddetail-status-completed-text">판매가 완료되었습니다</span>
+                </div>
+            )}
             </div>
 
             {/* 메타 정보 */}

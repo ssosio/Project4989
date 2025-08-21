@@ -25,8 +25,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import boot.sagu.service.CustomOAuth2UserService;
 import boot.sagu.service.CustomUserDetailsService;
 import boot.sagu.dto.MemberDto;
-// ⬇️ 네 프로젝트의 CustomUserDetails 실제 경로로 바꿔주세요
-import boot.sagu.config.CustomUserDetails;
 
 @RequiredArgsConstructor
 @Configuration

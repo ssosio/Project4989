@@ -308,4 +308,44 @@ public class PostsController {
 		}
 	}
 	
+	// 구매내역 조회 API
+	@GetMapping("/purchaseHistory")
+	public ResponseEntity<Map<String, Object>> getPurchaseHistory(
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// System.out.println("🔍 구매내역 조회 API 호출됨");
+			
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				// System.err.println("❌ 인증 토큰이 없음");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			// System.out.println("👤 조회 요청 사용자 ID: " + memberId);
+			
+			// 구매내역 조회
+			List<Map<String, Object>> purchases = postService.getPurchaseHistory(memberId);
+			// System.out.println("🛒 조회된 구매내역 개수: " + (purchases != null ? purchases.size() : "null"));
+			
+			if (purchases != null && !purchases.isEmpty()) {
+				// System.out.println("📋 첫 번째 구매내역: " + purchases.get(0));
+			}
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"purchases", purchases
+			));
+			
+		} catch (Exception e) {
+			// System.err.println("❌ 구매내역 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "구매내역 조회 중 오류가 발생했습니다."));
+		}
+	}
+	
 }

@@ -70,4 +70,7 @@ public interface PostsMapperInter {
 	// 채팅방 참여자 조회
 	List<Map<String, Object>> getChatParticipants(@Param("postId") Long postId);
 	
+	// 구매내역 조회
+	List<Map<String, Object>> getPurchaseHistory(@Param("memberId") Long memberId);
+	
 }

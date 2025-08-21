@@ -700,15 +700,44 @@
   padding: 4px 0;
 }
 
-/* 모바일 반응형 */
-@media (max-width: 768px) {
-  .gooddetail-status-selector {
-    padding: 12px;
-    margin-top: 12px;
-  }
-  
-  .gooddetail-status-select {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-}
+        /* 판매완료 상태 표시 */
+        .gooddetail-status-completed {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 16px;
+          background: #f0f9ff;
+          border-radius: 8px;
+          border: 1px solid #0ea5e9;
+          margin-top: 16px;
+          text-align: center;
+          justify-content: center;
+        }
+
+        .gooddetail-status-completed-icon {
+          font-size: 18px;
+        }
+
+        .gooddetail-status-completed-text {
+          font-size: 14px;
+          font-weight: 600;
+          color: #0c4a6e;
+        }
+
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
+          .gooddetail-status-selector {
+            padding: 12px;
+            margin-top: 12px;
+          }
+
+          .gooddetail-status-select {
+            font-size: 13px;
+            padding: 8px 10px;
+          }
+          
+          .gooddetail-status-completed {
+            padding: 12px;
+            margin-top: 12px;
+          }
+        }

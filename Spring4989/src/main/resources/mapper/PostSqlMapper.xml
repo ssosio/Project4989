@@ -591,4 +591,27 @@
 		ORDER BY lastMessageTime DESC
 	</select>
 
+	<!-- 구매내역 조회 -->
+	<select id="getPurchaseHistory" resultType="map">
+		SELECT 
+		    p.post_id AS postId,
+		    p.title,
+		    p.price,
+		    p.status,
+		    p.trade_type AS tradeType,
+		    p.post_type AS postType,
+		    p.created_at AS createdAt,
+		    p.updated_at AS updatedAt,
+		    p.buyer_id AS buyerId,
+		    p.member_id AS sellerId,
+		    m.nickname AS sellerNickname,
+		    ph.photo_url AS mainPhotoUrl,
+		    ph.is_main AS isMain
+		FROM posts p
+		INNER JOIN members m ON p.member_id = m.member_id
+		LEFT JOIN post_photos ph ON p.post_id = ph.post_id AND ph.is_main = 1
+		WHERE p.buyer_id = #{memberId}
+		ORDER BY p.updated_at DESC, p.created_at DESC
+	</select>
+
 </mapper>

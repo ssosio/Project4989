@@ -402,4 +402,24 @@ public class PostsService implements PostsServiceInter {
 		}
 	}
 	
+	// 구매내역 조회
+	public List<Map<String, Object>> getPurchaseHistory(Long memberId) {
+		try {
+			// System.out.println("🔍 PostsService.getPurchaseHistory 호출됨 - memberId: " + memberId);
+			
+			List<Map<String, Object>> result = postMapper.getPurchaseHistory(memberId);
+			// System.out.println("🛒 Mapper에서 반환된 결과: " + (result != null ? result.size() + "개" : "null"));
+			
+			if (result != null && !result.isEmpty()) {
+				// System.out.println("📋 첫 번째 결과 샘플: " + result.get(0));
+			}
+			
+			return result;
+		} catch (Exception e) {
+			// System.err.println("❌ 구매내역 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return new ArrayList<>();
+		}
+	}
+	
 }
