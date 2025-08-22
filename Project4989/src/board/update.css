@@ -358,3 +358,80 @@
     height: 100px;
   }
 }
+
+.estates_detail{
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.estates_detail td:first-child {
+  width: 100px;
+}
+
+.estates_detail td:first-child input{
+  width: 80px;
+}
+
+.estates_detail td:nth-child(2) {
+  width: 100px;
+}
+
+.estates_detail td:nth-child(3) {
+  width: 100px;
+}
+
+.estates_detail td:nth-child(4) {
+  width: 310px;
+}
+
+.car-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.car-detail td:first-child {
+  width: 140px;
+}
+
+.car-detail td:nth-child(2) {
+  width: 100px;
+}
+
+.car-detail td:nth-child(3) {
+  width: 130px;
+}
+
+.car-detail td:nth-child(3) input {
+  width: 100px;
+}
+
+.car-detail td:nth-child(4) {
+  width: 120px;
+}
+
+.car-detail td:nth-child(5) {
+  width: 100px;
+}
+
+.item-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  flex-direction: row;
+  gap: 30px;
+}
+
+.item-detail td:first-child {
+  width: 230px;
+}
+
+
+.item-detail td:nth-child(2) {
+  width: 175px;
+}

@@ -171,6 +171,9 @@ useEffect(() => {
   // ✅ 라디오 필터 로직
   const filteredItems = useMemo(() => {
     return mergedItems.filter(it => {
+      // AUCTION 타입은 항상 제외
+      if (normalizeTrade(it.tradeType) === 'AUCTION') return false;
+      
       // categoryId: 숫자 또는 문자열일 수 있으니 느슨히 비교
       if (filters.categoryId !== 'ALL') {
         // 상세에 categoryId가 없으면 통과시키지 않음
@@ -283,14 +286,6 @@ useEffect(() => {
               </div>
 
               <div className="filter-group">
-                <div className="filter-label">카테고리</div>
-                <label><input type="radio" name="category" value="ALL" checked={filters.categoryId === 'ALL'} onChange={onChangeCategory} /> 전체</label>
-                <label><input type="radio" name="category" value="1" checked={filters.categoryId === '1'} onChange={onChangeCategory} /> 전자제품</label>
-                <label><input type="radio" name="category" value="2" checked={filters.categoryId === '2'} onChange={onChangeCategory} /> 의류</label>
-                <label><input type="radio" name="category" value="3" checked={filters.categoryId === '3'} onChange={onChangeCategory} /> 가구</label>
-              </div>
-
-              <div className="filter-group">
                 <div className="filter-label">상태</div>
                 <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
                 <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
@@ -302,9 +297,19 @@ useEffect(() => {
                 <div className="filter-label">판매타입</div>
                 <label><input type="radio" name="tradeType" value="ALL"     checked={filters.tradeType === 'ALL'}     onChange={onChangeTradeType} /> 전체</label>
                 <label><input type="radio" name="tradeType" value="SALE"    checked={filters.tradeType === 'SALE'}    onChange={onChangeTradeType} /> 판매</label>
-                <label><input type="radio" name="tradeType" value="AUCTION" checked={filters.tradeType === 'AUCTION'} onChange={onChangeTradeType} /> 경매</label>
+                {/* <label><input type="radio" name="tradeType" value="AUCTION" checked={filters.tradeType === 'AUCTION'} onChange={onChangeTradeType} /> 경매</label> */}
                 <label><input type="radio" name="tradeType" value="SHARE"   checked={filters.tradeType === 'SHARE'}   onChange={onChangeTradeType} /> 나눔</label>
               </div>
+
+              <div className="filter-group">
+                <div className="filter-label">카테고리</div>
+                <label><input type="radio" name="category" value="ALL" checked={filters.categoryId === 'ALL'} onChange={onChangeCategory} /> 전체</label>
+                <label><input type="radio" name="category" value="1" checked={filters.categoryId === '1'} onChange={onChangeCategory} /> 전자제품</label>
+                <label><input type="radio" name="category" value="2" checked={filters.categoryId === '2'} onChange={onChangeCategory} /> 의류</label>
+                <label><input type="radio" name="category" value="3" checked={filters.categoryId === '3'} onChange={onChangeCategory} /> 가구</label>
+              </div>
+
+              
             </div>
           </div>
 

@@ -27,6 +27,16 @@ const Real_estate = () => {
     return Number.isNaN(n) ? null : n;
   };
   const STATUS_ALIAS = (v) => (norm(v) === 'SOLD' ? 'SOLD_OUT' : norm(v));
+  
+  // tradeType 정규화 함수 추가
+  const normalizeTrade = (v) => {
+    const s = (v ?? '').toString().trim();
+    const u = s.toUpperCase();
+    if (u === '1' || u === 'SALE'    || s === '판매') return 'SALE';
+    if (u === '2' || u === 'AUCTION' || s === '경매') return 'AUCTION';
+    if (u === '3' || u === 'SHARE'   || s === '나눔' || u === 'GIVE' || u === 'GIVEAWAY' || u === 'FREE') return 'SHARE';
+    return u; // 혹시 다른 값이 오면 대문자 그대로
+  };
 
   const ROOMS_RANGES = [
     { key: 'ALL', label: '전체', test: () => true },
@@ -125,6 +135,7 @@ const Real_estate = () => {
       const area = d.area ?? d.size ?? d.Area ?? null;
       const floor = d.floor ?? d.Floor ?? null;
       const parking = d.parking ?? d.Parking ?? null;
+      const commonTrade = p.tradeType ?? p.trade_type ?? p.TRADE_TYPE;
 
       const processedEstate = {
         ...p, // 사진/제목/가격/createdAt/status 등
@@ -136,6 +147,8 @@ const Real_estate = () => {
         _area: toInt(area),
         _floor: toInt(floor),
         _parking: parking,
+        // tradeType 정규화 추가
+        tradeType: normalizeTrade(commonTrade),
       };
       
       console.log(`부동산 ${p.postId} 처리 결과:`, {
@@ -146,7 +159,8 @@ const Real_estate = () => {
         _rooms: processedEstate._rooms,
         _area: processedEstate._area,
         _floor: processedEstate._floor,
-        _parking: processedEstate._parking
+        _parking: processedEstate._parking,
+        tradeType: processedEstate.tradeType
       });
       
       return processedEstate;
@@ -163,6 +177,7 @@ const Real_estate = () => {
     dealType: 'ALL',
     rooms: 'ALL',
     area: 'ALL',
+    tradeType: 'ALL',
   });
 
   // ---------- 필터 적용 ----------
@@ -172,6 +187,12 @@ const Real_estate = () => {
     console.log('총 부동산 수:', estates.length);
     
     const filtered = estates.filter((e) => {
+      // AUCTION 타입은 항상 제외
+      if (normalizeTrade(e.tradeType) === 'AUCTION') {
+        console.log(`❌ AUCTION 타입 제외: ${e.title} (tradeType: ${e.tradeType})`);
+        return false;
+      }
+      
       // 상태 필터
       if (filters.status !== 'ALL') {
         if (e._status !== filters.status) {
@@ -214,6 +235,14 @@ const Real_estate = () => {
         const range = AREA_RANGES.find((r) => r.key === filters.area);
         if (!range?.test(e._area)) {
           console.log(`❌ 면적 필터 제외: ${e.title} (면적: ${e._area}평, 필터: ${filters.area})`);
+          return false;
+        }
+      }
+      
+      // 판매타입 필터
+      if (filters.tradeType !== 'ALL') {
+        if (normalizeTrade(e.tradeType) !== normalizeTrade(filters.tradeType)) {
+          console.log(`❌ 판매타입 필터 제외: ${e.title} (tradeType: ${e.tradeType}, 필터: ${filters.tradeType})`);
           return false;
         }
       }
@@ -266,6 +295,7 @@ const Real_estate = () => {
   const onChangeDealType = (e) => setAndResetPage({ dealType: e.target.value });
   const onChangeRooms = (e) => setAndResetPage({ rooms: e.target.value });
   const onChangeArea = (e) => setAndResetPage({ area: e.target.value });
+  const onChangeTradeType = (e) => setAndResetPage({ tradeType: e.target.value });
   
   // 필터 초기화 함수
   const resetFilters = () => {
@@ -275,6 +305,7 @@ const Real_estate = () => {
       dealType: 'ALL',
       rooms: 'ALL',
       area: 'ALL',
+      tradeType: 'ALL',
     });
   };
 
@@ -325,6 +356,13 @@ const Real_estate = () => {
               </div>
 
               <div className="filter-group">
+                <div className="filter-label">판매타입</div>
+                <label><input type="radio" name="tradeType" value="ALL" checked={filters.tradeType === 'ALL'} onChange={onChangeTradeType} /> 전체</label>
+                <label><input type="radio" name="tradeType" value="SALE" checked={filters.tradeType === 'SALE'} onChange={onChangeTradeType} /> 판매</label>
+                <label><input type="radio" name="tradeType" value="SHARE" checked={filters.tradeType === 'SHARE'} onChange={onChangeTradeType} /> 나눔</label>
+              </div>
+
+              <div className="filter-group">
                 <div className="filter-label">매물종류</div>
                 <label><input type="radio" name="propertyType" value="ALL" checked={filters.propertyType === 'ALL'} onChange={onChangePropertyType} /> 전체</label>
                 <label><input type="radio" name="propertyType" value="apt" checked={filters.propertyType === 'apt'} onChange={onChangePropertyType} /> 아파트</label>
@@ -361,6 +399,7 @@ const Real_estate = () => {
                   </label>
                 ))}
               </div>
+
             </div>
           </div>
 
@@ -403,32 +442,9 @@ const Real_estate = () => {
                           <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
                             {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
                           </span>
-                          {p._propertyType && (
-                            <span className="trade-type-badge">
-                              {p._propertyType === 'apt' ? '아파트' : 
-                               p._propertyType === 'studio' ? '오피스텔' : 
-                               p._propertyType === 'oneroom' ? '원룸' : 
-                               p._propertyType === 'tworoom' ? '투룸' : p._propertyType}
-                            </span>
-                          )}
-                          {p._dealType && (
-                            <span className="trade-type-badge">
-                              {p._dealType === 'lease' ? '전세' : 
-                               p._dealType === 'rent' ? '월세' : 
-                               p._dealType === 'leaseAndrent' ? '전월세' : 
-                               p._dealType === 'buy' ? '매매' : p._dealType}
-                            </span>
-                          )}
-                          {p._rooms && (
-                            <span className="trade-type-badge">
-                              {p._rooms}개
-                            </span>
-                          )}
-                          {p._area && (
-                            <span className="trade-type-badge">
-                              {p._area}㎡
-                            </span>
-                          )}
+                          <span className={`trade-type-badge ${p.tradeType === 'SALE' ? 'sale' : p.tradeType === 'AUCTION' ? 'auction' : p.tradeType === 'SHARE' ? 'share' : ''}`}>
+                            {p.tradeType === 'SALE' ? '판매' : p.tradeType === 'AUCTION' ? '경매' : p.tradeType === 'SHARE' ? '나눔' : p.tradeType || '미정'}
+                          </span>
                         </div>
                       </div>
                     </div>

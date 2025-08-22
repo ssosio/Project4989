@@ -25,6 +25,7 @@ public class PostsDto {
     private Timestamp updatedAt; // updated_at → updatedAt
     private String postType;    // post_type → postType (새로 추가)
     private String mainPhotoUrl; // 메인 이미지 URL
+    private int location;
     
     // ENUM 정의 (참고용)
     public enum TradeType {

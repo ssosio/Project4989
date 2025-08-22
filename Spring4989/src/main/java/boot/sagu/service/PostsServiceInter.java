@@ -46,8 +46,8 @@ public interface PostsServiceInter {
 	public int insertReport(ReportsDto dto);
 	
 	// 검색 메서드 추가
-	public List<PostsDto> searchAll(Map<String, Object> searchParams);
-	
-	public int countSearchAll(Map<String, Object> searchParams);
+//	public List<PostsDto> searchAll(Map<String, Object> searchParams);
+//	
+//	public int countSearchAll(Map<String, Object> searchParams);
 
 }

@@ -310,14 +310,13 @@ const UpdatePost = () => {
                             </td>
                             </tr>
                             )}
-                            {
-                    postType==='REAL_ESTATES'&&(
+                            {postType==='REAL_ESTATES'&&(
                         <tr className="estates_detail">
                             <td>
                                 <label>면적
                                 <input type="text" name='area' value={area} onChange={(e)=>{
                                         setArea(e.target.value);
-                                    }}/>㎡
+                                    }}/><span>㎡</span>
                                 </label>
                             </td>
                             <td>
@@ -354,10 +353,10 @@ const UpdatePost = () => {
                     postType==='CARS'&&(
                         <tr className="">
                             <td>
-                                <label>브랜드
+                                <label >브랜드
                                     <select name='brand' value={brand} onChange={(e)=>{
                                         setBrand(e.target.value);
-                                    }}>
+                                    }} >
                                         <option value=""  selected>브랜드를 선택해 주세요</option>
                                         <option value="kia">기아</option>
                                         <option value="hyundai">현대</option>
@@ -367,6 +366,10 @@ const UpdatePost = () => {
                                     </select>
                                 </label>
                             </td>
+                                    </tr>
+                            )}
+                            {postType==='CARS'&&(
+                             <tr className="car-detail">
                             <td>
                                 <label>모델
                                 <input type="text" name='model' value={model} onChange={(e)=>{
@@ -385,7 +388,7 @@ const UpdatePost = () => {
                                 <label>주행거리
                                 <input type="text" name='mileage' value={mileage} onChange={(e)=>{
                                         setMileage(e.target.value);
-                                    }}/>km
+                                    }}/><span>km</span>
                                 </label>
                             </td>
                             <td>
@@ -452,7 +455,7 @@ const UpdatePost = () => {
                 }
                 {
                     postType==='ITEMS' &&(
-                    <tr className="">
+                    <tr className="item-detail">
                         <td>
                             <label>대분류
                                 <select onChange={handleParentChange} value={selectedParent}>

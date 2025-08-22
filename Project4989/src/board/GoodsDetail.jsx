@@ -551,12 +551,12 @@ const GoodsDetail = () => {
                 </div>
               </div>
               <div className="gooddetail-metrics-right">
-                  {post?.memberId && (!userInfo || Number(userInfo.memberId) !== Number(post.memberId)) && (
+                 {!userInfo || Number(userInfo.memberId) !== Number(post.memberId) && (
                 <button className="gooddetail-report-btn" onClick={() => setOpen(true)}>
                 신고/문의
               </button>
-      )
-    }
+                )
+              }
               </div>
             </div>
 

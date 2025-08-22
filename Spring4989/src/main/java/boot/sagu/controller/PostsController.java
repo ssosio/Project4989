@@ -24,6 +24,7 @@ import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.CarDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
+import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
 import boot.sagu.dto.ReportsDto;
@@ -84,7 +85,9 @@ public class PostsController {
 			@RequestParam(value = "sortBy", required = false) String sortBy,
 			@RequestParam(value = "sortOrder", required = false) String sortOrder,
 			@RequestParam(value = "page", defaultValue = "1") int page,
-			@RequestParam(value = "size", defaultValue = "12") int size) {
+			@RequestParam(value = "size", defaultValue = "12") int size,
+			@RequestHeader(value="Authorization", required=false) String authorization,
+			@ModelAttribute MemberRegionDto mrdto) {
 		
 		try {
 			// 검색 파라미터를 Map으로 구성
@@ -104,6 +107,21 @@ public class PostsController {
 			searchParams.put("sortOrder", sortOrder);
 			searchParams.put("page", page);
 			searchParams.put("size", size);
+			
+			// ✅ regionId 처리 (로그인시에만 지역 제한)
+	        Integer regionId = 0;
+	        try {
+	            if (authorization != null && authorization.startsWith("Bearer ")) {
+	                String token = authorization.substring(7);
+	                long loginId = jwtUtil.extractMemberId(token); // 유효성 검사 포함
+	                if (loginId != 0 && mrdto.getRegionId() != 0) {
+	                    regionId = mrdto.getRegionId();
+	                }
+	            }
+	        } catch (Exception ignore) {
+	            // 토큰 무효/만료 → regionId 그대로 null
+	        }
+	        searchParams.put("regionId", regionId);
 			
 			List<PostsDto> searchResults = postService.searchAll(searchParams);
 			int totalCount = postService.countSearchAll(searchParams);
@@ -140,7 +158,6 @@ public class PostsController {
 			searchParams.put("categoryId", "ALL");
 			searchParams.put("sortBy", "");
 			searchParams.put("sortOrder", "");
-			searchParams.put("page", page);
 			searchParams.put("size", size);
 			
 			List<PostsDto> searchResults = postService.searchAll(searchParams);

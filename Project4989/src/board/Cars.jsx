@@ -42,6 +42,16 @@ const Cars = () => {
     return u || null;
   };
   const STATUS_ALIAS = (v) => (norm(v) === 'SOLD' ? 'SOLD_OUT' : norm(v));
+  
+  // tradeType 정규화 함수 추가
+  const normalizeTrade = (v) => {
+    const s = (v ?? '').toString().trim();
+    const u = s.toUpperCase();
+    if (u === '1' || u === 'SALE'    || s === '판매') return 'SALE';
+    if (u === '2' || u === 'AUCTION' || s === '경매') return 'AUCTION';
+    if (u === '3' || u === 'SHARE'   || s === '나눔' || u === 'GIVE' || u === 'GIVEAWAY' || u === 'FREE') return 'SHARE';
+    return u; // 혹시 다른 값이 오면 대문자 그대로
+  };
 
   const MILEAGE_RANGES = [
     { key: 'ALL', label: '전체', test: () => true },
@@ -130,6 +140,7 @@ const Cars = () => {
       const mileage = d.mileage ?? d.km ?? d.kms ?? d.odometer ?? d.Mileage ?? null;
       const fuel = d.fuelType ?? d.fuel ?? d.FuelType ?? null;
       const trans = d.transmission ?? d.gearbox ?? d.Transmission ?? null;
+      const commonTrade = p.tradeType ?? p.trade_type ?? p.TRADE_TYPE;
 
       const processedCar = {
         ...p, // 사진/제목/가격/createdAt/status 등
@@ -140,6 +151,8 @@ const Cars = () => {
         _mileage: toInt(mileage),
         _fuel: normalizeFuel(fuel),
         _trans: normalizeTrans(trans),
+        // tradeType 정규화 추가
+        tradeType: normalizeTrade(commonTrade),
       };
       
       console.log(`차량 ${p.postId} 처리 결과:`, {
@@ -149,7 +162,8 @@ const Cars = () => {
         _year: processedCar._year,
         _mileage: processedCar._mileage,
         _fuel: processedCar._fuel,
-        _trans: processedCar._trans
+        _trans: processedCar._trans,
+        tradeType: processedCar.tradeType
       });
       
       return processedCar;
@@ -167,6 +181,7 @@ const Cars = () => {
     mileage: 'ALL',
     fuelType: 'ALL',
     transmission: 'ALL',
+    tradeType: 'ALL',
   });
 
 
@@ -178,6 +193,12 @@ const Cars = () => {
     console.log('총 차량 수:', cars.length);
     
     const filtered = cars.filter((c) => {
+      // AUCTION 타입은 항상 제외
+      if (normalizeTrade(c.tradeType) === 'AUCTION') {
+        console.log(`❌ AUCTION 타입 제외: ${c.title} (tradeType: ${c.tradeType})`);
+        return false;
+      }
+      
       // 상태 필터
       if (filters.status !== 'ALL') {
         if (c._status !== filters.status) {
@@ -269,6 +290,14 @@ const Cars = () => {
         }
       }
       
+      // 판매타입 필터
+      if (filters.tradeType !== 'ALL') {
+        if (normalizeTrade(c.tradeType) !== normalizeTrade(filters.tradeType)) {
+          console.log(`❌ 판매타입 필터 제외: ${c.title} (tradeType: ${c.tradeType}, 필터: ${filters.tradeType})`);
+          return false;
+        }
+      }
+      
       console.log(`✅ 필터 통과: ${c.title}`);
       return true;
     });
@@ -320,6 +349,7 @@ const Cars = () => {
   const onChangeMileage = (e) => setAndResetPage({ mileage: e.target.value });
   const onChangeFuel = (e) => setAndResetPage({ fuelType: e.target.value });
   const onChangeTrans = (e) => setAndResetPage({ transmission: e.target.value });
+  const onChangeTradeType = (e) => setAndResetPage({ tradeType: e.target.value });
   
   // 필터 초기화 함수
   const resetFilters = () => {
@@ -330,6 +360,7 @@ const Cars = () => {
       mileage: 'ALL',
       fuelType: 'ALL',
       transmission: 'ALL',
+      tradeType: 'ALL',
     });
   };
 
@@ -382,6 +413,13 @@ const Cars = () => {
               </div>
 
               <div className="filter-group">
+                <div className="filter-label">판매타입</div>
+                <label><input type="radio" name="tradeType" value="ALL" checked={filters.tradeType === 'ALL'} onChange={onChangeTradeType} /> 전체</label>
+                <label><input type="radio" name="tradeType" value="SALE" checked={filters.tradeType === 'SALE'} onChange={onChangeTradeType} /> 판매</label>
+                <label><input type="radio" name="tradeType" value="SHARE" checked={filters.tradeType === 'SHARE'} onChange={onChangeTradeType} /> 나눔</label>
+              </div>
+
+              <div className="filter-group">
                 <div className="filter-label">브랜드</div>
                 <label><input type="radio" name="brand" value="ALL" checked={filters.brand === 'ALL'} onChange={onChangeBrand} /> 전체</label>
                 <label><input type="radio" name="brand" value="kia" checked={filters.brand === 'kia'} onChange={onChangeBrand} /> 기아</label>
@@ -423,6 +461,7 @@ const Cars = () => {
                 <label><input type="radio" name="transmission" value="auto" checked={filters.transmission === 'auto'} onChange={onChangeTrans} /> 오토</label>
                 <label><input type="radio" name="transmission" value="stick" checked={filters.transmission === 'stick'} onChange={onChangeTrans} /> 수동</label>
               </div>
+              
             </div>
           </div>
 
@@ -453,34 +492,18 @@ const Cars = () => {
                         <div className="cars-price">{p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}</div>
                         <div className="cars-member">판매자: {p.nickname}</div>
                         <div>조회수: {p.viewCount}</div>
-                        <div className="cars-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
-                        
-                        {/* 상태 및 차량 정보 배지 */}
                         <div className="cars-status">
                           <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
                             {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
                           </span>
-                          {p._brand && (
-                            <span className="trade-type-badge">
-                              {p._brand}
-                            </span>
-                          )}
-                          {p._year && (
-                            <span className="trade-type-badge">
-                              {p._year}년
-                            </span>
-                          )}
-                          {p._fuel && (
-                            <span className="trade-type-badge">
-                              {p._fuel === 'GASOLINE' ? '가솔린' : p._fuel === 'DIESEL' ? '디젤' : p._fuel === 'ELECTRIC' ? '전기' : p._fuel}
-                            </span>
-                          )}
-                          {p._trans && (
-                            <span className="trade-type-badge">
-                              {p._trans === 'AUTOMATIC' ? '오토' : p._trans === 'MANUAL' ? '수동' : p._trans}
-                            </span>
-                          )}
+                          <span className={`trade-type-badge ${p.tradeType === 'SALE' ? 'sale' : p.tradeType === 'AUCTION' ? 'auction' : p.tradeType === 'SHARE' ? 'share' : ''}`}>
+                            {p.tradeType === 'SALE' ? '판매' : p.tradeType === 'AUCTION' ? '경매' : p.tradeType === 'SHARE' ? '나눔' : p.tradeType || '미정'}
+                          </span>
                         </div>
+                        <div className="cars-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+                        
+                        {/* 상태 및 차량 정보 배지 */}
+                        
                       </div>
                     </div>
                   ))}

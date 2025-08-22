@@ -13,12 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.CarDto;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.ItemDto;
+import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
@@ -336,6 +339,9 @@ public class PostsService implements PostsServiceInter {
 	
 	//검색
 	public List<PostsDto> searchAll(Map<String, Object> searchParams) {
+		
+		
+		
         // 파라미터 추출 및 정리
         String keyword = (String) searchParams.get("keyword");
         String postType = (String) searchParams.get("postType");
@@ -352,6 +358,7 @@ public class PostsService implements PostsServiceInter {
         String sortOrder = (String) searchParams.get("sortOrder");
         Integer page = (Integer) searchParams.get("page");
         Integer size = (Integer) searchParams.get("size");
+        Integer regionId = (Integer)searchParams.get("regionId");
         
         // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
@@ -367,7 +374,7 @@ public class PostsService implements PostsServiceInter {
         int offset = (p - 1) * s;
         
         return postMapper.searchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
-        		minArea, maxArea, cat, sb, so, s, offset);
+        		minArea, maxArea, cat, sb, so, s, offset,regionId);
     }
 
     public int countSearchAll(Map<String, Object> searchParams) {
@@ -383,6 +390,7 @@ public class PostsService implements PostsServiceInter {
         Integer minArea = (Integer) searchParams.get("minArea");
         Integer maxArea = (Integer) searchParams.get("maxArea");
         String categoryId = (String) searchParams.get("categoryId");
+        Integer regionId = (Integer)searchParams.get("regionId");
         
         // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
@@ -392,7 +400,7 @@ public class PostsService implements PostsServiceInter {
         String cat = (categoryId == null || categoryId.isBlank()) ? "ALL" : categoryId.trim();
         
         return postMapper.countSearchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
-        		minArea, maxArea, cat);
+        		minArea, maxArea, cat,regionId);
     }
 	
 }

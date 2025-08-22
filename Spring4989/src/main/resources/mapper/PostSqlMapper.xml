@@ -279,6 +279,7 @@
       p.created_at,
       p.view_count,
       p.member_id,
+      p.location,
       
       -- cars 테이블
       c.post_id AS c_post_id,
@@ -302,8 +303,9 @@
       ui.category_id AS ui_category_id,
       ui.conditions AS ui_conditions,
       
-      -- categories 테이블
-      cat.name AS ui_category_name
+             -- categories 테이블
+       cat.name AS ui_category_name
+      
   FROM posts p
   LEFT JOIN cars c ON c.post_id = p.post_id AND p.post_type = 'CARS'
   LEFT JOIN real_estates re ON re.post_id = p.post_id AND p.post_type = 'REAL_ESTATES'
@@ -312,12 +314,12 @@
 
   <where>
     <!-- ✅ 지역 매칭 필수: posts.location 이 member_regions.region_id 에 존재 -->
-    AND EXISTS (
+    <!-- AND EXISTS (
       SELECT 1
       FROM member_regions mr
       WHERE mr.region_id = p.location
     )
-
+ -->
     <!-- 키워드 검색 -->
     <if test="kw != ''">
       AND (
@@ -328,6 +330,7 @@
         OR LOWER(p.status)   LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR LOWER(p.post_type)LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR CAST(p.price AS CHAR) LIKE CONCAT('%', #{kw}, '%')
+        OR LOWER(p.detail_location)  LIKE CONCAT('%', LOWER(#{kw}), '%')
 
         -- cars
         OR LOWER(c.brand) LIKE CONCAT('%', LOWER(#{kw}), '%')
@@ -380,20 +383,20 @@
 			<if test="maxPrice != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null">AND</if>
 				p.price <= #{maxPrice}
-			</if>
+			</if> -->
 			
-			자동차 연식 범위 필터
-			<if test="minYear != null">
+			<!-- 자동차 연식 범위 필터 -->
+			<!-- <if test="minYear != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null">AND</if>
 				c.year >= #{minYear}
 			</if>
 			<if test="maxYear != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null">AND</if>
 				c.year <= #{maxYear}
-			</if>
+			</if> -->
 			
-			부동산 면적 범위 필터
-			<if test="minArea != null">
+			<!-- 부동산 면적 범위 필터 -->
+			<!-- <if test="minArea != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null or maxYear != null">AND</if>
 				re.area >= #{minArea}
 			</if>
@@ -407,6 +410,13 @@
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null or maxYear != null or minArea != null or maxArea != null">AND</if>
 				ui.category_id = #{categoryId}
 			</if>
+			
+			  <!-- 지역 필터 -->
+			  <if test="regionId != null and regionId != 0">
+			    <if test="(postType != null and postType != '' and postType != 'ALL') or (kw != '')">AND</if>
+			    p.location = #{regionId}
+			  </if>
+			
 		</where>
 		
 		<!-- 정렬 -->
@@ -464,6 +474,7 @@
 					OR LOWER(p.status) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR LOWER(p.post_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR CAST(p.price AS CHAR) LIKE CONCAT('%', #{kw}, '%')
+					OR LOWER(p.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					
 					-- cars 테이블 검색
 					OR LOWER(c.brand) LIKE CONCAT('%', LOWER(#{kw}), '%')
@@ -515,20 +526,20 @@
 			<if test="maxPrice != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null">AND</if>
 				p.price <= #{maxPrice}
-			</if>
+			</if> -->
 			
-			자동차 연식 범위 필터
-			<if test="minYear != null">
+			<!-- 자동차 연식 범위 필터 -->
+			<!-- <if test="minYear != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null">AND</if>
 				c.year >= #{minYear}
 			</if>
 			<if test="maxYear != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null">AND</if>
 				c.year <= #{maxYear}
-			</if>
+			</if> -->
 			
-			부동산 면적 범위 필터
-			<if test="minArea != null">
+			<!-- 부동산 면적 범위 필터 -->
+			<!-- <if test="minArea != null">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null or maxYear != null">AND</if>
 				re.area >= #{minArea}
 			</if>
@@ -541,6 +552,12 @@
 			<if test="categoryId != null and categoryId != '' and categoryId != 'ALL'">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null or maxYear != null or minArea != null or maxArea != null">AND</if>
 				ui.category_id = #{categoryId}
+			</if>
+			
+			<!-- 지역 필터 -->
+			<if test="regionId != null and regionId != 0">
+				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null or maxYear != null or minArea != null or maxArea != null or (categoryId != null and categoryId != '' and categoryId != 'ALL')">AND</if>
+				p.location = #{regionId}
 			</if>
 		</where>
 	</select>

@@ -67,7 +67,8 @@ public interface PostsMapperInter {
 		@Param("sortBy") String sortBy, // "price", "created_at", "view_count"
 		@Param("sortOrder") String sortOrder, // "asc", "desc"
 		@Param("size") int size,
-		@Param("offset") int offset
+		@Param("offset") int offset,
+		@Param("regionId") int regionId
 	);
 	
 	int countSearchAll(
@@ -81,7 +82,8 @@ public interface PostsMapperInter {
 		@Param("maxYear") Integer maxYear,
 		@Param("minArea") Integer minArea,
 		@Param("maxArea") Integer maxArea,
-		@Param("categoryId") String categoryId
+		@Param("categoryId") String categoryId,
+		@Param("regionId") int regionId
 	);
 	
 }
