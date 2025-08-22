@@ -3,9 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './cars.css';
 
-const CAR_DETAIL_URL = 'http://localhost:4989/post/cardetail'; // 필요시 수정
-const LIST_URL = 'http://localhost:4989/post/list';
-const PHOTO_BASE = 'http://localhost:4989/postphoto/';
+const CAR_DETAIL_URL = `${import.meta.env.VITE_API_BASE}/post/cardetail`;
+const LIST_URL = `${import.meta.env.VITE_API_BASE}/post/list`;
+const PHOTO_BASE = `${import.meta.env.VITE_API_BASE}/postphoto/`;
 
 const Cars = () => {
   const [postList, setPostList] = useState([]);

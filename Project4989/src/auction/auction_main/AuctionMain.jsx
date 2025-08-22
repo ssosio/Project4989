@@ -23,7 +23,10 @@ const AuctionMain = () => {
 
   const fetchAuctionList = async () => {
     try {
-      const response = await axios.get('http://192.168.10.138:4989/auction');
+      const apiBase = import.meta.env.VITE_API_BASE;
+      console.log('API Base:', apiBase);
+      const response = await axios.get(`${apiBase}/auction`);
+      console.log('경매 데이터:', response.data);
       setAuctionList(response.data);
       
       // 낙찰자 닉네임, 사진, 최고가 가져오기
@@ -33,34 +36,34 @@ const AuctionMain = () => {
       
       for (const auction of response.data) {
         // 낙찰자 닉네임 가져오기
-        if (auction.winnerId) {
+        if (auction.winner_id) {
           try {
-            const nicknameResponse = await axios.get(`http://192.168.10.138:4989/auction/member/${auction.winnerId}`);
-            nicknames[auction.postId] = nicknameResponse.data.nickname;
+            const nicknameResponse = await axios.get(`${import.meta.env.VITE_API_BASE}/auction/member/${auction.winner_id}`);
+            nicknames[auction.post_id] = nicknameResponse.data.nickname;
           } catch (err) {
-            console.error(`낙찰자 닉네임 조회 실패 (ID: ${auction.winnerId}):`, err);
-            nicknames[auction.postId] = `ID ${auction.winnerId}`;
+            console.error(`낙찰자 닉네임 조회 실패 (ID: ${auction.winner_id}):`, err);
+            nicknames[auction.post_id] = `ID ${auction.winner_id}`;
           }
         }
         
         // 경매 사진 가져오기 (첫 번째 사진만)
         try {
-          const photoResponse = await axios.get(`http://192.168.10.138:4989/auction/photos/${auction.postId}`);
+          const photoResponse = await axios.get(`${import.meta.env.VITE_API_BASE}/auction/photos/${auction.post_id}`);
           if (photoResponse.data && photoResponse.data.length > 0) {
-            photos[auction.postId] = photoResponse.data[0].photo_url;
+            photos[auction.post_id] = photoResponse.data[0].photo_url;
           }
         } catch (err) {
-          console.error(`경매 사진 조회 실패 (postId: ${auction.postId}):`, err);
+          console.error(`경매 사진 조회 실패 (postId: ${auction.post_id}):`, err);
         }
         
         // 최고가 가져오기
         try {
-          const bidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${auction.postId}`);
+          const bidResponse = await axios.get(`${import.meta.env.VITE_API_BASE}/auction/highest-bid/${auction.post_id}`);
           if (bidResponse.data && bidResponse.data.bidAmount) {
-            highestBids[auction.postId] = bidResponse.data.bidAmount;
+            highestBids[auction.post_id] = bidResponse.data.bidAmount;
           }
         } catch (err) {
-          console.error(`최고가 조회 실패 (postId: ${auction.postId}):`, err);
+          console.error(`최고가 조회 실패 (postId: ${auction.post_id}):`, err);
         }
       }
       
@@ -135,8 +138,8 @@ const AuctionMain = () => {
 
   // 필터링된 경매 목록
   const filteredAuctions = auctionList.filter(post => {
-    const isOngoing = new Date(post.auctionEndTime) > new Date();
-    const isEnded = new Date(post.auctionEndTime) <= new Date();
+    const isOngoing = new Date(post.auction_end_time) > new Date();
+    const isEnded = new Date(post.auction_end_time) <= new Date();
     
     return (filters.ongoing && isOngoing) || (filters.ended && isEnded);
   });
@@ -206,15 +209,15 @@ const AuctionMain = () => {
       <div className="auction-grid">
         {currentItems.map(post => (
           <div 
-            key={post.postId}
+            key={post.post_id}
             className="auction-card"
-            onClick={() => handleRowClick(post.postId)}
+            onClick={() => handleRowClick(post.post_id)}
           >
             {/* 상품 이미지 */}
             <div className="card-image">
-              {auctionPhotos[post.postId] ? (
+              {auctionPhotos[post.post_id] ? (
                 <img 
-                  src={`http://localhost:4989/auction/image/${auctionPhotos[post.postId]}`}
+                  src={`${import.meta.env.VITE_API_BASE}/auction/image/${auctionPhotos[post.post_id]}`}
                   alt={post.title}
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -222,17 +225,17 @@ const AuctionMain = () => {
                   }}
                 />
               ) : null}
-              <div className="no-image" style={{ display: auctionPhotos[post.postId] ? 'none' : 'flex' }}>
+              <div className="no-image" style={{ display: auctionPhotos[post.post_id] ? 'none' : 'flex' }}>
                 <span>📷</span>
                 <span>이미지 없음</span>
               </div>
               
               {/* 상태 배지 */}
               <div className="status-badge">
-                {post.winnerId ? (
+                {post.winner_id ? (
                   <span className="status-completed">낙찰완료</span>
                 ) : (
-                  new Date(post.auctionEndTime) < new Date() ? (
+                  new Date(post.auction_end_time) < new Date() ? (
                     <span className="status-failed">유찰</span>
                   ) : (
                     <span className="status-ongoing">경매중</span>
@@ -253,17 +256,17 @@ const AuctionMain = () => {
                 <div className="price-row">
                   <span className="price-label">현재 경매가:</span>
                   <span className="price-value current-bid">
-                    {highestBids[post.postId] ? formatPrice(highestBids[post.postId]) : formatPrice(post.price)}
+                    {highestBids[post.post_id] ? formatPrice(highestBids[post.post_id]) : formatPrice(post.price)}
                   </span>
                 </div>
               </div>
               
               <div className="card-bottom">
                 <div className="time-info">
-                  ⏰ {getTimeRemaining(post.auctionEndTime)}
+                  ⏰ {getTimeRemaining(post.auction_end_time)}
                 </div>
                 <div className="view-count">
-                  👁️ {post.viewCount || 0}
+                  👁️ {post.view_count || 0}
                 </div>
               </div>
             </div>

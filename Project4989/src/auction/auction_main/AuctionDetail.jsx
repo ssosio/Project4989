@@ -54,7 +54,22 @@ const AuctionDetail = () => {
 
   const SERVER_IP = '192.168.10.138';
   const SERVER_PORT = '4989';
-  const BASE = import.meta.env.VITE_API_BASE; // 예: http://192.168.10.138:4989
+
+  const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+
+  // 파일 상단 util로 추가
+  const normalizeDetail = (d = {}) => ({
+    ...d,
+    memberId: d.memberId ?? d.member_id ?? d.writerId ?? d.writer_id,
+    createdAt: d.createdAt ?? d.created_at ?? d.createDate ?? d.created_date,
+    auctionEndTime: d.auctionEndTime ?? d.auction_end_time ?? d.endTime ?? d.end_time,
+    price: d.price ?? d.startPrice ?? d.start_price ?? 0,
+    winnerId: d.winnerId ?? d.winner_id,
+    viewCount: d.viewCount ?? d.view_count ?? 0,
+  });
+
+  const normalizeHighestBid = (b) =>
+  b ? { ...b, bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0) } : null;
 
   // 시간 차이 계산
   const getTimeAgo = (bidTime) => {
@@ -78,7 +93,7 @@ const AuctionDetail = () => {
       try {
         // 상세
         const detailRes = await api.get(`/auction/detail/${postId}`);
-        setAuctionDetail(detailRes.data);
+        setAuctionDetail(normalizeDetail(detailRes.data));
         setLoading(false);
       } catch (err) {
         console.error('경매 상세 정보 조회 실패:', err);
@@ -88,7 +103,7 @@ const AuctionDetail = () => {
       try {
         // 최고가
         const hbRes = await api.get(`/auction/highest-bid/${postId}`);
-        setHighestBid(hbRes.data);
+        setHighestBid(normalizeHighestBid(hbRes.data));
       } catch (err) {
         console.error('최고가 조회 실패:', err);
         setHighestBid(null);
@@ -307,16 +322,18 @@ const AuctionDetail = () => {
     }
   };
 
-  const formatDate = (d) => {
-    if (!d || d === 'null' || d === '') return '-';
-    try {
-      const date = new Date(d);
-      if (date.getTime() === 0 || isNaN(date.getTime())) return '-';
-      return date.toLocaleString('ko-KR');
-    } catch {
-      return '-';
-    }
-  };
+const formatDate = (d) => {
+  if (!d || d === 'null' || d === '') return '-';
+  try {
+    // 'YYYY-MM-DD HH:mm:ss' → 'YYYY-MM-DDTHH:mm:ss'
+    const safe = typeof d === 'string' && d.includes(' ') ? d.replace(' ', 'T') : d;
+    const date = new Date(safe);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleString('ko-KR');
+  } catch {
+    return '-';
+  }
+};
 
   const formatPrice = (price) => {
     if (!price || price === 0) return '-';
@@ -351,43 +368,90 @@ const AuctionDetail = () => {
   };
 
   const handleBidSubmit = async () => {
+    console.log('=== 입찰 함수 시작 ===');
+    console.log('userInfo:', userInfo);
+    console.log('bidAmount:', bidAmount);
+    
+    // 로그를 더 오래 보이게 하기
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연) ==='), 100);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연2) ==='), 200);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연3) ==='), 500);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연4) ==='), 1000);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연5) ==='), 2000);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연6) ==='), 3000);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연7) ==='), 5000);
+    setTimeout(() => console.log('=== 입찰 함수 시작 (지연8) ==='), 10000);
+    
     if (!userInfo || !userInfo.memberId) {
+      console.log('로그인 정보 없음');
+      setTimeout(() => console.log('로그인 정보 없음 (지연)'), 100);
+      setTimeout(() => console.log('로그인 정보 없음 (지연2)'), 2000);
+      setTimeout(() => console.log('로그인 정보 없음 (지연3)'), 5000);
       setBidMessage('로그인 후 이용해주세요.');
       setBidMessageType('error');
       return;
     }
     const currentUserId = userInfo.memberId;
+    console.log('currentUserId:', currentUserId);
 
     if (auctionDetail && auctionDetail.memberId === currentUserId) {
+      console.log('본인 경매 참여 시도 차단');
+      setTimeout(() => console.log('본인 경매 참여 시도 차단 (지연)'), 100);
+      setTimeout(() => console.log('본인 경매 참여 시도 차단 (지연2)'), 2000);
+      setTimeout(() => console.log('본인 경매 참여 시도 차단 (지연3)'), 5000);
       setBidMessage('본인 경매에는 참여할 수 없습니다.');
       setBidMessageType('error');
       return;
     }
 
     if (!bidAmount || bidAmount <= 0) {
+      console.log('입찰 금액 유효성 검사 실패:', bidAmount);
+      setTimeout(() => console.log('입찰 금액 유효성 검사 실패 (지연):', bidAmount), 100);
+      setTimeout(() => console.log('입찰 금액 유효성 검사 실패 (지연2):', bidAmount), 2000);
+      setTimeout(() => console.log('입찰 금액 유효성 검사 실패 (지연3):', bidAmount), 5000);
       setBidMessage('유효한 입찰 금액을 입력해주세요.');
       setBidMessageType('error');
       return;
     }
 
     const currentHighestBid = getCurrentPrice();
+    console.log('현재 최고가:', currentHighestBid);
+    console.log('입찰 금액:', bidAmount);
     if (bidAmount <= currentHighestBid) {
+      console.log('입찰가가 최고가보다 낮음');
+      setTimeout(() => console.log('입찰가가 최고가보다 낮음 (지연) - 현재최고가:', currentHighestBid, '입찰가:', bidAmount), 100);
+      setTimeout(() => console.log('입찰가가 최고가보다 낮음 (지연2) - 현재최고가:', currentHighestBid, '입찰가:', bidAmount), 2000);
+      setTimeout(() => console.log('입찰가가 최고가보다 낮음 (지연3) - 현재최고가:', currentHighestBid, '입찰가:', bidAmount), 5000);
       setBidMessage(`입찰가가 현재 최고가(${currentHighestBid.toLocaleString()}원)보다 낮거나 같습니다.\n더 높은 금액을 입력해주세요.`);
       setBidMessageType('error');
       return;
     }
 
     if (highestBid && highestBid.bidderId === currentUserId) {
+      console.log('연속 입찰 시도 차단');
+      setTimeout(() => console.log('연속 입찰 시도 차단 (지연)'), 100);
+      setTimeout(() => console.log('연속 입찰 시도 차단 (지연2)'), 2000);
+      setTimeout(() => console.log('연속 입찰 시도 차단 (지연3)'), 5000);
       setBidMessage('연속 입찰은 불가능합니다.\n다른 분이 입찰한 후 시도해주세요.');
       setBidMessageType('error');
       return;
     }
 
     try {
+      console.log('=== API 요청 시작 ===');
+      console.log('요청 URL:', `/auction/${postId}/bids`);
+      console.log('요청 데이터:', {
+        postId: parseInt(postId, 10),
+        bidderId: Number(currentUserId),
+        bidAmount: Number(bidAmount),
+        bid_amount: Number(bidAmount)
+      });
+      
       const res = await api.post(`/auction/${postId}/bids`, {
         postId: parseInt(postId, 10),
         bidderId: Number(currentUserId),
         bidAmount: Number(bidAmount),
+        bid_amount: Number(bidAmount)
       });
 
       if (res.data?.status === 'NEED_GUARANTEE') {

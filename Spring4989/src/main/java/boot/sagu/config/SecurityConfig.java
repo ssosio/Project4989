@@ -3,7 +3,6 @@ package boot.sagu.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -11,22 +10,20 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import jakarta.servlet.http.HttpServletResponse;
-
+import boot.sagu.dto.MemberDto;
 import boot.sagu.service.CustomOAuth2UserService;
 import boot.sagu.service.CustomUserDetailsService;
-import boot.sagu.dto.MemberDto;
-// ⬇️ 네 프로젝트의 CustomUserDetails 실제 경로로 바꿔주세요
-import boot.sagu.config.CustomUserDetails;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Configuration
@@ -58,9 +55,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(java.util.List.of(
-            "http://localhost:5173",
-            "http://192.168.10.136:5173",
-            "http://192.168.10.138:5173"
+            "http://localhost:5173"
         ));
         c.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
         c.setAllowedHeaders(java.util.List.of("*"));
@@ -75,21 +70,29 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(withDefaults())
+            // CSRF: JWT/Stateless이므로 전역 비활성화(중복 호출 제거)
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+            // ✅ 기본 폼/베이식 로그인 비활성화(REST/JWT)
+            .formLogin(AbstractHttpConfigurer::disable)
+            .httpBasic(AbstractHttpConfigurer::disable)
+
             .authorizeHttpRequests(authz -> authz
-                //  프리플라이트 허용(간헐적 401 예방)
+                // 프리플라이트
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                // ✅ /login 정확 매칭 허용 ("/login/**"와 별개)
+                .requestMatchers("/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/login").permitAll()
+
                 // 인증 필요한 경로
-                .requestMatchers(HttpMethod.GET ,"/member/**").authenticated()
-                // 채팅 관련 API는 인증 없이 접근 가능
-            	.requestMatchers("/api/notifications/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/member/**").authenticated()
+                .requestMatchers("/api/notifications/**").permitAll()
                 .requestMatchers("/submit").authenticated()
                 .requestMatchers("/auction/*/bids", "/auction/delete/**").authenticated()
 
-                // 결제: webhook 공개, confirm은 인증 필요(명시)
+                // 결제
                 .requestMatchers(HttpMethod.POST, "/api/auctions/portone/webhook").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auctions/portone/confirm").authenticated()
 
@@ -104,20 +107,14 @@ public class SecurityConfig {
                 .requestMatchers("/chatsave/**","/read").permitAll()
                 .requestMatchers("/api/region/**","/api/member-region/register").permitAll()
                 .requestMatchers("/api/member-region/addresses/**").authenticated()
-                .requestMatchers("/submit").authenticated()
-                // 경매 조회용 API는 인증 불필요
-                .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()
-                // 경매 방 인원수 관련 API는 인증 불필요
-                .requestMatchers("/auction/room/**").permitAll()
-                .requestMatchers("/auction/photos/	**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**").permitAll()
-                .requestMatchers("/api/region/**","/api/member-region/**").permitAll()
+                // (중복) .requestMatchers("/submit").authenticated() ← 하나만 남김
 
-                // 경매 조회/방(공개)
+                // 경매 공개
                 .requestMatchers("/auction",
                                  "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**",
                                  "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**",
                                  "/auction/bid-history/**", "/auction/room/**").permitAll()
-                
+
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
 
@@ -125,23 +122,15 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
-                System.out.println("=== Security Exception Details ===");
-                System.out.println("Request URI: " + req.getRequestURI());
-                System.out.println("Request Method: " + req.getMethod());
-                System.out.println("Authorization Header: " + req.getHeader("Authorization"));
-                System.out.println("Error: " + e.getMessage());
-                System.out.println("Error Type: " + e.getClass().getSimpleName());
-                System.out.println("================================");
                 res.setContentType("application/json;charset=UTF-8");
                 res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 res.getWriter().write("{\"error\": \"Unauthorized\"}");
             }));
 
-        // JWT 필터는 표준 위치: UsernamePasswordAuthenticationFilter “앞”
+        // JWT 필터: /login은 통과시키도록 필터 내부에서 예외 처리 권장
         http.addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService),
                 UsernamePasswordAuthenticationFilter.class);
 
-        // 구글 로그인
         http.oauth2Login(oauth2 -> oauth2
             .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
             .successHandler(oAuth2LoginSuccessHandler())
@@ -149,4 +138,6 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
 }

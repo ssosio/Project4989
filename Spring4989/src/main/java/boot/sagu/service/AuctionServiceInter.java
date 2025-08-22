@@ -50,5 +50,7 @@ public interface AuctionServiceInter {
 	
 	   public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
 	   
+	   public int existsGuaranteeByImpUid(String impUid);
+	   
 	
 }

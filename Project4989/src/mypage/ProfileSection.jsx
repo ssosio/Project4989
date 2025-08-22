@@ -113,7 +113,7 @@ const ProfileSection = ({ userInfo }) => {
       }
 
       console.log('Making request with token:', token);
-      const response = await axios.get(`http://localhost:4989/member/profile?loginId=${userInfo.loginId}`, {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE}/member/profile?loginId=${userInfo.loginId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

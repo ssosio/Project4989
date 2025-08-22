@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -27,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.FavoritesDto;
@@ -35,6 +39,7 @@ import boot.sagu.dto.PortOneConfirmRequest;
 import boot.sagu.dto.PortOneWebhookPayloadDTO;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
+import boot.sagu.service.EscrowService;
 import boot.sagu.service.PortOneService;
 
 @RestController
@@ -53,6 +58,10 @@ public class AuctionController {
 	
 	@Autowired
 	private JwtUtil jwtUtil;
+	
+	// 클래스 필드에 추가
+	@Autowired
+	private EscrowService escrowService;
 	
 	// 경매 방별 현재 접속 사용자 관리 (postId -> Set<sessionId>)
 	private final Map<String, Set<String>> auctionRoomUsers = new ConcurrentHashMap<>();
@@ -435,17 +444,6 @@ public class AuctionController {
 	        ));
 	    }
 	}
-		//이미 납부했으면 바로 입찰 처리
-
-
-	  // 포트원 웹훅(결제 성공 검증 → 보증금 저장)
-    @PostMapping("/api/auctions/portone/webhook")
-    public ResponseEntity<String> portoneWebhook(@RequestBody PortOneWebhookPayloadDTO p) {
-        // postId/memberId는 merchant_uid 규칙(guarantee_{postId}_{memberId})에서 파싱하거나,
-        // 프론트 custom_data로 넘겨 받도록 설계하세요.
-        auctionService.handlePortOneWebhook(p.getPostId(), p.getMemberId(), p.getImpUid(), p.getMerchantUid());
-        return ResponseEntity.ok("ok");
-    }
     
     //수동 종료(운영/관리자용)
     @PostMapping("/auction/{postId}/end")
@@ -490,6 +488,60 @@ public class AuctionController {
             ));
         }
     }
+    
+    //webhook처리
+    @PostMapping(
+      value = "/api/auctions/portone/webhook",
+      consumes = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_FORM_URLENCODED_VALUE }
+    )
+    public ResponseEntity<String> portoneWebhook(@RequestBody(required = false) Map<String, Object> body) {
+      try {
+        String impUid      = body == null ? null : String.valueOf(body.get("imp_uid"));
+        String merchantUid = body == null ? null : String.valueOf(body.get("merchant_uid"));
+        String status      = body == null ? null : String.valueOf(body.get("status"));	
+        String customData  = body == null ? null : String.valueOf(body.get("custom_data"));
+
+        // merchant_uid: guarantee_{postId}_{memberId} or escrow_{postId}_{memberId}
+        Long postId = null, memberId = null;
+        if (merchantUid != null && merchantUid.matches("^(guarantee|escrow)_\\d+_\\d+$")) {
+          String[] t = merchantUid.split("_");
+          postId = Long.valueOf(t[1]);
+          memberId = Long.valueOf(t[2]);
+        }
+        
+     // 컨트롤러 portoneWebhook(...) 내부 — merchantUid 파싱 직후 분기
+        if (merchantUid != null && merchantUid.startsWith("escrow_")) {
+            // postId/memberId 파싱 동일
+            if (postId == null || memberId == null) {
+                Matcher m = Pattern.compile("^escrow_(\\d+)_(\\d+)(?:_\\d+)?$").matcher(merchantUid);
+                if (m.matches()) {
+                    postId = postId == null ? Long.parseLong(m.group(1)) : postId;
+                    memberId = memberId == null ? Long.parseLong(m.group(2)) : memberId;
+                }
+            }
+            escrowService.handleEscrowPaid(postId, memberId, impUid, merchantUid); // 구현 아래
+            return ResponseEntity.ok("ok");
+        }
+        // custom_data 보조(JSON 문자열일 수 있음)
+        if ((postId == null || memberId == null) && customData != null && !customData.isBlank()) {
+          try {
+            Map<?,?> cd = new ObjectMapper().readValue(customData, Map.class);
+            if (postId == null && cd.get("postId") != null)   postId   = Long.valueOf(String.valueOf(cd.get("postId")));
+            if (memberId == null && cd.get("memberId") != null) memberId = Long.valueOf(String.valueOf(cd.get("memberId")));
+          } catch (Exception ignore) {}
+        }
+
+        // 서비스 호출은 널 안전하게 처리 (내부에서 검증/로그)
+        auctionService.handlePortOneWebhook(postId, memberId, impUid, merchantUid);
+
+        // 재시도 방지: 빨리 200
+        return ResponseEntity.ok("ok");
+      } catch (Exception e) {
+        // 어떤 예외가 나도 200으로 응답해 포트원 재시도 루프 방지(내부 로그로 추적)
+        return ResponseEntity.ok("ok");
+      }
+    }
+
 
 
 	// 내 게시글 타입별 개수 조회 (위쪽 필터용)

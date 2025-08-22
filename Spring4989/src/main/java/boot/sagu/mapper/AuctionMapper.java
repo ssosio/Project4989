@@ -97,5 +97,7 @@ public interface AuctionMapper {
 
 	// 유찰 게시글만 조회 (경매에서만 발생)
 	public List<Map<String, Object>> getMyCancelledAuctionPosts(@Param("memberId") long memberId);
+	
+	public int existsGuaranteeByImpUid(String impUid);
 
 }

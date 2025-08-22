@@ -24,39 +24,46 @@ function LoginForm({ onLoginSuccess }) {
 
   // 폼 제출 시 실행되는 함수
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // 백엔드 로그인 API 호출
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE}/login`, formData);
-      // 서버로부터 받은 토큰 추출
-      const { token } = response.data;
+  e.preventDefault();
+  try {
+    const base = import.meta.env.VITE_API_BASE;
 
-      // 토큰을 localStorage에 저장 (브라우저를 닫아도 유지됨)
-      localStorage.setItem('jwtToken', token);
+    // JSON으로만 보냄: 서버가 username을 기대하든 loginId를 기대하든 OK
+    const payload = {
+      id: formData.loginId,
+      username: formData.loginId,   // 백엔드가 username 기대할 때 대비
+      loginId: formData.loginId,    // 백엔드가 loginId 기대할 때 대비
+      password: formData.password,
+    };
 
-      // 토큰을 디코딩하여 payload(사용자 정보)를 추출합니다.
-      const decodedToken = jwtDecode(token);
-      const userInfo = {
-        loginId: decodedToken.sub,
-        memberId: decodedToken.memberId,
-        nickname: decodedToken.nickname,
-        profileImageUrl: decodedToken.profileImageUrl
-      };
+    const res = await axios.post(`${base}/login`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
 
-      // 이후 모든 axios 요청 헤더에 자동으로 토큰을 포함시킴
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    const token = res.data?.token || res.data?.accessToken || res.data?.jwt;
+    if (!token) throw new Error("토큰 없음");
 
-      // props로 받은 onLoginSuccess 함수를 호출하여 Root의 상태를 업데이트합니다.
-      onLoginSuccess(userInfo);
-
-      alert('로그인 성공!');
-      navi('/'); // 로그인 성공 후 메인 페이지로 이동
-
-    } catch (error) {
-      console.error('로그인 중 오류 발생:', error);
-      alert('로그인 실패! 아이디 또는 비밀번호를 확인해주세요.');
-    }
-  };
+    localStorage.setItem("jwtToken", token);
+    const decoded = jwtDecode(token);
+    const userInfo = {
+      loginId: decoded.sub,
+      memberId: decoded.memberId,
+      nickname: decoded.nickname,
+      profileImageUrl: decoded.profileImageUrl,
+    };
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    onLoginSuccess(userInfo);
+    alert("로그인 성공!");
+    navi("/");
+  } catch (err) {
+    console.error("로그인 중 오류 발생:", err);
+    alert(
+      (err?.response?.data && typeof err.response.data === "string")
+        ? err.response.data
+        : "로그인 실패! 아이디 또는 비밀번호를 확인해주세요."
+    );
+  }
+};
 
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>

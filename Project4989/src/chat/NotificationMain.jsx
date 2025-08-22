@@ -53,7 +53,7 @@ const NotificationItem = styled(ListItem)(() => ({
 const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
     const [notifications, setNotifications] = useState([]);
     const { userInfo, token } = useContext(AuthContext);
-    const SERVER_IP = '192.168.10.136';
+    const SERVER_IP = '192.168.10.138';
     const SERVER_PORT = '4989';
 
     // 시간 포맷팅 함수 (채팅에서 가져온 그대로 사용)

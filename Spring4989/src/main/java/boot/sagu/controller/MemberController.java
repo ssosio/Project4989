@@ -4,12 +4,12 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,30 +44,48 @@ public class MemberController {
         memberService.signup(dto,profileImageFile);
     }
     
-    // 로그인 성공 시 JWT 토큰을 반환하도록 로직 변경
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody MemberDto dto) {
-        try {
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(dto.getLoginId());
+ // 로그인 성공 시 JWT 토큰 반환 (JSON만 받음)
+ // 필요하면 consumes 제거해도 되지만, 프론트가 JSON 보내고 있으니 명시 유지 권장
+ @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
+ public ResponseEntity<?> login(@RequestBody Map<String, Object> body) {
+     try {
+         // 0) 디버깅용(문제 생기면 무엇이 왔는지 바로 확인)
+         System.out.println("[LOGIN] body=" + body);
 
-            if (passwordEncoder.matches(dto.getPassword(), userDetails.getPassword())) {
-                // 인증 성공 시, DB에서 사용자 정보 전체를 가져옴
-                MemberDto member = memberService.getMemberByLoginId(dto.getLoginId());
-                
-                // 사용자 정보를 담아 JWT 토큰 생성
-                final String token = jwtUtil.generateToken(member);
-                
-                // 생성된 토큰을 JSON 형태로 반환
-                return ResponseEntity.ok(Map.of("token", token));
-            } else {
-                // 비밀번호 불일치
-                return ResponseEntity.status(401).body("Login failed: Bad credentials");
-            }
-        } catch (Exception e) {
-            // 아이디 없음 또는 기타 예외
-            return ResponseEntity.status(401).body("Login failed: " + e.getMessage());
-        }
-    }
+         // 1) 로그인 아이디 추출: id / loginId / username 모두 허용
+         String loginId = getFirstNonBlank(body, "loginId", "id", "username");
+         String password = getFirstNonBlank(body, "password", "pwd");
+
+         if (loginId == null || password == null) {
+             return ResponseEntity.status(400).body("필수값 누락(loginId/id/username, password/pwd)");
+         }
+
+         // 2) 사용자/패스워드 검증 (기존 로직 그대로)
+         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginId);
+         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+             return ResponseEntity.status(401).body("Login failed: Bad credentials");
+         }
+
+         // 3) 토큰 생성 (기존 로직 그대로)
+         MemberDto member = memberService.getMemberByLoginId(loginId);
+         final String token = jwtUtil.generateToken(member);
+         return ResponseEntity.ok(Map.of("token", token));
+
+     } catch (Exception e) {
+         return ResponseEntity.status(401).body("Login failed: " + e.getMessage());
+     }
+ }
+
+ private String getFirstNonBlank(Map<String, Object> body, String... keys) {
+     for (String k : keys) {
+         Object v = body.get(k);
+         if (v != null) {
+             String s = String.valueOf(v).trim();
+             if (!s.isEmpty()) return s;
+         }
+     }
+     return null;
+ }
     
     @GetMapping("/check-loginid")
     public ResponseEntity<?> checkLoginId(@RequestParam("loginId") String loginId) {
