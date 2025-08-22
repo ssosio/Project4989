@@ -28,6 +28,10 @@
 		createdAt,
 		p.updated_at AS UpdatedAt,
 		p.post_type AS postType,
+		p.location AS location,
+		p.detail_location AS detailLocation,
+		p.latitude AS latitude,
+		p.longitude AS longitude,
 		m.nickname AS nickname,
 		m.member_id AS memberId,
 		COALESCE(

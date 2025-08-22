@@ -2,10 +2,11 @@ import axios from 'axios';
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
-import DetailChat from '../chat/DetailChat';
+import DetailChat from '../chat/detailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
 import BuyerSelectionModal from '../components/BuyerSelectionModal';
 import './gooddetail.css';
+import DetailMap from '../chat/detailMap';
 
 const GoodsDetail = () => {
   // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
@@ -80,6 +81,7 @@ const GoodsDetail = () => {
         if (postResult.status === 'fulfilled') {
           const postData = postResult.value.data;
           console.log("✅ Post 데이터 로드 성공:", postData);
+          console.log("✅ location:", postData.location);
 
           // post 데이터의 content 필드 확인
           console.log("📝 Post content 확인:", {
@@ -812,6 +814,22 @@ const GoodsDetail = () => {
                   </div>
                 </>
               )}
+              <div>
+                <div className="gooddetail-info-title">희망거래장소</div>
+                <div className="wish-address">{post.detailLocation}</div>
+                {/* 다른 게시글 정보 표시 */}
+                {post && (
+                  <>
+                    {/* 위도와 경도 데이터가 있을 때만 지도를 렌더링합니다. */}
+                    {post.latitude && post.longitude && (
+                      <DetailMap
+                        latitude={post.latitude}
+                        longitude={post.longitude}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -847,6 +865,9 @@ const GoodsDetail = () => {
           token={token}
           onComplete={handleBuyerSelectionComplete}
         />
+
+
+
       </div>
     </div>
   );

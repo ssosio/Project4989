@@ -38,7 +38,7 @@ const StyledDialog = styled(Dialog)(({ zindex, offset }) => ({
         position: 'absolute',
         right: 0,
         top: 0,
-        height: '100vh',
+        height: '90vh',
         maxHeight: '100vh',
         width: 450,
         maxWidth: 'none',
@@ -292,13 +292,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 declaration_content: reportDetail
             };
             const response = await axios.post(
-                `http://${SERVER_IP}:${SERVER_PORT}/submit`,
+                `http://${SERVER_IP}:${SERVER_PORT}/api/notifications/submit`,
                 reportData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
             if (response.status === 200 || response.status === 201) {
                 // 커스텀 모달로 변경 필요
-                console.log('신고가 접수되었습니다. 감사합니다.');
+                alert('신고가 접수되었습니다. 감사합니다.');
                 handleReportModalClose();
             } else {
                 // 커스텀 모달로 변경 필요

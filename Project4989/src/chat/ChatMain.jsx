@@ -87,8 +87,6 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
             setTimeout(() => {
                 onUnreadCountChange(totalUnreadCount);
             }, 0);
-        } else {
-
         }
     };
 
@@ -166,7 +164,7 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                     calculateAndNotifyUnreadCount([]);
                 }
             })
-            .catch(error => {
+            .catch(() => {
                 // console.error("채팅방 목록 가져오기 실패:", error);
                 setChatList([]);
             });
@@ -254,18 +252,6 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                 });
             });
 
-
-
-            client.subscribe('/topic/debug', message => {
-
-            });
-
-
-            client.subscribe(`/user/${userInfo.memberId}/queue/*`, message => {
-
-            });
-
-
             client.subscribe('/topic/*', message => {
 
 
@@ -340,26 +326,21 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                         }
                     }
                 } catch (error) {
-                    // console.error('❌ 토픽 메시지 처리 중 오류:', error);
+                    console.error('❌ 토픽 메시지 처리 중 오류:', error);
                 }
             });
 
 
-            client.subscribe('/queue/*', message => {
-
-            });
         };
 
-        client.onStompError = (frame) => {
 
-        };
 
         client.onDisconnect = () => {
 
         };
 
         client.onWebSocketError = (error) => {
-            // console.error('❌ WebSocket 오류:', error);
+            console.error('❌ WebSocket 오류:', error);
         };
 
         client.activate();
