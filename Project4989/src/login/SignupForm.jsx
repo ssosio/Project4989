@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './SignupForm.css';
 
 function SignupForm() {
   // 1. 폼 데이터 State
@@ -161,94 +162,224 @@ function SignupForm() {
 
   // 3. JSX 렌더링
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>회원가입</h2>
-      <form onSubmit={handleSubmit}>
-        
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <img
-            src={previewUrl}
-            alt="Profile Preview"
-            style={{ width: '120px', height: '120px', borderRadius: '50%', cursor: 'pointer', objectFit: 'cover' }}
-            onClick={() => fileInputRef.current.click()}
-          />
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-            style={{ display: 'none' }}
-            accept="image/*"
-          />
+    <div className="signup-container">
+      <div className="signup-card">
+        <div className="signup-header">
+          <h2 className="signup-title">회원가입</h2>
+          <p className="signup-subtitle">안전하고 편리한 중고거래를 시작하세요</p>
         </div>
         
-        <div style={{ marginBottom: '15px' }}>
-          <label>아이디</label>
-          <input type="text" name="loginId" value={formData.loginId} onChange={handleChange} onBlur={handleIdBlur} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
-          {/* 중복 확인 메시지 표시 */}
-          {idCheckMessage && <p style={{ color: idCheckMessage.color, fontSize: '12px', margin: '5px 0 0' }}>{idCheckMessage.text}</p>}
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>비밀번호</label>
-          <input type="password" name="password" value={formData.password} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
-          {passwordError && <p style={{ color: 'red', fontSize: '12px' }}>{passwordError}</p>}
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>비밀번호 확인</label>
-          <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
-          {confirmPasswordError && <p style={{ color: 'red', fontSize: '12px' }}>{confirmPasswordError}</p>}
-          {formData.confirmPassword && !confirmPasswordError && <p style={{ color: 'green', fontSize: '12px' }}>✅ 비밀번호가 일치합니다.</p>}
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>닉네임</label>
-          <input type="text" name="nickname" value={formData.nickname} onChange={handleChange} required style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}/>
+        <form onSubmit={handleSubmit} className="signup-form">
           
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>이메일</label>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <input type="text" name="localPart" value={email.localPart} onChange={handleEmailChange} required style={{ width: '40%', padding: '8px' }}/>
-            <span style={{ margin: '0 5px' }}>@</span>
-            <input type="text" name="domain" value={email.domain} onChange={handleEmailChange} required disabled={emailDomain !== 'direct' && emailDomain !== ''} style={{ width: '40%', padding: '8px' }}/>
-            <select value={emailDomain} onChange={(e) => setEmailDomain(e.target.value)} style={{ marginLeft: '10px', padding: '8px' }}>
-              <option value="">선택</option>
-              {emailDomains.map(d => <option key={d} value={d}>{d}</option>)}
-              <option value="direct">직접입력</option>
-            </select>
+          {/* 프로필 이미지 업로드 */}
+          <div className="profile-image-section">
+            <div className="profile-image-wrapper" onClick={() => {
+              console.log('프로필 이미지 클릭됨');
+              if (fileInputRef.current) {
+                console.log('파일 입력 참조 존재함');
+                fileInputRef.current.click();
+              } else {
+                console.log('파일 입력 참조가 없음');
+              }
+            }}>
+              <img
+                src={previewUrl}
+                alt="Profile Preview"
+                className="profile-preview"
+              />
+              <div className="profile-image-overlay">
+                <span className="profile-image-text">클릭하여 이미지 선택</span>
+              </div>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => {
+                console.log('파일 변경 이벤트 발생:', e.target.files);
+                handleImageChange(e);
+              }}
+              className="profile-file-input"
+              accept="image/*"
+            />
+            <p className="profile-hint">프로필 이미지를 클릭하여 사진을 선택하세요</p>
           </div>
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label>휴대폰 번호</label>
-          <div style={{ display: 'flex' }}>
-            <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required disabled={isVerified} style={{ flex: 1, padding: '8px' }}/>
-            <button type="button" onClick={handleSendCode} disabled={isCodeSent} style={{ marginLeft: '10px' }}>
-              인증번호 발송
-            </button>
+          
+          {/* 아이디 입력 */}
+          <div className="form-group">
+            <label className="form-label">아이디</label>
+            <div className="input-wrapper">
+              <input 
+                type="text" 
+                name="loginId" 
+                value={formData.loginId} 
+                onChange={handleChange} 
+                onBlur={handleIdBlur} 
+                required 
+                className="form-input"
+                placeholder="아이디를 입력하세요"
+              />
+            </div>
+            {idCheckMessage && (
+              <p className={`id-check-message ${idCheckMessage.color}`}>
+                {idCheckMessage.text}
+              </p>
+            )}
           </div>
-        </div>
+          
+          {/* 비밀번호 입력 */}
+          <div className="form-group">
+            <label className="form-label">비밀번호</label>
+            <div className="input-wrapper">
+              <input 
+                type="password" 
+                name="password" 
+                value={formData.password} 
+                onChange={handleChange} 
+                required 
+                className="form-input"
+                placeholder="비밀번호를 입력하세요"
+              />
+            </div>
+            {passwordError && <p className="error-message">{passwordError}</p>}
+          </div>
+          
+          {/* 비밀번호 확인 */}
+          <div className="form-group">
+            <label className="form-label">비밀번호 확인</label>
+            <div className="input-wrapper">
+              <input 
+                type="password" 
+                name="confirmPassword" 
+                value={formData.confirmPassword} 
+                onChange={handleChange} 
+                required 
+                className="form-input"
+                placeholder="비밀번호를 다시 입력하세요"
+              />
+            </div>
+            {formData.confirmPassword && !confirmPasswordError && (
+              <p className="success-message">✅ 비밀번호가 일치합니다.</p>
+            )}
+            {confirmPasswordError && <p className="error-message">{confirmPasswordError}</p>}
+          </div>
+          
+          {/* 닉네임 입력 */}
+          <div className="form-group">
+            <label className="form-label">닉네임</label>
+            <div className="input-wrapper">
+              <input 
+                type="text" 
+                name="nickname" 
+                value={formData.nickname} 
+                onChange={handleChange} 
+                required 
+                className="form-input"
+                placeholder="닉네임을 입력하세요"
+              />
+            </div>
+          </div>
+          
+          {/* 이메일 입력 */}
+          <div className="form-group">
+            <label className="form-label">이메일</label>
+            <div className="email-input-group">
+              <input 
+                type="text" 
+                name="localPart" 
+                value={email.localPart} 
+                onChange={handleEmailChange} 
+                required 
+                className="email-local-input"
+                placeholder="이메일"
+              />
+              <span className="email-at">@</span>
+              <input 
+                type="text" 
+                name="domain" 
+                value={email.domain} 
+                onChange={handleEmailChange} 
+                required 
+                disabled={emailDomain !== 'direct' && emailDomain !== ''} 
+                className="email-domain-input"
+                placeholder="도메인"
+              />
+              <select 
+                value={emailDomain} 
+                onChange={(e) => setEmailDomain(e.target.value)} 
+                className="email-domain-select"
+              >
+                <option value="">선택</option>
+                {emailDomains.map(d => <option key={d} value={d}>{d}</option>)}
+                <option value="direct">직접입력</option>
+              </select>
+            </div>
+          </div>
 
-        {isCodeSent && !isVerified && (
-          <div style={{ marginBottom: '15px' }}>
-            <label>인증번호</label>
-            <div style={{ display: 'flex' }}>
-              <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} required style={{ flex: 1, padding: '8px' }}/>
-              <button type="button" onClick={handleVerifyCode} style={{ marginLeft: '10px' }}>
-                인증 확인
+          {/* 휴대폰 번호 입력 */}
+          <div className="form-group">
+            <label className="form-label">휴대폰 번호</label>
+            <div className="phone-input-group">
+              <input 
+                type="tel" 
+                value={phoneNumber} 
+                onChange={(e) => setPhoneNumber(e.target.value)} 
+                required 
+                disabled={isVerified} 
+                className="phone-input"
+                placeholder="휴대폰 번호를 입력하세요"
+              />
+              <button 
+                type="button" 
+                onClick={handleSendCode} 
+                disabled={isCodeSent} 
+                className="send-code-btn"
+              >
+                인증번호 발송
               </button>
             </div>
           </div>
-        )}
-        
-        {isVerified && <p style={{color: 'green', fontWeight: 'bold'}}>✅ 휴대폰 인증이 완료되었습니다.</p>}
 
-        <button type="submit" disabled={!isVerified} style={{ width: '100%', padding: '10px', marginTop: '10px', backgroundColor: isVerified ? '#007bff' : '#ccc', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          가입하기
-        </button>
-      </form>
+          {/* 인증번호 입력 */}
+          {isCodeSent && !isVerified && (
+            <div className="form-group">
+              <label className="form-label">인증번호</label>
+              <div className="verification-input-group">
+                <input 
+                  type="text" 
+                  value={verificationCode} 
+                  onChange={(e) => setVerificationCode(e.target.value)} 
+                  required 
+                  className="verification-input"
+                  placeholder="인증번호를 입력하세요"
+                />
+                <button 
+                  type="button" 
+                  onClick={handleVerifyCode} 
+                  className="verify-code-btn"
+                >
+                  인증 확인
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* 인증 완료 메시지 */}
+          {isVerified && (
+            <div className="verification-success">
+              <p className="success-message">✅ 휴대폰 인증이 완료되었습니다.</p>
+            </div>
+          )}
+
+          {/* 회원가입 버튼 */}
+          <button 
+            type="submit" 
+            disabled={!isVerified} 
+            className="signup-btn"
+          >
+            가입하기
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

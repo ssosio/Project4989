@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="boot.sagu.mapper.ReviewMapperInter">
+    
+    <!-- 후기 작성 -->
+    <insert id="insertReview" parameterType="boot.sagu.dto.ReviewDto">
+        INSERT INTO trade_reviews (
+            post_id, 
+            reviewer_id, 
+            review_opposite_id, 
+            rating, 
+            comment, 
+            created_at
+        ) VALUES (
+            #{postId}, 
+            #{reviewerId}, 
+            #{reviewOppositeId}, 
+            #{rating}, 
+            #{comment}, 
+            NOW()
+        )
+    </insert>
+    
+</mapper>

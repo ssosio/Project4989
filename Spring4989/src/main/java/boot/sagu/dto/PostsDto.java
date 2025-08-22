@@ -15,6 +15,7 @@ public class PostsDto {
     private Long memberId;      // member_id → memberId
     private String title;
     private String content;     // content 필드 추가
+    private Long buyerId;
     private BigDecimal price;
     private String tradeType;   // trade_type → tradeType
     private String status;
