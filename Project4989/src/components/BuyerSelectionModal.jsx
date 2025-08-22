@@ -127,7 +127,12 @@ const BuyerSelectionModal = ({ open, onClose, postId, token, onComplete }) => {
 
             if (response.data.success) {
                 alert('판매가 완료되었습니다!');
-                onComplete();
+                console.log('BuyerSelectionModal - onComplete 호출:', {
+                    selectedBuyerId,
+                    selectedBuyerIdType: typeof selectedBuyerId,
+                    postId
+                });
+                onComplete(selectedBuyerId);
                 onClose();
             } else {
                 alert('판매 완료 처리에 실패했습니다.');
