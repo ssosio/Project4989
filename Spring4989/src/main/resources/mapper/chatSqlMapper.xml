@@ -50,10 +50,14 @@
         lastMsg.message_content as lastMessage,
         lastMsg.message_type as lastMessageType,
         lastMsg.created_at as lastMessageTime,
-        COALESCE(unread.unreadCount, 0) as unreadCount
+        COALESCE(unread.unreadCount, 0) as unreadCount,
+        p.title as postTitle,
+        p.price as postPrice,
+        cr.product_id as productId
     FROM chatroom cr
     LEFT JOIN members seller ON cr.seller_id = seller.member_id
     LEFT JOIN members buyer ON cr.buyer_id = buyer.member_id
+    LEFT JOIN posts p ON cr.product_id = p.post_id
     -- 마지막 메시지 가져오기 (윈도우 함수 사용)
     LEFT JOIN (
         SELECT 

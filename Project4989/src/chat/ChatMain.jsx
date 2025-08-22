@@ -79,8 +79,16 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
 
     const calculateAndNotifyUnreadCount = (list) => {
         const totalUnreadCount = list.reduce((sum, room) => sum + (room.unreadCount || 0), 0);
+
+        
         if (onUnreadCountChange) {
-            onUnreadCountChange(totalUnreadCount);
+
+            // 🔧 React 경고 해결: setTimeout으로 렌더링 사이클과 분리
+            setTimeout(() => {
+                onUnreadCountChange(totalUnreadCount);
+            }, 0);
+        } else {
+
         }
     };
 
@@ -145,21 +153,21 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
         let url = `http://${SERVER_IP}:${SERVER_PORT}/chat/rooms?memberId=${userInfo.memberId}`;
         axios.get(url)
             .then(res => {
-                if (Array.isArray(res.data)) {
-                    const sortedChatRooms = res.data.sort((a, b) => {
-                        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-                        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-                        return timeB - timeA;
-                    });
-                    setChatList(sortedChatRooms);
-                    calculateAndNotifyUnreadCount(sortedChatRooms);
-                } else {
-                    setChatList([]);
-                    calculateAndNotifyUnreadCount([]);
-                }
+                                    if (Array.isArray(res.data)) {
+                        const sortedChatRooms = res.data.sort((a, b) => {
+                            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+                            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+                            return timeB - timeA;
+                        });
+                        setChatList(sortedChatRooms);
+                        calculateAndNotifyUnreadCount(sortedChatRooms);
+                    } else {
+                        setChatList([]);
+                        calculateAndNotifyUnreadCount([]);
+                    }
             })
             .catch(error => {
-                console.error("채팅방 목록 가져오기 실패:", error);
+                // console.error("채팅방 목록 가져오기 실패:", error);
                 setChatList([]);
             });
     };
@@ -181,27 +189,59 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
         });
 
         client.onConnect = () => {
-            console.log('STOMP 연결 성공');
+
             setStompClient(client);
+
             client.subscribe(`/user/${userInfo.memberId}/queue/chat-rooms`, message => {
+
                 const chatRoomUpdate = JSON.parse(message.body);
+
+                
                 setChatList(prevList => {
                     const existingIndex = prevList.findIndex(room => room.chatRoomId === chatRoomUpdate.chatRoomId);
                     let newList;
+                    
                     if (existingIndex > -1) {
+                        // 기존 채팅방 업데이트
                         newList = [...prevList];
-                        newList[existingIndex] = { ...newList[existingIndex], ...chatRoomUpdate };
+                        const currentRoom = newList[existingIndex];
+                        
+                        // 새 메시지가 오면 unreadCount 증가 (본인이 보낸 메시지가 아닌 경우)
+                        const newUnreadCount = chatRoomUpdate.senderId === userInfo.memberId 
+                            ? (currentRoom.unreadCount || 0)  // 본인이 보낸 메시지는 unreadCount 증가 안함
+                            : (currentRoom.unreadCount || 0) + 1;  // 상대방이 보낸 메시지는 unreadCount 증가
+                        
+                        newList[existingIndex] = { 
+                            ...currentRoom, 
+                            ...chatRoomUpdate,
+                            unreadCount: newUnreadCount
+                        };
                     } else {
-                        newList = [chatRoomUpdate, ...prevList];
+                        // 새 채팅방 추가 (상대방이 보낸 메시지인 경우 unreadCount 1로 설정)
+                        const initialUnreadCount = chatRoomUpdate.senderId === userInfo.memberId ? 0 : 1;
+                        newList = [{ ...chatRoomUpdate, unreadCount: initialUnreadCount }, ...prevList];
                     }
-                    const sortedList = newList.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+                    
+                    // lastMessageTime 기준으로 정렬
+                    const sortedList = newList.sort((a, b) => {
+                        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+                        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+                        return timeB - timeA;
+                    });
+                    
+                    // unreadCount 총합 계산 및 Header에 알림
                     calculateAndNotifyUnreadCount(sortedList);
                     return sortedList;
                 });
             });
 
+            // 읽음 처리 실시간 업데이트
+
             client.subscribe(`/user/${userInfo.memberId}/queue/read`, message => {
+
                 const readUpdate = JSON.parse(message.body);
+
+                
                 setChatList(prevList => {
                     const newList = prevList.map(room => {
                         if (room.chatRoomId === Number(readUpdate.chatRoomId)) {
@@ -213,10 +253,113 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                     return newList;
                 });
             });
+
+
+
+            client.subscribe('/topic/debug', message => {
+
+            });
+
+
+            client.subscribe(`/user/${userInfo.memberId}/queue/*`, message => {
+
+            });
+
+
+            client.subscribe('/topic/*', message => {
+
+                
+                try {
+                    // 메시지 본문 파싱
+                    const messageBody = message.body;
+
+                    
+                    if (messageBody) {
+                        const chatData = JSON.parse(messageBody);
+
+                        
+                        // 🔧 snake_case를 camelCase로 변환
+                        const normalizedData = {
+                            ...chatData,
+                            chatRoomId: chatData.chat_room_id,
+                            senderId: chatData.sender_id,
+                            messageContent: chatData.message_content,
+                            messageType: chatData.message_type,
+                            createdAt: chatData.created_at
+                        };
+
+                        
+                        // 채팅방 업데이트 처리
+                        if (normalizedData.type === 'CHAT' && normalizedData.chatRoomId) {
+
+                            
+                                                         setChatList(prevList => {
+                                 const existingIndex = prevList.findIndex(room => room.chatRoomId === normalizedData.chatRoomId);
+                                 let newList;
+                                 
+                                 if (existingIndex > -1) {
+                                     // 기존 채팅방 업데이트
+                                     newList = [...prevList];
+                                     const currentRoom = newList[existingIndex];
+                                     
+                                     // 새 메시지가 오면 unreadCount 증가 (본인이 보낸 메시지가 아닌 경우)
+                                     const newUnreadCount = normalizedData.senderId === userInfo.memberId 
+                                         ? (currentRoom.unreadCount || 0)  // 본인이 보낸 메시지는 unreadCount 증가 안함
+                                         : (currentRoom.unreadCount || 0) + 1;  // 상대방이 보낸 메시지는 unreadCount 증가
+                                     
+                                     newList[existingIndex] = { 
+                                         ...currentRoom, 
+                                         lastMessage: normalizedData.messageContent,
+                                         lastMessageType: normalizedData.messageType,
+                                         lastMessageTime: normalizedData.createdAt || new Date().toISOString(),
+                                         unreadCount: newUnreadCount
+                                     };
+                                 } else {
+                                     // 새 채팅방 추가 (상대방이 보낸 메시지인 경우 unreadCount 1로 설정)
+                                     const initialUnreadCount = normalizedData.senderId === userInfo.memberId ? 0 : 1;
+                                     newList = [{ 
+                                         chatRoomId: normalizedData.chatRoomId,
+                                         lastMessage: normalizedData.messageContent,
+                                         lastMessageType: normalizedData.messageType,
+                                         lastMessageTime: normalizedData.createdAt || new Date().toISOString(),
+                                         unreadCount: initialUnreadCount
+                                     }, ...prevList];
+                                 }
+                                
+                                // lastMessageTime 기준으로 정렬
+                                const sortedList = newList.sort((a, b) => {
+                                    const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+                                    const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+                                    return timeB - timeA;
+                                });
+                                
+                                // unreadCount 총합 계산 및 Header에 알림
+                                calculateAndNotifyUnreadCount(sortedList);
+                                return sortedList;
+                            });
+                        }
+                    }
+                        } catch (error) {
+            // console.error('❌ 토픽 메시지 처리 중 오류:', error);
+        }
+            });
+
+
+            client.subscribe('/queue/*', message => {
+
+            });
         };
 
         client.onStompError = (frame) => {
-            console.error('브로커 오류:', frame);
+
+        };
+
+        client.onDisconnect = () => {
+
+        };
+
+        client.onWebSocketError = (error) => {
+            // console.error('❌ WebSocket 오류:', error);
         };
 
         client.activate();
@@ -235,6 +378,21 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
             setOpenChatRooms(prev => [...prev, room]);
         }
 
+        // 🔔 실시간 읽음 처리: 채팅방 클릭 시 즉시 unreadCount 0으로 설정
+        if (room.unreadCount > 0) {
+            setChatList(prevList => {
+                const newList = prevList.map(chatRoom => {
+                    if (chatRoom.chatRoomId === room.chatRoomId) {
+                        return { ...chatRoom, unreadCount: 0 };
+                    }
+                    return chatRoom;
+                });
+                calculateAndNotifyUnreadCount(newList);
+                return newList;
+            });
+        }
+
+        // STOMP를 통한 읽음 처리 서버 전송
         if (stompClient && stompClient.active) {
             const readMessage = { chatRoomId: room.chatRoomId, memberId: userInfo.memberId };
             stompClient.publish({
@@ -322,6 +480,24 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
                                                         {formatTime(room.lastMessageTime)}
                                                     </Typography>
                                                 </Box>
+                                                {/* 물품 제목 표시 */}
+                                                {room.postTitle && (
+                                                    <Typography 
+                                                        variant="body2" 
+                                                        sx={{ 
+                                                            color: '#4A90E2', 
+                                                            fontSize: '13px', 
+                                                            fontWeight: 500,
+                                                            mb: 0.5,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            maxWidth: 200
+                                                        }}
+                                                    >
+                                                        🛍️ {room.postTitle}
+                                                    </Typography>
+                                                )}
                                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                     <Typography
                                                         variant="body2"

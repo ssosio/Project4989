@@ -403,4 +403,76 @@ public class PostsService implements PostsServiceInter {
         		minArea, maxArea, cat,regionId);
     }
 	
+	// 게시물 소유자 조회
+	public Long findPostOwnerId(Long postId) {
+		return postMapper.findOwnerId(postId);
+	}
+	
+	// 채팅방 참여자 조회 (판매완료 시 거래자 선택용)
+	public List<Map<String, Object>> getChatParticipants(Long postId) {
+		return postMapper.getChatParticipants(postId);
+	}
+
+	// 판매 상태 변경 메서드 (거래자 선택 포함)
+	@Transactional
+	public boolean updatePostStatus(Long postId, String status, Long buyerId, Long memberId) {
+		try {
+			// 1. 권한 확인 - 작성자 본인인지 확인
+			Long ownerId = postMapper.findOwnerId(postId);
+			if (ownerId == null || !ownerId.equals(memberId)) {
+				System.err.println("권한 없음: postId=" + postId + ", 요청자=" + memberId + ", 소유자=" + ownerId);
+				return false;
+			}
+			
+			// 2. 상태 값 검증
+			if (status == null || status.trim().isEmpty()) {
+				System.err.println("상태 값이 비어있음: " + status);
+				return false;
+			}
+			
+			// 3. 상태 변경 실행
+			int result;
+			if ("SOLD".equals(status.trim()) && buyerId != null) {
+				// 판매완료 시 거래자 ID도 함께 업데이트
+				result = postMapper.updatePostStatusWithBuyer(postId, status.trim(), buyerId);
+			} else {
+				// 일반 상태 변경
+				result = postMapper.updatePostStatus(postId, status.trim());
+			}
+			
+			if (result > 0) {
+				System.out.println("상태 변경 성공: postId=" + postId + ", status=" + status + ", buyerId=" + buyerId + ", memberId=" + memberId);
+				return true;
+			} else {
+				System.err.println("상태 변경 실패: postId=" + postId + ", status=" + status);
+				return false;
+			}
+			
+		} catch (Exception e) {
+			System.err.println("상태 변경 중 예외 발생: " + e.getMessage());
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	// 구매내역 조회
+	public List<Map<String, Object>> getPurchaseHistory(Long memberId) {
+		try {
+			// System.out.println("🔍 PostsService.getPurchaseHistory 호출됨 - memberId: " + memberId);
+			
+			List<Map<String, Object>> result = postMapper.getPurchaseHistory(memberId);
+			// System.out.println("🛒 Mapper에서 반환된 결과: " + (result != null ? result.size() + "개" : "null"));
+			
+			if (result != null && !result.isEmpty()) {
+				// System.out.println("📋 첫 번째 결과 샘플: " + result.get(0));
+			}
+			
+			return result;
+		} catch (Exception e) {
+			// System.err.println("❌ 구매내역 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return new ArrayList<>();
+		}
+	}
+	
 }

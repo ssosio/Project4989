@@ -2,8 +2,10 @@ import axios from 'axios';
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
-import DetailChat from '../chat/detailChat';
+import DetailChat from '../chat/DetailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
+import BuyerSelectionModal from '../components/BuyerSelectionModal';
+import ReviewModal from '../components/ReviewModal';
 import './gooddetail.css';
 
 const GoodsDetail = () => {
@@ -46,6 +48,13 @@ const GoodsDetail = () => {
 
   // 상단 state 모음 근처에 추가
   const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false); // ✅ 판매 상태 업데이트 진행 상태
+  const [showBuyerModal, setShowBuyerModal] = useState(false); // ✅ 거래자 선택 모달 상태
+  
+  // 후기 관련 상태
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  // const [selectedBuyerId, setSelectedBuyerId] = useState(null); // 제거
+  const [hasReview, setHasReview] = useState(false);
 
   // 💡 수정된 useEffect: userInfo 또는 postId가 변경될 때 API를 다시 호출하도록 변경
   useEffect(() => {
@@ -81,6 +90,13 @@ const GoodsDetail = () => {
           const postData = postResult.value.data;
           console.log("✅ Post 데이터 로드 성공:", postData);
           
+          // buyerId 필드 확인
+          console.log("🔍 buyerId 확인:", {
+            buyerId: postData.buyerId,
+            buyerIdType: typeof postData.buyerId,
+            hasBuyerId: 'buyerId' in postData
+          });
+          
           // post 데이터의 content 필드 확인
           console.log("📝 Post content 확인:", {
             content: postData.content,
@@ -90,6 +106,9 @@ const GoodsDetail = () => {
           });
 
           setPost(postData);
+
+          // 판매완료 상태인 경우 구매자 정보는 post.buyerId에서 직접 가져옴
+          // localStorage 복원 로직 제거
 
           const photoList = Array.isArray(postData.photos)
             ? postData.photos
@@ -137,6 +156,9 @@ const GoodsDetail = () => {
     // 💡 localStorage 감지 이벤트 리스너는 이제 필요 없습니다.
     // AuthContext가 상태를 관리하므로, context의 변경에 따라 컴포넌트가 재렌더링됩니다.
   }, [postId, userInfo, token]); // 의존성 배열에 userInfo와 token을 추가
+
+  // selectedBuyerId 상태 제거 - post.buyerId를 직접 사용
+  // const [selectedBuyerId, setSelectedBuyerId] = useState(null);
 
   // view count(조회수)
   const incCalledRef = useRef(false);
@@ -193,6 +215,77 @@ const GoodsDetail = () => {
   }, [postId, userInfo]);
 
 
+
+  // 후기 관련 함수들
+  const handleReviewClick = () => {
+    const isSeller = userInfo?.memberId === post?.memberId;
+    const reviewerId = userInfo?.memberId;
+    const reviewOppositeId = isSeller ? post?.buyerId : post?.memberId;
+    
+    console.log('후기 버튼 클릭됨:', {
+      postId,
+      reviewerId,
+      reviewOppositeId,
+      isSeller,
+      postMemberId: post?.memberId,
+      userMemberId: userInfo?.memberId,
+      buyerId: post?.buyerId
+    });
+    
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSubmitted = () => {
+    setHasReview(true);
+    setShowReviewModal(false);
+  };
+
+  const handleReviewModalClose = () => {
+    setShowReviewModal(false);
+  };
+
+  const canWriteReview = () => {
+    const isSeller = userInfo?.memberId === post?.memberId;
+    const isBuyer = post?.buyerId === userInfo?.memberId;
+    const statusCheck = post?.status === 'SOLD';
+    const noReviewCheck = !hasReview;
+    const buyerSelectedCheck = post?.buyerId !== null;
+    
+    console.log('=== canWriteReview 상세 체크 ===');
+    console.log('기본 정보:', {
+      userInfo: !!userInfo,
+      memberId: userInfo?.memberId,
+      postMemberId: post?.memberId,
+      status: post?.status,
+      hasReview,
+      buyerId: post?.buyerId,
+      buyerIdType: typeof post?.buyerId,
+      hasBuyerIdField: 'buyerId' in (post || {})
+    });
+    
+    console.log('조건별 체크:', {
+      isSeller,
+      isBuyer,
+      statusCheck,
+      noReviewCheck,
+      buyerSelectedCheck
+    });
+    
+    // 판매자 조건 체크 (임시로 selectedBuyerId 체크 제거)
+    if (userInfo?.memberId === post?.memberId && post?.status === 'SOLD' && !hasReview) {
+      console.log('✅ 판매자 후기 작성 가능');
+      return true;
+    }
+    
+    // 구매자 조건 체크
+    if (post?.status === 'SOLD' && !hasReview && post?.buyerId === userInfo?.memberId) {
+      console.log('✅ 구매자 후기 작성 가능');
+      return true;
+    }
+    
+    console.log('❌ 후기 작성 불가능');
+    return false;
+  };
 
   //좋아요 토글
   const onToggle = async () => {
@@ -418,6 +511,67 @@ const GoodsDetail = () => {
     navi(getFallbackListPath(), { state: { focusId: Number(postId) } });
   };
 
+  // 판매 상태 변경 핸들러
+  const handleStatusChange = async (newStatus) => {
+    if (!userInfo || !post || Number(userInfo.memberId) !== Number(post.memberId)) {
+      alert('권한이 없습니다.');
+      return;
+    }
+
+    if (newStatus === post.status) {
+      return; // 같은 상태면 변경하지 않음
+    }
+
+    // 판매완료 선택 시 거래자 선택 모달 열기
+    if (newStatus === 'SOLD') {
+      setShowBuyerModal(true);
+      return;
+    }
+
+    // 일반 상태 변경 (판매중, 예약중)
+    setIsUpdatingStatus(true);
+    try {
+      const response = await axios.put(
+        `http://localhost:4989/post/updateStatus?postId=${postId}&status=${newStatus}`,
+        null,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.data.success) {
+        setPost(prev => ({ ...prev, status: newStatus }));
+        alert('판매 상태가 변경되었습니다.');
+      } else {
+        alert('상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('판매 상태 변경 실패:', error);
+      alert('상태 변경 중 오류가 발생했습니다.');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // 거래자 선택 완료 핸들러
+  const handleBuyerSelectionComplete = (buyerId) => {
+    console.log('구매자 선택 완료:', {
+      buyerId,
+      buyerIdType: typeof buyerId,
+      postId
+    });
+    
+    // 상태를 SOLD로 업데이트하고 선택된 구매자 ID 저장
+    setPost(prev => ({ ...prev, status: 'SOLD', buyerId: buyerId }));
+    
+    setShowBuyerModal(false);
+    
+    console.log('상태 업데이트 완료:', {
+      buyerId: buyerId,
+      postStatus: 'SOLD'
+    });
+  };
+
   // 사진 슬라이드 관련 함수들
   const nextPhoto = () => {
     if (photos && photos.length > 0) {
@@ -582,25 +736,17 @@ const GoodsDetail = () => {
                 <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
                 <span>찜 {count}</span>
               </button>
-                {/* 대화 */}
-          {userInfo && userInfo.memberId === post.memberId ? (
-            <>
-              <button className="gooddetail-chat-btn"
-                onClick={handleChatToggle}
-              >
-                대화
-              </button>
-            </>
-          ) : (
-            <>
-              {/* 비로그인 상태일 때의 버튼들 */}
-              <button className="gooddetail-chat-btn"
-                onClick={() => alert('로그인 후 이용 가능합니다.')}
-              >
-                대화
-              </button>
-            </>
-          )}
+                {/* 대화 버튼: 로그인 상태일 때만 'handleChatToggle' 실행 */}
+              {userInfo ? (
+                <button className="gooddetail-chat-btn" onClick={handleChatToggle}>
+                  대화
+                </button>
+              ) : (
+                // 비로그인 상태일 때
+                <button className="gooddetail-chat-btn" onClick={() => alert('로그인 후 이용 가능합니다.')}>
+                  대화
+                </button>
+              )}
 
           {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
           {userInfo && userInfo.memberId === post.memberId && (
@@ -630,6 +776,41 @@ const GoodsDetail = () => {
           >
             목록
           </button>
+
+                      {/* 작성자 본인만 볼 수 있는 판매 상태 선택 */}
+            {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
+                <div className="gooddetail-status-selector">
+                    <label htmlFor="status-select" className="gooddetail-status-label">
+                        판매 상태 변경:
+                    </label>
+                    <select
+                        id="status-select"
+                        className="gooddetail-status-select"
+                        value={post.status || 'ON_SALE'}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        disabled={isUpdatingStatus}
+                    >
+                        <option value="ON_SALE">판매중</option>
+                        <option value="RESERVED">예약중</option>
+                        <option value="SOLD">판매완료</option>
+                    </select>
+                    {isUpdatingStatus && (
+                        <span className="gooddetail-status-updating">업데이트 중...</span>
+                    )}
+                </div>
+            )}
+            
+            {/* 판매완료 상태일 때 후기 버튼 표시 */}
+            {userInfo && post.status === 'SOLD' && canWriteReview() && (
+                <div className="gooddetail-status-completed">
+                    <button 
+                        className="gooddetail-review-btn"
+                        onClick={handleReviewClick}
+                    >
+                        {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
+                    </button>
+                </div>
+            )}
             </div>
 
             {/* 메타 정보 */}
@@ -775,11 +956,34 @@ const GoodsDetail = () => {
 
 
 
-      {/* DetailChat 컴포넌트 렌더링 */}
-      {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+              {/* DetailChat 컴포넌트 렌더링 */}
+        {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
+        
+        {/* 거래자 선택 모달 */}
+        <BuyerSelectionModal
+          open={showBuyerModal}
+          onClose={() => setShowBuyerModal(false)}
+          postId={postId}
+          token={token}
+          onComplete={handleBuyerSelectionComplete}
+        />
+        
+        {/* 후기 작성 모달 */}
+        <ReviewModal
+          isOpen={showReviewModal}
+          onClose={handleReviewModalClose}
+          postId={postId}
+          reviewerId={userInfo?.memberId}
+          reviewOppositeId={
+            userInfo?.memberId === post?.memberId 
+              ? post?.buyerId  // 판매자가 작성 시: 구매자 ID
+              : post?.memberId   // 구매자가 작성 시: 판매자 ID
+          }
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default GoodsDetail;

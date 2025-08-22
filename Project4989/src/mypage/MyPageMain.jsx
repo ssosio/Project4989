@@ -5,6 +5,7 @@ import ProfileSection from './ProfileSection';
 import TransactionSection from './TransactionSection';
 import BiddingSection from './BiddingSection';
 import WishlistSection from './WishlistSection';
+import PurchaseHistorySection from './PurchaseHistorySection';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {
@@ -78,6 +79,7 @@ const MyPageMain = () => {
           >
             <Tab label="회원정보" />
             <Tab label="판매 내역" />
+            <Tab label="구매 내역" />
             <Tab label="입찰중" />
             <Tab label="찜한 상품" />
           </Tabs>
@@ -93,10 +95,14 @@ const MyPageMain = () => {
         </TabPanel>
         
         <TabPanel value={tabValue} index={2}>
-          <BiddingSection userInfo={userInfo} />
+          <PurchaseHistorySection userInfo={userInfo} />
         </TabPanel>
         
         <TabPanel value={tabValue} index={3}>
+          <BiddingSection userInfo={userInfo} />
+        </TabPanel>
+        
+        <TabPanel value={tabValue} index={4}>
           <WishlistSection userInfo={userInfo} />
         </TabPanel>
       </Paper>

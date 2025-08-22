@@ -1,0 +1,7 @@
+package boot.sagu.service;
+
+import boot.sagu.dto.ReviewDto;
+
+public interface ReviewServiceInter {
+    boolean createReview(ReviewDto reviewDto);
+}
