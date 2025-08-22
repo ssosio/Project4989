@@ -358,7 +358,7 @@ public class PostsService implements PostsServiceInter {
         String sortOrder = (String) searchParams.get("sortOrder");
         Integer page = (Integer) searchParams.get("page");
         Integer size = (Integer) searchParams.get("size");
-        Integer regionId = (Integer)searchParams.get("regionId");
+		/* int regionId = (int)searchParams.get("regionId"); */
         
         // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
@@ -374,7 +374,7 @@ public class PostsService implements PostsServiceInter {
         int offset = (p - 1) * s;
         
         return postMapper.searchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
-        		minArea, maxArea, cat, sb, so, s, offset,regionId);
+        		minArea, maxArea, cat, sb, so, s, offset);
     }
 
     public int countSearchAll(Map<String, Object> searchParams) {
@@ -390,7 +390,7 @@ public class PostsService implements PostsServiceInter {
         Integer minArea = (Integer) searchParams.get("minArea");
         Integer maxArea = (Integer) searchParams.get("maxArea");
         String categoryId = (String) searchParams.get("categoryId");
-        Integer regionId = (Integer)searchParams.get("regionId");
+		/* int regionId = (int)searchParams.get("regionId"); */
         
         // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
@@ -400,7 +400,7 @@ public class PostsService implements PostsServiceInter {
         String cat = (categoryId == null || categoryId.isBlank()) ? "ALL" : categoryId.trim();
         
         return postMapper.countSearchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
-        		minArea, maxArea, cat,regionId);
+        		minArea, maxArea, cat);
     }
 	
 	// 게시물 소유자 조회

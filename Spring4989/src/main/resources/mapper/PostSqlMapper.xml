@@ -308,7 +308,7 @@
       ui.conditions AS ui_conditions,
       
              -- categories 테이블
-       cat.name AS ui_category_name
+       cat.name AS ui_category_id
       
   FROM posts p
   LEFT JOIN cars c ON c.post_id = p.post_id AND p.post_type = 'CARS'
@@ -416,10 +416,10 @@
 			</if>
 			
 			  <!-- 지역 필터 -->
-			  <if test="regionId != null and regionId != 0">
+			  <!-- <if test="regionId != null and regionId != 0">
 			    <if test="(postType != null and postType != '' and postType != 'ALL') or (kw != '')">AND</if>
 			    p.location = #{regionId}
-			  </if>
+			  </if> -->
 			
 		</where>
 		
@@ -559,10 +559,10 @@
 			</if>
 			
 			<!-- 지역 필터 -->
-			<if test="regionId != null and regionId != 0">
+			<!-- <if test="regionId != null and regionId != 0">
 				<if test="kw != '' or (postType != null and postType != '' and postType != 'ALL') or (status != null and status != '' and status != 'ALL') or (tradeType != null and tradeType != '' and tradeType != 'ALL') or minPrice != null or maxPrice != null or minYear != null or maxYear != null or minArea != null or maxArea != null or (categoryId != null and categoryId != '' and categoryId != 'ALL')">AND</if>
 				p.location = #{regionId}
-			</if>
+			</if> -->
 		</where>
 	</select>
 

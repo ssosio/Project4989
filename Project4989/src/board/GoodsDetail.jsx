@@ -720,7 +720,7 @@ const GoodsDetail = () => {
                 <span className="gooddetail-info-label">상품상태</span>
                 <span className="gooddetail-info-value">
                   <span className={`gooddetail-status ${post.status === 'ON_SALE' ? 'on-sale' : post.status === 'RESERVED' ? 'reserved' : 'sold'}`}>
-                    {post.status === 'ON_SALE' ? '새 상품' : post.status === 'RESERVED' ? '예약중' : '판매완료'}
+                    {post.status === 'ON_SALE' ? '판매중' : post.status === 'RESERVED' ? '예약중' : '판매완료'}
                   </span>
                 </span>
               </div>
