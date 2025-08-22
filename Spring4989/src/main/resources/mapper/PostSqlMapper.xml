@@ -24,8 +24,8 @@
       p.trade_type AS tradeType,
       p.status AS status,
       p.view_count AS viewCount,
-      p.created_at AS
-      createdAt,
+      p.created_at AS createdAt,
+      p.buyer_id AS buyerId,
       p.updated_at AS UpdatedAt,
       p.post_type AS postType,
       p.location AS location,

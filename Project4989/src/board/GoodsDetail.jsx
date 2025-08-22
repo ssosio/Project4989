@@ -55,6 +55,7 @@ const GoodsDetail = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   // const [selectedBuyerId, setSelectedBuyerId] = useState(null); // 제거
   const [hasReview, setHasReview] = useState(false);
+  const [reviewCompleted, setReviewCompleted] = useState(false); // 추가
 
   // 💡 수정된 useEffect: userInfo 또는 postId가 변경될 때 API를 다시 호출하도록 변경
   useEffect(() => {
@@ -236,6 +237,8 @@ const GoodsDetail = () => {
   };
 
   const handleReviewSubmitted = () => {
+    console.log('후기 작성 완료됨');
+    setReviewCompleted(true); // 후기 작성 완료 상태로 설정
     setHasReview(true);
     setShowReviewModal(false);
   };
@@ -800,15 +803,21 @@ const GoodsDetail = () => {
                 </div>
             )}
             
-            {/* 판매완료 상태일 때 후기 버튼 표시 */}
-            {userInfo && post.status === 'SOLD' && canWriteReview() && (
+            {/* 판매완료 상태일 때 후기 버튼 또는 완료 메시지 표시 */}
+            {userInfo && post.status === 'SOLD' && (
                 <div className="gooddetail-status-completed">
-                    <button 
-                        className="gooddetail-review-btn"
-                        onClick={handleReviewClick}
-                    >
-                        {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
-                    </button>
+                    {canWriteReview() ? (
+                        <button 
+                            className="gooddetail-review-btn"
+                            onClick={handleReviewClick}
+                        >
+                            {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
+                        </button>
+                    ) : reviewCompleted ? (
+                        <div className="gooddetail-review-completed">
+                            후기작성이 완료되었습니다
+                        </div>
+                    ) : null}
                 </div>
             )}
             </div>

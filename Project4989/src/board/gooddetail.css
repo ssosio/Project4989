@@ -763,6 +763,17 @@
           box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
+        .gooddetail-review-completed {
+          text-align: center;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          color: #28a745;
+          font-weight: 500;
+          margin: 20px 0;
+        }
+
         /* 모바일 반응형 */
         @media (max-width: 768px) {
           .gooddetail-status-selector {
