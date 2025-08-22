@@ -205,7 +205,16 @@ public class MemberController {
             }
             
             memberService.updateProfile(existingMember);
-            return ResponseEntity.ok("프로필이 성공적으로 수정되었습니다.");
+            
+            // 업데이트된 회원 정보로 새로운 JWT 토큰 생성
+            MemberDto updatedMember = memberService.getMemberByLoginId(loginId);
+            String newToken = jwtUtil.generateToken(updatedMember);
+            
+            // 새로운 토큰과 함께 성공 메시지 반환
+            return ResponseEntity.ok(Map.of(
+                "message", "프로필이 성공적으로 수정되었습니다.",
+                "token", newToken
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("프로필 수정 중 오류가 발생했습니다: " + e.getMessage());
         }
@@ -213,66 +222,59 @@ public class MemberController {
     
     // 프로필 사진 변경
     @PutMapping("/member/profile-image")
-    public ResponseEntity<?> updateProfileImage(@RequestParam("loginId") String loginId, 
-                                              @RequestParam("profileImageFile") MultipartFile profileImageFile) {
+    public ResponseEntity<?> updateProfileImage(@RequestParam("loginId") String loginId, @RequestParam("profileImageFile") MultipartFile profileImageFile) {
         try {
             if (profileImageFile.isEmpty()) {
-                return ResponseEntity.badRequest().body("프로필 사진을 선택해주세요.");
+                return ResponseEntity.badRequest().body("프로필 이미지 파일을 선택해주세요.");
             }
             
-            // 파일 유효성 검사
-            if (!profileImageFile.getContentType().startsWith("image/")) {
-                return ResponseEntity.badRequest().body("이미지 파일만 업로드 가능합니다.");
-            }
+            // 파일 업로드 및 DB 업데이트
+            String profileImageUrl = memberService.updateProfileImage(loginId, profileImageFile);
             
-            if (profileImageFile.getSize() > 5 * 1024 * 1024) { // 5MB 제한
-                return ResponseEntity.badRequest().body("파일 크기는 5MB 이하여야 합니다.");
-            }
+            // 업데이트된 회원 정보로 새로운 JWT 토큰 생성
+            MemberDto updatedMember = memberService.getMemberByLoginId(loginId);
+            String newToken = jwtUtil.generateToken(updatedMember);
             
-            // 프로필 사진 업로드 및 URL 반환
-            String imageUrl = memberService.updateProfileImage(loginId, profileImageFile);
-            return ResponseEntity.ok(Map.of("message", "프로필 사진이 성공적으로 변경되었습니다.", "imageUrl", imageUrl));
-            
+            // 새로운 토큰과 함께 성공 메시지 반환
+            return ResponseEntity.ok(Map.of(
+                "message", "프로필 이미지가 성공적으로 변경되었습니다.",
+                "token", newToken,
+                "profileImageUrl", profileImageUrl
+            ));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("프로필 사진 변경 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.status(500).body("프로필 이미지 변경 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
     
-    // 비밀번호 변경 (현재 비밀번호 확인 후 변경)
+    // 비밀번호 변경
     @PutMapping("/member/password")
-    public ResponseEntity<?> changePassword(@RequestParam("loginId") String loginId, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> updatePassword(@RequestParam("loginId") String loginId, @RequestBody Map<String, String> passwordData) {
         try {
-            String currentPassword = request.get("currentPassword");
-            String newPassword = request.get("newPassword");
+            String currentPassword = passwordData.get("currentPassword");
+            String newPassword = passwordData.get("newPassword");
             
-            if (currentPassword == null || newPassword == null) {
-                return ResponseEntity.badRequest().body("현재 비밀번호와 새 비밀번호를 모두 입력해주세요.");
-            }
-            
-            MemberDto member = memberService.getMemberByLoginId(loginId);
-            if (member == null) {
+            // 현재 비밀번호 확인
+            MemberDto existingMember = memberService.getMemberByLoginId(loginId);
+            if (existingMember == null) {
                 return ResponseEntity.status(404).body("회원을 찾을 수 없습니다.");
             }
             
-            // 현재 비밀번호 확인
-            if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
-                return ResponseEntity.status(401).body("현재 비밀번호가 올바르지 않습니다.");
-            }
-            
-            // 새 비밀번호 유효성 검사
-            if (newPassword.length() < 10) {
-                return ResponseEntity.badRequest().body("새 비밀번호는 10자 이상이어야 합니다.");
-            }
-            
-            // 강력한 비밀번호 정규식 검사
-            String strongPasswordRegex = "^(?=.*[A-Z])(?=.*[!@#$%^&*])(?=.*[0-9]).{10,}$";
-            if (!newPassword.matches(strongPasswordRegex)) {
-                return ResponseEntity.badRequest().body("비밀번호는 10자 이상이어야 하며, 대문자, 특수문자, 숫자를 포함해야 합니다.");
+            if (!passwordEncoder.matches(currentPassword, existingMember.getPassword())) {
+                return ResponseEntity.status(400).body("현재 비밀번호가 일치하지 않습니다.");
             }
             
             // 새 비밀번호로 업데이트
             memberService.updatePassword(loginId, newPassword);
-            return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+            
+            // 업데이트된 회원 정보로 새로운 JWT 토큰 생성
+            MemberDto updatedMember = memberService.getMemberByLoginId(loginId);
+            String newToken = jwtUtil.generateToken(updatedMember);
+            
+            // 새로운 토큰과 함께 성공 메시지 반환
+            return ResponseEntity.ok(Map.of(
+                "message", "비밀번호가 성공적으로 변경되었습니다.",
+                "token", newToken
+            ));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("비밀번호 변경 중 오류가 발생했습니다: " + e.getMessage());
         }
