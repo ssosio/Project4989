@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import { AuthContext } from '../../context/AuthContext';
 import './auction.css';
-import api from '../../lib/api';            // ★ axios 대신 우리가 만든 인스턴스 사용
+import api from '../../lib/api';
 import PortOnePayment from './PortOnePayment';
 
 const AuctionDetail = () => {
@@ -50,6 +50,7 @@ const AuctionDetail = () => {
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentMerchantUid, setPaymentMerchantUid] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const SERVER_IP = '192.168.10.138';
@@ -57,7 +58,6 @@ const AuctionDetail = () => {
 
   const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
-  // 파일 상단 util로 추가
   const normalizeDetail = (d = {}) => ({
     ...d,
     memberId: d.memberId ?? d.member_id ?? d.writerId ?? d.writer_id,
@@ -69,29 +69,23 @@ const AuctionDetail = () => {
   });
 
   const normalizeHighestBid = (b) =>
-  b ? { ...b, bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0) } : null;
+    b ? { ...b, bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0) } : null;
 
-  // 시간 차이 계산
   const getTimeAgo = (bidTime) => {
     const now = new Date();
     const bidDate = new Date(bidTime);
     const diffInMinutes = Math.floor((now - bidDate) / (1000 * 60));
-
     if (diffInMinutes < 1) return '방금 전';
     if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}시간 전`;
-
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}일 전`;
   };
 
-  // 최초 로딩
   useEffect(() => {
     (async () => {
       try {
-        // 상세
         const detailRes = await api.get(`/auction/detail/${postId}`);
         setAuctionDetail(normalizeDetail(detailRes.data));
         setLoading(false);
@@ -101,7 +95,6 @@ const AuctionDetail = () => {
       }
 
       try {
-        // 최고가
         const hbRes = await api.get(`/auction/highest-bid/${postId}`);
         setHighestBid(normalizeHighestBid(hbRes.data));
       } catch (err) {
@@ -110,7 +103,6 @@ const AuctionDetail = () => {
       }
 
       try {
-        // 방 입장
         const joinRes = await api.post(`/auction/room/join/${postId}`, { sessionId });
         if (joinRes.data?.success) setUserCount(joinRes.data.userCount);
       } catch (err) {
@@ -121,15 +113,11 @@ const AuctionDetail = () => {
       getBidHistory();
     })();
 
-    // beforeunload(새로고침/탭닫기) 시에는 sendBeacon 사용
     const handleBeforeUnload = () => {
-      navigator.sendBeacon(
-        `${BASE}/auction/room/leave/${postId}/${sessionId}`
-      );
+      navigator.sendBeacon(`${BASE}/auction/room/leave/${postId}/${sessionId}`);
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // 언마운트 시(페이지 이동) leave
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       api.post(`/auction/room/leave/${postId}`, { sessionId }).catch((err) => {
@@ -138,56 +126,42 @@ const AuctionDetail = () => {
     };
   }, [postId, sessionId, userInfo]);
 
-  // 작성자 닉네임
   useEffect(() => {
     if (auctionDetail?.memberId) {
       api
         .get(`/auction/member/${auctionDetail.memberId}`)
         .then((res) => setAuthorNickname(res.data.nickname))
-        .catch((err) => {
-          console.error('작성자 닉네임 조회 실패:', err);
-          setAuthorNickname(`ID: ${auctionDetail.memberId}`);
-        });
+        .catch(() => setAuthorNickname(`ID: ${auctionDetail.memberId}`));
     }
   }, [auctionDetail?.memberId]);
 
-  // 낙찰자 닉네임
   useEffect(() => {
     if (auctionDetail?.winnerId) {
       api
         .get(`/auction/member/${auctionDetail.winnerId}`)
         .then((res) => setWinnerNickname(res.data.nickname))
-        .catch((err) => {
-          console.error('낙찰자 닉네임 조회 실패:', err);
-          setWinnerNickname(`ID: ${auctionDetail.winnerId}`);
-        });
+        .catch(() => setWinnerNickname(`ID: ${auctionDetail.winnerId}`));
     } else {
       setWinnerNickname('');
     }
   }, [auctionDetail?.winnerId]);
 
-  // 최고 입찰자 닉네임
   useEffect(() => {
     if (highestBid?.bidderId) {
       api
         .get(`/auction/member/${highestBid.bidderId}`)
         .then((res) => setHighestBidderNickname(res.data.nickname))
-        .catch((err) => {
-          console.error('최고 입찰자 닉네임 조회 실패:', err);
-          setHighestBidderNickname(`ID: ${highestBid.bidderId}`);
-        });
+        .catch(() => setHighestBidderNickname(`ID: ${highestBid.bidderId}`));
     } else {
       setHighestBidderNickname('');
     }
   }, [highestBid?.bidderId]);
 
-  // 입찰 기록 표시용 "n분 전"
   useEffect(() => {
     const interval = setInterval(() => setBidHistory((prev) => [...prev]), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // 방 인원수 주기 갱신
   useEffect(() => {
     const interval = setInterval(() => {
       api
@@ -200,7 +174,6 @@ const AuctionDetail = () => {
     return () => clearInterval(interval);
   }, [postId]);
 
-  // 마감 타이머
   useEffect(() => {
     if (!auctionDetail?.auctionEndTime) {
       setTimeRemaining('마감시간 미정');
@@ -210,12 +183,10 @@ const AuctionDetail = () => {
       const endTime = new Date(auctionDetail.auctionEndTime);
       const now = new Date();
       const diff = endTime - now;
-
       if (diff <= 0) {
         setTimeRemaining('경매 종료');
         return;
       }
-
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -232,7 +203,6 @@ const AuctionDetail = () => {
     return () => clearInterval(timer);
   }, [auctionDetail?.auctionEndTime]);
 
-  // 토스트 자동 제거
   useEffect(() => {
     if (!bidMessage) return;
     const t = setTimeout(() => {
@@ -242,7 +212,6 @@ const AuctionDetail = () => {
     return () => clearTimeout(t);
   }, [bidMessage]);
 
-  // 소켓 연결
   useEffect(() => {
     const client = new Client({
       brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
@@ -283,7 +252,6 @@ const AuctionDetail = () => {
     };
   }, [postId, sessionId, userInfo]);
 
-  // 소켓 메시지 처리
   const handleSocketMessage = (data) => {
     switch (data.type) {
       case 'BID_UPDATE': {
@@ -322,18 +290,17 @@ const AuctionDetail = () => {
     }
   };
 
-const formatDate = (d) => {
-  if (!d || d === 'null' || d === '') return '-';
-  try {
-    // 'YYYY-MM-DD HH:mm:ss' → 'YYYY-MM-DDTHH:mm:ss'
-    const safe = typeof d === 'string' && d.includes(' ') ? d.replace(' ', 'T') : d;
-    const date = new Date(safe);
-    if (isNaN(date.getTime())) return '-';
-    return date.toLocaleString('ko-KR');
-  } catch {
-    return '-';
-  }
-};
+  const formatDate = (d) => {
+    if (!d || d === 'null' || d === '') return '-';
+    try {
+      const safe = typeof d === 'string' && d.includes(' ') ? d.replace(' ', 'T') : d;
+      const date = new Date(safe);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleString('ko-KR');
+    } catch {
+      return '-';
+    }
+  };
 
   const formatPrice = (price) => {
     if (!price || price === 0) return '-';
@@ -368,95 +335,47 @@ const formatDate = (d) => {
   };
 
   const handleBidSubmit = async () => {
-    console.log('=== 입찰 함수 시작 ===');
-    console.log('userInfo:', userInfo);
-    console.log('bidAmount:', bidAmount);
-    
-    // 로그를 더 오래 보이게 하기
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연) ==='), 100);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연2) ==='), 200);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연3) ==='), 500);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연4) ==='), 1000);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연5) ==='), 2000);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연6) ==='), 3000);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연7) ==='), 5000);
-    setTimeout(() => console.log('=== 입찰 함수 시작 (지연8) ==='), 10000);
-    
     if (!userInfo || !userInfo.memberId) {
-      console.log('로그인 정보 없음');
-      setTimeout(() => console.log('로그인 정보 없음 (지연)'), 100);
-      setTimeout(() => console.log('로그인 정보 없음 (지연2)'), 2000);
-      setTimeout(() => console.log('로그인 정보 없음 (지연3)'), 5000);
       setBidMessage('로그인 후 이용해주세요.');
       setBidMessageType('error');
       return;
     }
     const currentUserId = userInfo.memberId;
-    console.log('currentUserId:', currentUserId);
 
     if (auctionDetail && auctionDetail.memberId === currentUserId) {
-      console.log('본인 경매 참여 시도 차단');
-      setTimeout(() => console.log('본인 경매 참여 시도 차단 (지연)'), 100);
-      setTimeout(() => console.log('본인 경매 참여 시도 차단 (지연2)'), 2000);
-      setTimeout(() => console.log('본인 경매 참여 시도 차단 (지연3)'), 5000);
       setBidMessage('본인 경매에는 참여할 수 없습니다.');
       setBidMessageType('error');
       return;
     }
 
     if (!bidAmount || bidAmount <= 0) {
-      console.log('입찰 금액 유효성 검사 실패:', bidAmount);
-      setTimeout(() => console.log('입찰 금액 유효성 검사 실패 (지연):', bidAmount), 100);
-      setTimeout(() => console.log('입찰 금액 유효성 검사 실패 (지연2):', bidAmount), 2000);
-      setTimeout(() => console.log('입찰 금액 유효성 검사 실패 (지연3):', bidAmount), 5000);
       setBidMessage('유효한 입찰 금액을 입력해주세요.');
       setBidMessageType('error');
       return;
     }
 
     const currentHighestBid = getCurrentPrice();
-    console.log('현재 최고가:', currentHighestBid);
-    console.log('입찰 금액:', bidAmount);
     if (bidAmount <= currentHighestBid) {
-      console.log('입찰가가 최고가보다 낮음');
-      setTimeout(() => console.log('입찰가가 최고가보다 낮음 (지연) - 현재최고가:', currentHighestBid, '입찰가:', bidAmount), 100);
-      setTimeout(() => console.log('입찰가가 최고가보다 낮음 (지연2) - 현재최고가:', currentHighestBid, '입찰가:', bidAmount), 2000);
-      setTimeout(() => console.log('입찰가가 최고가보다 낮음 (지연3) - 현재최고가:', currentHighestBid, '입찰가:', bidAmount), 5000);
       setBidMessage(`입찰가가 현재 최고가(${currentHighestBid.toLocaleString()}원)보다 낮거나 같습니다.\n더 높은 금액을 입력해주세요.`);
       setBidMessageType('error');
       return;
     }
 
     if (highestBid && highestBid.bidderId === currentUserId) {
-      console.log('연속 입찰 시도 차단');
-      setTimeout(() => console.log('연속 입찰 시도 차단 (지연)'), 100);
-      setTimeout(() => console.log('연속 입찰 시도 차단 (지연2)'), 2000);
-      setTimeout(() => console.log('연속 입찰 시도 차단 (지연3)'), 5000);
       setBidMessage('연속 입찰은 불가능합니다.\n다른 분이 입찰한 후 시도해주세요.');
       setBidMessageType('error');
       return;
     }
 
     try {
-      console.log('=== API 요청 시작 ===');
-      console.log('요청 URL:', `/auction/${postId}/bids`);
-      console.log('요청 데이터:', {
-        postId: parseInt(postId, 10),
-        bidderId: Number(currentUserId),
-        bidAmount: Number(bidAmount),
-        bid_amount: Number(bidAmount)
-      });
-      
       const res = await api.post(`/auction/${postId}/bids`, {
-        postId: parseInt(postId, 10),
-        bidderId: Number(currentUserId),
-        bidAmount: Number(bidAmount),
-        bid_amount: Number(bidAmount)
+        bid_amount: Number(bidAmount) // 바디는 이 키 하나만
       });
 
       if (res.data?.status === 'NEED_GUARANTEE') {
         const guaranteeAmount = res.data.guaranteeAmount || Math.max(1, Math.round((auctionDetail?.price || 0) * 0.1));
         setPaymentAmount(guaranteeAmount);
+        setPaymentMerchantUid(res.data.merchantUid); // 서버가 내려준 merchantUid 그대로 사용
         setShowPaymentModal(true);
         return;
       }
@@ -474,8 +393,6 @@ const formatDate = (d) => {
     } catch (error) {
       const status = error.response?.status;
       const data = error.response?.data;
-      console.error('입찰 실패 status/data:', status, data);
-
       const msg = data?.message || data?.error || (error.message || '알 수 없는 오류가 발생했습니다.');
 
       if (status === 401) {
@@ -484,6 +401,7 @@ const formatDate = (d) => {
       } else if (status === 402 && data?.status === 'NEED_GUARANTEE') {
         const guaranteeAmount = data.guaranteeAmount || Math.max(1, Math.round((auctionDetail?.price || 0) * 0.1));
         setPaymentAmount(guaranteeAmount);
+        setPaymentMerchantUid(data.merchantUid);
         setBidMessage('보증금 결제가 필요합니다. 결제를 진행해주세요.');
         setBidMessageType('info');
         setShowPaymentModal(true);
@@ -516,18 +434,13 @@ const formatDate = (d) => {
         try {
           const w = await api.get(`/auction/member/${hb.data.bidderId}`);
           setWinnerNickname(w.data.nickname || `ID: ${hb.data.bidderId}`);
-        } catch (memberErr) {
-          console.error('낙찰자 정보 조회 실패:', memberErr);
+        } catch {
           setWinnerNickname(`ID: ${hb.data.bidderId}`);
         }
       }
 
       window.location.reload();
     } catch (error) {
-      console.error('경매 종료 실패:', error);
-      console.error('에러 상세:', error.response?.data);
-      console.error('에러 상태:', error.response?.status);
-
       if (error.response?.data) setBidMessage(error.response.data);
       else setBidMessage('경매 종료에 실패했습니다.');
       setBidMessageType('error');
@@ -665,11 +578,8 @@ const formatDate = (d) => {
     setIsProcessingPayment(false);
 
     try {
-      // 결제 이후 실제 입찰 재시도
       await api.post(`/auction/${postId}/bids`, {
-        postId: parseInt(postId, 10),
-        bidderId: userInfo?.memberId,
-        bidAmount: bidAmount,
+        bid_amount: Number(bidAmount) // 결제 후 재시도도 동일 키만
       });
 
       setBidMessage('보증금 결제가 완료되었고, 입찰이 성공했습니다!');
@@ -683,7 +593,6 @@ const formatDate = (d) => {
       setAuctionDetail(detail.data);
       setHighestBid(hb.data);
     } catch (error) {
-      console.error('입찰 실패:', error);
       const data = error.response?.data;
       const msg = data?.message || data?.error || '보증금은 결제되었지만 입찰에 실패했습니다. 다시 시도해주세요.';
       setBidMessage(msg);
@@ -749,9 +658,7 @@ const formatDate = (d) => {
 
   return (
     <div className="auction-detail-container">
-      {/* 메인 콘텐츠 */}
       <div className="detail-content">
-        {/* 왼쪽 - 상품 정보 */}
         <div className="product-info-section">
           <div className="product-header">
             <div className="title-heart-container">
@@ -831,7 +738,6 @@ const formatDate = (d) => {
               </div>
             </div>
 
-            {/* 메타 */}
             <div className="product-meta-section">
               <div className="meta-row">
                 <div className="meta-item author-date">
@@ -880,7 +786,6 @@ const formatDate = (d) => {
             </div>
           </div>
 
-          {/* 설명 + 이미지 */}
           <div className="product-description-image-section">
             <div className="product-content">
               <h3 className="content-title">상품 설명</h3>
@@ -946,7 +851,6 @@ const formatDate = (d) => {
           </button>
         </div>
 
-        {/* 오른쪽 - 타이머/최고가 */}
         <div className="product-image-section">
           <div className="timer-section-overlay">
             <div className="timer-title">남은 시간 (경매 마감까지)</div>
@@ -1026,7 +930,6 @@ const formatDate = (d) => {
               </div>
             </div>
 
-            {/* 금액 버튼 */}
             <div className="bid-amount-buttons">
               {timeRemaining !== '경매 종료' ? (
                 <>
@@ -1043,7 +946,6 @@ const formatDate = (d) => {
               )}
             </div>
 
-            {/* 입찰 입력/버튼 */}
             <div className="bid-input-section">
               {timeRemaining !== '경매 종료' ? (
                 <>
@@ -1066,12 +968,10 @@ const formatDate = (d) => {
               )}
             </div>
 
-            {/* 토스트 */}
             <div className="toast-message-area">
               {bidMessage && <div className={`bid-message ${bidMessageType}`}>{bidMessage}</div>}
             </div>
 
-            {/* 종료 버튼 */}
             <div style={{ marginTop: 20, textAlign: 'center', minHeight: 56 }}>
               {(() => {
                 const condition1 = timeRemaining !== '경매 종료';
@@ -1115,7 +1015,6 @@ const formatDate = (d) => {
         </div>
       </div>
 
-      {/* 이미지 모달 */}
       {imageModalOpen && (
         <div className="image-modal-overlay" onClick={closeImageModal}>
           <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1158,7 +1057,6 @@ const formatDate = (d) => {
         </div>
       )}
 
-      {/* 비번 확인 모달 */}
       {showPasswordModal && (
         <div className="password-modal-overlay">
           <div className="password-modal">
@@ -1181,7 +1079,6 @@ const formatDate = (d) => {
         </div>
       )}
 
-      {/* 보증금 결제 모달 */}
       {showPaymentModal && (
         <div className="payment-modal">
           <div className="payment-modal-content">
@@ -1212,12 +1109,12 @@ const formatDate = (d) => {
         </div>
       )}
 
-      {/* 포트원 결제 컴포넌트 */}
       {isProcessingPayment && (
         <PortOnePayment
           postId={parseInt(postId, 10)}
           memberId={userInfo?.memberId}
           amount={paymentAmount}
+          merchantUid={paymentMerchantUid}
           onPaymentComplete={handlePaymentComplete}
           onPaymentCancel={handlePaymentCancel}
         />

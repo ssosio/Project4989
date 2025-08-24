@@ -359,69 +359,83 @@ public class AuctionService implements AuctionServiceInter {
 	
 	//(웹훅) 결제 검증 후 보증금 저장: imp_uid 조회 → 상태/금액/merchant_uid 검증 → DB insert
 	// 결제 검증 + 보증금 저장
+	// AuctionService.java
 	@Transactional
 	public void handlePortOneWebhook(Long postId, Long memberId, String impUid, String merchantUidFromClient) {
-		   if (impUid == null || merchantUidFromClient == null) {
-		        // 최소한의 방어(로그만 남기고 조기 종료)
-		        return;
-		    }
-		   
-		   // (1) 멱등성: 같은 imp_uid로 이미 저장돼 있으면 중복 처리 방지
-		    if (auctionMapper.existsGuaranteeByImpUid(impUid) > 0) {
-		        return;
-		    }
-		
-		    // (2) postId/memberId 누락 시 merchant_uid에서 보조 파싱
-		    if ((postId == null || memberId == null) && merchantUidFromClient.matches("^(guarantee|escrow)_(\\d+)_(\\d+)$")) {
-		        Matcher m = Pattern.compile("^(guarantee|escrow)_(\\d+)_(\\d+)$").matcher(merchantUidFromClient);
-		        if (m.matches()) {
-		            if (postId == null)   postId   = Long.parseLong(m.group(2));
-		            if (memberId == null) memberId = Long.parseLong(m.group(3));
-		        }
-		    }
-		    if (postId == null || memberId == null) {
-		        // 식별 불가 → 로그 후 종료(또는 예외)
-		        return;
-		    }
-		    
-		    // (3) 서버 검증: imp_uid로 포트원 REST V1 조회
-		    PortOnePayment pay = portOneService.getPayment(impUid);
-		    if (pay == null) {
-		        throw new IllegalStateException("결제정보 조회 실패");
-		    }
-		    if (!"paid".equalsIgnoreCase(pay.getStatus())) {
-		        throw new IllegalStateException("결제상태가 paid가 아님");
-		    }
-		    
-		    // (4) 금액/merchant_uid 검증 (보증금: 시작가의 10%)
-		    int startPrice = auctionMapper.getStartPrice(postId);
-		    int expected = Math.max(1, (int) Math.round(startPrice * 0.1));
+	    // 0) 기본 방어
+	    if (impUid == null && merchantUidFromClient == null) {
+	        // 둘 다 없으면 더 진행 불가
+	        return;
+	    }
+	    if (merchantUidFromClient == null) merchantUidFromClient = "";
 
-		    if (pay.getAmount() != expected || !merchantUidFromClient.equals(pay.getMerchantUid())) {
-		        // 위변조 의심 → 즉시 취소 권장
-		        portOneService.cancelPayment(impUid, "보증금 검증 실패", null);
-		        throw new IllegalStateException("결제 검증 실패");
-		    }
-		    
+	    // 1) merchant_uid에서 postId/memberId 보조 파싱 (타임스탬프 유무 모두 허용)
+	    // 허용 형태: guarantee|escrow _ {postId} _ {memberId} (_{숫자})?   ← 뒤에 _1234567890 붙어도 OK
+	    final Pattern MU = Pattern.compile("^(guarantee|escrow)_(\\d+)_(\\d+)(?:_\\d+)?$");
+	    Matcher m = MU.matcher(merchantUidFromClient);
+	    if (m.matches()) {
+	        if (postId == null)   postId   = Long.parseLong(m.group(2));
+	        if (memberId == null) memberId = Long.parseLong(m.group(3));
+	    }
+	    if (postId == null || memberId == null) {
+	        // 식별 불가 → 종료
+	        return;
+	    }
+
+	    // 2) 멱등성: 이미 동일 imp_uid 저장되어 있으면 조용히 성공 처리
+	    if (impUid != null && auctionMapper.existsGuaranteeByImpUid(impUid) > 0) {
+	        return;
+	    }
+	    // (선택) 이미 해당 (postId, memberId)로 PAID/HOLD 이력이 있으면 조용히 성공 처리
+	    if (auctionMapper.countAuctionGuaranteeByPostAndMember(postId, memberId) > 0) {
+	        return;
+	    }
+
+	    // 3) 포트원 조회 (imp_uid 기준)
+	    PortOnePayment pay = portOneService.getPayment(impUid);
+	    if (pay == null) {
+	        throw new IllegalStateException("결제정보 조회 실패");
+	    }
 	    if (!"paid".equalsIgnoreCase(pay.getStatus())) {
 	        throw new IllegalStateException("결제상태가 paid가 아님");
 	    }
 
-	    if (pay.getAmount() != expected || !pay.getMerchantUid().equals(merchantUidFromClient)) {
-	    	 // 위변조 의심 → 즉시 취소 권장
-	        portOneService.cancelPayment(impUid, "보증금 검증 실패", null);
+	    // 4) 금액/merchant_uid 검증 (시작가의 10%)
+	    int startPrice = auctionMapper.getStartPrice(postId);
+	    int expected   = Math.max(1, (int) Math.round(startPrice * 0.1));
+
+	    // 머천트 UID 정규화(뒤쪽 타임스탬프는 제거하고 비교)
+	    String normClientMU = normalizeMerchantUid(merchantUidFromClient);
+	    String normPaidMU   = normalizeMerchantUid(pay.getMerchantUid());
+
+	    if (pay.getAmount() != expected || !normClientMU.equals(normPaidMU)) {
+	        // 위변조 의심 → 즉시 취소 권장
+	        portOneService.cancelPayment(pay.getImpUid(), "보증금 검증 실패", null);
 	        throw new IllegalStateException("결제 검증 실패");
 	    }
 
+	    // 5) 저장
 	    AuctionGuaranteeDTO dto = new AuctionGuaranteeDTO();
 	    dto.setPostId(postId);
 	    dto.setMemberId(memberId);
 	    dto.setAmount(BigDecimal.valueOf(pay.getAmount()));
-	    dto.setImpUid(impUid);
+	    dto.setImpUid(pay.getImpUid());
 	    dto.setMerchantUid(pay.getMerchantUid());
 	    dto.setStatus("PAID");
 	    auctionMapper.insertGuarantee(dto);
+
+	    // (디버깅 도움 로그 — 필요 없으면 지워도 됨)
+	    System.out.println("[GUARANTEE] saved postId=" + postId + ", memberId=" + memberId
+	        + ", impUid=" + pay.getImpUid() + ", merchantUid=" + pay.getMerchantUid()
+	        + ", amount=" + pay.getAmount());
 	}
+
+	private String normalizeMerchantUid(String mu) {
+	    if (mu == null) return "";
+	    // guarantee_123_45_1716799999999 → guarantee_123_45 로 정규화
+	    return mu.replaceFirst("^(guarantee|escrow)_(\\d+)_(\\d+)(?:_\\d+)?$", "$1_$2_$3");
+	}
+
 	
 	@Transactional
 	public EscrowOrderDTO createEscrowOrderForWinner(long postId, long winnerId) {

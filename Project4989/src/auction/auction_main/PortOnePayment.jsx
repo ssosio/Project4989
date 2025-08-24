@@ -3,9 +3,9 @@ import React, { useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { PORTONE_CONFIG, PAYMENT_ERROR_MESSAGES } from '../../config/portone';
-import api from '../../lib/api'; // ★ axios 대신 인터셉터 달린 인스턴스
+import api from '../../lib/api';
 
-// 포트원 스크립트를 한 번만 로드
+// 포트원 스크립트 로드 (1회)
 function loadPortOneScript() {
   return new Promise((resolve, reject) => {
     if (window.IMP) return resolve();
@@ -28,12 +28,13 @@ export default function PortOnePayment({
   postId,
   memberId,
   amount,
+  merchantUid,
   onPaymentComplete,
   onPaymentCancel,
 }) {
   const navigate = useNavigate();
   const { userInfo } = useContext(AuthContext);
-  const launchedRef = useRef(false); // 결제창 중복 오픈 방지
+  const launchedRef = useRef(false);
 
   useEffect(() => {
     if (launchedRef.current) return;
@@ -51,23 +52,25 @@ export default function PortOnePayment({
         const { IMP } = window;
         IMP.init(PORTONE_CONFIG.IMP_CODE);
 
-        // 🔐 토큰 체크: jwtToken 또는 accessToken 모두 허용 + 접두어 정리
+        // 로그인 토큰 존재 확인(실제 전송은 api 인스턴스가 함)
         const raw = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
         if (!raw) {
           alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.');
-          // 실제 상세 경로에 맞춰 redirect 파라미터 조정
           navigate(`/login?redirect=/auction/detail/${postId}`);
           window[guardKey] = false;
           return;
         }
 
-        // 구매자 정보
         const buyer_email = userInfo?.loginId || userInfo?.email || '';
         const buyer_name  = userInfo?.nickname || '구매자';
         const buyer_tel   = userInfo?.phone || userInfo?.tel || '';
 
-        // 유니크 merchant_uid
-        const merchantUid = `guarantee_${postId}_${memberId}_${Date.now()}`;
+        if (!merchantUid) {
+          alert('결제 식별자(merchantUid)가 없습니다. 다시 시도해주세요.');
+          window[guardKey] = false;
+          onPaymentCancel?.();
+          return;
+        }
 
         IMP.request_pay(
           {
@@ -86,7 +89,6 @@ export default function PortOnePayment({
 
             if (rsp.success) {
               try {
-                // ✅ confirm은 api 인스턴스로 호출(Authorization 자동 부착 + 토큰 리프레시)
                 await api.post('/api/auctions/portone/confirm', {
                   postId: Number(postId),
                   memberId: Number(memberId),
@@ -94,12 +96,11 @@ export default function PortOnePayment({
                   merchantUid,
                   paidAmount: rsp.paid_amount,
                 });
-
                 onPaymentComplete?.();
               } catch (err) {
                 console.error('결제 검증/전달 실패:', err);
                 alert(`${PAYMENT_ERROR_MESSAGES.FAILED} (검증 실패)`);
-                onPaymentCancel?.();
+                onPaymentCancel?.(rsp);
               }
             } else {
               const msg =

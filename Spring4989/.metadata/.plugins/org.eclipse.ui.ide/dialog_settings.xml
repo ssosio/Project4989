@@ -15,7 +15,6 @@
 		<item value="org.eclipse.jgit.ssh.apache:7.3.0.202506031305-r"/>
 		<item value="org.eclipse.jgit:7.3.0.202506031305-r"/>
 		<item value="org.eclipse.jst.common.fproj.enablement.jdt:3.37.0.v202501090237"/>
-		<item value="org.eclipse.jst.enterprise_ui.feature:3.38.0.v202504240052"/>
 		<item value="org.eclipse.justj.openjdk.hotspot.jre.full:21.0.7.v20250502-0916"/>
 		<item value="org.eclipse.m2e.feature:2.9.0.20250514-0352"/>
 		<item value="org.eclipse.m2e.logback.feature:2.7.100.20250418-1315"/>
@@ -29,9 +28,6 @@
 		<item value="org.eclipse.tm.terminal.feature:12.1.0.202505062016"/>
 		<item value="org.eclipse.tm.terminal.view.feature:12.1.0.202506041901"/>
 		<item value="org.eclipse.wst.common.fproj:3.7.4.v202501090237"/>
-		<item value="org.eclipse.wst.json_ui.feature:1.1.11.v202308160419"/>
-		<item value="org.eclipse.wst.web_ui.feature:3.36.0.v202503020853"/>
-		<item value="org.eclipse.wst.xml_ui.feature:3.37.0.v202503020853"/>
 		<item value="org.jboss.tools.m2e.wro4j.feature:1.2.1.202301111328"/>
 		<item value="org.sonatype.m2e.egit.feature:0.17.0.202209271423"/>
 	</list>
@@ -41,6 +37,7 @@
 		<item key="SmartImportRootWizardPage.STORE_NESTED_PROJECTS" value="true"/>
 		<item key="SmartImportRootWizardPage.STORE_CONFIGURE_NATURES" value="true"/>
 		<list key="org.eclipse.ui.internal.wizards.datatransfer.SmartImportRootWizardPage.knownSources">
+			<item value="C:\Users\Administrator\Desktop\4989\Project4989"/>
 			<item value="C:\Users\user\Desktop\4989\Project4989\Spring4989"/>
 		</list>
 		<section name="SmartImportWizard.dialogBounds">

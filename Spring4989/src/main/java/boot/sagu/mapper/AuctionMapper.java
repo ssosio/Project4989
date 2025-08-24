@@ -42,9 +42,9 @@ public interface AuctionMapper {
 	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기 	
 	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postId")long postId,@Param("winnerId")long winnerId);
 	//보증금 상태관리
-	public int updateGuaranteeStatus(@Param("guaranteedId")long guaranteeId,@Param("status") String status);
+	public int updateGuaranteeStatus(@Param("guaranteeId")long guaranteeId,@Param("status") String status);
 	//경매 시작가
-	public int getStartPrice(@Param("postId") Long postId);
+	public int getStartPrice(@Param("postId") long postId);
 	
 
 	// 경매 삭제
@@ -98,6 +98,6 @@ public interface AuctionMapper {
 	// 유찰 게시글만 조회 (경매에서만 발생)
 	public List<Map<String, Object>> getMyCancelledAuctionPosts(@Param("memberId") long memberId);
 	
-	public int existsGuaranteeByImpUid(String impUid);
+	public int existsGuaranteeByImpUid(@Param("impUid") String impUid);
 
 }
