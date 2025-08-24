@@ -9,7 +9,8 @@ import {
   People as PeopleIcon,
   PostAdd as PostAddIcon,
   Chat as ChatIcon,
-  Report as ReportIcon
+  Report as ReportIcon,
+  Feedback as FeedbackIcon
 } from '@mui/icons-material';
 
 const StatsCards = ({ stats }) => {
@@ -71,8 +72,25 @@ const StatsCards = ({ stats }) => {
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
               {stats.totalReports}
             </Typography>
-            <Typography variant="body2">신고 건수</Typography>
+            <Typography variant="body2">게시글 신고 건수</Typography>
           </CardContent>
+          
+        </Card>
+      </Grid>
+       <Grid item xs={12} sm={6} md={3}>
+        <Card sx={{ 
+          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          color: 'white',
+          textAlign: 'center'
+        }}>
+          <CardContent>
+            <FeedbackIcon sx={{ fontSize: 40, mb: 1 }} />
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+              {stats.totalReports}
+            </Typography>
+            <Typography variant="body2">채팅 신고 건수</Typography>
+          </CardContent>
+          
         </Card>
       </Grid>
     </Grid>

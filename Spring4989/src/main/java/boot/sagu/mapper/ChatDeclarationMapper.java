@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 import boot.sagu.dto.ChatDeclarationDto;
 import boot.sagu.dto.ChatDeclarationResultDto;
+import boot.sagu.dto.ChatDeclarationResultNotificationDto;
 
 @Mapper
 public interface ChatDeclarationMapper {
@@ -38,4 +39,24 @@ public interface ChatDeclarationMapper {
 	 * @return 업데이트된 행의 수
 	 */
 	public void updateDeclarationStatus(java.util.Map<String, Object> params);
+	
+	/**
+	 * 특정 회원이 받은 신고 결과 알림 목록 조회
+	 * @param resultMemberId 신고 결과를 받은 회원 ID
+	 * @return 신고 결과 알림 목록
+	 */
+	public List<ChatDeclarationResultNotificationDto> getDeclarationResultNotifications(@Param("resultMemberId") long resultMemberId);
+	
+	/**
+	 * 신고 결과 알림을 읽음 처리
+	 * @param chatdeclarationresultId 신고 결과 ID
+	 */
+	public void markDeclarationResultAsRead(@Param("chatdeclarationresultId") Integer chatdeclarationresultId);
+
+	/**
+	 * 특정 사용자의 읽지 않은 알림 개수 조회
+	 * @param memberId 사용자 ID
+	 * @return 읽지 않은 알림 개수
+	 */
+	public int getUnreadNotificationCount(@Param("memberId") String memberId);
 }

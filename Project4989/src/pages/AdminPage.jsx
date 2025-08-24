@@ -14,7 +14,9 @@ import {
   Report as ReportIcon,
   Category as CategoryIcon,
   Dashboard as DashboardIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Feedback as FeedbackIcon,
+  LocationOn as LocationOnIcon
 } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 
@@ -29,6 +31,7 @@ import SystemSettingsTab from '../components/admin/SystemSettingsTab';
 import PostDetailModal from '../components/admin/PostDetailModal';
 import UserDetailModal from '../components/admin/UserDetailModal';
 import ChatReportManagementTab from '../components/admin/ChatReportManagementTab';
+import AddressManagementTab from '../components/admin/AddressManagementTab';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {
@@ -140,9 +143,10 @@ const AdminPage = () => {
             <Tab icon={<PeopleIcon />} label="회원 관리" />
             <Tab icon={<PostAddIcon />} label="게시글 관리" />
             <Tab icon={<ReportIcon />} label="게시글 신고 관리" />
-            <Tab icon={<ReportIcon />} label="채팅 신고 관리" />
+            <Tab icon={<FeedbackIcon />} label="채팅 신고 관리" />
             <Tab icon={<CategoryIcon />} label="카테고리 관리" />
             <Tab icon={<SettingsIcon />} label="시스템 설정" />
+            <Tab icon={<LocationOnIcon />} label="주소 관리" />
           </Tabs>
         </Box>
 
@@ -190,16 +194,23 @@ const AdminPage = () => {
           <ChatReportManagementTab />
         </TabPanel>
 
+
         {/* 카테고리 관리 탭 */}
         <TabPanel value={tabValue} index={5}>
           <CategoryManagementTab />
         </TabPanel>
+
 
         {/* 시스템 설정 탭 */}
         <TabPanel value={tabValue} index={6}>
           <SystemSettingsTab />
         </TabPanel>
       </Paper>
+
+          {/* 주소 관리 탭 */}
+        <TabPanel value={tabValue} index={7}>
+          <AddressManagementTab />
+        </TabPanel>
 
       {/* 모달들 */}
       <PostDetailModal 

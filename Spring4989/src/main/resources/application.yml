@@ -28,19 +28,6 @@ mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-    # MyBatis 로그 레벨 설정
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    # 추가 로깅 설정
-    call-setters-on-nulls: true
-    return-instance-for-empty-row: false
-
-# 로깅 레벨 설정
-logging:
-  level:
-    boot.sagu.mapper: DEBUG
-    org.apache.ibatis: DEBUG
-    org.springframework.jdbc: DEBUG
-
 #jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'

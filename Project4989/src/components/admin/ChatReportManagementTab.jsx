@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Chip, Button, CircularProgress, Alert, Box,
-  Modal, IconButton, TextField
+  Modal, IconButton, TextField, Pagination, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { Close as CloseIcon, Search as SearchIcon } from '@mui/icons-material';
 import { chatDeclarationAPI } from '../../lib/api';
@@ -28,11 +28,18 @@ const ChatReportManagementTab = () => {
 
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     fetchChatDeclarations();
   }, []);
+
+  // pageSize가 변경될 때 totalPages 재계산
+  useEffect(() => {
+    setTotalPages(Math.ceil(totalCount / pageSize));
+  }, [pageSize, totalCount]);
 
   const fetchChatDeclarations = async () => {
     try {
@@ -53,6 +60,10 @@ const ChatReportManagementTab = () => {
         });
 
         setChatDeclarations(validDeclarations);
+        
+        // 페이지네이션 정보 설정
+        setTotalCount(validDeclarations.length);
+        setTotalPages(Math.ceil(validDeclarations.length / pageSize));
 
         // 고유한 사용자 ID들 추출
         const userIds = [...new Set([
@@ -313,24 +324,20 @@ const ChatReportManagementTab = () => {
   };
 
   // 페이지네이션 관련 함수들
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+  const handlePageChange = (event, newPage) => {
+    setCurrentPage(newPage);
   };
 
-  const handleNextPage = () => {
-    const totalPages = Math.ceil(chatDeclarations.length / rowsPerPage);
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+  const handlePageSizeChange = (event) => {
+    const newSize = event.target.value;
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   // 현재 페이지의 데이터 계산
-  const indexOfLastItem = currentPage * rowsPerPage;
-  const indexOfFirstItem = indexOfLastItem - rowsPerPage;
+  const indexOfLastItem = currentPage * pageSize;
+  const indexOfFirstItem = indexOfLastItem - pageSize;
   const currentItems = chatDeclarations.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(chatDeclarations.length / rowsPerPage);
 
   if (loading) {
     return (
@@ -399,6 +406,23 @@ const ChatReportManagementTab = () => {
             >
               새로고침
             </Button>
+          </Box>
+          
+          {/* 페이지 크기 선택 */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>페이지 크기</InputLabel>
+              <Select
+                value={pageSize}
+                label="페이지 크기"
+                onChange={handlePageSizeChange}
+              >
+                <MenuItem value={5}>5개</MenuItem>
+                <MenuItem value={10}>10개</MenuItem>
+                <MenuItem value={20}>20개</MenuItem>
+                <MenuItem value={50}>50개</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
           <TableContainer>
             <Table>
@@ -479,32 +503,24 @@ const ChatReportManagementTab = () => {
             </Table>
           </TableContainer>
           
-          {/* 간단한 페이지네이션 */}
-          <Box display="flex" justifyContent="center" alignItems="center" mt={2} gap={2}>
-            <Button
-              variant="outlined"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-              size="small"
-            >
-              이전
-            </Button>
-            
-            <Typography variant="body2" color="textSecondary">
-              {currentPage} / {totalPages} 페이지
-            </Typography>
-            
-            <Button
-              variant="outlined"
-              onClick={handleNextPage}
-              disabled={currentPage >= totalPages}
-              size="small"
-            >
-              다음
-            </Button>
-            
-            <Typography variant="body2" color="textSecondary" ml={2}>
-              총 {chatDeclarations.length}건 중 {(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, chatDeclarations.length)}건 표시
+          {/* 페이지네이션 */}
+          {totalPages > 1 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+
+          {/* 페이지 정보 */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              총 {totalCount}개 중 {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalCount)}개 표시
             </Typography>
           </Box>
         </CardContent>

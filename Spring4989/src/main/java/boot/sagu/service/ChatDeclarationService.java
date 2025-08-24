@@ -2,6 +2,7 @@ package boot.sagu.service;
 
 import boot.sagu.dto.ChatDeclarationDto;
 import boot.sagu.dto.ChatDeclarationResultDto;
+import boot.sagu.dto.ChatDeclarationResultNotificationDto;
 import boot.sagu.mapper.ChatDeclarationMapper;
 
 import java.util.List;
@@ -76,7 +77,7 @@ public class ChatDeclarationService implements ChatDeclarationServiceInter{
 			ChatDeclarationResultDto resultDto = new ChatDeclarationResultDto();
 			resultDto.setDeclarationId(declarationId);
 			resultDto.setResultMemberId(resultMemberId);
-			resultDto.setReason(reason);
+			resultDto.setResultContent(reason);
 			
 			System.out.println(">>> [DEBUG] ChatDeclarationResultDto 생성: " + resultDto);
 			
@@ -133,31 +134,40 @@ public class ChatDeclarationService implements ChatDeclarationServiceInter{
 			System.out.println(">>> [DEBUG] params 타입: " + params.getClass().getName());
 			System.out.println(">>> [DEBUG] params 내용:");
 			for (java.util.Map.Entry<String, Object> entry : params.entrySet()) {
-				System.out.println(">>> [DEBUG]   " + entry.getKey() + " = " + entry.getValue() + " (타입: " + (entry.getValue() != null ? entry.getValue().getClass().getName() : "null") + ")");
+				System.out.println(">>> [DEBUG]   - " + entry.getKey() + ": " + entry.getValue() + " (타입: " + (entry.getValue() != null ? entry.getValue().getClass().getName() : "null") + ")");
 			}
 			
-			chatDeclarationMapper.updateDeclarationStatus(params);
-			System.out.println(">>> [DEBUG] updateDeclarationStatus 호출 완료");
-			
-			System.out.println(">>> [DEBUG] updateDeclarationStatus 호출 완료");
-			System.out.println(">>> [DEBUG] 조치 처리 완료");
-			
-			// 업데이트 후 데이터베이스 상태 확인
 			try {
-				ChatDeclarationDto updatedDeclaration = chatDeclarationMapper.getDeclarationById(declarationId);
-				if (updatedDeclaration != null) {
-					System.out.println(">>> [DEBUG] 업데이트 후 신고 정보: " + updatedDeclaration);
-				} else {
-					System.out.println(">>> [WARNING] 업데이트 후 신고 정보를 찾을 수 없습니다.");
-				}
+				chatDeclarationMapper.updateDeclarationStatus(params);
+				System.out.println(">>> [DEBUG] updateDeclarationStatus 호출 완료");
 			} catch (Exception e) {
-				System.err.println(">>> [ERROR] 업데이트 후 상태 확인 중 오류: " + e.getMessage());
+				System.err.println(">>> [ERROR] updateDeclarationStatus 실행 중 예외 발생: " + e.getMessage());
+				e.printStackTrace();
+				throw e;
 			}
+			
+			System.out.println(">>> [SUCCESS] 조치 처리가 성공적으로 완료되었습니다!");
+			System.out.println(">>> [SUCCESS] declarationId: " + declarationId + ", actionType: " + actionType);
 			
 		} catch (Exception e) {
 			System.err.println(">>> [ERROR] processAction 실행 중 예외 발생: " + e.getMessage());
 			e.printStackTrace();
 			throw e;
 		}
+	}
+	
+	@Override
+	public List<ChatDeclarationResultNotificationDto> getDeclarationResultNotifications(long resultMemberId) {
+		return chatDeclarationMapper.getDeclarationResultNotifications(resultMemberId);
+	}
+	
+	@Override
+	public void markDeclarationResultAsRead(Integer chatdeclarationresultId) {
+		chatDeclarationMapper.markDeclarationResultAsRead(chatdeclarationresultId);
+	}
+
+	@Override
+	public int getUnreadNotificationCount(String memberId) {
+		return chatDeclarationMapper.getUnreadNotificationCount(memberId);
 	}
 }
