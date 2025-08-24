@@ -135,7 +135,7 @@ public class SecurityConfig {
                 res.getWriter().write("{\"error\": \"Unauthorized\"}");
             }));
 
-        // JWT 필터는 표준 위치: UsernamePasswordAuthenticationFilter “앞”
+        // JWT 필터는 표준 위치: UsernamePasswordAuthenticationFilter "앞"
         http.addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService),
                 UsernamePasswordAuthenticationFilter.class);
 

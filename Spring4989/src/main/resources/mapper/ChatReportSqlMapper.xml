@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="boot.sagu.mapper.ChatDeclarationMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap id="ChatDeclarationResultMap" type="boot.sagu.dto.ChatDeclarationDto">
+        <id column="declaration_id" property="declaration_id"/>
+        <result column="declaration_chat_room_id" property="declaration_chat_room_id"/>
+        <result column="declaration_memberid" property="declaration_memberid"/>
+        <result column="declaration_opposite_memberid" property="declaration_opposite_memberid"/>
+        <result column="declaration_type" property="declaration_type"/>
+        <result column="declaration_content" property="declaration_content"/>
+        <result column="declaration_time" property="declaration_time"/>
+        <result column="status" property="status"/>
+        <result column="result" property="result"/>
+    </resultMap>
+
+    <!-- chatdeclaration 테이블의 status와 result 업데이트 -->
+    <update id="updateDeclarationStatus" parameterType="map">
+        UPDATE chatdeclaration 
+        SET status = #{status}, 
+            result = #{result}
+        WHERE declaration_id = #{declarationId}
+    </update>
+
+    <!-- 모든 신고 조회 -->
+    <select id="getAllDeclarations" resultMap="ChatDeclarationResultMap">
+        SELECT 
+            declaration_id,
+            declaration_chat_room_id,
+            declaration_memberid,
+            declaration_opposite_memberid,
+            declaration_type,
+            declaration_content,
+            declaration_time,
+            status,
+            result
+        FROM chatdeclaration 
+        ORDER BY declaration_id DESC
+    </select>
+
+    <!-- 특정 신고 조회 -->
+    <select id="getDeclarationById" resultMap="ChatDeclarationResultMap">
+        SELECT 
+            declaration_id,
+            declaration_chat_room_id,
+            declaration_memberid,
+            declaration_opposite_memberid,
+            declaration_type,
+            declaration_content,
+            declaration_time,
+            status,
+            result
+        FROM chatdeclaration 
+        WHERE declaration_id = #{declarationId}
+    </select>
+
+    <!-- 신고 결과 삽입 -->
+    <insert id="insertDeclarationResult" parameterType="boot.sagu.dto.ChatDeclarationResultDto">
+        INSERT INTO chatdeclarationresult (
+            chatdeclaration_id, 
+            result_member_id, 
+            result_content, 
+            created_at
+        ) VALUES (
+            #{declarationId}, 
+            #{resultMemberId}, 
+            #{reason}, 
+            NOW()
+        )
+    </insert>
+
+</mapper>

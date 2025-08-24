@@ -28,6 +28,7 @@ import CategoryManagementTab from '../components/admin/CategoryManagementTab';
 import SystemSettingsTab from '../components/admin/SystemSettingsTab';
 import PostDetailModal from '../components/admin/PostDetailModal';
 import UserDetailModal from '../components/admin/UserDetailModal';
+import ChatReportManagementTab from '../components/admin/ChatReportManagementTab';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {
@@ -138,7 +139,8 @@ const AdminPage = () => {
             <Tab icon={<DashboardIcon />} label="대시보드" />
             <Tab icon={<PeopleIcon />} label="회원 관리" />
             <Tab icon={<PostAddIcon />} label="게시글 관리" />
-            <Tab icon={<ReportIcon />} label="신고 관리" />
+            <Tab icon={<ReportIcon />} label="게시글 신고 관리" />
+            <Tab icon={<ReportIcon />} label="채팅 신고 관리" />
             <Tab icon={<CategoryIcon />} label="카테고리 관리" />
             <Tab icon={<SettingsIcon />} label="시스템 설정" />
           </Tabs>
@@ -174,7 +176,7 @@ const AdminPage = () => {
           />
         </TabPanel>
 
-        {/* 신고 관리 탭 */}
+        {/* 게시글 신고 관리 탭 */}
         <TabPanel value={tabValue} index={3}>
           <ReportManagementTab 
             reports={reports} 
@@ -183,13 +185,18 @@ const AdminPage = () => {
           />
         </TabPanel>
 
-        {/* 카테고리 관리 탭 */}
+        {/* 채팅 신고 관리 탭 */}
         <TabPanel value={tabValue} index={4}>
+          <ChatReportManagementTab />
+        </TabPanel>
+
+        {/* 카테고리 관리 탭 */}
+        <TabPanel value={tabValue} index={5}>
           <CategoryManagementTab />
         </TabPanel>
 
         {/* 시스템 설정 탭 */}
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel value={tabValue} index={6}>
           <SystemSettingsTab />
         </TabPanel>
       </Paper>
