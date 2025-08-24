@@ -435,7 +435,8 @@ const UpdatePost = () => {
                     </tr>
                     )
                 }
-                {
+                
+                {/* {
                     (postType==='ITEMS'||postType==='CARS'||postType==='REAL_ESTATES') &&(
                     <tr className="">
                         <td>
@@ -452,7 +453,7 @@ const UpdatePost = () => {
                         </td>
                     </tr>
                     )
-                }
+                } */}
                 {
                     postType==='ITEMS' &&(
                     <tr className="item-detail">

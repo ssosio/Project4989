@@ -167,7 +167,6 @@ const AdminPage = () => {
         {/* 게시글 관리 탭 */}
         <TabPanel value={tabValue} index={2}>
           <PostManagementTab 
-            recentPosts={recentPosts} 
             getStatusText={getStatusText} 
             getStatusColor={getStatusColor} 
             onPostDetail={handlePostDetail}
