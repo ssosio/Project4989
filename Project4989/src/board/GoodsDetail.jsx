@@ -169,61 +169,6 @@ const GoodsDetail = () => {
   // selectedBuyerId 상태 제거 - post.buyerId를 직접 사용
   // const [selectedBuyerId, setSelectedBuyerId] = useState(null);
 
-  // view count(조회수)
-  const incCalledRef = useRef(false);
-
-  useEffect(() => {
-    if (!postId) return;
-    if (incCalledRef.current) return;   // ✅ 두 번째 실행 차단 (StrictMode/재렌더)
-    incCalledRef.current = true;
-
-    axios.post(`http://localhost:4989/post/viewcount?postId=${postId}`)
-      .catch(console.error);
-  }, [postId]);
-
-  //좋아요갯수
-  useEffect(() => {
-    axios.get(`http://localhost:4989/post/count?postId=${postId}`)
-      .then(({ data }) => setCount(Number(data.count) || 0))
-      .catch(err => console.log(err));
-  }, [postId]);
-
-  // 내가 좋아요 눌렀는지 (로그인시에만 호출)
-  // useEffect(() => {
-  //   if (!postId || !userInfo?.memberId) return;
-  //   axios
-  //     .get(`http://localhost:4989/post/checkfav`, { params: { postId } })
-  //     .then(({ data }) => setFavorited(Boolean(data.favorited)))
-  //     .catch(() => setFavorited(false));
-  // }, [postId, userInfo]);
-
-  // 내가 좋아요 눌렀는지 (로그인시에만 호출)
-  useEffect(() => {
-    if (!postId || !userInfo?.memberId) return;
-
-    console.group('[checkfav] 요청 시작');
-    console.log('postId:', postId, 'memberId:', userInfo.memberId);
-
-    axios.get('http://localhost:4989/post/checkfav', { params: { postId } })
-      .then(({ data, status }) => {
-        console.log('HTTP status:', status);
-        console.log('response data:', data);
-        const value = !!data?.favorited;
-        console.log('parsed favorited:', value);
-        setFavorited(value);
-        if (estateResult.status === 'fulfilled') setEstate(estateResult.value.data);
-        else console.error('❌ Estate 데이터 로드 실패:', estateResult.reason);
-      })
-      .catch((err) => {
-        console.error('데이터 로딩 중 에러:', err);
-        console.error('에러 상세 정보:', {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-        });
-      });
-  }, [postId, token]);
-
   // view count(조회수) — StrictMode 중복 방지
   const incCalledRef = useRef(false);
   useEffect(() => {
