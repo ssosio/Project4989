@@ -174,6 +174,24 @@ export const Header = () => {
     });
   }, []); // 💡 빈 의존성 배열을 넣어 컴포넌트가 처음 마운트될 때만 함수가 생성되도록 함
 
+  // 읽지 않은 알림 개수를 가져오는 함수
+  const fetchUnreadNotificationCount = useCallback(async () => {
+    if (userInfo && userInfo.memberId) {
+      try {
+        const response = await axios.get(`http://localhost:4989/api/chat-declarations/unread-count/${userInfo.memberId}`);
+        setUnreadNotificationCount(response.data);
+      } catch (error) {
+        console.error('읽지 않은 알림 개수 조회 실패:', error);
+        setUnreadNotificationCount(0);
+      }
+    }
+  }, [userInfo]);
+
+  // 사용자 정보가 변경될 때마다 읽지 않은 알림 개수 조회
+  useEffect(() => {
+    fetchUnreadNotificationCount();
+  }, [fetchUnreadNotificationCount]);
+
   // 💡 참고: 기존의 useEffect는 ChatMain으로 이동되었으므로 주석 처리하거나 제거 가능
   // useEffect(() => {
   //     ... (이 코드는 ChatMain에서 처리)
@@ -447,7 +465,7 @@ export const Header = () => {
                   boxShadow: '0 4px 12px rgba(74, 144, 226, 0.2)'
                 }
               }} onClick={handleNotificationClick}>
-                <Badge badgeContent={2} color="primary" sx={{
+                <Badge badgeContent={unreadNotificationCount} color="primary" sx={{
                   '& .MuiBadge-badge': {
                     background: '#4A90E2',
                     fontSize: '10px',
@@ -594,10 +612,11 @@ export const Header = () => {
         onClose={handleChatClose}
         onUnreadCountChange={handleUnreadCountChange}
       />
-      <NotificationMain
-        open={notificationDrawerOpen}
-        onClose={handleNotificationClose}
-      />
+                  <NotificationMain 
+              open={notificationDrawerOpen} 
+              onClose={handleNotificationClose}
+              onUnreadCountChange={fetchUnreadNotificationCount}
+            />
     </AppBar>
   );
 };

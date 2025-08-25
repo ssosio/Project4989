@@ -2,11 +2,12 @@ import axios from 'axios';
 import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ReportModal from './ReportModal';
-import DetailChat from '../chat/DetailChat';
+import DetailChat from '../chat/detailChat';
 import { AuthContext } from '../context/AuthContext'; // AuthContext import 추가
 import BuyerSelectionModal from '../components/BuyerSelectionModal';
 import ReviewModal from '../components/ReviewModal';
 import './gooddetail.css';
+import DetailMap from '../chat/detailMap';
 
 const GoodsDetail = () => {
   // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
@@ -50,7 +51,7 @@ const GoodsDetail = () => {
   const [deleting, setDeleting] = useState(false); // ✅ 삭제 진행 상태
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false); // ✅ 판매 상태 업데이트 진행 상태
   const [showBuyerModal, setShowBuyerModal] = useState(false); // ✅ 거래자 선택 모달 상태
-  
+
   // 후기 관련 상태
   const [showReviewModal, setShowReviewModal] = useState(false);
   // const [selectedBuyerId, setSelectedBuyerId] = useState(null); // 제거
@@ -78,7 +79,7 @@ const GoodsDetail = () => {
     Promise.allSettled([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
       .then((results) => {
         const [postResult, goodsResult, carsResult, estateResult] = results;
-        
+
         console.log("✅ API 응답 결과:", {
           post: postResult.status,
           goods: goodsResult.status,
@@ -90,14 +91,14 @@ const GoodsDetail = () => {
         if (postResult.status === 'fulfilled') {
           const postData = postResult.value.data;
           console.log("✅ Post 데이터 로드 성공:", postData);
-          
+
           // buyerId 필드 확인
           console.log("🔍 buyerId 확인:", {
             buyerId: postData.buyerId,
             buyerIdType: typeof postData.buyerId,
             hasBuyerId: 'buyerId' in postData
           });
-          
+
           // post 데이터의 content 필드 확인
           console.log("📝 Post content 확인:", {
             content: postData.content,
@@ -147,7 +148,7 @@ const GoodsDetail = () => {
           response: err.response?.data,
           status: err.response?.status
         });
-        
+
         // 에러 발생 시에도 기본 데이터라도 설정
         if (err.response?.data) {
           console.log("에러 응답에서 받은 데이터:", err.response.data);
@@ -222,7 +223,7 @@ const GoodsDetail = () => {
     const isSeller = userInfo?.memberId === post?.memberId;
     const reviewerId = userInfo?.memberId;
     const reviewOppositeId = isSeller ? post?.buyerId : post?.memberId;
-    
+
     console.log('후기 버튼 클릭됨:', {
       postId,
       reviewerId,
@@ -232,7 +233,7 @@ const GoodsDetail = () => {
       userMemberId: userInfo?.memberId,
       buyerId: post?.buyerId
     });
-    
+
     setShowReviewModal(true);
   };
 
@@ -253,7 +254,7 @@ const GoodsDetail = () => {
     const statusCheck = post?.status === 'SOLD';
     const noReviewCheck = !hasReview;
     const buyerSelectedCheck = post?.buyerId !== null;
-    
+
     console.log('=== canWriteReview 상세 체크 ===');
     console.log('기본 정보:', {
       userInfo: !!userInfo,
@@ -265,7 +266,7 @@ const GoodsDetail = () => {
       buyerIdType: typeof post?.buyerId,
       hasBuyerIdField: 'buyerId' in (post || {})
     });
-    
+
     console.log('조건별 체크:', {
       isSeller,
       isBuyer,
@@ -273,19 +274,19 @@ const GoodsDetail = () => {
       noReviewCheck,
       buyerSelectedCheck
     });
-    
+
     // 판매자 조건 체크 (임시로 selectedBuyerId 체크 제거)
     if (userInfo?.memberId === post?.memberId && post?.status === 'SOLD' && !hasReview) {
       console.log('✅ 판매자 후기 작성 가능');
       return true;
     }
-    
+
     // 구매자 조건 체크
     if (post?.status === 'SOLD' && !hasReview && post?.buyerId === userInfo?.memberId) {
       console.log('✅ 구매자 후기 작성 가능');
       return true;
     }
-    
+
     console.log('❌ 후기 작성 불가능');
     return false;
   };
@@ -563,12 +564,12 @@ const GoodsDetail = () => {
       buyerIdType: typeof buyerId,
       postId
     });
-    
+
     // 상태를 SOLD로 업데이트하고 선택된 구매자 ID 저장
     setPost(prev => ({ ...prev, status: 'SOLD', buyerId: buyerId }));
-    
+
     setShowBuyerModal(false);
-    
+
     console.log('상태 업데이트 완료:', {
       buyerId: buyerId,
       postStatus: 'SOLD'
@@ -578,7 +579,7 @@ const GoodsDetail = () => {
   // 사진 슬라이드 관련 함수들
   const nextPhoto = () => {
     if (photos && photos.length > 0) {
-      setCurrentPhotoIndex((prevIndex) => 
+      setCurrentPhotoIndex((prevIndex) =>
         prevIndex === photos.length - 1 ? 0 : prevIndex + 1
       );
     }
@@ -586,7 +587,7 @@ const GoodsDetail = () => {
 
   const prevPhoto = () => {
     if (photos && photos.length > 0) {
-      setCurrentPhotoIndex((prevIndex) => 
+      setCurrentPhotoIndex((prevIndex) =>
         prevIndex === 0 ? photos.length - 1 : prevIndex - 1
       );
     }
@@ -682,7 +683,7 @@ const GoodsDetail = () => {
             {/* 상품 헤더 정보 */}
             <div className="gooddetail-header">
               <h1 className="gooddetail-title">{post.title}</h1>
-              
+
               {/* 가격 섹션 */}
               <div className="gooddetail-price">
                 <div className="gooddetail-price-value">
@@ -739,7 +740,7 @@ const GoodsDetail = () => {
                 <span className="like-icon">{favorited ? "❤️" : "🤍"}</span>
                 <span>찜 {count}</span>
               </button>
-                {/* 대화 버튼: 로그인 상태일 때만 'handleChatToggle' 실행 */}
+              {/* 대화 버튼: 로그인 상태일 때만 'handleChatToggle' 실행 */}
               {userInfo ? (
                 <button className="gooddetail-chat-btn" onClick={handleChatToggle}>
                   대화
@@ -751,75 +752,69 @@ const GoodsDetail = () => {
                 </button>
               )}
 
-          {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
-          {userInfo && userInfo.memberId === post.memberId && (
-            <>
-            <button
-                type="button"
-                className="gooddetail-btn"
-                onClick={() => navi(`/board/update?postId=${postId}`)}
-              >
-                수정
-              </button>
+              {/* 작성자 본인에게만 보이는 수정/삭제 버튼 */}
+              {userInfo && userInfo.memberId === post.memberId && (
+                <>
+                  <button
+                    type="button"
+                    className="gooddetail-btn"
+                    onClick={() => navi(`/board/update?postId=${postId}`)}
+                  >
+                    수정
+                  </button>
+
+                  <button
+                    type="button"
+                    className="gooddetail-btn danger"
+                    onClick={handleDeletePost}
+                    disabled={deleting}
+                  >
+                    {deleting ? '삭제 중...' : '삭제'}
+                  </button>
+                </>
+              )}
 
               <button
-                type="button"
-                className="gooddetail-btn danger"
-                onClick={handleDeletePost}
-                disabled={deleting}
+                className="gooddetail-btn secondary"
+                onClick={handleGoBackToList}
               >
-                {deleting ? '삭제 중...' : '삭제'}
+                목록
               </button>
-            </>
-          )}
 
-          <button 
-            className="gooddetail-btn secondary"
-            onClick={handleGoBackToList}
-          >
-            목록
-          </button>
-
-                      {/* 작성자 본인만 볼 수 있는 판매 상태 선택 */}
-            {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
+              {/* 작성자 본인만 볼 수 있는 판매 상태 선택 */}
+              {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
                 <div className="gooddetail-status-selector">
-                    <label htmlFor="status-select" className="gooddetail-status-label">
-                        판매 상태 변경:
-                    </label>
-                    <select
-                        id="status-select"
-                        className="gooddetail-status-select"
-                        value={post.status || 'ON_SALE'}
-                        onChange={(e) => handleStatusChange(e.target.value)}
-                        disabled={isUpdatingStatus}
-                    >
-                        <option value="ON_SALE">판매중</option>
-                        <option value="RESERVED">예약중</option>
-                        <option value="SOLD">판매완료</option>
-                    </select>
-                    {isUpdatingStatus && (
-                        <span className="gooddetail-status-updating">업데이트 중...</span>
-                    )}
+                  <label htmlFor="status-select" className="gooddetail-status-label">
+                    판매 상태 변경:
+                  </label>
+                  <select
+                    id="status-select"
+                    className="gooddetail-status-select"
+                    value={post.status || 'ON_SALE'}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    disabled={isUpdatingStatus}
+                  >
+                    <option value="ON_SALE">판매중</option>
+                    <option value="RESERVED">예약중</option>
+                    <option value="SOLD">판매완료</option>
+                  </select>
+                  {isUpdatingStatus && (
+                    <span className="gooddetail-status-updating">업데이트 중...</span>
+                  )}
                 </div>
-            )}
-            
-            {/* 판매완료 상태일 때 후기 버튼 또는 완료 메시지 표시 */}
-            {userInfo && post.status === 'SOLD' && (
+              )}
+
+              {/* 판매완료 상태일 때 후기 버튼 표시 */}
+              {userInfo && post.status === 'SOLD' && canWriteReview() && (
                 <div className="gooddetail-status-completed">
-                    {canWriteReview() ? (
-                        <button 
-                            className="gooddetail-review-btn"
-                            onClick={handleReviewClick}
-                        >
-                            {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
-                        </button>
-                    ) : reviewCompleted ? (
-                        <div className="gooddetail-review-completed">
-                            후기작성이 완료되었습니다
-                        </div>
-                    ) : null}
+                  <button
+                    className="gooddetail-review-btn"
+                    onClick={handleReviewClick}
+                  >
+                    {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
+                  </button>
                 </div>
-            )}
+              )}
             </div>
 
             {/* 메타 정보 */}
@@ -866,7 +861,7 @@ const GoodsDetail = () => {
                   {post.tradeType === 'SALE' ? '판매' : post.tradeType === 'AUCTION' ? '경매' : '나눔'}
                 </div>
               </div>
-              
+
               {post.postType === 'ITEMS' && goods && (
                 <>
                   <div className="gooddetail-info-item">
@@ -883,7 +878,7 @@ const GoodsDetail = () => {
                   </div>
                 </>
               )}
-              
+
               {post.postType === 'CARS' && cars && (
                 <>
                   <div className="gooddetail-info-item">
@@ -912,7 +907,7 @@ const GoodsDetail = () => {
                   </div>
                 </>
               )}
-              
+
               {post.postType === 'REAL_ESTATES' && estate && (
                 <>
                   <div className="gooddetail-info-item">
@@ -941,15 +936,31 @@ const GoodsDetail = () => {
                   </div>
                 </>
               )}
+              <div>
+                <div className="gooddetail-info-title">희망거래장소</div>
+                <div className="wish-address">{post.detailLocation}</div>
+                {/* 다른 게시글 정보 표시 */}
+                {post && (
+                  <>
+                    {/* 위도와 경도 데이터가 있을 때만 지도를 렌더링합니다. */}
+                    {post.latitude && post.longitude && (
+                      <DetailMap
+                        latitude={post.latitude}
+                        longitude={post.longitude}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
 
 
-      
 
-        
+
+
 
         {/* 신고 모달 */}
         <ReportModal
@@ -965,9 +976,9 @@ const GoodsDetail = () => {
 
 
 
-              {/* DetailChat 컴포넌트 렌더링 */}
+        {/* DetailChat 컴포넌트 렌더링 */}
         {showChat && chatRoom && <DetailChat open={showChat} onClose={handleChatToggle} chatRoom={chatRoom} />}
-        
+
         {/* 거래자 선택 모달 */}
         <BuyerSelectionModal
           open={showBuyerModal}
@@ -976,7 +987,7 @@ const GoodsDetail = () => {
           token={token}
           onComplete={handleBuyerSelectionComplete}
         />
-        
+
         {/* 후기 작성 모달 */}
         <ReviewModal
           isOpen={showReviewModal}
@@ -984,15 +995,15 @@ const GoodsDetail = () => {
           postId={postId}
           reviewerId={userInfo?.memberId}
           reviewOppositeId={
-            userInfo?.memberId === post?.memberId 
+            userInfo?.memberId === post?.memberId
               ? post?.buyerId  // 판매자가 작성 시: 구매자 ID
               : post?.memberId   // 구매자가 작성 시: 판매자 ID
           }
           onReviewSubmitted={handleReviewSubmitted}
         />
-        </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 export default GoodsDetail;

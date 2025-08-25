@@ -193,4 +193,8 @@
     WHERE cr.chat_room_id = #{chatRoomId}
 </select>
 
+<select id="countChat" resultType="int">
+	select count(*) from chatroom where buyer_exit_status=0 and seller_exit_status=0
+</select>
+
 </mapper>
