@@ -13,8 +13,6 @@ public interface ChatDeclarationServiceInter {
 	
 	public List<ChatDeclarationDto> getAllDeclarations();
 	
-	public int countDeclarations();
-	
 	/**
 	 * 특정 회원이 받은 신고 결과 알림 목록 조회
 	 * @param resultMemberId 신고 결과를 받은 회원 ID
@@ -34,4 +32,6 @@ public interface ChatDeclarationServiceInter {
 	 * @return 읽지 않은 알림 개수
 	 */
 	public int getUnreadNotificationCount(String memberId);
+	
+	public int countReports();
 }

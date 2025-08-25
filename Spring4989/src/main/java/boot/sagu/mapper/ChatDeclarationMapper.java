@@ -18,8 +18,6 @@ public interface ChatDeclarationMapper {
 	
 	public List<ChatDeclarationDto> getAllDeclarations();
 	
-	public int countDeclarations();
-	
 	/**
 	 * 신고 결과 테이블에 데이터 삽입
 	 * @param dto 신고 결과 DTO
@@ -59,4 +57,6 @@ public interface ChatDeclarationMapper {
 	 * @return 읽지 않은 알림 개수
 	 */
 	public int getUnreadNotificationCount(@Param("memberId") String memberId);
+	
+	public int countReports();
 }

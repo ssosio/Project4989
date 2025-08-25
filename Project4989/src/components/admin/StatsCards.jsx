@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Grid,
   Card,
@@ -12,12 +12,31 @@ import {
   Report as ReportIcon,
   Feedback as FeedbackIcon
 } from '@mui/icons-material';
+import axios from 'axios';
 
 const StatsCards = ({ stats }) => {
+  const [activeChatroom, setActiveChatroom] = useState(0);
+  const [chatReports, setChatReports] = useState(0);
+
+  useEffect(() => {
+    const list = () => {
+      const url = "http://localhost:4989/api/chat-declarations/count";
+      axios.get(url)
+        .then(async (res) => {
+          setActiveChatroom(res.data.chatCnt);
+          setChatReports(res.data.reportCnt);
+        })
+        .catch(err => {
+          console.error("에러 발생:", err);
+        });
+    };
+    list()
+  }, [])
+
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
       <Grid item xs={12} sm={6} md={3}>
-        <Card sx={{ 
+        <Card sx={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
           textAlign: 'center'
@@ -32,7 +51,7 @@ const StatsCards = ({ stats }) => {
         </Card>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <Card sx={{ 
+        <Card sx={{
           background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
           color: 'white',
           textAlign: 'center'
@@ -47,7 +66,7 @@ const StatsCards = ({ stats }) => {
         </Card>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <Card sx={{ 
+        <Card sx={{
           background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
           color: 'white',
           textAlign: 'center'
@@ -55,14 +74,14 @@ const StatsCards = ({ stats }) => {
           <CardContent>
             <ChatIcon sx={{ fontSize: 40, mb: 1 }} />
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.activeChats}
+              {activeChatroom}
             </Typography>
             <Typography variant="body2">활성 채팅</Typography>
           </CardContent>
         </Card>
       </Grid>
       <Grid item xs={12} sm={6} md={3}>
-        <Card sx={{ 
+        <Card sx={{
           background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
           color: 'white',
           textAlign: 'center'
@@ -74,11 +93,11 @@ const StatsCards = ({ stats }) => {
             </Typography>
             <Typography variant="body2">게시글 신고 건수</Typography>
           </CardContent>
-          
+
         </Card>
       </Grid>
-       <Grid item xs={12} sm={6} md={3}>
-        <Card sx={{ 
+      <Grid item xs={12} sm={6} md={3}>
+        <Card sx={{
           background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
           color: 'white',
           textAlign: 'center'
@@ -86,11 +105,11 @@ const StatsCards = ({ stats }) => {
           <CardContent>
             <FeedbackIcon sx={{ fontSize: 40, mb: 1 }} />
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.totalReports}
+              {chatReports}
             </Typography>
             <Typography variant="body2">채팅 신고 건수</Typography>
           </CardContent>
-          
+
         </Card>
       </Grid>
     </Grid>

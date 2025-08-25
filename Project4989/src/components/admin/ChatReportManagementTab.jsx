@@ -17,14 +17,14 @@ const ChatReportManagementTab = () => {
   console.log('>>> [DEBUG] ChatReportManagementTab 컴포넌트 렌더링 시작');
   console.log('>>> [DEBUG] 상태 초기화 완료 - loading:', loading, 'userInfoMap:', userInfoMap);
 
-        // 모달 상태
-   const [contentModalOpen, setContentModalOpen] = useState(false);
-   const [selectedContent, setSelectedContent] = useState(null);
-   const [chatRoomModalOpen, setChatRoomModalOpen] = useState(false);
-   const [selectedChatRoomId, setSelectedChatRoomId] = useState(null);
-   const [actionModalOpen, setActionModalOpen] = useState(false);
-   const [selectedDeclarationId, setSelectedDeclarationId] = useState(null);
-   const [actionReason, setActionReason] = useState('');
+  // 모달 상태
+  const [contentModalOpen, setContentModalOpen] = useState(false);
+  const [selectedContent, setSelectedContent] = useState(null);
+  const [chatRoomModalOpen, setChatRoomModalOpen] = useState(false);
+  const [selectedChatRoomId, setSelectedChatRoomId] = useState(null);
+  const [actionModalOpen, setActionModalOpen] = useState(false);
+  const [selectedDeclarationId, setSelectedDeclarationId] = useState(null);
+  const [actionReason, setActionReason] = useState('');
 
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,14 +53,14 @@ const ChatReportManagementTab = () => {
       if (response.data && Array.isArray(response.data)) {
         const validDeclarations = response.data.filter(item => item !== null);
         console.log('유효한 데이터:', validDeclarations);
-        
+
         // status 필드 디버깅
         validDeclarations.forEach((item, index) => {
           console.log(`데이터[${index}] status:`, item.status, 'result:', item.result);
         });
 
         setChatDeclarations(validDeclarations);
-        
+
         // 페이지네이션 정보 설정
         setTotalCount(validDeclarations.length);
         setTotalPages(Math.ceil(validDeclarations.length / pageSize));
@@ -93,9 +93,9 @@ const ChatReportManagementTab = () => {
     console.log('>>> [DEBUG] fetchUserInfo 호출됨, memberIds:', memberIds);
     try {
       const userPromises = memberIds.map(async (memberId) => {
-                 try {
-           const token = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
-           const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/api/users/${memberId}`, {
+        try {
+          const token = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
+          const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/api/users/${memberId}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
@@ -147,21 +147,21 @@ const ChatReportManagementTab = () => {
     }
   };
 
-     const getUserDisplayName = (memberId, userInfoMap) => {
-     console.log('>>> [DEBUG] getUserDisplayName 호출됨: memberId=' + memberId + ', userInfoMap=', userInfoMap);
-     const userInfo = userInfoMap[memberId];
-     if (userInfo && userInfo.nickname) {
-       return userInfo.nickname;
-     }
-     return `사용자${memberId}`;
-   };
+  const getUserDisplayName = (memberId, userInfoMap) => {
+    console.log('>>> [DEBUG] getUserDisplayName 호출됨: memberId=' + memberId + ', userInfoMap=', userInfoMap);
+    const userInfo = userInfoMap[memberId];
+    if (userInfo && userInfo.nickname) {
+      return userInfo.nickname;
+    }
+    return `사용자${memberId}`;
+  };
 
-   const handleContentClick = (declaration) => {
-     setSelectedContent(declaration);
-     setContentModalOpen(true);
-   };
+  const handleContentClick = (declaration) => {
+    setSelectedContent(declaration);
+    setContentModalOpen(true);
+  };
 
-  
+
 
   const handleInvestigateClick = (chatRoomId) => {
     setSelectedChatRoomId(chatRoomId);
@@ -179,22 +179,22 @@ const ChatReportManagementTab = () => {
       console.log('>>> [DEBUG] 제재 처리 시작');
       console.log('>>> [DEBUG] selectedDeclarationId:', selectedDeclarationId);
       console.log('>>> [DEBUG] actionReason:', actionReason);
-      
+
       if (!actionReason.trim()) {
         alert('제재 사유를 입력해주세요.');
         return;
       }
 
-             const token = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
-       console.log('>>> [DEBUG] JWT 토큰:', token);
-      
+      const token = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
+      console.log('>>> [DEBUG] JWT 토큰:', token);
+
       const requestBody = {
         reason: actionReason,
         actionType: 'SANCTION'
       };
       console.log('>>> [DEBUG] 요청 본문:', requestBody);
 
-             const requestUrl = `${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/api/chat-declarations/${selectedDeclarationId}/action`;
+      const requestUrl = `${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/api/chat-declarations/${selectedDeclarationId}/action`;
       console.log('>>> [DEBUG] 요청 URL:', requestUrl);
 
       console.log('>>> [DEBUG] fetch 요청 시작');
@@ -233,14 +233,14 @@ const ChatReportManagementTab = () => {
   const handleCompanion = async () => {
     try {
       console.log('>>> [DEBUG] 반려 처리 시작');
-      
+
       if (!actionReason.trim()) {
         alert('반려 사유를 입력해주세요.');
         return;
       }
 
-             const token = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
-       const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/api/chat-declarations/${selectedDeclarationId}/action`, {
+      const token = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/api/chat-declarations/${selectedDeclarationId}/action`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -272,29 +272,29 @@ const ChatReportManagementTab = () => {
     setSelectedChatRoomId(null);
   };
 
-     const getStatusColor = (status) => {
-     if (status === 'COMPLETE') {
-       return 'success'; // 초록색 (처리됨)
-     }
-     return 'warning'; // 주황색 (접수됨)
-   };
+  const getStatusColor = (status) => {
+    if (status === 'COMPLETE') {
+      return 'success'; // 초록색 (처리됨)
+    }
+    return 'warning'; // 주황색 (접수됨)
+  };
 
-   const getDeclarationTypeColor = (type) => {
-     switch (type) {
-       case '욕설':
-         return 'error'; // 빨간색
-       case '스팸':
-         return 'warning'; // 주황색
-       case '부적절한 내용':
-         return 'info'; // 파란색
-       case '괴롭힘':
-         return 'secondary'; // 보라색
-       case '기타':
-         return 'success'; // 초록색 (기존 회색에서 변경)
-       default:
-         return 'primary'; // 기본 파란색
-     }
-   };
+  const getDeclarationTypeColor = (type) => {
+    switch (type) {
+      case '욕설':
+        return 'error'; // 빨간색
+      case '스팸':
+        return 'warning'; // 주황색
+      case '부적절한 내용':
+        return 'info'; // 파란색
+      case '괴롭힘':
+        return 'secondary'; // 보라색
+      case '기타':
+        return 'success'; // 초록색 (기존 회색에서 변경)
+      default:
+        return 'primary'; // 기본 파란색
+    }
+  };
 
   const getStatusText = (status) => {
     if (status === 'COMPLETE') {
@@ -392,22 +392,9 @@ const ChatReportManagementTab = () => {
             <Typography variant="body2" color="textSecondary">
               총 {chatDeclarations.length}건의 신고
             </Typography>
-            <Button 
-              variant="outlined" 
-              onClick={() => {
-                console.log('>>> [DEBUG] 수동 새로고침 버튼 클릭됨');
-                console.log('>>> [DEBUG] 현재 userInfoMap:', userInfoMap);
-                setUserInfoMap({});
-                setLoading(true);
-                setCurrentPage(1); // 페이지 리셋
-                fetchChatDeclarations();
-              }}
-              startIcon={<SearchIcon />}
-            >
-              새로고침
-            </Button>
+
           </Box>
-          
+
           {/* 페이지 크기 선택 */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
             <FormControl size="small" sx={{ minWidth: 120 }}>
@@ -449,60 +436,60 @@ const ChatReportManagementTab = () => {
                     <TableCell>
                       {getUserDisplayName(safeGetValue(declaration, 'declaration_opposite_memberid'), userInfoMap)}
                     </TableCell>
-                                         <TableCell>
-                       <Button
-                         variant="text"
-                         color={getDeclarationTypeColor(safeGetValue(declaration, 'declaration_type'))}
-                         size="small"
-                         onClick={() => handleContentClick(declaration)}
-                         sx={{ 
-                           textTransform: 'none',
-                           fontWeight: 'bold',
-                           '&:hover': { 
-                             backgroundColor: `${getDeclarationTypeColor(safeGetValue(declaration, 'declaration_type'))}.light`,
-                             color: 'white'
-                           }
-                         }}
-                       >
-                         {safeGetValue(declaration, 'declaration_type')}
-                       </Button>
-                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="text"
+                        color={getDeclarationTypeColor(safeGetValue(declaration, 'declaration_type'))}
+                        size="small"
+                        onClick={() => handleContentClick(declaration)}
+                        sx={{
+                          textTransform: 'none',
+                          fontWeight: 'bold',
+                          '&:hover': {
+                            backgroundColor: `${getDeclarationTypeColor(safeGetValue(declaration, 'declaration_type'))}.light`,
+                            color: 'white'
+                          }
+                        }}
+                      >
+                        {safeGetValue(declaration, 'declaration_type')}
+                      </Button>
+                    </TableCell>
                     <TableCell>
                       {formatDate(safeGetValue(declaration, 'declaration_time'))}
                     </TableCell>
-                                         <TableCell>
-                       <Chip
-                         label={getStatusText(safeGetValue(declaration, 'status'))}
-                         color={getStatusColor(safeGetValue(declaration, 'status'))}
-                         size="small"
-                       />
-                     </TableCell>
-                                         <TableCell>
-                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                         <Button
-                           size="small"
-                           variant="outlined"
-                           color="primary"
-                           onClick={() => handleInvestigateClick(safeGetValue(declaration, 'declaration_chat_room_id'))}
-                         >
-                           조사
-                         </Button>
-                         <Button
-                           size="small"
-                           variant="outlined"
-                           color="secondary"
-                           onClick={() => handleActionClick(safeGetValue(declaration, 'declaration_id'))}
-                         >
-                           조치
-                         </Button>
-                       </Box>
-                     </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getStatusText(safeGetValue(declaration, 'status'))}
+                        color={getStatusColor(safeGetValue(declaration, 'status'))}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          onClick={() => handleInvestigateClick(safeGetValue(declaration, 'declaration_chat_room_id'))}
+                        >
+                          조사
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="secondary"
+                          onClick={() => handleActionClick(safeGetValue(declaration, 'declaration_id'))}
+                        >
+                          조치
+                        </Button>
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
-          
+
           {/* 페이지네이션 */}
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
@@ -524,240 +511,240 @@ const ChatReportManagementTab = () => {
             </Typography>
           </Box>
         </CardContent>
-             </Card>
+      </Card>
 
-       {/* 신고 내용 상세 모달 */}
-       <Modal
-         open={contentModalOpen}
-         onClose={() => setContentModalOpen(false)}
-         aria-labelledby="content-modal-title"
-       >
-         <Box
-           sx={{
-             position: 'absolute',
-             top: '50%',
-             left: '50%',
-             transform: 'translate(-50%, -50%)',
-             width: 600,
-             maxHeight: '80vh',
-             bgcolor: 'background.paper',
-             border: '2px solid #1976d2',
-             boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-             p: 4,
-             borderRadius: 3,
-             overflow: 'auto'
-           }}
-         >
-           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} pb={2} borderBottom={2} borderColor="primary.main">
-             <Typography id="content-modal-title" variant="h5" component="h2" color="primary" fontWeight="bold">
-               📋 신고 상세 정보
-             </Typography>
-             <IconButton 
-               onClick={() => setContentModalOpen(false)}
-               sx={{ 
-                 color: 'primary.main',
-                 '&:hover': { backgroundColor: 'primary.light', color: 'white' }
-               }}
-             >
-               <CloseIcon />
-             </IconButton>
-           </Box>
-           
-           <Box sx={{ mb: 3 }}>
-             <Typography variant="h6" color="primary" gutterBottom fontWeight="bold">
-               🚨 신고 내용
-             </Typography>
-             <Box 
-               sx={{ 
-                 p: 2, 
-                 bgcolor: '#f8f9fa', 
-                 borderRadius: 2, 
-                 border: '1px solid #e9ecef',
-                 minHeight: '100px'
-               }}
-             >
-               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                 {selectedContent?.declaration_content || '신고 내용이 없습니다.'}
-               </Typography>
-             </Box>
-           </Box>
-           
-           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-             <Box sx={{ flex: 1, minWidth: '200px' }}>
-               <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                 📅 신고 시간
-               </Typography>
-               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                 {formatDate(selectedContent?.declaration_time) || '-'}
-               </Typography>
-             </Box>
-             <Box sx={{ flex: 1, minWidth: '200px' }}>
-               <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                 🏷️ 신고 유형
-               </Typography>
-               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                 {selectedContent?.declaration_type || '-'}
-               </Typography>
-             </Box>
-           </Box>
-         </Box>
-       </Modal>
+      {/* 신고 내용 상세 모달 */}
+      <Modal
+        open={contentModalOpen}
+        onClose={() => setContentModalOpen(false)}
+        aria-labelledby="content-modal-title"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 600,
+            maxHeight: '80vh',
+            bgcolor: 'background.paper',
+            border: '2px solid #1976d2',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            p: 4,
+            borderRadius: 3,
+            overflow: 'auto'
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} pb={2} borderBottom={2} borderColor="primary.main">
+            <Typography id="content-modal-title" variant="h5" component="h2" color="primary" fontWeight="bold">
+              📋 신고 상세 정보
+            </Typography>
+            <IconButton
+              onClick={() => setContentModalOpen(false)}
+              sx={{
+                color: 'primary.main',
+                '&:hover': { backgroundColor: 'primary.light', color: 'white' }
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
 
-       {/* DetailChat 컴포넌트 직접 렌더링 */}
-       {selectedChatRoomId && (
-         <DetailChat 
-           chatRoom={{ chatRoomId: selectedChatRoomId, isAdminInvestigation: true }}
-           open={chatRoomModalOpen}
-           onClose={handleCloseChatRoomModal}
-         />
-       )}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" color="primary" gutterBottom fontWeight="bold">
+              🚨 신고 내용
+            </Typography>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: '#f8f9fa',
+                borderRadius: 2,
+                border: '1px solid #e9ecef',
+                minHeight: '100px'
+              }}
+            >
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                {selectedContent?.declaration_content || '신고 내용이 없습니다.'}
+              </Typography>
+            </Box>
+          </Box>
 
-             {/* 조치 모달 */}
-       <Modal
-         open={actionModalOpen}
-         onClose={() => setActionModalOpen(false)}
-         aria-labelledby="action-modal-title"
-       >
-         <Box
-           sx={{
-             position: 'absolute',
-             top: '50%',
-             left: '50%',
-             transform: 'translate(-50%, -50%)',
-             width: 700,
-             maxHeight: '85vh',
-             bgcolor: 'background.paper',
-             border: '2px solid #d32f2f',
-             boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-             p: 4,
-             borderRadius: 3,
-             overflow: 'auto'
-           }}
-         >
-           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} pb={2} borderBottom={2} borderColor="error.main">
-             <Typography id="action-modal-title" variant="h5" component="h2" color="error" fontWeight="bold">
-               ⚖️ 신고 조치 처리
-             </Typography>
-             <IconButton 
-               onClick={() => setActionModalOpen(false)}
-               sx={{ 
-                 color: 'error.main',
-                 '&:hover': { backgroundColor: 'error.light', color: 'white' }
-               }}
-             >
-               <CloseIcon />
-             </IconButton>
-           </Box>
-           
-           {/* 신고 데이터 정보 섹션 */}
-           <Box sx={{ mb: 4, p: 3, bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ffb74d' }}>
-             <Typography variant="h6" color="warning.dark" gutterBottom fontWeight="bold">
-               📊 신고 정보 요약
-             </Typography>
-             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
-               <Box>
-                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                   🆔 신고 ID
-                 </Typography>
-                 <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                   #{selectedDeclarationId}
-                 </Typography>
-               </Box>
-               <Box>
-                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                   🏷️ 신고 유형
-                 </Typography>
-                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                   {chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_type || '-'}
-                 </Typography>
-               </Box>
-               <Box>
-                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                   📅 신고 시간
-                 </Typography>
-                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                   {formatDate(chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_time) || '-'}
-                 </Typography>
-               </Box>
-               <Box>
-                 <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                   💬 채팅방 ID
-                 </Typography>
-                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                   #{chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_chat_room_id || '-'}
-                 </Typography>
-               </Box>
-             </Box>
-             
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ flex: 1, minWidth: '200px' }}>
+              <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                📅 신고 시간
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {formatDate(selectedContent?.declaration_time) || '-'}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: '200px' }}>
+              <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                🏷️ 신고 유형
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                {selectedContent?.declaration_type || '-'}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
 
-           </Box>
-           
-           {/* 조치 사유 입력 */}
-           <Box sx={{ mb: 4 }}>
-             <Typography variant="h6" color="error" gutterBottom fontWeight="bold">
-               ✍️ 조치 사유 입력
-             </Typography>
-             <TextField
-               fullWidth
-               multiline
-               rows={4}
-               label="조치 사유를 상세히 입력해주세요"
-               value={actionReason}
-               onChange={(e) => setActionReason(e.target.value)}
-               placeholder="예시: 사용자가 부적절한 언어를 사용하여 다른 사용자에게 불쾌감을 주었습니다. 커뮤니티 가이드라인 위반으로 인한 제재를 적용합니다."
-               sx={{ 
-                 '& .MuiOutlinedInput-root': {
-                   '&:hover fieldset': { borderColor: 'error.main' },
-                   '&.Mui-focused fieldset': { borderColor: 'error.main' }
-                 }
-               }}
-             />
-           </Box>
-           
-           {/* 조치 버튼들 */}
-           <Box display="flex" justifyContent="flex-end" gap={2} pt={2} borderTop={1} borderColor="divider">
-             <Button
-               variant="contained"
-               color="error"
-               onClick={handleSanction}
-               disabled={!actionReason.trim()}
-               sx={{ 
-                 px: 3, 
-                 py: 1.5,
-                 fontWeight: 'bold',
-                 '&:hover': { transform: 'translateY(-1px)', boxShadow: 3 }
-               }}
-             >
-               🚫 제재 처리
-             </Button>
-             <Button
-               variant="contained"
-               color="warning"
-               onClick={handleCompanion}
-               disabled={!actionReason.trim()}
-               sx={{ 
-                 px: 3, 
-                 py: 1.5,
-                 fontWeight: 'bold',
-                 '&:hover': { transform: 'translateY(-1px)', boxShadow: 3 }
-               }}
-             >
-               ❌ 반려 처리
-             </Button>
-             <Button
-               variant="outlined"
-               onClick={() => setActionModalOpen(false)}
-               sx={{ 
-                 px: 3, 
-                 py: 1.5,
-                 '&:hover': { backgroundColor: 'grey.100' }
-               }}
-             >
-               취소
-             </Button>
-           </Box>
-         </Box>
-       </Modal>
+      {/* DetailChat 컴포넌트 직접 렌더링 */}
+      {selectedChatRoomId && (
+        <DetailChat
+          chatRoom={{ chatRoomId: selectedChatRoomId, isAdminInvestigation: true }}
+          open={chatRoomModalOpen}
+          onClose={handleCloseChatRoomModal}
+        />
+      )}
+
+      {/* 조치 모달 */}
+      <Modal
+        open={actionModalOpen}
+        onClose={() => setActionModalOpen(false)}
+        aria-labelledby="action-modal-title"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 700,
+            maxHeight: '85vh',
+            bgcolor: 'background.paper',
+            border: '2px solid #d32f2f',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            p: 4,
+            borderRadius: 3,
+            overflow: 'auto'
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} pb={2} borderBottom={2} borderColor="error.main">
+            <Typography id="action-modal-title" variant="h5" component="h2" color="error" fontWeight="bold">
+              ⚖️ 신고 조치 처리
+            </Typography>
+            <IconButton
+              onClick={() => setActionModalOpen(false)}
+              sx={{
+                color: 'error.main',
+                '&:hover': { backgroundColor: 'error.light', color: 'white' }
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* 신고 데이터 정보 섹션 */}
+          <Box sx={{ mb: 4, p: 3, bgcolor: '#fff3e0', borderRadius: 2, border: '1px solid #ffb74d' }}>
+            <Typography variant="h6" color="warning.dark" gutterBottom fontWeight="bold">
+              📊 신고 정보 요약
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                  🆔 신고 ID
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  #{selectedDeclarationId}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                  🏷️ 신고 유형
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                  {chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_type || '-'}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                  📅 신고 시간
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                  {formatDate(chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_time) || '-'}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                  💬 채팅방 ID
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                  #{chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_chat_room_id || '-'}
+                </Typography>
+              </Box>
+            </Box>
+
+
+          </Box>
+
+          {/* 조치 사유 입력 */}
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h6" color="error" gutterBottom fontWeight="bold">
+              ✍️ 조치 사유 입력
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="조치 사유를 상세히 입력해주세요"
+              value={actionReason}
+              onChange={(e) => setActionReason(e.target.value)}
+              placeholder="예시: 사용자가 부적절한 언어를 사용하여 다른 사용자에게 불쾌감을 주었습니다. 커뮤니티 가이드라인 위반으로 인한 제재를 적용합니다."
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: 'error.main' },
+                  '&.Mui-focused fieldset': { borderColor: 'error.main' }
+                }
+              }}
+            />
+          </Box>
+
+          {/* 조치 버튼들 */}
+          <Box display="flex" justifyContent="flex-end" gap={2} pt={2} borderTop={1} borderColor="divider">
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleSanction}
+              disabled={!actionReason.trim()}
+              sx={{
+                px: 3,
+                py: 1.5,
+                fontWeight: 'bold',
+                '&:hover': { transform: 'translateY(-1px)', boxShadow: 3 }
+              }}
+            >
+              🚫 제재 처리
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={handleCompanion}
+              disabled={!actionReason.trim()}
+              sx={{
+                px: 3,
+                py: 1.5,
+                fontWeight: 'bold',
+                '&:hover': { transform: 'translateY(-1px)', boxShadow: 3 }
+              }}
+            >
+              ❌ 반려 처리
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => setActionModalOpen(false)}
+              sx={{
+                px: 3,
+                py: 1.5,
+                '&:hover': { backgroundColor: 'grey.100' }
+              }}
+            >
+              취소
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
     </>
   );
 };

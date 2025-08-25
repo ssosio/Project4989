@@ -101,7 +101,7 @@
         FROM chatdeclarationresult cdr
         INNER JOIN chatdeclaration cd ON cdr.chatdeclaration_id = cd.declaration_id
         INNER JOIN members m ON cd.declaration_memberid = m.member_id
-        WHERE cdr.result_member_id = #{resultMemberId}
+        WHERE cdr.result_member_id = #{resultMemberId} and cd.result='SANCTION'
         ORDER BY cdr.created_at DESC
     </select>
     
@@ -120,4 +120,25 @@
         AND (cdr.is_read = 0 OR cdr.is_read IS NULL)
     </select>
 
+	<select id="countReports" resultType="int">
+		select count(*) from chatdeclaration where status='RECEIVED'
+	</select>
+	
+	<insert id="insertDeclaration" parameterType="boot.sagu.dto.ChatDeclarationDto" useGeneratedKeys="true" keyProperty="declaration_id">
+		insert into chatdeclaration (
+			declaration_chat_room_id,
+			declaration_memberid,
+			declaration_opposite_memberid,
+			declaration_type,
+			declaration_content,
+			declaration_time
+		) values (
+			#{declaration_chat_room_id},
+			#{declaration_memberid},
+			#{declaration_opposite_memberid},
+			#{declaration_type},
+			#{declaration_content},
+			now()
+		)
+	</insert>
 </mapper>

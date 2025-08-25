@@ -56,6 +56,7 @@ const AdminPage = () => {
   const [isPostDetailOpen, setIsPostDetailOpen] = useState(false);
   const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
 
+
   // 더미 데이터 (실제로는 API에서 가져올 데이터)
   const [stats] = useState({
     totalUsers: 1250,
@@ -97,6 +98,8 @@ const AdminPage = () => {
     setSelectedUser(user);
     setIsUserDetailOpen(true);
   };
+
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -152,40 +155,40 @@ const AdminPage = () => {
 
         {/* 대시보드 탭 */}
         <TabPanel value={tabValue} index={0}>
-          <DashboardTab 
-            recentPosts={recentPosts} 
-            reports={reports} 
-            getStatusText={getStatusText} 
-            getStatusColor={getStatusColor} 
+          <DashboardTab
+            recentPosts={recentPosts}
+            reports={reports}
+            getStatusText={getStatusText}
+            getStatusColor={getStatusColor}
           />
         </TabPanel>
 
         {/* 회원 관리 탭 */}
         <TabPanel value={tabValue} index={1}>
-          <UserManagementTab 
-            recentUsers={recentUsers} 
-            getStatusText={getStatusText} 
-            getStatusColor={getStatusColor} 
+          <UserManagementTab
+            recentUsers={recentUsers}
+            getStatusText={getStatusText}
+            getStatusColor={getStatusColor}
             onUserDetail={handleUserDetail}
           />
         </TabPanel>
 
         {/* 게시글 관리 탭 */}
         <TabPanel value={tabValue} index={2}>
-          <PostManagementTab 
-            recentPosts={recentPosts} 
-            getStatusText={getStatusText} 
-            getStatusColor={getStatusColor} 
+          <PostManagementTab
+            recentPosts={recentPosts}
+            getStatusText={getStatusText}
+            getStatusColor={getStatusColor}
             onPostDetail={handlePostDetail}
           />
         </TabPanel>
 
         {/* 게시글 신고 관리 탭 */}
         <TabPanel value={tabValue} index={3}>
-          <ReportManagementTab 
-            reports={reports} 
-            getStatusText={getStatusText} 
-            getStatusColor={getStatusColor} 
+          <ReportManagementTab
+            reports={reports}
+            getStatusText={getStatusText}
+            getStatusColor={getStatusColor}
           />
         </TabPanel>
 
@@ -207,22 +210,22 @@ const AdminPage = () => {
         </TabPanel>
       </Paper>
 
-          {/* 주소 관리 탭 */}
-        <TabPanel value={tabValue} index={7}>
-          <AddressManagementTab />
-        </TabPanel>
+      {/* 주소 관리 탭 */}
+      <TabPanel value={tabValue} index={7}>
+        <AddressManagementTab />
+      </TabPanel>
 
       {/* 모달들 */}
-      <PostDetailModal 
-        open={isPostDetailOpen} 
-        onClose={() => setIsPostDetailOpen(false)} 
-        post={selectedPost} 
+      <PostDetailModal
+        open={isPostDetailOpen}
+        onClose={() => setIsPostDetailOpen(false)}
+        post={selectedPost}
       />
-      
-      <UserDetailModal 
-        open={isUserDetailOpen} 
-        onClose={() => setIsUserDetailOpen(false)} 
-        user={selectedUser} 
+
+      <UserDetailModal
+        open={isUserDetailOpen}
+        onClose={() => setIsUserDetailOpen(false)}
+        user={selectedUser}
       />
     </Container>
   );

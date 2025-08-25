@@ -37,12 +37,6 @@ public class ChatDeclarationService implements ChatDeclarationServiceInter{
 		return chatDeclarationMapper.getAllDeclarations();
 	}
 
-	@Override
-	public int countDeclarations() {
-		// TODO Auto-generated method stub
-		return chatDeclarationMapper.countDeclarations();
-	}
-
 	/**
 	 * 채팅 신고 조치 처리
 	 * @param declarationId 신고 ID
@@ -169,5 +163,11 @@ public class ChatDeclarationService implements ChatDeclarationServiceInter{
 	@Override
 	public int getUnreadNotificationCount(String memberId) {
 		return chatDeclarationMapper.getUnreadNotificationCount(memberId);
+	}
+
+	@Override
+	public int countReports() {
+		// TODO Auto-generated method stub
+		return chatDeclarationMapper.countReports();
 	}
 }

@@ -1,6 +1,8 @@
 package boot.sagu.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import boot.sagu.dto.ChatDeclarationDto;
 import boot.sagu.dto.ChatDeclarationResultNotificationDto;
 import boot.sagu.service.ChatDeclarationService;
+import boot.sagu.service.ChatService;
 
 @RestController
 @RequestMapping("/api/chat-declarations")
@@ -26,9 +29,13 @@ public class ChatDeclarationController {
 
 	@Autowired
     private final ChatDeclarationService chatDeclarationService;
+	
+	@Autowired
+	private final ChatService chatService;
 
-    public ChatDeclarationController(ChatDeclarationService chatDeclarationService) {
+    public ChatDeclarationController(ChatDeclarationService chatDeclarationService, ChatService chatService) {
         this.chatDeclarationService = chatDeclarationService;
+        this.chatService=chatService;
     }
 
     /**
@@ -199,5 +206,19 @@ public class ChatDeclarationController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+    
+    @GetMapping("/count")
+    public Map<String, Integer> count()
+    {
+    	int chatCnt=chatService.countChat();
+    	int reportCnt=chatDeclarationService.countReports();
+    	
+    	Map<String, Integer> map=new HashMap<>();
+    	
+    	map.put("chatCnt", chatCnt);
+    	map.put("reportCnt", reportCnt);
+    	
+    	return map;
     }
 }

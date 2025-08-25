@@ -96,7 +96,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
     const chatRoomId = chatRoom?.chatRoomId;
     const isAdminInvestigation = chatRoom?.isAdminInvestigation || false;
-    const SERVER_IP = '175.212.203.114';
+    const SERVER_IP = '192.168.10.136';
     const SERVER_PORT = '4989';
 
     const handleMenuOpen = (event) => {
@@ -1099,9 +1099,9 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                 />
                             </Box>
                         ) : (
-                            <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
                                 justifyContent: 'center',
                                 p: 2,
                                 bgcolor: 'grey.100',
