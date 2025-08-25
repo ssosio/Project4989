@@ -22,6 +22,9 @@
 	<select id="findByLoginId" parameterType="String" resultType="member">
 	    SELECT * FROM members WHERE login_id = #{loginId}
 	</select>
+	<select id="findById" parameterType="Long" resultType="member">
+	    SELECT * FROM members WHERE member_id = #{memberId}
+	</select>
 	<select id="countByLoginId" parameterType="String" resultType="int">
 		SELECT COUNT(*) FROM members WHERE login_id = #{loginId}
 	</select>

@@ -46,6 +46,11 @@ public class MemberService implements MemberServiceInter {
 	}
 
 	@Override
+	public MemberDto getMemberById(Long memberId) {
+		return memberMapper.findById(memberId);
+	}
+
+	@Override
 	public boolean isLoginIdAvailable(String loginId) {
 		// TODO Auto-generated method stub
 		return memberMapper.countByLoginId(loginId) == 0;

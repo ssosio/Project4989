@@ -9,7 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class AppConfig {
 	
     // 업로드 경로를 상수로 정의
-	public static final String UPLOAD_DIR = "C:/Users/user/Desktop/4989/Project4989/Spring4989/src/main/resources/static/save/";
+	public static final String UPLOAD_DIR = "C:/SIST0217/Project4989/Spring4989/src/main/resources/static/save/";
 	
 	@Bean
     public PasswordEncoder passwordEncoder() {

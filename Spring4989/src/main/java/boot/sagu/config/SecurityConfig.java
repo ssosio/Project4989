@@ -25,8 +25,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import boot.sagu.service.CustomOAuth2UserService;
 import boot.sagu.service.CustomUserDetailsService;
 import boot.sagu.dto.MemberDto;
-// ⬇️ 네 프로젝트의 CustomUserDetails 실제 경로로 바꿔주세요
-import boot.sagu.config.CustomUserDetails;
 
 @RequiredArgsConstructor
 @Configuration
@@ -59,7 +57,7 @@ public class SecurityConfig {
         CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(java.util.List.of(
             "http://localhost:5173",
-            "http://192.168.10.136:5173",
+            		"http://192.168.10.136:5173",
             "http://192.168.10.138:5173"
         ));
         c.setAllowedMethods(java.util.List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
@@ -96,7 +94,8 @@ public class SecurityConfig {
                 // 공개 경로
                 .requestMatchers("/chat/**", "/chat/rooms/**", "/chat/rooms",
                                  "/unread-count/**", "/api/chat/**",
-                                 "/room/create-with-message", "/room/enter", "/estate/**").permitAll()
+                                 "/room/create-with-message", "/room/enter", "/estate/**",
+                                 "/listMessage/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/post/**", "/goods/**", "/cars/**").permitAll()
                 .requestMatchers("/signup", "/login/**", "/oauth2/**", "/save/**", "/check-loginid","/postphoto/**").permitAll()
@@ -105,6 +104,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/region/**","/api/member-region/register").permitAll()
                 .requestMatchers("/api/member-region/addresses/**").authenticated()
                 .requestMatchers("/submit").authenticated()
+                // 채팅 신고 관련 API는 공개로 설정
+                .requestMatchers("/api/chat-declarations/**").permitAll()
+                // 지역 관리 API는 공개로 설정
+                .requestMatchers("/api/regions/**").permitAll()
                 // 경매 조회용 API는 인증 불필요
                 .requestMatchers("/auction", "/auction/photos/**", "/auction/detail/**", "/auction/highest-bid/**", "/auction/image/**", "/auction/member/**", "/auction/favorite/count/**", "/auction/bid-history/**").permitAll()
                 // 경매 방 인원수 관련 API는 인증 불필요
@@ -137,9 +140,9 @@ public class SecurityConfig {
                 res.getWriter().write("{\"error\": \"Unauthorized\"}");
             }));
 
-        // JWT 필터는 표준 위치: UsernamePasswordAuthenticationFilter “앞”
-        http.addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService),
-                UsernamePasswordAuthenticationFilter.class);
+         //JWT 필터는 표준 위치: UsernamePasswordAuthenticationFilter "앞"
+         http.addFilterBefore(new JwtAuthenticationFilter(jwtUtil, customUserDetailsService),
+                 UsernamePasswordAuthenticationFilter.class);
 
         // 구글 로그인
         http.oauth2Login(oauth2 -> oauth2

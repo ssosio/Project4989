@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -233,5 +234,118 @@ public class PostsController {
 	        resp.put("size", size);
 	        return resp;
 	    }
+	
+	// 채팅방 참여자 조회 API (판매완료 시 거래자 선택용)
+	@GetMapping("/chatParticipants")
+	public ResponseEntity<Map<String, Object>> getChatParticipants(
+			@RequestParam("postId") Long postId,
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			
+			// 권한 확인 (작성자 본인만 가능)
+			Long ownerId = postService.findPostOwnerId(postId);
+			if (ownerId == null || !ownerId.equals(memberId)) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(Map.of("success", false, "message", "권한이 없습니다."));
+			}
+			
+			// 채팅방 참여자 조회
+			List<Map<String, Object>> participants = postService.getChatParticipants(postId);
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true, 
+				"participants", participants
+			));
+			
+		} catch (Exception e) {
+			System.err.println("채팅방 참여자 조회 중 오류 발생: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "서버 오류가 발생했습니다."));
+		}
+	}
+
+	// 판매 상태 변경 API (거래자 선택 포함)
+	@PutMapping("/updateStatus")
+	public ResponseEntity<Map<String, Object>> updatePostStatus(
+			@RequestParam("postId") Long postId,
+			@RequestParam("status") String status,
+			@RequestParam(value = "buyerId", required = false) Long buyerId,
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			
+			// 권한 확인 및 상태 변경 실행
+			boolean success = postService.updatePostStatus(postId, status, buyerId, memberId);
+			
+			if (success) {
+				return ResponseEntity.ok(Map.of("success", true, "message", "상태가 성공적으로 변경되었습니다."));
+			} else {
+				return ResponseEntity.badRequest()
+					.body(Map.of("success", false, "message", "상태 변경에 실패했습니다."));
+			}
+			
+		} catch (Exception e) {
+			System.err.println("상태 변경 중 오류 발생: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "서버 오류가 발생했습니다."));
+		}
+	}
+	
+	// 구매내역 조회 API
+	@GetMapping("/purchaseHistory")
+	public ResponseEntity<Map<String, Object>> getPurchaseHistory(
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// System.out.println("🔍 구매내역 조회 API 호출됨");
+			
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				// System.err.println("❌ 인증 토큰이 없음");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			// System.out.println("👤 조회 요청 사용자 ID: " + memberId);
+			
+			// 구매내역 조회
+			List<Map<String, Object>> purchases = postService.getPurchaseHistory(memberId);
+			// System.out.println("🛒 조회된 구매내역 개수: " + (purchases != null ? purchases.size() : "null"));
+			
+			if (purchases != null && !purchases.isEmpty()) {
+				// System.out.println("📋 첫 번째 구매내역: " + purchases.get(0));
+			}
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"purchases", purchases
+			));
+			
+		} catch (Exception e) {
+			// System.err.println("❌ 구매내역 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "구매내역 조회 중 오류가 발생했습니다."));
+		}
+	}
 	
 }

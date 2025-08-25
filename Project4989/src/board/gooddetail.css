@@ -641,3 +641,114 @@
     font-size: 12px;
   }
 }
+
+/* 판매 상태 선택기 스타일 */
+.gooddetail-status-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-top: 16px;
+}
+
+.gooddetail-status-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 4px;
+}
+
+.gooddetail-status-select {
+  padding: 10px 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.gooddetail-status-select:hover {
+  border-color: #3182f6;
+  box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
+}
+
+.gooddetail-status-select:focus {
+  outline: none;
+  border-color: #3182f6;
+  box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
+}
+
+.gooddetail-status-select:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+  border-color: #dee2e6;
+}
+
+.gooddetail-status-updating {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 4px 0;
+}
+
+        /* 판매완료 상태 표시 */
+        .gooddetail-status-completed {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          background: #f0f9ff;
+          border-radius: 8px;
+          border: 1px solid #0ea5e9;
+          margin-top: 16px;
+        }
+
+        .gooddetail-review-btn {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .gooddetail-review-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 모바일 반응형 */
+        @media (max-width: 768px) {
+          .gooddetail-status-selector {
+            padding: 12px;
+            margin-top: 12px;
+          }
+
+          .gooddetail-status-select {
+            font-size: 13px;
+            padding: 8px 10px;
+          }
+          
+          .gooddetail-status-completed {
+            padding: 12px;
+            margin-top: 12px;
+          }
+          
+          .gooddetail-review-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+          }
+        }

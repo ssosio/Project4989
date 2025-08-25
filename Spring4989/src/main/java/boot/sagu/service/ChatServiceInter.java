@@ -32,4 +32,6 @@ public Long getRecipientId(Long chatRoomId, Long senderId);
 
 public Map<String, Object> getChatRoomById(Long chatRoomId, Long memberId);
 
+public int countChat();
+
 }

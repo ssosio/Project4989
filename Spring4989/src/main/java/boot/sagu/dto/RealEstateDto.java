@@ -15,9 +15,5 @@ public class RealEstateDto {
 	private int rooms;
 	private int floor;
 	private String dealType;
-	private int location;
-	private String detail_location;
-	private double latitude;
-	private double longitude;
 
 }

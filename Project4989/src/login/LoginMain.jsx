@@ -30,7 +30,7 @@ const LoginMain = ({ onLoginSuccess }) => {
                     <LoginForm onLoginSuccess={onLoginSuccess} />
                     
                     {/* 찾기 링크들 */}
-                    <Box sx={{ mt: 3, textAlign: 'center' }}>
+                    <Box sx={{ mt: -1, textAlign: 'center' }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                             계정에 문제가 있으신가요?
                         </Typography>
