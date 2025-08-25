@@ -53,13 +53,38 @@ public interface PostsMapperInter {
 	
 	//검색
 	List<PostsDto> searchAll(
-		      @Param("keyword") String keyword,
-		      @Param("postType") String postType, // "ALL" 또는 "CARS"/"ESTATE"/"ITEMS"
-		      @Param("size") int size,
-		      @Param("offset") int offset
-		  );
-		  int countSearchAll(@Param("keyword") String keyword,
-		                     @Param("postType") String postType);
+		@Param("keyword") String keyword,
+		@Param("postType") String postType, // "ALL" 또는 "CARS"/"REAL_ESTATES"/"ITEMS"
+		@Param("status") String status, // "ALL" 또는 "ON_SALE"/"SOLD"/"RESERVED"
+		@Param("tradeType") String tradeType, // "ALL" 또는 "SALE"/"AUCTION"/"SHARE"
+		@Param("minPrice") Integer minPrice,
+		@Param("maxPrice") Integer maxPrice,
+		@Param("minYear") Integer minYear,
+		@Param("maxYear") Integer maxYear,
+		@Param("minArea") Integer minArea,
+		@Param("maxArea") Integer maxArea,
+		@Param("categoryId") String categoryId, // 중고물품 카테고리 ID
+		@Param("sortBy") String sortBy, // "price", "created_at", "view_count"
+		@Param("sortOrder") String sortOrder, // "asc", "desc"
+		@Param("size") int size,
+		@Param("offset") int offset,
+		@Param("memberId") Long memberId
+	);
+	
+	int countSearchAll(
+		@Param("keyword") String keyword,
+		@Param("postType") String postType,
+		@Param("status") String status,
+		@Param("tradeType") String tradeType,
+		@Param("minPrice") Integer minPrice,
+		@Param("maxPrice") Integer maxPrice,
+		@Param("minYear") Integer minYear,
+		@Param("maxYear") Integer maxYear,
+		@Param("minArea") Integer minArea,
+		@Param("maxArea") Integer maxArea,
+		@Param("categoryId") String categoryId,
+		@Param("memberId") Long memberId
+	);
 	
 	// 판매 상태 변경
 	int updatePostStatus(@Param("postId") Long postId, @Param("status") String status);

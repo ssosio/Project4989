@@ -1,7 +1,9 @@
 import axios from 'axios';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FaChevronUp } from 'react-icons/fa';
 import './real_estate.css';
+import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const ESTATE_DETAIL_URL = 'http://localhost:4989/post/estatedetail';
 const LIST_URL = 'http://localhost:4989/post/list';
@@ -25,6 +27,16 @@ const Real_estate = () => {
     return Number.isNaN(n) ? null : n;
   };
   const STATUS_ALIAS = (v) => (norm(v) === 'SOLD' ? 'SOLD_OUT' : norm(v));
+  
+  // tradeType 정규화 함수 추가
+  const normalizeTrade = (v) => {
+    const s = (v ?? '').toString().trim();
+    const u = s.toUpperCase();
+    if (u === '1' || u === 'SALE'    || s === '판매') return 'SALE';
+    if (u === '2' || u === 'AUCTION' || s === '경매') return 'AUCTION';
+    if (u === '3' || u === 'SHARE'   || s === '나눔' || u === 'GIVE' || u === 'GIVEAWAY' || u === 'FREE') return 'SHARE';
+    return u; // 혹시 다른 값이 오면 대문자 그대로
+  };
 
   const ROOMS_RANGES = [
     { key: 'ALL', label: '전체', test: () => true },
@@ -123,6 +135,7 @@ const Real_estate = () => {
       const area = d.area ?? d.size ?? d.Area ?? null;
       const floor = d.floor ?? d.Floor ?? null;
       const parking = d.parking ?? d.Parking ?? null;
+      const commonTrade = p.tradeType ?? p.trade_type ?? p.TRADE_TYPE;
 
       const processedEstate = {
         ...p, // 사진/제목/가격/createdAt/status 등
@@ -134,6 +147,8 @@ const Real_estate = () => {
         _area: toInt(area),
         _floor: toInt(floor),
         _parking: parking,
+        // tradeType 정규화 추가
+        tradeType: normalizeTrade(commonTrade),
       };
       
       console.log(`부동산 ${p.postId} 처리 결과:`, {
@@ -144,7 +159,8 @@ const Real_estate = () => {
         _rooms: processedEstate._rooms,
         _area: processedEstate._area,
         _floor: processedEstate._floor,
-        _parking: processedEstate._parking
+        _parking: processedEstate._parking,
+        tradeType: processedEstate.tradeType
       });
       
       return processedEstate;
@@ -161,6 +177,7 @@ const Real_estate = () => {
     dealType: 'ALL',
     rooms: 'ALL',
     area: 'ALL',
+    tradeType: 'ALL',
   });
 
   // ---------- 필터 적용 ----------
@@ -170,6 +187,12 @@ const Real_estate = () => {
     console.log('총 부동산 수:', estates.length);
     
     const filtered = estates.filter((e) => {
+      // AUCTION 타입은 항상 제외
+      if (normalizeTrade(e.tradeType) === 'AUCTION') {
+        console.log(`❌ AUCTION 타입 제외: ${e.title} (tradeType: ${e.tradeType})`);
+        return false;
+      }
+      
       // 상태 필터
       if (filters.status !== 'ALL') {
         if (e._status !== filters.status) {
@@ -212,6 +235,14 @@ const Real_estate = () => {
         const range = AREA_RANGES.find((r) => r.key === filters.area);
         if (!range?.test(e._area)) {
           console.log(`❌ 면적 필터 제외: ${e.title} (면적: ${e._area}평, 필터: ${filters.area})`);
+          return false;
+        }
+      }
+      
+      // 판매타입 필터
+      if (filters.tradeType !== 'ALL') {
+        if (normalizeTrade(e.tradeType) !== normalizeTrade(filters.tradeType)) {
+          console.log(`❌ 판매타입 필터 제외: ${e.title} (tradeType: ${e.tradeType}, 필터: ${filters.tradeType})`);
           return false;
         }
       }
@@ -264,6 +295,7 @@ const Real_estate = () => {
   const onChangeDealType = (e) => setAndResetPage({ dealType: e.target.value });
   const onChangeRooms = (e) => setAndResetPage({ rooms: e.target.value });
   const onChangeArea = (e) => setAndResetPage({ area: e.target.value });
+  const onChangeTradeType = (e) => setAndResetPage({ tradeType: e.target.value });
   
   // 필터 초기화 함수
   const resetFilters = () => {
@@ -273,6 +305,7 @@ const Real_estate = () => {
       dealType: 'ALL',
       rooms: 'ALL',
       area: 'ALL',
+      tradeType: 'ALL',
     });
   };
 
@@ -282,177 +315,189 @@ const Real_estate = () => {
         <div className="real-estate-header">
           <h1 className="real-estate-title">부동산 목록</h1>
           <p className="real-estate-subtitle">다양한 부동산을 찾아보세요</p>
+          <button type='button' className="real-estate-register-btn" onClick={() => {
+            // 로그인 상태 체크
+            const token = localStorage.getItem('jwtToken');
+            if (!token || token === 'undefined' || token === 'null') {
+              alert('로그인이 필요한 서비스입니다.');
+              navi('/login');
+              return;
+            }
+            // 로그인 상태면 등록 페이지로 이동
+            navi("/board/post");
+          }}>
+              부동산 등록하기
+            </button>
         </div>
 
-                 {/* ✅ 라디오 필터 UI */}
-         <div className="estates-filters">
-
-           <div className="filter-group">
-             <div className="filter-label">상태</div>
-             <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
-             <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
-             <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
-             <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
-           </div>
-
-           <div className="filter-group">
-             <div className="filter-label">매물종류</div>
-             <label><input type="radio" name="propertyType" value="ALL" checked={filters.propertyType === 'ALL'} onChange={onChangePropertyType} /> 전체</label>
-             <label><input type="radio" name="propertyType" value="apt" checked={filters.propertyType === 'apt'} onChange={onChangePropertyType} /> 아파트</label>
-             <label><input type="radio" name="propertyType" value="studio" checked={filters.propertyType === 'studio'} onChange={onChangePropertyType} /> 오피스텔</label>
-             <label><input type="radio" name="propertyType" value="oneroom" checked={filters.propertyType === 'oneroom'} onChange={onChangePropertyType} /> 원룸</label>
-             <label><input type="radio" name="propertyType" value="tworoom" checked={filters.propertyType === 'tworoom'} onChange={onChangePropertyType} /> 투룸</label>
-           </div>
-
-           <div className="filter-group">
-             <div className="filter-label">거래유형</div>
-             <label><input type="radio" name="dealType" value="ALL" checked={filters.dealType === 'ALL'} onChange={onChangeDealType} /> 전체</label>
-             <label><input type="radio" name="dealType" value="lease" checked={filters.dealType === 'lease'} onChange={onChangeDealType} /> 전세</label>
-             <label><input type="radio" name="dealType" value="rent" checked={filters.dealType === 'rent'} onChange={onChangeDealType} /> 월세</label>
-             <label><input type="radio" name="dealType" value="leaseAndrent" checked={filters.dealType === 'leaseAndrent'} onChange={onChangeDealType} /> 전월세</label>
-             <label><input type="radio" name="dealType" value="buy" checked={filters.dealType === 'buy'} onChange={onChangeDealType} /> 매매</label>
-           </div>
-
-           <div className="filter-group">
-             <div className="filter-label">방 개수</div>
-             {ROOMS_RANGES.map((r) => (
-               <label key={`rooms-${r.key}`}>
-                 <input type="radio" name="rooms" value={r.key} checked={filters.rooms === r.key} onChange={onChangeRooms} />
-                 {r.label}
-               </label>
-             ))}
-           </div>
-
-           <div className="filter-group">
-             <div className="filter-label">면적</div>
-             {AREA_RANGES.map((r) => (
-               <label key={`area-${r.key}`}>
-                 <input type="radio" name="area" value={r.key} checked={filters.area === r.key} onChange={onChangeArea} />
-                 {r.label}
-               </label>
-             ))}
-           </div>
-
-           {/* 필터 초기화 버튼 */}
-           <div className="filter-reset-container">
-                           <button 
-                type="button" 
-                className="filter-reset-btn" 
-                onClick={resetFilters}
-                title="모든 필터 초기화"
-              >
-                필터 초기화
-              </button>
-           </div>
-
-         </div>
-
-        <button type='button' className="real-estate-register-btn" onClick={() => navi("/board/post")}>
-          부동산 등록하기
-        </button>
-
-        {filteredEstates.length > 0 ? (
-          <>
-            <div className="real-estate-grid">
-              {currentItems.map(p => (
-                <div
-                  id={`post-${p.postId}`}
-                  key={p.postId}
-                  className="real-estate-card"
-                  onClick={() =>
-                    navi(`/board/GoodsDetail?postId=${p.postId}`, {
-                      state: { from: `${location.pathname}${location.search || ''}`, page: currentPage, focusId: p.postId }
-                    })
-                  }
+        {/* 메인 컨텐츠 영역 */}
+        <div className="real-estate-main-content">
+          {/* 왼쪽 사이드바 - 필터 */}
+          <div className="real-estate-sidebar">
+            <div className="estates-filters">
+              {/* 필터 초기화 버튼 */}
+              <div className="filter-reset-container">
+                <button 
+                  type="button" 
+                  className="filter-reset-btn" 
+                  onClick={resetFilters}
+                  title="모든 필터 초기화"
                 >
-                  <div className="real-estate-image">
-                    {p.mainPhotoUrl ? (
-                      <img loading="lazy" src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} />
-                    ) : (
-                      <div className="real-estate-image-placeholder">이미지 없음</div>
-                    )}
-                  </div>
-                  <div className="real-estate-info">
-                    <h3 className="real-estate-title-text">{p.title}</h3>
-                    <div className="real-estate-price">
-                      {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
-                    </div>
-                    <div className="real-estate-member">판매자: {p.nickname}</div>
-                    <div>조회수: {p.viewCount}</div>
-                    <div className="real-estate-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
-                    
-                    {/* 상태 및 부동산 정보 배지 */}
-                    <div className="estates-status">
-                      <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
-                        {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
-                      </span>
-                      {p._propertyType && (
-                        <span className="trade-type-badge">
-                          {p._propertyType === 'apt' ? '아파트' : 
-                           p._propertyType === 'studio' ? '오피스텔' : 
-                           p._propertyType === 'oneroom' ? '원룸' : 
-                           p._propertyType === 'tworoom' ? '투룸' : p._propertyType}
-                        </span>
-                      )}
-                      {p._dealType && (
-                        <span className="trade-type-badge">
-                          {p._dealType === 'lease' ? '전세' : 
-                           p._dealType === 'rent' ? '월세' : 
-                           p._dealType === 'leaseAndrent' ? '전월세' : 
-                           p._dealType === 'buy' ? '매매' : p._dealType}
-                        </span>
-                      )}
-                      {p._rooms && (
-                        <span className="trade-type-badge">
-                          {p._rooms}개
-                        </span>
-                      )}
-                                             {p._area && (
-                         <span className="trade-type-badge">
-                           {p._area}㎡
-                         </span>
-                       )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="real-estate-pagination">
-              <div className="real-estate-page-info">
-                총 {filteredEstates.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredEstates.length)}개 표시
+                  필터 초기화
+                </button>
               </div>
 
-              {totalPages > 1 ? (
-                <>
-                  <button className="real-estate-page-btn real-estate-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>이전</button>
-                  <div className="real-estate-page-numbers">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        className={`real-estate-page-number ${currentPage === page ? 'active' : ''}`}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-                  <button className="real-estate-page-btn real-estate-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>다음</button>
-                </>
-              ) : (
-                <div className="real-estate-page-single">페이지 1 / 1</div>
-              )}
+              <div className="filter-group">
+                <div className="filter-label">상태</div>
+                <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
+                <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
+                <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
+                <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">판매타입</div>
+                <label><input type="radio" name="tradeType" value="ALL" checked={filters.tradeType === 'ALL'} onChange={onChangeTradeType} /> 전체</label>
+                <label><input type="radio" name="tradeType" value="SALE" checked={filters.tradeType === 'SALE'} onChange={onChangeTradeType} /> 판매</label>
+                <label><input type="radio" name="tradeType" value="SHARE" checked={filters.tradeType === 'SHARE'} onChange={onChangeTradeType} /> 나눔</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">매물종류</div>
+                <label><input type="radio" name="propertyType" value="ALL" checked={filters.propertyType === 'ALL'} onChange={onChangePropertyType} /> 전체</label>
+                <label><input type="radio" name="propertyType" value="apt" checked={filters.propertyType === 'apt'} onChange={onChangePropertyType} /> 아파트</label>
+                <label><input type="radio" name="propertyType" value="studio" checked={filters.propertyType === 'studio'} onChange={onChangePropertyType} /> 오피스텔</label>
+                <label><input type="radio" name="propertyType" value="oneroom" checked={filters.propertyType === 'oneroom'} onChange={onChangePropertyType} /> 원룸</label>
+                <label><input type="radio" name="propertyType" value="tworoom" checked={filters.propertyType === 'tworoom'} onChange={onChangePropertyType} /> 투룸</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">거래유형</div>
+                <label><input type="radio" name="dealType" value="ALL" checked={filters.dealType === 'ALL'} onChange={onChangeDealType} /> 전체</label>
+                <label><input type="radio" name="dealType" value="lease" checked={filters.dealType === 'lease'} onChange={onChangeDealType} /> 전세</label>
+                <label><input type="radio" name="dealType" value="rent" checked={filters.dealType === 'rent'} onChange={onChangeDealType} /> 월세</label>
+                <label><input type="radio" name="dealType" value="leaseAndrent" checked={filters.dealType === 'leaseAndrent'} onChange={onChangeDealType} /> 전월세</label>
+                <label><input type="radio" name="dealType" value="buy" checked={filters.dealType === 'buy'} onChange={onChangeDealType} /> 매매</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">방 개수</div>
+                {ROOMS_RANGES.map((r) => (
+                  <label key={`rooms-${r.key}`}>
+                    <input type="radio" name="rooms" value={r.key} checked={filters.rooms === r.key} onChange={onChangeRooms} />
+                    {r.label}
+                  </label>
+                ))}
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">면적</div>
+                {AREA_RANGES.map((r) => (
+                  <label key={`area-${r.key}`}>
+                    <input type="radio" name="area" value={r.key} checked={filters.area === r.key} onChange={onChangeArea} />
+                    {r.label}
+                  </label>
+                ))}
+              </div>
+
             </div>
-          </>
-        ) : (
-          <div className="real-estate-empty">
-            <div className="real-estate-empty-icon">🏠</div>
-            <div className="real-estate-empty-text">조건에 맞는 부동산이 없습니다</div>
-            <button className="real-estate-empty-btn" onClick={() => navi("/board/post")}>
-              첫 번째 부동산 등록하기
-            </button>
           </div>
-        )}
+
+          {/* 오른쪽 메인 컨텐츠 */}
+          <div className="real-estate-content">
+            
+
+            {filteredEstates.length > 0 ? (
+              <>
+                <div className="real-estate-grid">
+                  {currentItems.map(p => (
+                    <div
+                      id={`post-${p.postId}`}
+                      key={p.postId}
+                      className="real-estate-card"
+                      onClick={() =>
+                        navi(`/board/GoodsDetail?postId=${p.postId}`, {
+                          state: { from: `${location.pathname}${location.search || ''}`, page: currentPage, focusId: p.postId }
+                        })
+                      }
+                    >
+                      <div className="real-estate-image">
+                        {p.mainPhotoUrl ? (
+                          <img loading="lazy" src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} />
+                        ) : (
+                          <div className="real-estate-image-placeholder">이미지 없음</div>
+                        )}
+                      </div>
+                      <div className="real-estate-info">
+                        <h3 className="real-estate-title-text">{p.title}</h3>
+                        <div className="real-estate-price">
+                          {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
+                        </div>
+                        <div className="real-estate-member">판매자: {p.nickname}</div>
+                        <div>조회수: {p.viewCount}</div>
+                        <div className="real-estate-date">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}</div>
+                        
+                        {/* 상태 및 부동산 정보 배지 */}
+                        <div className="estates-status">
+                          <span className={`status-badge ${p._status === 'ON_SALE' ? 'on-sale' : p._status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                            {p._status === 'ON_SALE' ? '판매중' : p._status === 'RESERVED' ? '예약' : '판매완료'}
+                          </span>
+                          <span className={`trade-type-badge ${p.tradeType === 'SALE' ? 'sale' : p.tradeType === 'AUCTION' ? 'auction' : p.tradeType === 'SHARE' ? 'share' : ''}`}>
+                            {p.tradeType === 'SALE' ? '판매' : p.tradeType === 'AUCTION' ? '경매' : p.tradeType === 'SHARE' ? '나눔' : p.tradeType || '미정'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="real-estate-pagination">
+                  <div className="real-estate-page-info">
+                    총 {filteredEstates.length}개 중 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredEstates.length)}개 표시
+                  </div>
+
+                  {totalPages > 1 ? (
+                    <>
+                      <button className="real-estate-page-btn real-estate-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>이전</button>
+                      <div className="real-estate-page-numbers">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            className={`real-estate-page-number ${currentPage === page ? 'active' : ''}`}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button className="real-estate-page-btn real-estate-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>다음</button>
+                    </>
+                  ) : (
+                    <div className="real-estate-page-single">페이지 1 / 1</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="real-estate-empty">
+                <div className="real-estate-empty-icon">🏠</div>
+                <div className="real-estate-empty-text">조건에 맞는 부동산이 없습니다</div>
+                <button className="real-estate-empty-btn" onClick={() => {
+                  // 로그인 상태 체크
+                  const token = localStorage.getItem('jwtToken');
+                  if (!token || token === 'undefined' || token === 'null') {
+                    alert('로그인이 필요한 서비스입니다.');
+                    navi('/login');
+                    return;
+                  }
+                  // 로그인 상태면 등록 페이지로 이동
+                  navi("/board/post");
+                }}>
+                  첫 번째 부동산 등록하기
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* 최상단으로 스크롤하는 화살표 버튼 */}
         {showScrollTop && (
@@ -461,7 +506,7 @@ const Real_estate = () => {
             onClick={scrollToTop}
             title="최상단으로 이동"
           >
-            ↑
+            <KeyboardArrowUpRoundedIcon />
           </button>
         )}
       </div>

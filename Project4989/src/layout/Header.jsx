@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase, Badge, Paper, List, ListItem, ListItemText, Popper, ClickAwayListener } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -62,7 +62,14 @@ export const Header = () => {
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0); // 👈 읽지 않은 메시지 개수를 저장할 상태
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // 👈 읽지 않은 알림 개수를 저장할 상태
+  
+  // 검색 관련 상태
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchAnchorEl, setSearchAnchorEl] = useState(null);
+  const [searchError, setSearchError] = useState(null);
+  
   const navi = useNavigate();
 
   const handleMenu = (event) => setAnchorEl(event.currentTarget);
@@ -79,6 +86,77 @@ export const Header = () => {
   const handleNotificationClose = () => {
     setNotificationDrawerOpen(false);
   };
+  
+  // 검색 관련 함수들
+  const handleSearchInputChange = (event) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    setSearchAnchorEl(event.currentTarget);
+    
+    if (query.trim()) {
+      performSearch(query);
+    } else {
+      setSearchResults([]);
+      setSearchAnchorEl(null);
+    }
+  };
+
+  const performSearch = async (query) => {
+    if (!query.trim()) return;
+    
+    try {
+      setSearchLoading(true);
+      setSearchError(null);
+      
+      const { data } = await axios.get('http://localhost:4989/post/search-simple', {
+        params: { 
+          keyword: query.trim(),
+          page: 1,
+          size: 5 // 헤더에서는 5개만 표시
+        }
+      });
+      
+      setSearchResults(data.content || []);
+    } catch (error) {
+      console.error('검색 오류:', error);
+      setSearchError(error?.response?.data?.error || '검색 중 오류가 발생했습니다.');
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSearchResultClick = (post) => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchAnchorEl(null);
+    navi(`/board/GoodsDetail?postId=${post.postId}`);
+  };
+
+  const handleSearchClose = () => {
+    setSearchAnchorEl(null);
+    setSearchResults([]);
+  };
+
+  // 검색어 초기화 함수
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchAnchorEl(null);
+    setSearchError(null);
+  };
+
+  // 로고 클릭 핸들러
+  const handleLogoClick = () => {
+    clearSearch();
+    navi('/');
+  };
+
+  // 검색 입력 필드 포커스 핸들러
+  const handleSearchFocus = () => {
+    clearSearch();
+  };
+
   // ✅ 수정: useCallback을 사용하여 함수를 메모이제이션
   const handleUnreadCountChange = useCallback((count) => {
     // console.log("🔔 Header handleUnreadCountChange 호출됨 - count:", count);
@@ -181,7 +259,7 @@ export const Header = () => {
             transform: 'translateY(-1px)',
             boxShadow: '0 4px 15px rgba(74, 144, 226, 0.15)'
           }
-        }} onClick={() => navi('/')}>
+        }} onClick={handleLogoClick}>
           <img src="/4989로고.png" alt="4989 로고" className="header-logo-img" style={{
             height: '48px',
             width: 'auto',
@@ -207,12 +285,146 @@ export const Header = () => {
           display: 'flex',
           justifyContent: 'center',
           maxWidth: '600px',
-          margin: '0 auto'
+          margin: '0 auto',
+          position: 'relative'
         }}>
           <TossSearch>
             <SearchIconWrapper><SearchRoundedIcon /></SearchIconWrapper>
-            <StyledInputBase placeholder="🔍 물품이나 동네를 검색하세요" />
+            <StyledInputBase 
+              placeholder="🔍 물품이나 동네를 검색하세요" 
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              onFocus={handleSearchFocus}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  navi(`/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
+                }
+              }}
+            />
           </TossSearch>
+          
+          {/* 검색 결과 드롭다운 */}
+          <Popper
+            open={Boolean(searchAnchorEl) && (searchResults.length > 0 || searchLoading || searchError)}
+            anchorEl={searchAnchorEl}
+            placement="bottom-start"
+            style={{ zIndex: 1300, width: searchAnchorEl ? searchAnchorEl.offsetWidth : 'auto' }}
+          >
+            <ClickAwayListener onClickAway={handleSearchClose}>
+              <Paper 
+                elevation={8}
+                sx={{
+                  mt: 1,
+                  maxHeight: 400,
+                  overflow: 'auto',
+                  borderRadius: 2,
+                  border: '1px solid #E0E0E0'
+                }}
+              >
+                {searchLoading && (
+                  <Box sx={{ p: 2, textAlign: 'center', color: '#666' }}>
+                    검색 중...
+                  </Box>
+                )}
+                
+                {searchError && (
+                  <Box sx={{ p: 2, textAlign: 'center', color: 'error.main' }}>
+                    {searchError}
+                  </Box>
+                )}
+                
+                {!searchLoading && !searchError && searchResults.length > 0 && (
+                  <List sx={{ p: 0 }}>
+                    {searchResults.map((post) => (
+                      <ListItem
+                        key={post.postId}
+                        button
+                        onClick={() => handleSearchResultClick(post)}
+                        sx={{
+                          borderBottom: '1px solid #f0f0f0',
+                          '&:hover': {
+                            backgroundColor: '#f8f9fa'
+                          },
+                          '&:last-child': {
+                            borderBottom: 'none'
+                          }
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#007bff' }}>
+                                [{post.postType}] {post.title}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#666', mt: 0.5 }}>
+                                {post.price?.toLocaleString?.() ?? post.price}원
+                              </Typography>
+                                                             {post.content && (
+                                 <Typography variant="caption" sx={{ color: '#888', display: 'block', mt: 0.5 }}>
+                                   {post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}
+                                 </Typography>
+                               )}
+                               {/* 타입별 상세 정보 */}
+                               {post.postType === "CARS" && post.car && (
+                                 <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                                   🚗 {post.car.brand} {post.car.model} / {post.car.year}년식 · {post.car.mileage?.toLocaleString()}km
+                                 </Typography>
+                               )}
+                               {post.postType === "REAL_ESTATES" && post.estate && (
+                                 <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                                   🏠 {post.estate.propertyType === 'apt' ? '아파트' : 
+                                       post.estate.propertyType === 'studio' ? '오피스텔' : 
+                                       post.estate.propertyType === 'oneroom' ? '원룸' : 
+                                       post.estate.propertyType === 'tworoom' ? '투룸' : post.estate.propertyType} · {post.estate.area}㎡
+                                 </Typography>
+                               )}
+                               {post.postType === "ITEMS" && post.item && (
+                                 <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                                   📦 {post.item.categoryId === 1 ? '전자제품' : 
+                                       post.item.categoryId === 2 ? '의류' : 
+                                       post.item.categoryId === 3 ? '가구' : 
+                                       post.item.categoryName || `카테고리 ${post.item.categoryId}`}
+                                 </Typography>
+                               )}
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                    {searchResults.length >= 5 && (
+                      <ListItem
+                        button
+                        onClick={() => {
+                          navi(`/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
+                          handleSearchClose();
+                        }}
+                        sx={{
+                          backgroundColor: '#f8f9fa',
+                          '&:hover': {
+                            backgroundColor: '#e9ecef'
+                          }
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography variant="body2" sx={{ textAlign: 'center', color: '#007bff', fontWeight: 600 }}>
+                              더 많은 결과 보기
+                            </Typography>
+                          }
+                        />
+                      </ListItem>
+                    )}
+                  </List>
+                )}
+                
+                {!searchLoading && !searchError && searchResults.length === 0 && searchQuery.trim() && (
+                  <Box sx={{ p: 2, textAlign: 'center', color: '#666' }}>
+                    검색 결과가 없습니다.
+                  </Box>
+                )}
+              </Paper>
+            </ClickAwayListener>
+          </Popper>
         </Box>
 
         {/* 우측 아이콘 및 버튼 영역 (로그인 상태에 따라 분기) */}

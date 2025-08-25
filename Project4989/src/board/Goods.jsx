@@ -1,7 +1,9 @@
 import axios from 'axios';
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FaChevronUp } from 'react-icons/fa';
 import './goods.css';
+import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const Goods = () => {
 
@@ -169,6 +171,9 @@ useEffect(() => {
   // ✅ 라디오 필터 로직
   const filteredItems = useMemo(() => {
     return mergedItems.filter(it => {
+      // AUCTION 타입은 항상 제외
+      if (normalizeTrade(it.tradeType) === 'AUCTION') return false;
+      
       // categoryId: 숫자 또는 문자열일 수 있으니 느슨히 비교
       if (filters.categoryId !== 'ALL') {
         // 상세에 categoryId가 없으면 통과시키지 않음
@@ -232,6 +237,24 @@ useEffect(() => {
         <div className="goods-header">
           <h1 className="goods-title">중고물품 목록</h1>
           <p className="goods-subtitle">다양한 중고물품을 찾아보세요</p>
+          {/* 등록 버튼 */}
+            <button
+              type='button'
+              className="goods-register-btn"
+              onClick={() => {
+                // 로그인 상태 체크
+                const token = localStorage.getItem('jwtToken');
+                if (!token || token === 'undefined' || token === 'null') {
+                  alert('로그인이 필요한 서비스입니다.');
+                  navi('/login');
+                  return;
+                }
+                // 로그인 상태면 등록 페이지로 이동
+                navi("/board/post");
+              }}
+            >
+              물품 등록하기
+            </button>
         </div>
 
         {/* search */}
@@ -243,63 +266,63 @@ useEffect(() => {
                 search
               </button> */}
 
-        {/* ✅ 라디오 필터 UI */}
-        <div className="goods-filters">
-          <div className="filter-group">
-            <div className="filter-label">카테고리</div>
-            <label><input type="radio" name="category" value="ALL" checked={filters.categoryId === 'ALL'} onChange={onChangeCategory} /> 전체</label>
-            <label><input type="radio" name="category" value="1" checked={filters.categoryId === '1'} onChange={onChangeCategory} /> 전자제품</label>
-            <label><input type="radio" name="category" value="2" checked={filters.categoryId === '2'} onChange={onChangeCategory} /> 의류</label>
-            <label><input type="radio" name="category" value="3" checked={filters.categoryId === '3'} onChange={onChangeCategory} /> 가구</label>
+        {/* 메인 컨텐츠 영역 */}
+        <div className="goods-main-content">
+
+
+          {/* 왼쪽 사이드바 - 필터 */}
+          <div className="goods-sidebar">
+            <div className="goods-filters">
+              {/* 필터 초기화 버튼 */}
+              <div className="filter-reset-container">
+                <button 
+                  type="button" 
+                  className="filter-reset-btn" 
+                  onClick={resetFilters}
+                  title="모든 필터 초기화"
+                >
+                  필터 초기화
+                </button>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">상태</div>
+                <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
+                <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
+                <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
+                <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">판매타입</div>
+                <label><input type="radio" name="tradeType" value="ALL"     checked={filters.tradeType === 'ALL'}     onChange={onChangeTradeType} /> 전체</label>
+                <label><input type="radio" name="tradeType" value="SALE"    checked={filters.tradeType === 'SALE'}    onChange={onChangeTradeType} /> 판매</label>
+                {/* <label><input type="radio" name="tradeType" value="AUCTION" checked={filters.tradeType === 'AUCTION'} onChange={onChangeTradeType} /> 경매</label> */}
+                <label><input type="radio" name="tradeType" value="SHARE"   checked={filters.tradeType === 'SHARE'}   onChange={onChangeTradeType} /> 나눔</label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-label">카테고리</div>
+                <label><input type="radio" name="category" value="ALL" checked={filters.categoryId === 'ALL'} onChange={onChangeCategory} /> 전체</label>
+                <label><input type="radio" name="category" value="1" checked={filters.categoryId === '1'} onChange={onChangeCategory} /> 전자제품</label>
+                <label><input type="radio" name="category" value="2" checked={filters.categoryId === '2'} onChange={onChangeCategory} /> 의류</label>
+                <label><input type="radio" name="category" value="3" checked={filters.categoryId === '3'} onChange={onChangeCategory} /> 가구</label>
+              </div>
+
+              
+            </div>
           </div>
 
-          <div className="filter-group">
-            <div className="filter-label">상태</div>
-            <label><input type="radio" name="status" value="ALL" checked={filters.status === 'ALL'} onChange={onChangeStatus} /> 전체</label>
-            <label><input type="radio" name="status" value="ON_SALE" checked={filters.status === 'ON_SALE'} onChange={onChangeStatus} /> 판매중</label>
-            <label><input type="radio" name="status" value="RESERVED" checked={filters.status === 'RESERVED'} onChange={onChangeStatus} /> 예약</label>
-            <label><input type="radio" name="status" value="SOLD" checked={filters.status === 'SOLD'} onChange={onChangeStatus} /> 판매완료</label>
-          </div>
+          {/* 오른쪽 메인 컨텐츠 */}
+          <div className="goods-content">
+            
 
-          <div className="filter-group">
-            <div className="filter-label">판매타입</div>
-            <label><input type="radio" name="tradeType" value="ALL"     checked={filters.tradeType === 'ALL'}     onChange={onChangeTradeType} /> 전체</label>
-            <label><input type="radio" name="tradeType" value="SALE"    checked={filters.tradeType === 'SALE'}    onChange={onChangeTradeType} /> 판매</label>
-            <label><input type="radio" name="tradeType" value="AUCTION" checked={filters.tradeType === 'AUCTION'} onChange={onChangeTradeType} /> 경매</label>
-            <label><input type="radio" name="tradeType" value="SHARE"   checked={filters.tradeType === 'SHARE'}   onChange={onChangeTradeType} /> 나눔</label>
-          </div>
-
-          {/* 필터 초기화 버튼 */}
-          <div className="filter-reset-container">
-            <button 
-              type="button" 
-              className="filter-reset-btn" 
-              onClick={resetFilters}
-              title="모든 필터 초기화"
-            >
-              필터 초기화
-            </button>
-          </div>
-
-        </div>
-
-        {/* 등록 버튼 */}
-        <button
-          type='button'
-          className="goods-register-btn"
-          onClick={() => {
-            navi("/board/post");
-          }}
-        >
-          물품 등록하기
-        </button>
-
-        {/* 상품 목록 */}
-        {filteredItems.length > 0 ?(
-          <>
-            <div className="goods-grid">
-              {currentItems.map(p => (
-                <div id={`post-${p.postId}`}        // ← 스크롤 타겟
+            {/* 상품 목록 */}
+            {filteredItems.length > 0 ?(
+              <>
+                <div className="goods-grid">
+                  {currentItems.map(p => (
+                    <div id={`post-${p.postId}`}        // ← 스크롤 타겟
   key={p.postId}
   className="goods-card"
   onClick={() =>
@@ -307,83 +330,85 @@ useEffect(() => {
       state: { from: fromUrl, page: currentPage, focusId: p.postId, scrollY: window.scrollY },
     })
   }>
-                  <div className="goods-image">
-                    {p.mainPhotoUrl ? (
-                      <img
-                        src={photoUrl + p.mainPhotoUrl}
-                        alt={p.title}
-                      />
-                    ) : (
-                      <div className="goods-image-placeholder">
-                        이미지 없음
+                      <div className="goods-image">
+                        {p.mainPhotoUrl ? (
+                          <img
+                            src={photoUrl + p.mainPhotoUrl}
+                            alt={p.title}
+                          />
+                        ) : (
+                          <div className="goods-image-placeholder">
+                            이미지 없음
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="goods-info">
-                    <h3 className="goods-title-text">{p.title}</h3>
-                    <div className="goods-price">
-                      {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
-                    </div>
+                      <div className="goods-info">
+                        <h3 className="goods-title-text">{p.title}</h3>
+                        <div className="goods-price">
+                          {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
+                        </div>
 
-                    {/* ✅ 상세에서 온 값 안전 표시 */}
-                    {/* <div className="goods-meta">
-                      <span>카테고리: {p.categoryId === 1 ? '전자제품' : p.categoryId === 2 ? '의류' : p.categoryId === 3 ? '가구' : '-'}</span>
-                    </div> */}
+                        {/* ✅ 상세에서 온 값 안전 표시 */}
+                        {/* <div className="goods-meta">
+                          <span>카테고리: {p.categoryId === 1 ? '전자제품' : p.categoryId === 2 ? '의류' : p.categoryId === 3 ? '가구' : '-'}</span>
+                        </div> */}
 
-                    <div className="goods-member">판매자: {p.nickname}</div>
-                    <div>조회수: {p.viewCount}</div>
-                    <div className="goods-status">
-                      <span className={`status-badge ${p.status === 'ON_SALE' ? 'on-sale' : p.status === 'RESERVED' ? 'reserved' : 'sold'}`}>
-                        {p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}
-                      </span>
-                      <span className={`trade-type-badge ${p.tradeType === 'SALE' ? 'sale' : p.tradeType === 'AUCTION' ? 'auction' : p.tradeType === 'SHARE' ? 'share' : ''}`}>
-                        {p.tradeType === 'SALE' ? '판매' : p.tradeType === 'AUCTION' ? '경매' : p.tradeType === 'SHARE' ? '나눔' : p.tradeType || '미정'}
-                      </span>
+                        <div className="goods-member">판매자: {p.nickname}</div>
+                        <div>조회수: {p.viewCount}</div>
+                        <div className="goods-status">
+                          <span className={`status-badge ${p.status === 'ON_SALE' ? 'on-sale' : p.status === 'RESERVED' ? 'reserved' : 'sold'}`}>
+                            {p.status==='ON_SALE'?'판매중':p.status==='RESERVED'?'예약':'판매완료'}
+                          </span>
+                          <span className={`trade-type-badge ${p.tradeType === 'SALE' ? 'sale' : p.tradeType === 'AUCTION' ? 'auction' : p.tradeType === 'SHARE' ? 'share' : ''}`}>
+                            {p.tradeType === 'SALE' ? '판매' : p.tradeType === 'AUCTION' ? '경매' : p.tradeType === 'SHARE' ? '나눔' : p.tradeType || '미정'}
+                          </span>
+                        </div>
+                        <div className="goods-date">
+                          {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
+                        </div>
+                      </div>
                     </div>
-                    <div className="goods-date">
-                      {p.createdAt ? new Date(p.createdAt).toLocaleString() : ''}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            {/* 페이지네이션 */}
-            <div className="goods-pagination">
-              <div className="goods-page-info">
-                총 {filteredItems.length}개 중 {startIndex + 1}-{Math.min(endIndex, filteredItems.length)}개 표시
-              </div>
-              
-              {totalPages > 1 ? (
-                <>
-                  <button className="goods-page-btn goods-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>이전</button>
-                  <div className="goods-page-numbers">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        className={`goods-page-number ${currentPage === page ? 'active' : ''}`}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                {/* 페이지네이션 */}
+                <div className="goods-pagination">
+                  <div className="goods-page-info">
+                    총 {filteredItems.length}개 중 {startIndex + 1}-{Math.min(endIndex, filteredItems.length)}개 표시
                   </div>
-                  <button className="goods-page-btn goods-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>다음</button>
-                </>
-              ) : (
-                <div className="goods-page-single">페이지 1 / 1</div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="goods-empty">
-            <div className="goods-empty-icon">📦</div>
-            <div className="goods-empty-text">조건에 맞는 물품이 없습니다</div>
-            <button className="goods-empty-btn" onClick={() => { navi("/board/post"); }}>
-              첫 번째 물품 등록하기
-            </button>
+                  
+                  {totalPages > 1 ? (
+                    <>
+                      <button className="goods-page-btn goods-prev-btn" onClick={handlePrevPage} disabled={currentPage === 1}>이전</button>
+                      <div className="goods-page-numbers">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            className={`goods-page-number ${currentPage === page ? 'active' : ''}`}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button className="goods-page-btn goods-next-btn" onClick={handleNextPage} disabled={currentPage === totalPages}>다음</button>
+                    </>
+                  ) : (
+                    <div className="goods-page-single">페이지 1 / 1</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="goods-empty">
+                <div className="goods-empty-icon">📦</div>
+                <div className="goods-empty-text">조건에 맞는 물품이 없습니다</div>
+                <button className="goods-empty-btn" onClick={() => { navi("/board/post"); }}>
+                  첫 번째 물품 등록하기
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* 최상단으로 스크롤하는 화살표 버튼 */}
         {showScrollTop && (
@@ -392,7 +417,7 @@ useEffect(() => {
             onClick={scrollToTop}
             title="최상단으로 이동"
           >
-            ↑
+            <KeyboardArrowUpRoundedIcon />
           </button>
         )}
       </div>
