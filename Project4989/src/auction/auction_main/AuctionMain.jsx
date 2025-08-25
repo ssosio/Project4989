@@ -23,7 +23,7 @@ const AuctionMain = () => {
 
   const fetchAuctionList = async () => {
     try {
-      const response = await axios.get('http://192.168.10.138:4989/auction');
+      const response = await axios.get('http://localhost:4989/auction');
       setAuctionList(response.data);
       
       // 낙찰자 닉네임, 사진, 최고가 가져오기
@@ -35,7 +35,7 @@ const AuctionMain = () => {
         // 낙찰자 닉네임 가져오기
         if (auction.winnerId) {
           try {
-            const nicknameResponse = await axios.get(`http://192.168.10.138:4989/auction/member/${auction.winnerId}`);
+            const nicknameResponse = await axios.get(`http://localhost:4989/auction/member/${auction.winnerId}`);
             nicknames[auction.postId] = nicknameResponse.data.nickname;
           } catch (err) {
             console.error(`낙찰자 닉네임 조회 실패 (ID: ${auction.winnerId}):`, err);
@@ -45,7 +45,7 @@ const AuctionMain = () => {
         
         // 경매 사진 가져오기 (첫 번째 사진만)
         try {
-          const photoResponse = await axios.get(`http://192.168.10.138:4989/auction/photos/${auction.postId}`);
+          const photoResponse = await axios.get(`http://localhost:4989/auction/photos/${auction.postId}`);
           if (photoResponse.data && photoResponse.data.length > 0) {
             photos[auction.postId] = photoResponse.data[0].photo_url;
           }
@@ -55,7 +55,7 @@ const AuctionMain = () => {
         
         // 최고가 가져오기
         try {
-          const bidResponse = await axios.get(`http://192.168.10.138:4989/auction/highest-bid/${auction.postId}`);
+          const bidResponse = await axios.get(`http://localhost:4989/auction/highest-bid/${auction.postId}`);
           if (bidResponse.data && bidResponse.data.bidAmount) {
             highestBids[auction.postId] = bidResponse.data.bidAmount;
           }
