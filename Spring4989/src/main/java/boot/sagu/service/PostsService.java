@@ -13,12 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.CarDto;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.ItemDto;
+import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
@@ -335,19 +338,69 @@ public class PostsService implements PostsServiceInter {
 	}
 	
 	//검색
-	public List<PostsDto> searchAll(String keyword, String postType, int page, int size) {
+	public List<PostsDto> searchAll(Map<String, Object> searchParams) {
+		
+		
+		
+        // 파라미터 추출 및 정리
+        String keyword = (String) searchParams.get("keyword");
+        String postType = (String) searchParams.get("postType");
+        String status = (String) searchParams.get("status");
+        String tradeType = (String) searchParams.get("tradeType");
+        Integer minPrice = (Integer) searchParams.get("minPrice");
+        Integer maxPrice = (Integer) searchParams.get("maxPrice");
+        Integer minYear = (Integer) searchParams.get("minYear");
+        Integer maxYear = (Integer) searchParams.get("maxYear");
+        Integer minArea = (Integer) searchParams.get("minArea");
+        Integer maxArea = (Integer) searchParams.get("maxArea");
+        String categoryId = (String) searchParams.get("categoryId");
+        String sortBy = (String) searchParams.get("sortBy");
+        String sortOrder = (String) searchParams.get("sortOrder");
+        Integer page = (Integer) searchParams.get("page");
+        Integer size = (Integer) searchParams.get("size");
+        Long memberId = (Long)searchParams.get("memberId");
+        
+        // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
         String pt = (postType == null || postType.isBlank()) ? "ALL" : postType.trim().toUpperCase();
-        int p = Math.max(1, page);
-        int s = Math.max(1, size);
-        int offset = (p - 1) * s;
-        return postMapper.searchAll(kw, pt, s, offset);
+        String st = (status == null || status.isBlank()) ? "ALL" : status.trim().toUpperCase();
+        String tt = (tradeType == null || tradeType.isBlank()) ? "ALL" : tradeType.trim().toUpperCase();
+        String cat = (categoryId == null || categoryId.isBlank()) ? "ALL" : categoryId.trim();
+        String sb = (sortBy == null || sortBy.isBlank()) ? "" : sortBy.trim();
+        String so = (sortOrder == null || sortOrder.isBlank()) ? "" : sortOrder.trim();
+        
+        int p = Math.max(1, page != null ? page : 1);
+        int s = Math.max(1, size != null ? size : 12);
+        int offset =  Math.max(0,(p - 1) * s);
+        
+        return postMapper.searchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
+        		minArea, maxArea, cat, sb, so, s, offset,memberId);
     }
 
-    public int countSearchAll(String keyword, String postType) {
+    public int countSearchAll(Map<String, Object> searchParams) {
+        // 파라미터 추출 및 정리
+        String keyword = (String) searchParams.get("keyword");
+        String postType = (String) searchParams.get("postType");
+        String status = (String) searchParams.get("status");
+        String tradeType = (String) searchParams.get("tradeType");
+        Integer minPrice = (Integer) searchParams.get("minPrice");
+        Integer maxPrice = (Integer) searchParams.get("maxPrice");
+        Integer minYear = (Integer) searchParams.get("minYear");
+        Integer maxYear = (Integer) searchParams.get("maxYear");
+        Integer minArea = (Integer) searchParams.get("minArea");
+        Integer maxArea = (Integer) searchParams.get("maxArea");
+        String categoryId = (String) searchParams.get("categoryId");
+        Long memberId = (Long)searchParams.get("memberId");
+        
+        // 기본값 설정
         String kw = keyword == null ? "" : keyword.trim();
         String pt = (postType == null || postType.isBlank()) ? "ALL" : postType.trim().toUpperCase();
-        return postMapper.countSearchAll(kw, pt);
+        String st = (status == null || status.isBlank()) ? "ALL" : status.trim().toUpperCase();
+        String tt = (tradeType == null || tradeType.isBlank()) ? "ALL" : tradeType.trim().toUpperCase();
+        String cat = (categoryId == null || categoryId.isBlank()) ? "ALL" : categoryId.trim();
+        
+        return postMapper.countSearchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
+        		minArea, maxArea, cat,memberId);
     }
 	
 	// 게시물 소유자 조회

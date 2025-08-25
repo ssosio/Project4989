@@ -21,4 +21,5 @@ public interface MemberServiceInter {
     // 마이페이지 관련 메서드들
     public void updateProfile(MemberDto member);
     public String updateProfileImage(String loginId, MultipartFile profileImageFile);
+    
 }

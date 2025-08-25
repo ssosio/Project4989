@@ -109,6 +109,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                requestURI.startsWith("/api/auth") ||
                requestURI.equals("/api/auctions/portone/webhook") ||
                requestURI.startsWith("/api/auth") ||     // ← refresh 포함
-               requestURI.equals("/error");
+               requestURI.equals("/error") ||
+               // 경매 관련 공개 API들
+               requestURI.startsWith("/auction/image/") ||
+               requestURI.startsWith("/auction/photos/") ||
+               requestURI.startsWith("/auction/detail/") ||
+               requestURI.startsWith("/auction/highest-bid/") ||
+               requestURI.startsWith("/auction/member/") ||
+               requestURI.startsWith("/auction/favorite/count/") ||
+               requestURI.startsWith("/auction/bid-history/") ||
+               requestURI.startsWith("/auction/room/") ||
+               requestURI.equals("/auction");
     }
 }

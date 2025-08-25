@@ -1,5 +1,7 @@
 package boot.sagu.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -34,4 +36,11 @@ public interface MemberMapper {
     
     // loginId로 memberId 조회
     public Integer findMemberIdByLoginId(@Param("loginId") String loginId);
+    
+    // 관리자용 메서드들
+    public MemberDto getMemberById(@Param("memberId") Long memberId);
+    public List<MemberDto> getAllMembersWithPaging(@Param("size") int size, @Param("offset") int offset);
+    public List<MemberDto> searchMembers(@Param("search") String search, @Param("size") int size, @Param("offset") int offset);
+    public int countAllMembers();
+    public int countSearchMembers(@Param("search") String search);
 }
