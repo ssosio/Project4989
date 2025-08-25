@@ -56,6 +56,7 @@ const GoodsDetail = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   // const [selectedBuyerId, setSelectedBuyerId] = useState(null); // 제거
   const [hasReview, setHasReview] = useState(false);
+  const [reviewCompleted, setReviewCompleted] = useState(false); // 추가
 
   // 💡 수정된 useEffect: userInfo 또는 postId가 변경될 때 API를 다시 호출하도록 변경
   useEffect(() => {
@@ -234,6 +235,8 @@ const GoodsDetail = () => {
   };
 
   const handleReviewSubmitted = () => {
+    console.log('후기 작성 완료됨');
+    setReviewCompleted(true); // 후기 작성 완료 상태로 설정
     setHasReview(true);
     setShowReviewModal(false);
   };

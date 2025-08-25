@@ -90,4 +90,5 @@ public class MemberService implements MemberServiceInter {
 		
 		return profileImageUrl;
 	}
+	
 }
