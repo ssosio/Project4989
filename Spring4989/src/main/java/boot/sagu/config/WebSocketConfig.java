@@ -20,6 +20,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("http://localhost:5173",
+                					"http://192.168.10.136:5173",
                 					"http://192.168.10.138:5173",
                 					"http://192.168.10.139:5173",
                 					"https://*.ngrok-free.app", // ★ 추가

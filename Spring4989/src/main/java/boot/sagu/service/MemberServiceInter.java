@@ -7,6 +7,7 @@ import boot.sagu.dto.MemberDto;
 public interface MemberServiceInter {
     public void signup(MemberDto dto,MultipartFile profileImageFile);
     public MemberDto getMemberByLoginId(String loginId);
+    public MemberDto getMemberById(Long memberId); // 추가
     boolean isLoginIdAvailable(String loginId);
     // 아이디 찾기 - 이메일과 전화번호로 회원 조회
     public MemberDto findByEmailAndPhone(String email, String phoneNumber);
@@ -20,4 +21,5 @@ public interface MemberServiceInter {
     // 마이페이지 관련 메서드들
     public void updateProfile(MemberDto member);
     public String updateProfileImage(String loginId, MultipartFile profileImageFile);
+    
 }

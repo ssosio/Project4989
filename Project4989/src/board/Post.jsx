@@ -271,7 +271,7 @@ const Post = () => {
                                     <select name="postType" id="" value={postType} onChange={(e) => {
                                         setPostType(e.target.value);
                                     }}>
-                                        <option value="" disabled selected>물건타입을 선택해 주세요</option>
+                                        <option value=""  selected>물건타입을 선택해 주세요</option>
                                         <option value="ITEMS" selected>중고물품</option>
                                         <option value="CARS">자동차</option>
                                         <option value="REAL_ESTATES">부동산</option>
@@ -287,7 +287,7 @@ const Post = () => {
                                             <select name='propertyType' value={propertyType} onChange={(e) => {
                                                 setPropertyType(e.target.value);
                                             }}>
-                                                <option value="" disabled selected>매물종류를 선택해 주세요</option>
+                                                <option value=""  selected>매물종류를 선택해 주세요</option>
                                                 <option value="apt">아파트</option>
                                                 <option value="studio">오피스텔</option>
                                                 <option value="oneroom">원룸</option>
@@ -321,7 +321,7 @@ const Post = () => {
                                             <select name='dealType' value={dealType} onChange={(e) => {
                                                 setDealType(e.target.value);
                                             }}>
-                                                <option value="" disabled selected>거래유형을 선택해 주세요</option>
+                                                <option value=""  selected>거래유형을 선택해 주세요</option>
                                                 <option value="lease">전세</option>
                                                 <option value="rent">월세</option>
                                                 <option value="leaseAndrent">전월세</option>
@@ -340,7 +340,7 @@ const Post = () => {
                                             <select name='brand' value={brand} onChange={(e) => {
                                                 setBrand(e.target.value);
                                             }}>
-                                                <option value="" disabled selected>브랜드를 선택해 주세요</option>
+                                                <option value=""  selected>브랜드를 선택해 주세요</option>
                                                 <option value="kia">기아</option>
                                                 <option value="hyundai">현대</option>
                                                 <option value="benz">벤츠</option>
@@ -375,7 +375,7 @@ const Post = () => {
                                             <select name='fuelType' value={fuelType} onChange={(e) => {
                                                 setFuelType(e.target.value);
                                             }}>
-                                                <option value="" disabled selected>연료타입을 선택해 주세요</option>
+                                                <option value=""  selected>연료타입을 선택해 주세요</option>
                                                 <option value="gasoline">휘발유</option>
                                                 <option value="diesel">경유</option>
                                                 <option value="electric">전기</option>
@@ -387,7 +387,7 @@ const Post = () => {
                                             <select name='transmission' value={transmission} onChange={(e) => {
                                                 setTransmission(e.target.value);
                                             }}>
-                                                <option value="" disabled selected>변속기타입을 선택해 주세요</option>
+                                                <option value=""  selected>변속기타입을 선택해 주세요</option>
                                                 <option value="auto">오토</option>
                                                 <option value="stick">수동</option>
                                             </select>
@@ -404,7 +404,7 @@ const Post = () => {
                                             <select name="tradeType" id="" value={tradeType} onChange={(e) => {
                                                 setTradeType(e.target.value);
                                             }}>
-                                                <option value="" disabled selected>판매타입을 선택해 주세요</option>
+                                                <option value=""  selected>판매타입을 선택해 주세요</option>
                                                 <option value="SALE">판매</option>
                                                 <option value="AUCTION">경매</option>
                                                 <option value="SHARE">나눔</option>
@@ -420,7 +420,7 @@ const Post = () => {
                                     <td>
                                         <label>대분류
                                             <select onChange={handleParentChange} value={selectedParent}>
-                                                <option value=""></option>
+                                                <option value="">대분류 선택</option>
                                                 {
                                                     parents.map(p => (
                                                         <option key={p.categoryId} value={p.categoryId}>{p.name}</option>
@@ -432,7 +432,7 @@ const Post = () => {
                                     <td>
                                         <label>소분류
                                             <select onChange={handleChildChange} value={selectedChild}>
-                                                <option value=""></option>
+                                                <option value="">소분류 선택</option>
                                                 {
                                                     children.map(c => (
                                                         <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
@@ -446,7 +446,7 @@ const Post = () => {
                                             <select value={conditions} onChange={(e) => {
                                                 setConditions(e.target.value);
                                             }}>
-                                                <option value="">선택해주세요</option>
+                                                <option value="">상태를 선택해주세요</option>
                                                 <option value="best">상</option>
                                                 <option value="good">중</option>
                                                 <option value="bad">하</option>

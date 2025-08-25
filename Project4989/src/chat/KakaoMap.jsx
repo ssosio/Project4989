@@ -78,7 +78,6 @@ const RadiusInput = styled.input`
 const KakaoMap = ({ mode = null, onAddressSelect }) => {
     const isKakaoLoaded = useKakaoLoader();
     const [map, setMap] = useState(null);
-    const [circle, setCircle] = useState(null);
     const [radius, setRadius] = useState(1000);
     const [center, setCenter] = useState(null);
     const [address, setAddress] = useState('');
@@ -118,20 +117,6 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
             position: centerLatLng,
         });
         setMarker(newMarker);
-
-        if (circle) circle.setMap(null);
-        const newCircle = new kakao.maps.Circle({
-            center: centerLatLng,
-            radius: radius,
-            strokeWeight: 1,
-            strokeColor: '#007bff',
-            strokeOpacity: 0.5,
-            strokeStyle: 'solid',
-            fillColor: '#007bff',
-            fillOpacity: 0.2
-        });
-        newCircle.setMap(map);
-        setCircle(newCircle);
 
         map.panTo(centerLatLng);
     }, [map, center, radius]);
@@ -189,8 +174,13 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
         setAddress(place.address_name); // ← 이거 추가
         setCenter({ lat: parseFloat(place.y), lng: parseFloat(place.x) }); // 지도 이동
         setPlaces([]); // 클릭 후 자동완성 목록 숨기기
-        // 부모 컴포넌트로 선택된 주소 정보 전달
-        onAddressSelect?.(selectedAddressInfo, false);
+        
+        // mode가 'address-select'일 때는 onAddressSelect를 호출하지 않음
+        // 주소만 텍스트창에 입력하고, 사용자가 직접 추가 버튼을 눌러야 함
+        if (mode === 'address-select') {
+            // 아무것도 하지 않음 - 주소만 텍스트창에 표시
+            return;
+        }
     };
 
     const handleRadiusChange = (e) => {
@@ -212,7 +202,7 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
             return;
         }
         try {
-            const response = await fetch('http://localhost:4989/api/region/register', {
+            const response = await fetch('http://localhost:4989/api/regions/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -249,7 +239,12 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
 
     return (
         <div>
-            <h1>지도 반경 설정 기능</h1>
+            {mode==='post' && (
+            <h1>희망 거래 주소</h1>
+            )}
+             {mode!=='post' && (
+            <h1>주소 등록</h1>
+            )}
             <SearchContainer>
                 <SearchInput
                     type="text"
@@ -285,19 +280,7 @@ const KakaoMap = ({ mode = null, onAddressSelect }) => {
             </SearchContainer>
 
             <MapContainer id="map">
-                <RadiusControl>
-                    <Typography variant="body1">
-                        반경: {radius}m
-                    </Typography>
-                    <RadiusInput
-                        type="range"
-                        min="100"
-                        max="5000"
-                        step="100"
-                        value={radius}
-                        onChange={handleRadiusChange}
-                    />
-                </RadiusControl>
+              
             </MapContainer>
 
         </div>

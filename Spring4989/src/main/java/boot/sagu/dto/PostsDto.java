@@ -15,6 +15,7 @@ public class PostsDto {
     private Long memberId;      // member_id → memberId
     private String title;
     private String content;     // content 필드 추가
+    private Long buyerId;
     private BigDecimal price;
     private String tradeType;   // trade_type → tradeType
     private String status;
@@ -25,6 +26,10 @@ public class PostsDto {
     private Timestamp updatedAt; // updated_at → updatedAt
     private String postType;    // post_type → postType (새로 추가)
     private String mainPhotoUrl; // 메인 이미지 URL
+    private int location;
+    private String detail_location;
+    private double latitude;
+    private double longitude;
     
     // ENUM 정의 (참고용)
     public enum TradeType {

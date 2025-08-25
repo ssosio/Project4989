@@ -1,23 +1,34 @@
 package boot.sagu.controller;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.ResponseEntity;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import boot.sagu.dto.RegionDto;
 import boot.sagu.mapper.RegionMapper;
-
-import java.util.Arrays;
-import java.util.List;
+import boot.sagu.service.RegionService;
 
 @RestController
-@RequestMapping("/api/region")
+@RequestMapping("/api/regions")
 public class RegionController {
 
+    @Autowired
+    private RegionService regionService;
+    
     @Autowired
     private RegionMapper regionMapper;
 
@@ -26,10 +37,32 @@ public class RegionController {
             "서울", "부산", "대구", "인천",
             "광주", "대전", "울산", "세종특별자치시"
     );
+    
+    // 지역 목록 조회 (페이지네이션)
+    @GetMapping
+    public ResponseEntity<Page<RegionDto>> getRegions(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        Page<RegionDto> regions = regionService.getRegions(pageable);
+        return ResponseEntity.ok(regions);
+    }
 
+    // 지역 상세 조회
+    @GetMapping("/{regionId}")
+    public ResponseEntity<RegionDto> getRegion(@PathVariable(name = "regionId") Integer regionId) {
+        RegionDto region = regionService.getRegionById(regionId);
+        if (region != null) {
+            return ResponseEntity.ok(region);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // 새 지역 추가
     @PostMapping("/register")
-    public ResponseEntity<String> registerRegion(@RequestBody RegionDto requestDto) {
-        // 1. 필수 정보 유효성 검사
+    public ResponseEntity<?> createRegion(@RequestBody RegionDto requestDto) {
+    	 // 1. 필수 정보 유효성 검사
         if (requestDto.getAddress() == null || requestDto.getAddress().isEmpty() ||
             requestDto.getLatitude() == 0 || requestDto.getLongitude() == 0) {
             return ResponseEntity.badRequest().body("필수 정보가 누락되었습니다.");
@@ -109,21 +142,28 @@ public class RegionController {
             return ResponseEntity.status(500).body("DB 저장 중 오류가 발생했습니다.");
         }
     }
-    
-    @GetMapping("/search")
-    public ResponseEntity<List<RegionDto>> searchRegions(@RequestParam("keyword") String keyword) {
-        if (keyword == null || keyword.isEmpty()) {
-            // 키워드가 없으면 빈 리스트를 반환
-            return ResponseEntity.ok(java.util.Collections.emptyList());
-        }
 
-        try {
-            List<RegionDto> results = regionMapper.findRegionsByKeyword(keyword);
-            return ResponseEntity.ok(results);
-        } catch (Exception e) {
-            System.err.println("DB 검색 오류: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(null);
+    // 지역 수정
+    @PutMapping("/{regionId}")
+    public ResponseEntity<RegionDto> updateRegion(
+            @PathVariable(name = "regionId") Integer regionId,
+            @RequestBody RegionDto regionDto) {
+        
+        regionDto.setRegionId(regionId);
+        RegionDto updatedRegion = regionService.updateRegion(regionDto);
+        if (updatedRegion != null) {
+            return ResponseEntity.ok(updatedRegion);
         }
+        return ResponseEntity.notFound().build();
+    }
+
+    // 지역 삭제
+    @DeleteMapping("/{regionId}")
+    public ResponseEntity<Void> deleteRegion(@PathVariable(name = "regionId") Integer regionId) {
+        boolean deleted = regionService.deleteRegion(regionId);
+        if (deleted) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }

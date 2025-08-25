@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
 import {
     Box,
     Dialog,
@@ -38,7 +38,7 @@ const StyledDialog = styled(Dialog)(({ zindex, offset }) => ({
         position: 'absolute',
         right: 0,
         top: 0,
-        height: '100vh',
+        height: '90vh',
         maxHeight: '100vh',
         width: 450,
         maxWidth: 'none',
@@ -95,7 +95,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     const isInitialScrollDone = useRef(false);
 
     const chatRoomId = chatRoom?.chatRoomId;
-    const SERVER_IP = '192.168.10.138';
+    const isAdminInvestigation = chatRoom?.isAdminInvestigation || false;
+    const SERVER_IP = '192.168.10.136';
     const SERVER_PORT = '4989';
 
     const handleMenuOpen = (event) => {
@@ -132,39 +133,33 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         setSelectedMessageId(null);
     };
 
-    const handleSearchChange = (e) => {
-        const q = e.target.value;
-        setSearchQuery(q);
-    };
-
-
-    useEffect(() => {
-        if (!searchQuery || !searchQuery.trim()) {
+    const performSearch = useCallback((query) => {
+        if (!query || !query.trim()) {
             setSearchResults([]);
             setCurrentResultIndex(0);
             return;
         }
-        const qLower = searchQuery.toLowerCase();
+        const qLower = query.toLowerCase();
         const results = messages.filter(msg =>
             msg?.message_type === 'text' &&
             msg?.message_content &&
             msg.message_content.toLowerCase().includes(qLower)
         );
         setSearchResults(results);
-        setCurrentResultIndex(0);
+        setCurrentResultIndex(0); // 새로운 검색 시에만 초기화
 
+        // 첫 번째 결과로 스크롤
         if (results.length > 0) {
-            const firstId = results[0].message_id;
-            setTimeout(() => {
-                if (messageRefs.current[firstId]) {
-                    messageRefs.current[firstId].scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                }
-            }, 100);
+            setTimeout(() => scrollToMessage(results[0].message_id), 100);
         }
-    }, [searchQuery, messages]);
+    }, [messages]); // 메시지 목록이 업데이트될 때만 함수를 재생성
+
+    const handleSearchChange = (e) => {
+        const q = e.target.value;
+        setSearchQuery(q);
+        performSearch(q);
+    };
+
 
     // ⭐ 수정된 useEffect: 초기 메시지 로드 후 한 번만 스크롤합니다.
     useEffect(() => {
@@ -298,13 +293,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 declaration_content: reportDetail
             };
             const response = await axios.post(
-                `http://${SERVER_IP}:${SERVER_PORT}/submit`,
+                `http://${SERVER_IP}:${SERVER_PORT}/api/chat-declarations/submit`,
                 reportData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
             if (response.status === 200 || response.status === 201) {
                 // 커스텀 모달로 변경 필요
-                console.log('신고가 접수되었습니다. 감사합니다.');
+                alert('신고가 접수되었습니다. 감사합니다.');
                 handleReportModalClose();
             } else {
                 // 커스텀 모달로 변경 필요
@@ -384,8 +379,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
                 const sentMessage = response.data;
+                // 🔔 실시간 업데이트: 이미지 전송 즉시 ChatMain에 반영
                 if (onUpdateLastMessage) {
-                    onUpdateLastMessage(chatRoomId, "사진", 'image', sentMessage.createdAt);
+                    const currentTime = sentMessage.createdAt || new Date().toISOString();
+                    onUpdateLastMessage(chatRoomId, "사진", 'image', currentTime);
+
+                    // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
+                    if (onMarkAsRead) {
+                        onMarkAsRead(chatRoomId);
+                    }
                 }
             }
             setSelectedImages([]);
@@ -414,20 +416,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
             message_type: 'text',
         };
 
-        // 🔧 추가: 낙관적 업데이트로 메시지를 먼저 화면에 표시
-        const newMessage = {
-            message_id: Date.now(),
-            chat_room_id: chatRoomId,
-            sender_id: userInfo.memberId,
-            message_type: 'text',
-            message_content: message,
-            created_at: new Date().toISOString(),
-            is_read: 1,
-            status: 'sending'
-        };
-
-        // 메시지를 먼저 상태에 추가
-        setMessages(prevMessages => [...prevMessages, newMessage]);
+        // 🔧 수정: 낙관적 업데이트 제거하여 중복 출력 방지
+        // 메시지 전송만 하고, 서버 응답을 기다림
 
         // 입력창 비우기
         setMessage('');
@@ -438,11 +428,21 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 body: JSON.stringify(webSocketMessage),
             });
 
+            // 🔔 실시간 업데이트: 메시지 전송 즉시 ChatMain에 반영
             if (onUpdateLastMessage) {
-                onUpdateLastMessage(chatRoomId, message, 'text', new Date().toISOString());
+                const currentTime = new Date().toISOString();
+                onUpdateLastMessage(chatRoomId, message, 'text', currentTime);
+
+                // 실시간으로 ChatMain의 unreadCount 업데이트 (본인이 보낸 메시지는 읽음 처리)
+                if (onMarkAsRead) {
+                    onMarkAsRead(chatRoomId);
+                }
             }
 
-            // 🔧 제거: useEffect에서 자동으로 스크롤 처리하므로 여기서는 불필요
+            // 🔧 추가: 메시지 전송 후 스크롤 처리
+            setTimeout(() => {
+                scrollToBottom();
+            }, 100);
 
         } catch (error) {
             console.error('텍스트 메시지 전송 실패:', error);
@@ -633,7 +633,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         };
     }, [open, chatRoomId, userInfo?.memberId]);
 
-    // 🔧 추가: 메시지가 추가될 때마다 자동 스크롤 (본인이 보낸 메시지일 때만)
+    // 🔧 수정: 본인이 보낸 메시지일 때만 자동 스크롤
     useEffect(() => {
         if (messages.length > 0) {
             const lastMessage = messages[messages.length - 1];
@@ -641,7 +641,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 // 본인이 보낸 메시지일 때만 스크롤
                 setTimeout(() => {
                     scrollToBottom();
-                }, 50);
+                }, 100);
             }
         }
     }, [messages.length, userInfo?.memberId]);
@@ -744,6 +744,43 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
                             {otherUserInfo?.nickname || 'Unknown'}
                         </Typography>
+                        {/* 물품 제목 표시 */}
+                        {chatRoom?.postTitle && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: '#4A90E2',
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    mt: 0.5,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    maxWidth: 250
+                                }}
+                            >
+                                🛍️ {chatRoom.postTitle}
+                            </Typography>
+                        )}
+                        {/* 관리자 조사 모드 표시 */}
+                        {isAdminInvestigation && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: '#d32f2f',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    mt: 0.5,
+                                    bgcolor: '#ffebee',
+                                    px: 1,
+                                    py: 0.5,
+                                    borderRadius: 1,
+                                    display: 'inline-block'
+                                }}
+                            >
+                                🔍 관리자 조사 모드
+                            </Typography>
+                        )}
                     </Box>
 
                     <IconButton onClick={toggleSearch}>
@@ -975,7 +1012,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             style={{ display: 'none' }}
                             onChange={handleImageUpload}
                         />
-                        {selectedImages.length > 0 && (
+                        {/* 관리자 조사 모드에서는 이미지 첨부 비활성화 */}
+                        {!isAdminInvestigation && selectedImages.length > 0 && (
                             <Box sx={{
                                 display: 'flex',
                                 gap: 1,
@@ -1018,46 +1056,64 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             </Box>
                         )}
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton
-                                onClick={() => fileInputRef.current?.click()}
-                                sx={{ color: '#666' }}
-                            >
-                                <AttachFileRoundedIcon />
-                            </IconButton>
-                            <TextField
-                                fullWidth
-                                multiline
-                                maxRows={4}
-                                placeholder="메시지를 입력하세요..."
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                variant="outlined"
-                                size="small"
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={handleSendMessage}
-                                                disabled={!message.trim() && selectedImages.length === 0}
-                                                sx={{
-                                                    color: (message.trim() || selectedImages.length > 0) ? '#3182f6' : '#ccc'
-                                                }}
-                                            >
-                                                <SendRoundedIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 24,
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 24
+                        {/* 관리자 조사 모드에서는 메시지 입력 비활성화 */}
+                        {!isAdminInvestigation ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <IconButton
+                                    onClick={() => fileInputRef.current?.click()}
+                                    sx={{ color: '#666' }}
+                                >
+                                    <AttachFileRoundedIcon />
+                                </IconButton>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    maxRows={4}
+                                    placeholder="메시지를 입력하세요..."
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    variant="outlined"
+                                    size="small"
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={handleSendMessage}
+                                                    disabled={!message.trim() && selectedImages.length === 0}
+                                                    sx={{
+                                                        color: (message.trim() || selectedImages.length > 0) ? '#3182f6' : '#ccc'
+                                                    }}
+                                                >
+                                                    <SendRoundedIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                        sx: {
+                                            borderRadius: 24,
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 24
+                                            }
                                         }
-                                    }
-                                }}
-                            />
-                        </Box>
+                                    }}
+                                />
+                            </Box>
+                        ) : (
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                p: 2,
+                                bgcolor: 'grey.100',
+                                borderRadius: 2,
+                                border: '1px dashed',
+                                borderColor: 'grey.400'
+                            }}>
+                                <Typography variant="body2" color="textSecondary">
+                                    🔍 관리자 조사 모드 - 메시지 전송 불가
+                                </Typography>
+                            </Box>
+                        )}
                     </Box>
                 </Box>
             </StyledDialog>

@@ -632,71 +632,68 @@ public class AuctionService implements AuctionServiceInter {
 		}
 	}
 
-	// 내 게시글 타입별 개수 조회 (위쪽 필터용)
-	public Map<String, Object> getMyPostsCounts(long memberId) {
-		try {
-			System.out.println("AuctionService.getMyPostsCounts 호출: memberId=" + memberId);
-			
-			Map<String, Object> counts = auctionMapper.getMyPostsCounts(memberId);
-			
-			System.out.println("조회된 개수: " + counts);
-			
-			return counts;
-		} catch (Exception e) {
-			System.err.println("내 게시글 개수 조회 실패: memberId=" + memberId + ", 오류: " + e.getMessage());
-			e.printStackTrace();
-			return Map.of("total", 0, "auction", 0, "general", 0, "giveaway", 0);
-		}
+	// ==================================마이페이지 판매 내역 관련 메서드==================================
+	
+	// 내 게시글 타입별 개수 조회
+	public Map<String, Object> getMyPostsCounts(int memberId) {
+		return auctionMapper.getMyPostsCounts(memberId);
+	}
+	
+	// 내 게시글 상태별 개수 조회 (타입 필터 적용)
+	public Map<String, Object> getMyPostsStatusCounts(Map<String, Object> params) {
+		return auctionMapper.getMyPostsStatusCounts(params);
+	}
+	
+	// 내 게시글 목록 조회 (페이징 포함)
+	public List<PostsDto> getMyPosts(Map<String, Object> params) {
+		return auctionMapper.getMyPosts(params);
+	}
+	
+	// 내 게시글 총 개수 조회 (페이징용)
+	public int getMyPostsTotalCount(Map<String, Object> params) {
+		return auctionMapper.getMyPostsTotalCount(params);
 	}
 
-	// 내 게시글 조회 (마이페이지 거래내역용)
-	public List<Map<String, Object>> getMyPosts(long memberId, String type, String status) {
-		System.out.println("AuctionService.getMyPosts 호출: memberId=" + memberId + ", type=" + type + ", status=" + status);
-		
-		List<Map<String, Object>> posts = auctionMapper.getMyPosts(memberId, type, status);
-		System.out.println("AuctionService.getMyPosts 결과: " + posts.size() + "개 게시글");
-		
-		return posts;
+	// ==================================마이페이지 입찰 내역 관련 메서드==================================
+	
+	// 내 입찰 기록 조회 (페이징 포함)
+	@Override
+	public List<Map<String, Object>> getMyBids(int memberId, String status, int offset, int limit) {
+		return auctionMapper.getMyBids(memberId, status, offset, limit);
+	}
+	
+	// 내 입찰 기록 총 개수
+	@Override
+	public int getMyBidsTotalCount(int memberId) {
+		return auctionMapper.getMyBidsTotalCount(memberId);
+	}
+	
+	// 내 입찰 기록 상태별 개수
+	@Override
+	public Map<String, Object> getMyBidsStatusCounts(int memberId) {
+		return auctionMapper.getMyBidsStatusCounts(memberId);
 	}
 
-	// 경매 게시글만 조회
-	public List<Map<String, Object>> getMyAuctionPosts(long memberId, String status) {
-		System.out.println("AuctionService.getMyAuctionPosts 호출: memberId=" + memberId + ", status=" + status);
-		
-		List<Map<String, Object>> posts = auctionMapper.getMyAuctionPosts(memberId, status);
-		System.out.println("AuctionService.getMyAuctionPosts 결과: " + posts.size() + "개 게시글");
-		
-		return posts;
+	// ==================================마이페이지 찜한 상품 관련 메서드==================================
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesCounts(int memberId) {
+		return auctionMapper.getMyFavoritesCounts(memberId);
 	}
-
-	// 일반거래 게시글만 조회
-	public List<Map<String, Object>> getMyGeneralPosts(long memberId, String status) {
-		System.out.println("AuctionService.getMyGeneralPosts 호출: memberId=" + memberId + ", status=" + status);
-		
-		List<Map<String, Object>> posts = auctionMapper.getMyGeneralPosts(memberId, status);
-		System.out.println("AuctionService.getMyGeneralPosts 결과: " + posts.size() + "개 게시글");
-		
-		return posts;
+	
+	// 내 찜한 상품 목록 조회 (페이징 포함)
+	public List<Map<String, Object>> getMyFavorites(Map<String, Object> params) {
+		return auctionMapper.getMyFavorites(params);
 	}
-
-	// 나눔 게시글만 조회
-	public List<Map<String, Object>> getMyGiveawayPosts(long memberId, String status) {
-		System.out.println("AuctionService.getMyGiveawayPosts 호출: memberId=" + memberId + ", status=" + status);
-		
-		List<Map<String, Object>> posts = auctionMapper.getMyGiveawayPosts(memberId, status);
-		System.out.println("AuctionService.getMyGiveawayPosts 결과: " + posts.size() + "개 게시글");
-		
-		return posts;
+	
+	// 내 찜한 상품 총 개수 조회 (페이징용)
+	public int getMyFavoritesTotalCount(Map<String, Object> params) {
+		return auctionMapper.getMyFavoritesTotalCount(params);
 	}
-
-	// 유찰 게시글만 조회 (경매에서만 발생)
-	public List<Map<String, Object>> getMyCancelledAuctionPosts(long memberId) {
-		System.out.println("AuctionService.getMyCancelledAuctionPosts 호출: memberId=" + memberId);
-		
-		List<Map<String, Object>> posts = auctionMapper.getMyCancelledAuctionPosts(memberId);
-		System.out.println("AuctionService.getMyCancelledAuctionPosts 결과: " + posts.size() + "개 게시글");
-		
-		return posts;
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesTypeCounts(int memberId) {
+		return auctionMapper.getMyFavoritesTypeCounts(memberId);
 	}
 
 	@Override

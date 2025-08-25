@@ -229,13 +229,38 @@ const ProfileSection = ({ userInfo }) => {
         return;
       }
 
-      await axios.put(`http://localhost:4989/member/profile?loginId=${userInfo.loginId}`, profileData, {
+      const response = await axios.put(`http://localhost:4989/member/profile?loginId=${userInfo.loginId}`, profileData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      setMessage({ type: 'success', text: '프로필이 성공적으로 수정되었습니다.' });
+      // 새로운 토큰과 메시지 받기
+      const { message: responseMessage, token: newToken } = response.data;
+      
+      // 새로운 토큰을 localStorage에 저장
+      localStorage.setItem('jwtToken', newToken);
+      
+      // axios 헤더에 새로운 토큰 설정
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // 새로운 토큰으로 사용자 정보 디코딩
+      const { jwtDecode } = await import('jwt-decode');
+      const decodedToken = jwtDecode(newToken);
+      
+      // 업데이트된 사용자 정보로 전역 상태 업데이트
+      const updatedUserInfo = {
+        loginId: decodedToken.sub,
+        memberId: decodedToken.memberId,
+        nickname: decodedToken.nickname,
+        role: decodedToken.role,
+        profileImageUrl: decodedToken.profileImageUrl
+      };
+      
+      // AuthContext의 updateUserInfo 함수 호출
+      updateUserInfo(updatedUserInfo);
+
+      setMessage({ type: 'success', text: responseMessage });
       setIsEditing(false);
 
       // 성공 메시지 3초 후 제거
@@ -369,7 +394,7 @@ const ProfileSection = ({ userInfo }) => {
         return;
       }
 
-      await axios.put(`http://localhost:4989/member/password?loginId=${userInfo.loginId}`, {
+      const response = await axios.put(`http://localhost:4989/member/password?loginId=${userInfo.loginId}`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, {
@@ -378,7 +403,32 @@ const ProfileSection = ({ userInfo }) => {
         }
       });
 
-      setMessage({ type: 'success', text: '비밀번호가 성공적으로 변경되었습니다.' });
+      // 새로운 토큰과 메시지 받기
+      const { message: responseMessage, token: newToken } = response.data;
+      
+      // 새로운 토큰을 localStorage에 저장
+      localStorage.setItem('jwtToken', newToken);
+      
+      // axios 헤더에 새로운 토큰 설정
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      // 새로운 토큰으로 사용자 정보 디코딩
+      const { jwtDecode } = await import('jwt-decode');
+      const decodedToken = jwtDecode(newToken);
+      
+      // 업데이트된 사용자 정보로 전역 상태 업데이트
+      const updatedUserInfo = {
+        loginId: decodedToken.sub,
+        memberId: decodedToken.memberId,
+        nickname: decodedToken.nickname,
+        role: decodedToken.role,
+        profileImageUrl: decodedToken.profileImageUrl
+      };
+      
+      // AuthContext의 updateUserInfo 함수 호출
+      updateUserInfo(updatedUserInfo);
+
+      setMessage({ type: 'success', text: responseMessage });
       setIsPasswordDialogOpen(false);
       setPasswordData({
         currentPassword: '',
@@ -390,18 +440,14 @@ const ProfileSection = ({ userInfo }) => {
       // 성공 메시지 3초 후 제거
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
-      console.error('비밀번호 변경 실패:', error);
+      console.error('비밀번호 변경에 실패했습니다:', error);
 
       // 인증 오류 처리
       if (handleAuthError(error)) {
         return;
       }
 
-      if (error.response?.status === 401) {
-        setPasswordError('현재 비밀번호가 올바르지 않습니다.');
-      } else {
-        setPasswordError('비밀번호 변경에 실패했습니다.');
-      }
+      setMessage({ type: 'error', text: '비밀번호 변경에 실패했습니다.' });
     }
   };
 
