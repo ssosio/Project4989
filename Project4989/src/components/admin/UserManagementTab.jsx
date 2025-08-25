@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Card,
   CardContent,
@@ -36,8 +36,10 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import api from '../../lib/api';
+import { AuthContext } from '../../context/AuthContext';
 
 const UserManagementTab = () => {
+  const { userInfo } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -78,7 +80,7 @@ const UserManagementTab = () => {
   // 회원 상세 정보 조회
   const handleUserDetail = async (user) => {
     try {
-      const response = await api.get(`/api/admin/members/${user.member_id}`);
+      const response = await api.get(`/api/admin/members/${user.memberId}`);
       setSelectedUser(response.data);
       setIsDetailOpen(true);
     } catch (error) {
@@ -94,11 +96,11 @@ const UserManagementTab = () => {
   // 회원 수정
   const handleEdit = (user) => {
     setEditForm({
-      member_id: user.member_id,
-      login_id: user.login_id,
+      member_id: user.memberId,
+      login_id: user.loginId,
       nickname: user.nickname,
       email: user.email,
-      phone_number: user.phone_number || '',
+      phone_number: user.phoneNumber || '',
       tier: user.tier
     });
     setIsEditOpen(true);
@@ -109,10 +111,21 @@ const UserManagementTab = () => {
       await api.put(`/api/admin/members/${editForm.member_id}`, editForm);
       
       // 로그 기록
+      console.log('전송할 액션 로그 데이터:', {
+        adminId: userInfo.memberId,
+        actionType: 'USER_UPDATE',
+        targetEntityType: 'MEMBER',
+        targetEntityId: editForm.member_id,
+        details: '회원 정보 수정'
+      });
+      console.log('userInfo:', userInfo);
+      console.log('userInfo.memberId:', userInfo.memberId);
+      
       await api.post('/api/admin/action-logs', {
-        action_type: 'USER_UPDATE',
-        target_entity_type: 'MEMBER',
-        target_entity_id: editForm.member_id,
+        adminId: userInfo.memberId,
+        actionType: 'USER_UPDATE',
+        targetEntityType: 'MEMBER',
+        targetEntityId: editForm.member_id,
         details: '회원 정보 수정'
       });
 
@@ -146,9 +159,10 @@ const UserManagementTab = () => {
 
       // 로그 기록
       await api.post('/api/admin/action-logs', {
-        action_type: actionType,
-        target_entity_type: 'MEMBER',
-        target_entity_id: userId,
+        adminId: userInfo.memberId,
+        actionType: actionType,
+        targetEntityType: 'MEMBER',
+        targetEntityId: userId,
         details: details
       });
 
@@ -177,9 +191,10 @@ const UserManagementTab = () => {
 
       // 로그 기록
       await api.post('/api/admin/action-logs', {
-        action_type: 'USER_DELETE',
-        target_entity_type: 'MEMBER',
-        target_entity_id: userId,
+        adminId: userInfo.memberId,
+        actionType: 'USER_DELETE',
+        targetEntityType: 'MEMBER',
+        targetEntityId: userId,
         details: '회원 삭제'
       });
 
@@ -276,54 +291,62 @@ const UserManagementTab = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.member_id}>
-                    <TableCell>{user.member_id}</TableCell>
-                    <TableCell>{user.login_id}</TableCell>
-                    <TableCell>{user.nickname}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone_number || '-'}</TableCell>
-                    <TableCell>{getTierText(user.tier)}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={getStatusText(user.status)} 
-                        color={getStatusColor(user.status)} 
-                        size="small" 
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.created_at).toLocaleDateString('ko-KR')}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton size="small" onClick={() => handleUserDetail(user)}>
-                        <VisibilityIcon />
-                      </IconButton>
-                      <IconButton size="small" color="primary" onClick={() => handleEdit(user)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        color={user.status === 'ACTIVE' ? 'warning' : 'success'}
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsBanOpen(true);
-                        }}
-                      >
-                        <BlockIcon />
-                      </IconButton>
-                      <IconButton 
-                        size="small" 
-                        color="error"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsDeleteOpen(true);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                {users && users.length > 0 ? (
+                  users.map((user) => (
+                    <TableRow key={user.memberId}>
+                      <TableCell>{user.memberId || 'N/A'}</TableCell>
+                      <TableCell>{user.loginId || 'N/A'}</TableCell>
+                      <TableCell>{user.nickname || 'N/A'}</TableCell>
+                      <TableCell>{user.email || 'N/A'}</TableCell>
+                      <TableCell>{user.phoneNumber || '-'}</TableCell>
+                      <TableCell>{getTierText(user.tier)}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={getStatusText(user.status)} 
+                          color={getStatusColor(user.status)} 
+                          size="small" 
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton size="small" onClick={() => handleUserDetail(user)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(user)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color={user.status === 'ACTIVE' ? 'warning' : 'success'}
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsBanOpen(true);
+                          }}
+                        >
+                          <BlockIcon />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          color="error"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsDeleteOpen(true);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                      {loading ? '로딩 중...' : '데이터가 없습니다.'}
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
@@ -346,15 +369,15 @@ const UserManagementTab = () => {
         <DialogContent>
           {selectedUser && (
             <Box sx={{ mt: 2 }}>
-              <Typography><strong>ID:</strong> {selectedUser.member_id}</Typography>
-              <Typography><strong>로그인 ID:</strong> {selectedUser.login_id}</Typography>
+              <Typography><strong>ID:</strong> {selectedUser.memberId}</Typography>
+              <Typography><strong>로그인 ID:</strong> {selectedUser.loginId}</Typography>
               <Typography><strong>닉네임:</strong> {selectedUser.nickname}</Typography>
               <Typography><strong>이메일:</strong> {selectedUser.email}</Typography>
-              <Typography><strong>전화번호:</strong> {selectedUser.phone_number || '-'}</Typography>
+              <Typography><strong>전화번호:</strong> {selectedUser.phoneNumber || '-'}</Typography>
               <Typography><strong>등급:</strong> {getTierText(selectedUser.tier)}</Typography>
               <Typography><strong>상태:</strong> {getStatusText(selectedUser.status)}</Typography>
-              <Typography><strong>가입일:</strong> {new Date(selectedUser.created_at).toLocaleString('ko-KR')}</Typography>
-              <Typography><strong>수정일:</strong> {new Date(selectedUser.updated_at).toLocaleString('ko-KR')}</Typography>
+              <Typography><strong>가입일:</strong> {new Date(selectedUser.createdAt).toLocaleString('ko-KR')}</Typography>
+              <Typography><strong>수정일:</strong> {new Date(selectedUser.updatedAt).toLocaleString('ko-KR')}</Typography>
             </Box>
           )}
         </DialogContent>
@@ -440,7 +463,7 @@ const UserManagementTab = () => {
           <Button onClick={() => setIsBanOpen(false)}>취소</Button>
           <Button 
             onClick={() => handleStatusChange(
-              selectedUser?.member_id, 
+              selectedUser?.memberId, 
               selectedUser?.status === 'ACTIVE' ? 'BANNED' : 'ACTIVE'
             )}
             variant="contained"
@@ -463,7 +486,7 @@ const UserManagementTab = () => {
         <DialogActions>
           <Button onClick={() => setIsDeleteOpen(false)}>취소</Button>
           <Button 
-            onClick={() => handleDelete(selectedUser?.member_id)}
+            onClick={() => handleDelete(selectedUser?.memberId)}
             variant="contained"
             color="error"
           >

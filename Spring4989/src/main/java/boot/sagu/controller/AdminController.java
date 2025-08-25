@@ -29,6 +29,8 @@ import boot.sagu.service.MemberServiceInter;
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ROLE_ADMIN')")
 public class AdminController {
+    
+
 
     @Autowired
     private MemberServiceInter memberService;
@@ -39,9 +41,9 @@ public class AdminController {
     // 회원 목록 조회 (페이징 및 검색)
     @GetMapping("/members")
     public ResponseEntity<?> getMembers(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "") String search) {
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "search", defaultValue = "") String search) {
         try {
             Pageable pageable = PageRequest.of(page - 1, size);
             Page<MemberDto> membersPage = adminService.getMembersWithPaging(pageable, search);
@@ -61,7 +63,7 @@ public class AdminController {
 
     // 회원 상세 정보 조회
     @GetMapping("/members/{memberId}")
-    public ResponseEntity<?> getMemberDetail(@PathVariable Long memberId) {
+    public ResponseEntity<?> getMemberDetail(@PathVariable(name = "memberId") Long memberId) {
         try {
             MemberDto member = memberService.getMemberById(memberId);
             if (member != null) {
@@ -77,7 +79,7 @@ public class AdminController {
 
     // 회원 정보 수정
     @PutMapping("/members/{memberId}")
-    public ResponseEntity<?> updateMember(@PathVariable Long memberId, @RequestBody MemberDto updateData) {
+    public ResponseEntity<?> updateMember(@PathVariable(name = "memberId") Long memberId, @RequestBody MemberDto updateData) {
         try {
             MemberDto existingMember = memberService.getMemberById(memberId);
             if (existingMember == null) {
@@ -110,7 +112,7 @@ public class AdminController {
     // 회원 상태 변경 (밴/해제)
     @PutMapping("/members/{memberId}/status")
     public ResponseEntity<?> updateMemberStatus(
-            @PathVariable Long memberId, 
+            @PathVariable(name = "memberId") Long memberId, 
             @RequestBody Map<String, String> statusData) {
         try {
             String newStatus = statusData.get("status");
@@ -137,7 +139,7 @@ public class AdminController {
 
     // 회원 삭제
     @DeleteMapping("/members/{memberId}")
-    public ResponseEntity<?> deleteMember(@PathVariable Long memberId) {
+    public ResponseEntity<?> deleteMember(@PathVariable(name = "memberId") Long memberId) {
         try {
             MemberDto existingMember = memberService.getMemberById(memberId);
             if (existingMember == null) {

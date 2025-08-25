@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE, // 예: http://localhost:4989
+  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:4989', // 기본값 설정
   withCredentials: false,
 });
 
