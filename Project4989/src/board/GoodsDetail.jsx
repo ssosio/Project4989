@@ -593,10 +593,12 @@ const GoodsDetail = () => {
               <button className="gooddetail-btn secondary" onClick={handleGoBackToList}>
                 목록
               </button>
+            </div>
 
-              {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
+            <div className="gooddetail-status-section">
+                {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
                 <div className="gooddetail-status-selector">
-                  <label htmlFor="status-select" className="gooddetail-status-label">판매 상태 변경:</label>
+                  <label htmlFor="status-select" className="gooddetail-status-label">판매 상태 변경</label>
                   <select
                     id="status-select"
                     className="gooddetail-status-select"
@@ -619,7 +621,7 @@ const GoodsDetail = () => {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
 
             <div className="gooddetail-meta">
               <div className="gooddetail-meta-item">
@@ -681,7 +683,8 @@ const GoodsDetail = () => {
                 <>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">브랜드</div>
-                    <div className="gooddetail-info-value">{cars.brand}</div>
+                    <div className="gooddetail-info-value">{cars.brand === 'kia' ? '기아' : cars.brand === 'hyundai' ? '현대' : cars.brand === 'benz' ? '벤츠' : cars.brand === 'audi' ? '아우디':'BMW'}</div>
+                    {/* <div className="gooddetail-info-value">{cars.brand}</div> */}
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">모델</div>
@@ -689,19 +692,21 @@ const GoodsDetail = () => {
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">연식</div>
-                    <div className="gooddetail-info-value">{cars.year}</div>
+                    <div className="gooddetail-info-value">{cars.year}년식</div>
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">주행거리</div>
-                    <div className="gooddetail-info-value">{cars.mileage}</div>
+                    <div className="gooddetail-info-value">{cars.mileage}km</div>
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">연료</div>
-                    <div className="gooddetail-info-value">{cars.fuelType}</div>
+                    <div className="gooddetail-info-value">{cars.fuelType === 'gasoline' ? '휘발유' : cars.fuelType === 'diesel' ? '경유' : '전기'}</div>
+                    {/* <div className="gooddetail-info-value">{cars.fuelType}</div> */}
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">변속기</div>
-                    <div className="gooddetail-info-value">{cars.transmission}</div>
+                    <div className="gooddetail-info-value">{cars.transmission === 'auto' ? '오토' : '수동'}</div>
+                    {/* <div className="gooddetail-info-value">{cars.transmission}</div> */}
                   </div>
                 </>
               )}

@@ -51,6 +51,12 @@ public interface PostsMapperInter {
 	//신고
 	public int insertReport(ReportsDto dto);
 	
+	// 신고 목록 조회
+	List<Map<String, Object>> getAllReports();
+	
+	// 신고 상태 업데이트
+	int updateReportStatus(@Param("reportId") Long reportId, @Param("status") String status);
+	
 	//검색
 	List<PostsDto> searchAll(
 		@Param("keyword") String keyword,

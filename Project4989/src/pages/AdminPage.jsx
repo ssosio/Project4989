@@ -185,11 +185,7 @@ const AdminPage = () => {
 
         {/* 게시글 신고 관리 탭 */}
         <TabPanel value={tabValue} index={3}>
-          <ReportManagementTab
-            reports={reports}
-            getStatusText={getStatusText}
-            getStatusColor={getStatusColor}
-          />
+          <ReportManagementTab />
         </TabPanel>
 
         {/* 채팅 신고 관리 탭 */}
@@ -208,12 +204,12 @@ const AdminPage = () => {
         <TabPanel value={tabValue} index={6}>
           <SystemSettingsTab />
         </TabPanel>
-      </Paper>
 
-      {/* 주소 관리 탭 */}
-      <TabPanel value={tabValue} index={7}>
-        <AddressManagementTab />
-      </TabPanel>
+        {/* 주소 관리 탭 */}
+        <TabPanel value={tabValue} index={7}>
+          <AddressManagementTab />
+        </TabPanel>
+      </Paper>
 
       {/* 모달들 */}
       <PostDetailModal

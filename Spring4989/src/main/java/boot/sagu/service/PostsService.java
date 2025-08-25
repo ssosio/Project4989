@@ -374,6 +374,14 @@ public class PostsService implements PostsServiceInter {
         int s = Math.max(1, size != null ? size : 12);
         int offset =  Math.max(0,(p - 1) * s);
         
+        // 디버깅용 로그
+        System.out.println("=== PostsService.searchAll 디버깅 ===");
+        System.out.println("page 파라미터: " + page);
+        System.out.println("size 파라미터: " + size);
+        System.out.println("계산된 페이지: " + p);
+        System.out.println("계산된 크기: " + s);
+        System.out.println("계산된 offset: " + offset);
+        
         return postMapper.searchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
         		minArea, maxArea, cat, sb, so, s, offset,memberId);
     }
@@ -487,6 +495,17 @@ public class PostsService implements PostsServiceInter {
 		}
 	}
 
+	// 신고 목록 조회
+	@Override
+	public List<Map<String, Object>> getAllReports() {
+		return postMapper.getAllReports();
+	}
+	
+	// 신고 상태 업데이트
+	@Override
+	public int updateReportStatus(Long reportId, String status) {
+		return postMapper.updateReportStatus(reportId, status);
+	}
 	
 	
 	

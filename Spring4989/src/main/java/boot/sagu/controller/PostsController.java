@@ -163,16 +163,23 @@ public class PostsController {
 			@RequestParam(value = "size", defaultValue = "12") int size) {
 		
 		try {
-			// 간단한 검색 파라미터를 Map으로 구성
-			Map<String, Object> searchParams = new HashMap<>();
-			searchParams.put("keyword", keyword);
-			searchParams.put("postType", "ALL");
-			searchParams.put("status", "ALL");
-			searchParams.put("tradeType", "ALL");
-			searchParams.put("categoryId", "ALL");
-			searchParams.put("sortBy", "");
-			searchParams.put("sortOrder", "");
-			searchParams.put("size", size);
+					// 간단한 검색 파라미터를 Map으로 구성
+		Map<String, Object> searchParams = new HashMap<>();
+		searchParams.put("keyword", keyword);
+		searchParams.put("postType", "ALL");
+		searchParams.put("status", "ALL");
+		searchParams.put("tradeType", "ALL");
+		searchParams.put("categoryId", "ALL");
+		searchParams.put("sortBy", "");
+		searchParams.put("sortOrder", "");
+		searchParams.put("page", page);
+		searchParams.put("size", size);
+		
+		// 디버깅용 로그
+		System.out.println("=== search-simple 디버깅 ===");
+		System.out.println("요청된 페이지: " + page);
+		System.out.println("요청된 크기: " + size);
+		System.out.println("searchParams: " + searchParams);
 			
 			List<PostsDto> searchResults = postService.searchAll(searchParams);
 			int totalCount = postService.countSearchAll(searchParams);
@@ -515,6 +522,45 @@ public class PostsController {
 		}
 		
 		return result;
+	}
+	
+	// 신고 목록 조회 API
+	@GetMapping("/reports")
+	public ResponseEntity<Map<String, Object>> getAllReports() {
+		try {
+			List<Map<String, Object>> reports = postService.getAllReports();
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"reports", reports
+			));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "신고 목록 조회 중 오류가 발생했습니다."));
+		}
+	}
+	
+	// 신고 상태 업데이트 API
+	@PutMapping("/reports/{reportId}/status")
+	public ResponseEntity<Map<String, Object>> updateReportStatus(
+			@PathVariable Long reportId,
+			@RequestParam String status) {
+		try {
+			int result = postService.updateReportStatus(reportId, status);
+			if (result > 0) {
+				return ResponseEntity.ok(Map.of(
+					"success", true,
+					"message", "신고 상태가 업데이트되었습니다."
+				));
+			} else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(Map.of("success", false, "message", "신고를 찾을 수 없습니다."));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "신고 상태 업데이트 중 오류가 발생했습니다."));
+		}
 	}
 	
 }

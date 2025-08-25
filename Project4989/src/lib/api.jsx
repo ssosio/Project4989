@@ -124,4 +124,5 @@ export const userAPI = {
   getMultipleUsers: (memberIds) => api.post('/api/users/multiple', memberIds),
 };
 
+export { api };
 export default api;

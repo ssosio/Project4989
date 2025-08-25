@@ -237,19 +237,25 @@
   width: 8px;
 }
 
-.goods-filters:hover::-webkit-scrollbar-track {
-  background: rgba(74, 144, 226, 0.1);
-  border-radius: 4px;
+.goods-filters::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.6) 0%, rgba(74, 144, 226, 0.8) 100%);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
 }
 
-.goods-filters:hover::-webkit-scrollbar-thumb {
-  background: rgba(74, 144, 226, 0.3);
-  border-radius: 4px;
-  transition: background 0.3s ease;
+.goods-filters::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.7) 0%, rgba(74, 144, 226, 0.9) 100%);
 }
 
-.goods-filters:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(74, 144, 226, 0.5);
+/* 스크롤바 화살표 버튼 숨기기 */
+.goods-filters::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Firefox 스크롤바 스타일링 */
+.goods-filters {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 144, 226, 0.6) rgba(74, 144, 226, 0.05);
+  scroll-behavior: smooth;
 }
 
 /* 등록 버튼 */

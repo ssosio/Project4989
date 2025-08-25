@@ -281,7 +281,7 @@ const Post = () => {
                         </tr>
                         {
                             postType === 'REAL_ESTATES' && (
-                                <tr className="conditional-section">
+                                <tr className="">
                                     <td>
                                         <label>매물종류
                                             <select name='propertyType' value={propertyType} onChange={(e) => {
@@ -295,6 +295,10 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
+                                    </tr>
+                            )}
+                            {postType==='REAL_ESTATES'&&(
+                        <tr className="estates_detail">
                                     <td>
                                         <label>면적
                                             <input type="text" name='area' value={area} onChange={(e) => {
@@ -334,7 +338,7 @@ const Post = () => {
                         }
                         {
                             postType === 'CARS' && (
-                                <tr className="conditional-section">
+                                <tr className="">
                                     <td>
                                         <label>브랜드
                                             <select name='brand' value={brand} onChange={(e) => {
@@ -349,6 +353,10 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
+                                    </tr>
+                            )}
+                            {postType==='CARS'&&(
+                             <tr className="car-detail">
                                     <td>
                                         <label>모델
                                             <input type="text" name='model' value={model} onChange={(e) => {
@@ -398,7 +406,7 @@ const Post = () => {
                         }
                         {
                             (postType === 'ITEMS' || postType === 'CARS') && (
-                                <tr className="conditional-section">
+                                <tr className="">
                                     <td>
                                         <label>판매타입
                                             <select name="tradeType" id="" value={tradeType} onChange={(e) => {
@@ -416,7 +424,7 @@ const Post = () => {
                         }
                         {
                             postType === 'ITEMS' && (
-                                <tr className="conditional-section">
+                                <tr className="item-detail">
                                     <td>
                                         <label>대분류
                                             <select onChange={handleParentChange} value={selectedParent}>

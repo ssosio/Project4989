@@ -366,7 +366,7 @@ const UpdatePost = () => {
                                     </select>
                                 </label>
                             </td>
-                                    </tr>
+                           </tr>
                             )}
                             {postType==='CARS'&&(
                              <tr className="car-detail">
