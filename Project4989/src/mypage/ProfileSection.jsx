@@ -504,14 +504,14 @@ const ProfileSection = ({ userInfo }) => {
         }
       });
 
-      if (response.data.imageUrl) {
+      if (response.data.profileImageUrl) {
         // 프로필 이미지 URL 업데이트
-        setProfileData(prev => ({ ...prev, profileImageUrl: response.data.imageUrl }));
+        setProfileData(prev => ({ ...prev, profileImageUrl: response.data.profileImageUrl }));
 
         // userInfo도 업데이트하여 헤더에 즉시 반영
         const updatedUserInfo = {
           ...userInfo,
-          profileImageUrl: response.data.imageUrl
+          profileImageUrl: response.data.profileImageUrl
         };
         updateUserInfo(updatedUserInfo);
 
@@ -631,7 +631,7 @@ const ProfileSection = ({ userInfo }) => {
             <CardContent sx={{ textAlign: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
-                  src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}` : 'https://placehold.co/150x150')}
+                  src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}?t=${Date.now()}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}?t=${Date.now()}` : 'https://placehold.co/150x150')}
                   sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
                   onError={(e) => {
                     console.log('Avatar image load error:', e);
