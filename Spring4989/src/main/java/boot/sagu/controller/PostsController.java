@@ -28,12 +28,14 @@ import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 import boot.sagu.service.CarService;
 import boot.sagu.service.EstateService;
 import boot.sagu.service.ItemService;
 import boot.sagu.service.MemberServiceInter;
 import boot.sagu.service.PostsService;
+import boot.sagu.service.RegionService;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -58,6 +60,9 @@ public class PostsController {
 	
 	@Autowired
 	ItemService itemService;
+	
+	@Autowired
+	RegionService regionService;
 	
 //	@GetMapping("/list")
 //	public List<PostsDto> list()
@@ -449,6 +454,67 @@ public class PostsController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(Map.of("success", false, "message", "구매내역 조회 중 오류가 발생했습니다."));
 		}
+	}
+	
+	@GetMapping("/regiondetail")
+	public ResponseEntity<RegionDto> getOneRegion(@RequestParam("regionId") Long regionId)
+	{
+		RegionDto region = postService.getOneRegion(regionId);
+		if (region != null) {
+			return ResponseEntity.ok(region);
+		}
+		return ResponseEntity.notFound().build();
+	}
+	
+	// 지역별 필터링 API
+	@GetMapping("/listByRegion")
+	public List<Map<String, Object>> listByRegion(
+			@RequestParam(value = "province", required = false) String province,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "district", required = false) String district,
+			@RequestParam(value = "town", required = false) String town) {
+		
+		Map<String, Object> regionParams = new HashMap<>();
+		regionParams.put("province", province);
+		regionParams.put("city", city);
+		regionParams.put("district", district);
+		regionParams.put("town", town);
+		
+		return postService.getPostListByRegion(regionParams);
+	}
+	
+	// 지역 목록 조회 API (province, city, district, town별)
+	@GetMapping("/regions")
+	public Map<String, Object> getRegions(
+			@RequestParam(value = "type", required = false) String type,
+			@RequestParam(value = "province", required = false) String province,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "district", required = false) String district) {
+		
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			switch (type) {
+				case "provinces":
+					result.put("data", regionService.getDistinctProvinces());
+					break;
+				case "cities":
+					result.put("data", regionService.getCitiesByProvince(province));
+					break;
+				case "districts":
+					result.put("data", regionService.getDistrictsByCity(province, city));
+					break;
+				case "towns":
+					result.put("data", regionService.getTownsByDistrict(province, city, district));
+					break;
+				default:
+					result.put("error", "Invalid type parameter");
+			}
+		} catch (Exception e) {
+			result.put("error", e.getMessage());
+		}
+		
+		return result;
 	}
 	
 }

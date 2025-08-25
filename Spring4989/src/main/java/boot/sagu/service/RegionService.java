@@ -57,4 +57,24 @@ public class RegionService {
         }
         return false;
     }
+    
+    // 모든 province 목록 조회
+    public List<String> getDistinctProvinces() {
+        return regionMapper.getDistinctProvinces();
+    }
+    
+    // 특정 province의 city 목록 조회
+    public List<String> getCitiesByProvince(String province) {
+        return regionMapper.getCitiesByProvince(province);
+    }
+    
+    // 특정 city의 district 목록 조회
+    public List<String> getDistrictsByCity(String province, String city) {
+        return regionMapper.getDistrictsByCity(province, city);
+    }
+    
+    // 특정 district의 town 목록 조회
+    public List<String> getTownsByDistrict(String province, String city, String district) {
+        return regionMapper.getTownsByDistrict(province, city, district);
+    }
 }

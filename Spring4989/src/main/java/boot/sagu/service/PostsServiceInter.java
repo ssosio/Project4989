@@ -12,6 +12,7 @@ import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 import jakarta.servlet.http.HttpSession;
 

@@ -83,6 +83,7 @@
 .real-estate-content {
   flex: 1;
   min-width: 0;
+  margin-top: 40px;
 }
 
 /* 필터 UI */

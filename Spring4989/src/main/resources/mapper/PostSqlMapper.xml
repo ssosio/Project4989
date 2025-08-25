@@ -192,7 +192,7 @@
    </update>
 
    <!--권한 확인 -->
-   <select id="findOwnerId" parameterType="long" resultType="long">
+   <select id="findPostOwnerId" parameterType="long" resultType="long">
       SELECT
       member_id
       FROM posts
@@ -331,14 +331,14 @@
       AND (
         -- posts
         LOWER(p.title)       LIKE CONCAT('%', LOWER(#{kw}), '%')
-        OR LOWER(p.content)  LIKE CONCAT('%', LOWER(#{kw}), '%')
+       <!--  OR LOWER(p.content)  LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR LOWER(p.trade_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR LOWER(p.status)   LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR LOWER(p.post_type)LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR CAST(p.price AS CHAR) LIKE CONCAT('%', #{kw}, '%')
         OR LOWER(p.detail_location)  LIKE CONCAT('%', LOWER(#{kw}), '%')
 
-        -- cars
+         cars
         OR LOWER(c.brand) LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR LOWER(c.model) LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR CAST(c.year AS CHAR)    LIKE CONCAT('%', #{kw}, '%')
@@ -346,19 +346,19 @@
         OR LOWER(c.fuel_type)      LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR LOWER(c.transmission)   LIKE CONCAT('%', LOWER(#{kw}), '%')
 
-        -- real_estates
+         real_estates
         OR LOWER(re.property_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
         OR CAST(re.area  AS CHAR)  LIKE CONCAT('%', #{kw}, '%')
         OR CAST(re.rooms AS CHAR)  LIKE CONCAT('%', #{kw}, '%')
         OR CAST(re.floor AS CHAR)  LIKE CONCAT('%', #{kw}, '%')
         OR LOWER(re.deal_type)     LIKE CONCAT('%', LOWER(#{kw}), '%')
 
-        -- used_items
+         used_items
         OR CAST(ui.category_id AS CHAR) LIKE CONCAT('%', #{kw}, '%')
         OR LOWER(ui.conditions)         LIKE CONCAT('%', LOWER(#{kw}), '%')
 
-        -- categories
-        OR LOWER(cat.name) LIKE CONCAT('%', LOWER(#{kw}), '%')
+         categories
+        OR LOWER(cat.name) LIKE CONCAT('%', LOWER(#{kw}), '%') -->
       )
     </if>
 
@@ -486,14 +486,14 @@
 				(
 					-- posts 테이블 검색
 					LOWER(p.title) LIKE CONCAT('%', LOWER(#{kw}), '%')
-					OR LOWER(p.content) LIKE CONCAT('%', LOWER(#{kw}), '%')
+					<!-- OR LOWER(p.content) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR LOWER(p.trade_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR LOWER(p.status) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR LOWER(p.post_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR CAST(p.price AS CHAR) LIKE CONCAT('%', #{kw}, '%')
 					OR LOWER(p.detail_location) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					
-					-- cars 테이블 검색
+					 cars 테이블 검색
 					OR LOWER(c.brand) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR LOWER(c.model) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR CAST(c.year AS CHAR) LIKE CONCAT('%', #{kw}, '%')
@@ -501,19 +501,19 @@
 					OR LOWER(c.fuel_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR LOWER(c.transmission) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					
-					-- real_estates 테이블 검색
+					 real_estates 테이블 검색
 					OR LOWER(re.property_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					OR CAST(re.area AS CHAR) LIKE CONCAT('%', #{kw}, '%')
 					OR CAST(re.rooms AS CHAR) LIKE CONCAT('%', #{kw}, '%')
 					OR CAST(re.floor AS CHAR) LIKE CONCAT('%', #{kw}, '%')
 					OR LOWER(re.deal_type) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					
-					-- used_items 테이블 검색
+					 used_items 테이블 검색
 					OR CAST(ui.category_id AS CHAR) LIKE CONCAT('%', #{kw}, '%')
 					OR LOWER(ui.conditions) LIKE CONCAT('%', LOWER(#{kw}), '%')
 					
-					-- categories 테이블 검색
-					OR LOWER(cat.name) LIKE CONCAT('%', LOWER(#{kw}), '%')
+					 categories 테이블 검색
+					OR LOWER(cat.name) LIKE CONCAT('%', LOWER(#{kw}), '%') -->
 				)
 			</if>
 			
@@ -639,5 +639,48 @@
       WHERE p.buyer_id = #{memberId}
       ORDER BY p.updated_at DESC, p.created_at DESC
    </select>
+
+<!-- 지역검색 -->
+	<select id="getOneRegion" resultType="boot.sagu.dto.RegionDto">
+		select * from regions where region_id=#{regionId}
+	</select>
+
+	<!-- 지역별 게시물 목록 조회 -->
+	<select id="getPostListByRegion" resultType="map">
+		SELECT
+			p.post_id AS postId,
+			p.member_id AS memberId,
+			p.title AS title,
+			p.price AS price,
+			p.post_type AS postType,
+			p.trade_type AS tradeType,
+			p.created_at AS createdAt,
+			p.view_count AS viewCount,
+			p.status AS status,
+			(SELECT photo_url FROM post_photos WHERE post_id = p.post_id AND is_main = 1 LIMIT 1) AS mainPhotoUrl,
+			m.nickname AS nickname,
+			r.province,
+			r.city,
+			r.district,
+			r.town
+		FROM posts p
+		LEFT JOIN members m ON m.member_id = p.member_id
+		LEFT JOIN regions r ON r.region_id = p.location
+		<where>
+			<if test="province != null and province != ''">
+				AND r.province = #{province}
+			</if>
+			<if test="city != null and city != ''">
+				AND r.city = #{city}
+			</if>
+			<if test="district != null and district != ''">
+				AND r.district = #{district}
+			</if>
+			<if test="town != null and town != ''">
+				AND r.town = #{town}
+			</if>
+		</where>
+		ORDER BY p.post_id DESC
+	</select>
 
 </mapper>

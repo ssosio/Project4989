@@ -7,6 +7,7 @@ import boot.sagu.dto.CarDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -39,8 +40,7 @@ public interface PostsMapperInter {
     // 중고물품 서브 수정 (used_items)
     int updateItem(ItemDto item);
     
-    // 권한 체크
-    Long findOwnerId(@Param("postId") Long postId);
+
 
     // (선택) 경매 종료시간 보정
     int updateAuctionEndTimeToNowPlus24H(@Param("postId") Long postId);
@@ -98,4 +98,12 @@ public interface PostsMapperInter {
 	// 구매내역 조회
 	List<Map<String, Object>> getPurchaseHistory(@Param("memberId") Long memberId);
 	
+	// 지역별 게시물 목록 조회
+	List<Map<String, Object>> getPostListByRegion(Map<String, Object> regionParams);
+	
+	// 게시물 소유자 조회 (메서드명 수정)
+	Long findPostOwnerId(@Param("postId") Long postId);
+	
+	// 지역 조회
+	RegionDto getOneRegion(@Param("regionId") Long regionId);
 }

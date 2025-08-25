@@ -92,7 +92,7 @@ export default function SearchBox() {
               size 
             };
         
-        const { data } = await axios.get(apiUrl, { params});
+        const { data } = await api.get(apiUrl, { params});
         setRows(data.content || []);
         setTotal(data.totalElements || 0);
       } catch (e) {

@@ -62,6 +62,7 @@ export const Header = () => {
   const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
   const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0); // 👈 읽지 않은 메시지 개수를 저장할 상태
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0); // 👈 읽지 않은 알림 개수를 저장할 상태
   
   // 검색 관련 상태
   const [searchQuery, setSearchQuery] = useState("");

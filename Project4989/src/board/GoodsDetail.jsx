@@ -43,6 +43,8 @@ const GoodsDetail = () => {
   const [targetId, setTargetId] = useState(null);
   const authorId = post?.memberId;
 
+  const [region, setRegion] = useState(null);
+  const [regionLoading, setRegionLoading] = useState(false);
 
   const navi = useNavigate();
 
@@ -56,7 +58,6 @@ const GoodsDetail = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   // const [selectedBuyerId, setSelectedBuyerId] = useState(null); // 제거
   const [hasReview, setHasReview] = useState(false);
-  const [reviewCompleted, setReviewCompleted] = useState(false); // 추가
 
   // 💡 수정된 useEffect: userInfo 또는 postId가 변경될 때 API를 다시 호출하도록 변경
   useEffect(() => {
@@ -116,6 +117,43 @@ const GoodsDetail = () => {
             ? postData.photos
             : JSON.parse(postData.photos || "[]");
           setPhotos(photoList);
+          
+          // Post 데이터에서 location 필드 확인
+          console.log("🔍 Post 데이터 location 필드 확인:", {
+            location: postData.location,
+            locationType: typeof postData.location,
+            hasLocation: 'location' in postData,
+            allKeys: Object.keys(postData)
+          });
+          
+          // Post 데이터에서 location 가져와서 region API 호출
+          if (postData.location) {
+            console.log("🌍 Region API 호출 시작 - regionId:", postData.location);
+            console.log("🌍 Region API 호출 URL:", `http://localhost:4989/post/regiondetail?regionId=${postData.location}`);
+            setRegionLoading(true);
+            axios.get(`http://localhost:4989/post/regiondetail?regionId=${postData.location}`, { headers })
+              .then(response => {
+                console.log("✅ Region API 응답 성공:", response);
+                console.log("✅ Region 데이터 로드 성공:", response.data);
+                console.log("✅ Region 데이터 상세:", {
+                  province: response.data.province,
+                  city: response.data.city,
+                  district: response.data.district,
+                  town: response.data.town
+                });
+                setRegion(response.data);
+                setRegionLoading(false);
+              })
+              .catch(error => {
+                console.error("❌ Region API 호출 실패:", error);
+                console.error("❌ Region API 응답 데이터:", error.response?.data);
+                console.error("❌ Region API 응답 상태:", error.response?.status);
+                console.error("❌ Region API 호출 URL:", `http://localhost:4989/post/regiondetail?regionId=${postData.location}`);
+                setRegionLoading(false);
+              });
+          } else {
+            console.log("⚠️ Post 데이터에 location이 없습니다. postData:", postData);
+          }
         } else {
           console.error("❌ Post 데이터 로드 실패:", postResult.reason);
         }
@@ -140,6 +178,16 @@ const GoodsDetail = () => {
         } else {
           console.error("❌ Estate 데이터 로드 실패:", estateResult.reason);
         }
+
+        // Region 데이터 처리
+        // if (regionResult.status === 'fulfilled') { // 이 부분은 위에서 처리되므로 제거
+        //   console.log("✅ Region 데이터 로드 성공:", regionResult.value);
+        //   console.log("✅ Region 데이터 내용:", regionResult.value.data);
+        //   setRegion(regionResult.value.data);
+        // } else {
+        //   console.error("❌ Region 데이터 로드 실패:", regionResult.reason);
+        //   console.error("❌ Region API 호출 URL:", `http://localhost:4989/post/regiondetail?regionId=${regionId}`);
+        // }
       })
       .catch(err => {
         console.error("데이터 로딩 중 에러:", err);
@@ -239,7 +287,7 @@ const GoodsDetail = () => {
 
   const handleReviewSubmitted = () => {
     console.log('후기 작성 완료됨');
-    setReviewCompleted(true); // 후기 작성 완료 상태로 설정
+            // 후기 작성 완료 처리
     setHasReview(true);
     setShowReviewModal(false);
   };
@@ -731,6 +779,18 @@ const GoodsDetail = () => {
               <div className="gooddetail-info-row">
                 <span className="gooddetail-info-label">배송비</span>
                 <span className="gooddetail-info-value">무료배송</span>
+              </div>
+              <div className="gooddetail-info-row">
+                <span className="gooddetail-info-label">상세주소</span>
+                <span className="gooddetail-info-value">
+                  {regionLoading ? "주소 정보 로딩 중..." : (
+                    region ? (
+                      `${region.province || ''} ${region.city || ''} ${region.district || ''} ${region.town || ''}`.trim()
+                    ) : (
+                      '주소 정보 없음'
+                    )
+                  )}
+                </span>
               </div>
             </div>
 

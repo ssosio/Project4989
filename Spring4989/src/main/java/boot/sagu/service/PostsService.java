@@ -25,6 +25,7 @@ import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 import boot.sagu.mapper.CarMapperInter;
 import boot.sagu.mapper.CategoryMapperInter;
@@ -275,7 +276,7 @@ public class PostsService implements PostsServiceInter {
 			List<MultipartFile> uploads, List<Long> deletePhotoIds, Long mainPhotoId, HttpSession session,
 			Long actorId) {
 		// 0) 권한 체크
-		Long ownerId = postMapper.findOwnerId(post.getPostId());
+		Long ownerId = postMapper.findPostOwnerId(post.getPostId());
 		if (ownerId == null || !ownerId.equals(actorId)) {
 			throw new AccessDeniedException("작성자만 수정 가능");
 		}
@@ -322,7 +323,7 @@ public class PostsService implements PostsServiceInter {
 	@Transactional
 	public void deletePost(Long postId,PostsDto post,Long actorId) {
 		// TODO Auto-generated method stub
-		Long ownerId = postMapper.findOwnerId(post.getPostId());
+		Long ownerId = postMapper.findPostOwnerId(post.getPostId());
 		if (ownerId == null || !ownerId.equals(actorId)) {
 			throw new AccessDeniedException("작성자만 삭제 가능");
 		}
@@ -404,8 +405,19 @@ public class PostsService implements PostsServiceInter {
     }
 	
 	// 게시물 소유자 조회
-	public Long findPostOwnerId(Long postId) {
-		return postMapper.findOwnerId(postId);
+	public Long findPostOwnerId(Long postId)
+	{
+		return postMapper.findPostOwnerId(postId);
+	}
+	
+	// 지역별 게시물 목록 조회
+	public List<Map<String, Object>> getPostListByRegion(Map<String, Object> regionParams) {
+		return postMapper.getPostListByRegion(regionParams);
+	}
+	
+	// 지역 조회
+	public RegionDto getOneRegion(Long regionId) {
+		return postMapper.getOneRegion(regionId);
 	}
 	
 	// 채팅방 참여자 조회 (판매완료 시 거래자 선택용)
@@ -418,7 +430,7 @@ public class PostsService implements PostsServiceInter {
 	public boolean updatePostStatus(Long postId, String status, Long buyerId, Long memberId) {
 		try {
 			// 1. 권한 확인 - 작성자 본인인지 확인
-			Long ownerId = postMapper.findOwnerId(postId);
+			Long ownerId = postMapper.findPostOwnerId(postId);
 			if (ownerId == null || !ownerId.equals(memberId)) {
 				System.err.println("권한 없음: postId=" + postId + ", 요청자=" + memberId + ", 소유자=" + ownerId);
 				return false;
@@ -474,5 +486,9 @@ public class PostsService implements PostsServiceInter {
 			return new ArrayList<>();
 		}
 	}
+
+	
+	
+	
 	
 }

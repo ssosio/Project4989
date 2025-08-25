@@ -16,6 +16,22 @@ const Cars = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const itemsPerPage = 12;
 
+  // 지역 필터 상태
+  const [regionFilters, setRegionFilters] = useState({
+    province: '',
+    city: '',
+    district: '',
+    town: ''
+  });
+
+  // 지역 옵션 상태
+  const [regionOptions, setRegionOptions] = useState({
+    provinces: [],
+    cities: [],
+    districts: [],
+    towns: []
+  });
+
   const navi = useNavigate('');
   const location = useLocation();
 
@@ -88,6 +104,104 @@ const Cars = () => {
   const handleNextPage = () => currentPage < totalPages && handlePageChange(currentPage + 1);
   const handlePrevPage = () => currentPage > 1 && handlePageChange(currentPage - 1);
 
+  // ---------- 지역 데이터 로드 ----------
+  useEffect(() => {
+    loadProvinces();
+  }, []);
+
+  // province 변경 시 city 로드
+  useEffect(() => {
+    if (regionFilters.province) {
+      loadCities(regionFilters.province);
+    } else {
+      setRegionOptions(prev => ({ ...prev, cities: [], districts: [], towns: [] }));
+      setRegionFilters(prev => ({ ...prev, city: '', district: '', town: '' }));
+    }
+  }, [regionFilters.province]);
+
+  // city 변경 시 district 로드 (city가 없어도 district 로드)
+  useEffect(() => {
+    if (regionFilters.province) {
+      if (regionFilters.city) {
+        loadDistricts(regionFilters.province, regionFilters.city);
+      } else {
+        // city가 없을 때도 district 로드 (city 파라미터를 빈 문자열로 전달)
+        loadDistricts(regionFilters.province, '');
+      }
+    } else {
+      setRegionOptions(prev => ({ ...prev, districts: [], towns: [] }));
+      setRegionFilters(prev => ({ ...prev, district: '', town: '' }));
+    }
+  }, [regionFilters.city, regionFilters.province]);
+
+  // district 변경 시 town 로드 (district가 없어도 town 로드)
+  useEffect(() => {
+    if (regionFilters.province) {
+      if (regionFilters.district) {
+        loadTowns(regionFilters.province, regionFilters.city, regionFilters.district);
+      } else {
+        // district가 없을 때도 town 로드 (district 파라미터를 빈 문자열로 전달)
+        loadTowns(regionFilters.province, regionFilters.city, '');
+      }
+    } else {
+      setRegionOptions(prev => ({ ...prev, towns: [] }));
+      setRegionFilters(prev => ({ ...prev, town: '' }));
+    }
+  }, [regionFilters.district, regionFilters.city, regionFilters.province]);
+
+  // 지역 데이터 로드 함수들
+  const loadProvinces = async () => {
+    try {
+      const response = await axios.get('http://localhost:4989/post/regions', {
+        params: { type: 'provinces' }
+      });
+      if (response.data.data) {
+        setRegionOptions(prev => ({ ...prev, provinces: response.data.data }));
+      }
+    } catch (error) {
+      console.error('Province 로드 실패:', error);
+    }
+  };
+
+  const loadCities = async (province) => {
+    try {
+      const response = await axios.get('http://localhost:4989/post/regions', {
+        params: { type: 'cities', province }
+      });
+      if (response.data.data) {
+        setRegionOptions(prev => ({ ...prev, cities: response.data.data }));
+      }
+    } catch (error) {
+      console.error('City 로드 실패:', error);
+    }
+  };
+
+  const loadDistricts = async (province, city) => {
+    try {
+      const response = await axios.get('http://localhost:4989/post/regions', {
+        params: { type: 'districts', province, city }
+      });
+      if (response.data.data) {
+        setRegionOptions(prev => ({ ...prev, districts: response.data.data }));
+      }
+    } catch (error) {
+      console.error('District 로드 실패:', error);
+    }
+  };
+
+  const loadTowns = async (province, city, district) => {
+    try {
+      const response = await axios.get('http://localhost:4989/post/regions', {
+        params: { type: 'towns', province, city, district }
+      });
+      if (response.data.data) {
+        setRegionOptions(prev => ({ ...prev, towns: response.data.data }));
+      }
+    } catch (error) {
+      console.error('Town 로드 실패:', error);
+    }
+  };
+
   // ---------- 데이터 로드 (공통 리스트) ----------
   useEffect(() => {
     (async () => {
@@ -99,6 +213,42 @@ const Cars = () => {
       }
     })();
   }, []);
+
+  // 지역별 필터링된 목록 호출
+  const listByRegion = async () => {
+    try {
+      const params = {};
+      if (regionFilters.province) params.province = regionFilters.province;
+      if (regionFilters.city) params.city = regionFilters.city;
+      if (regionFilters.district) params.district = regionFilters.district;
+      if (regionFilters.town) params.town = regionFilters.town;
+
+      const response = await axios.get('http://localhost:4989/post/listByRegion', { params });
+      setPostList(response.data || []);
+    } catch (error) {
+      console.error("지역별 필터링 에러:", error);
+      // 에러 시 전체 목록 로드
+      const { data } = await axios.get(LIST_URL);
+      setPostList(data || []);
+    }
+  };
+
+  useEffect(() => {
+    console.log("list");
+    // 지역 필터가 설정되어 있으면 지역별 필터링, 아니면 전체 목록
+    if (regionFilters.province || regionFilters.city || regionFilters.district || regionFilters.town) {
+      listByRegion();
+    } else {
+      (async () => {
+        try {
+          const { data } = await axios.get(LIST_URL);
+          setPostList(data || []);
+        } catch (e) {
+          console.error('리스트 에러:', e);
+        }
+      })();
+    }
+  }, [regionFilters]);
 
   // ---------- CARS만 추출 ----------
   const carsFromList = useMemo(() => postList.filter((p) => p.postType === 'CARS'), [postList]);
@@ -351,6 +501,12 @@ const Cars = () => {
   const onChangeTrans = (e) => setAndResetPage({ transmission: e.target.value });
   const onChangeTradeType = (e) => setAndResetPage({ tradeType: e.target.value });
   
+  // 지역 필터 변경 핸들러
+  const onChangeRegion = (type, value) => {
+    setCurrentPage(1);
+    setRegionFilters(prev => ({ ...prev, [type]: value }));
+  };
+  
   // 필터 초기화 함수
   const resetFilters = () => {
     setAndResetPage({
@@ -361,6 +517,12 @@ const Cars = () => {
       fuelType: 'ALL',
       transmission: 'ALL',
       tradeType: 'ALL',
+    });
+    setRegionFilters({
+      province: '',
+      city: '',
+      district: '',
+      town: ''
     });
   };
 
@@ -391,6 +553,79 @@ const Cars = () => {
         <div className="cars-main-content">
           {/* 왼쪽 사이드바 - 필터 */}
           <div className="cars-sidebar">
+            
+            {/* 지역 필터 */}
+            <div className='region-filter'>
+              <div className="region-filter-group">
+                
+                {/* Province 선택 */}
+                <div className="region-select-container">
+                  <label className="region-label">시/도</label>
+                  <select 
+                    value={regionFilters.province} 
+                    onChange={(e) => onChangeRegion('province', e.target.value)}
+                    className="region-select"
+                  >
+                    <option value="">전체</option>
+                    {regionOptions.provinces.map((province, index) => (
+                      <option key={index} value={province}>{province}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* City 선택 */}
+                {regionFilters.province && regionOptions.cities.length > 0 && (
+                  <div className="region-select-container">
+                    <label className="region-label">시/군/구</label>
+                    <select 
+                      value={regionFilters.city} 
+                      onChange={(e) => onChangeRegion('city', e.target.value)}
+                      className="region-select"
+                    >
+                      <option value="">전체</option>
+                      {regionOptions.cities.map((city, index) => (
+                        <option key={index} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* District 선택 */}
+                {regionFilters.province && (regionOptions.districts.length > 0 || !regionFilters.city) && (
+                  <div className="region-select-container">
+                    <label className="region-label">구</label>
+                    <select 
+                      value={regionFilters.district} 
+                      onChange={(e) => onChangeRegion('district', e.target.value)}
+                      className="region-select"
+                    >
+                      <option value="">전체</option>
+                      {regionOptions.districts.map((district, index) => (
+                        <option key={index} value={district}>{district}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Town 선택 */}
+                {regionFilters.province && regionOptions.towns.length > 0 && (
+                  <div className="region-select-container">
+                    <label className="region-label">동</label>
+                    <select 
+                      value={regionFilters.town} 
+                      onChange={(e) => onChangeRegion('town', e.target.value)}
+                      className="region-select"
+                    >
+                      <option value="">전체</option>
+                      {regionOptions.towns.map((town, index) => (
+                        <option key={index} value={town}>{town}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="cars-filters">
               {/* 필터 초기화 버튼 */}
               <div className="filter-reset-container">
