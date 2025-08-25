@@ -38,7 +38,7 @@ const StyledDialog = styled(Dialog)(({ zindex, offset }) => ({
         position: 'absolute',
         right: 0,
         top: 0,
-        height: '100vh',
+        height: '90vh',
         maxHeight: '100vh',
         width: 450,
         maxWidth: 'none',
@@ -95,6 +95,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     const isInitialScrollDone = useRef(false);
 
     const chatRoomId = chatRoom?.chatRoomId;
+    const isAdminInvestigation = chatRoom?.isAdminInvestigation || false;
     const SERVER_IP = '192.168.10.136';
     const SERVER_PORT = '4989';
 
@@ -292,13 +293,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 declaration_content: reportDetail
             };
             const response = await axios.post(
-                `http://${SERVER_IP}:${SERVER_PORT}/submit`,
+                `http://${SERVER_IP}:${SERVER_PORT}/api/chat-declarations/submit`,
                 reportData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
             if (response.status === 200 || response.status === 201) {
                 // 커스텀 모달로 변경 필요
-                console.log('신고가 접수되었습니다. 감사합니다.');
+                alert('신고가 접수되었습니다. 감사합니다.');
                 handleReportModalClose();
             } else {
                 // 커스텀 모달로 변경 필요
@@ -745,11 +746,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         </Typography>
                         {/* 물품 제목 표시 */}
                         {chatRoom?.postTitle && (
-                            <Typography 
-                                variant="body2" 
-                                sx={{ 
-                                    color: '#4A90E2', 
-                                    fontSize: '13px', 
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: '#4A90E2',
+                                    fontSize: '13px',
                                     fontWeight: 500,
                                     mt: 0.5,
                                     overflow: 'hidden',
@@ -759,6 +760,25 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                 }}
                             >
                                 🛍️ {chatRoom.postTitle}
+                            </Typography>
+                        )}
+                        {/* 관리자 조사 모드 표시 */}
+                        {isAdminInvestigation && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: '#d32f2f',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    mt: 0.5,
+                                    bgcolor: '#ffebee',
+                                    px: 1,
+                                    py: 0.5,
+                                    borderRadius: 1,
+                                    display: 'inline-block'
+                                }}
+                            >
+                                🔍 관리자 조사 모드
                             </Typography>
                         )}
                     </Box>
@@ -992,7 +1012,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             style={{ display: 'none' }}
                             onChange={handleImageUpload}
                         />
-                        {selectedImages.length > 0 && (
+                        {/* 관리자 조사 모드에서는 이미지 첨부 비활성화 */}
+                        {!isAdminInvestigation && selectedImages.length > 0 && (
                             <Box sx={{
                                 display: 'flex',
                                 gap: 1,
@@ -1035,46 +1056,64 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             </Box>
                         )}
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <IconButton
-                                onClick={() => fileInputRef.current?.click()}
-                                sx={{ color: '#666' }}
-                            >
-                                <AttachFileRoundedIcon />
-                            </IconButton>
-                            <TextField
-                                fullWidth
-                                multiline
-                                maxRows={4}
-                                placeholder="메시지를 입력하세요..."
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                variant="outlined"
-                                size="small"
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={handleSendMessage}
-                                                disabled={!message.trim() && selectedImages.length === 0}
-                                                sx={{
-                                                    color: (message.trim() || selectedImages.length > 0) ? '#3182f6' : '#ccc'
-                                                }}
-                                            >
-                                                <SendRoundedIcon />
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                    sx: {
-                                        borderRadius: 24,
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 24
+                        {/* 관리자 조사 모드에서는 메시지 입력 비활성화 */}
+                        {!isAdminInvestigation ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <IconButton
+                                    onClick={() => fileInputRef.current?.click()}
+                                    sx={{ color: '#666' }}
+                                >
+                                    <AttachFileRoundedIcon />
+                                </IconButton>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    maxRows={4}
+                                    placeholder="메시지를 입력하세요..."
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    variant="outlined"
+                                    size="small"
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={handleSendMessage}
+                                                    disabled={!message.trim() && selectedImages.length === 0}
+                                                    sx={{
+                                                        color: (message.trim() || selectedImages.length > 0) ? '#3182f6' : '#ccc'
+                                                    }}
+                                                >
+                                                    <SendRoundedIcon />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                        sx: {
+                                            borderRadius: 24,
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 24
+                                            }
                                         }
-                                    }
-                                }}
-                            />
-                        </Box>
+                                    }}
+                                />
+                            </Box>
+                        ) : (
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                p: 2,
+                                bgcolor: 'grey.100',
+                                borderRadius: 2,
+                                border: '1px dashed',
+                                borderColor: 'grey.400'
+                            }}>
+                                <Typography variant="body2" color="textSecondary">
+                                    🔍 관리자 조사 모드 - 메시지 전송 불가
+                                </Typography>
+                            </Box>
+                        )}
                     </Box>
                 </Box>
             </StyledDialog>

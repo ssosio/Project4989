@@ -15,6 +15,7 @@ public interface MemberMapper {
     public void signup(MemberDto dto);
     //중복처리
     public MemberDto findByLoginId(String loginId);
+    public MemberDto findById(Long memberId); // 추가
     public int countByLoginId(String loginId);
     public MemberDto findByEmail(String email);
     public MemberDto findByNickname(String nickname);

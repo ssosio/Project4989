@@ -1,6 +1,8 @@
 package boot.sagu.controller;
 
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,14 +22,14 @@ import org.springframework.web.multipart.MultipartFile;
 import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.service.CustomUserDetailsService;
-import boot.sagu.service.MemberServiceInter;
+import boot.sagu.service.MemberService; // MemberServiceInter 대신 MemberService 직접 사용
 import jakarta.validation.Valid;
 
 @RestController
 public class MemberController {
 
     @Autowired
-    private MemberServiceInter memberService;
+    private MemberService memberService; // MemberServiceInter 대신 MemberService 직접 사용
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
@@ -277,6 +279,91 @@ public class MemberController {
             ));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("비밀번호 변경 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    // 단일 사용자 정보 조회 (관리자용)
+    @GetMapping("/api/users/{memberId}")
+    public ResponseEntity<?> getUserInfo(@PathVariable("memberId") Long memberId) {
+        try {
+            MemberDto member = memberService.getMemberById(memberId);
+            if (member != null) {
+                // 민감한 정보는 제외하고 필요한 정보만 반환
+                MemberDto safeMember = new MemberDto();
+                safeMember.setMemberId(member.getMemberId());
+                safeMember.setNickname(member.getNickname());
+                safeMember.setLoginId(member.getLoginId());
+                safeMember.setEmail(member.getEmail());
+                safeMember.setStatus(member.getStatus());
+                safeMember.setRole(member.getRole());
+                safeMember.setTier(member.getTier());
+                safeMember.setCreatedAt(member.getCreatedAt());
+                
+                return ResponseEntity.ok(safeMember);
+            } else {
+                return ResponseEntity.status(404).body("사용자를 찾을 수 없습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("사용자 정보 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    // 여러 사용자 정보 조회 (관리자용)
+    @PostMapping("/api/users/multiple")
+    public ResponseEntity<?> getMultipleUsers(@RequestBody Map<String, List<Long>> request) {
+        try {
+            System.out.println(">>> [DEBUG] getMultipleUsers API 호출됨");
+            System.out.println(">>> [DEBUG] 받은 요청: " + request);
+            
+            List<Long> memberIds = request.get("memberIds");
+            if (memberIds == null || memberIds.isEmpty()) {
+                System.out.println(">>> [DEBUG] memberIds가 null이거나 비어있음");
+                return ResponseEntity.badRequest().body("사용자 ID 목록이 필요합니다.");
+            }
+
+            System.out.println(">>> [DEBUG] 조회할 memberIds: " + memberIds);
+
+            List<MemberDto> users = memberIds.stream()
+                .map(id -> {
+                    System.out.println(">>> [DEBUG] memberId " + id + " 조회 중...");
+                    MemberDto member = memberService.getMemberById(id);
+                    System.out.println(">>> [DEBUG] memberId " + id + " 결과: " + member);
+                    return member;
+                })
+                .filter(member -> member != null)
+                .map(member -> {
+                    System.out.println(">>> [DEBUG] memberId " + member.getMemberId() + " 처리 중...");
+                    // 민감한 정보는 제외하고 필요한 정보만 반환
+                    MemberDto safeMember = new MemberDto();
+                    safeMember.setMemberId(member.getMemberId());
+                    safeMember.setNickname(member.getNickname());
+                    safeMember.setLoginId(member.getLoginId());
+                    safeMember.setEmail(member.getEmail());
+                    safeMember.setStatus(member.getStatus());
+                    safeMember.setRole(member.getRole());
+                    safeMember.setTier(member.getTier());
+                    safeMember.setCreatedAt(member.getCreatedAt());
+                    System.out.println(">>> [DEBUG] safeMember 생성 완료: " + safeMember);
+                    return safeMember;
+                })
+                .collect(Collectors.toList());
+
+            System.out.println(">>> [DEBUG] 최종 결과: " + users);
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            System.out.println(">>> [ERROR] getMultipleUsers 에러 발생: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("사용자 정보 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    // 테스트용 엔드포인트
+    @GetMapping("/api/users/test")
+    public ResponseEntity<?> test() {
+        try {
+            return ResponseEntity.ok("MemberController 테스트 성공!");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("테스트 실패: " + e.getMessage());
         }
     }
 }
