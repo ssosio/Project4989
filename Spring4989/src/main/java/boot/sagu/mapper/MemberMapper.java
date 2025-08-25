@@ -43,4 +43,7 @@ public interface MemberMapper {
     public List<MemberDto> searchMembers(@Param("search") String search, @Param("size") int size, @Param("offset") int offset);
     public int countAllMembers();
     public int countSearchMembers(@Param("search") String search);
+    
+    // 신용도 등급 관리를 위한 메서드
+    public List<Integer> getAllMemberIds();
 }

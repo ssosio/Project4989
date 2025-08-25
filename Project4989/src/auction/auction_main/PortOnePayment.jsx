@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { PORTONE_CONFIG, PAYMENT_ERROR_MESSAGES } from '../../config/portone';
 import api from '../../lib/api';
+import './PortOnePayment.css';
 
 // 포트원 스크립트 로드 (1회)
 function loadPortOneScript() {
@@ -142,23 +143,54 @@ export default function PortOnePayment({
   }, []);
 
   const title = mode === 'ESCROW' ? '에스크로 결제' : '보증금 결제';
+  const subtitle = mode === 'ESCROW' ? '낙찰 금액 결제(차감형)입니다.' : '경매 참여를 위해 보증금을 결제해주세요.';
 
   return (
     <div className="payment-container">
-      <div className="payment-content">
-        <h2>{title}</h2>
-        <p>{mode === 'ESCROW' ? '낙찰 금액 결제(차감형)입니다.' : '경매 참여를 위해 보증금을 결제해주세요.'}</p>
-        <div className="payment-details">
-          <p><strong>결제 금액:</strong> {Number(amount).toLocaleString()}원</p>
-          <p><strong>결제 수단:</strong> KG이니시스 (카드)</p>
-          <p><strong>결제 방법:</strong> 결제창이 자동으로 열립니다.</p>
+      <div className="payment-card">
+        <div className="payment-header">
+          <div className="payment-icon">
+            {mode === 'ESCROW' ? '💰' : '🏆'}
+          </div>
+          <h2 className="payment-title">{title}</h2>
+          <p className="payment-subtitle">{subtitle}</p>
         </div>
+        
+        <div className="payment-details">
+          <div className="payment-amount">
+            <span className="amount-label">결제 금액</span>
+            <span className="amount-value">{Number(amount).toLocaleString()}원</span>
+          </div>
+          
+          <div className="payment-info">
+            <div className="info-item">
+              <span className="info-label">결제 수단</span>
+              <span className="info-value">KG이니시스 (카드)</span>
+            </div>
+            <div className="info-item">
+              <span className="info-label">결제 방법</span>
+              <span className="info-value">결제창 자동 열림</span>
+            </div>
+          </div>
+        </div>
+        
         <div className="payment-loading">
-          <p>결제창을 불러오는 중입니다...</p>
-          <div className="loading-spinner" />
-          <p style={{ fontSize: 14, color: '#666', marginTop: 10 }}>
+          <div className="loading-spinner">
+            <div className="spinner-ring"></div>
+            <div className="spinner-ring"></div>
+            <div className="spinner-ring"></div>
+          </div>
+          <p className="loading-text">결제창을 불러오는 중입니다...</p>
+          <p className="loading-hint">
             결제창이 열리지 않으면 새로고침 후 다시 시도해주세요.
           </p>
+        </div>
+        
+        <div className="payment-footer">
+          <div className="security-badge">
+            <span className="security-icon">🔒</span>
+            <span>보안 결제</span>
+          </div>
         </div>
       </div>
     </div>

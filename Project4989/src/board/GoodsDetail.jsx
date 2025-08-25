@@ -6,6 +6,7 @@ import DetailChat from '../chat/detailChat';
 import { AuthContext } from '../context/AuthContext';
 import BuyerSelectionModal from '../components/BuyerSelectionModal';
 import ReviewModal from '../components/ReviewModal';
+import CreditTierDisplay from '../components/CreditTierDisplay';
 import './gooddetail.css';
 import DetailMap from '../chat/detailMap';
 
@@ -548,6 +549,7 @@ const GoodsDetail = () => {
             <div className="gooddetail-meta">
               <div className="gooddetail-meta-item">
                 <strong>작성자:</strong> {post.nickname}
+                <CreditTierDisplay memberId={post.memberId} showDetails={false} />
               </div>
               <div className="gooddetail-meta-item">
                 <strong>작성일:</strong> {post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : ''}
@@ -712,11 +714,33 @@ const GoodsDetail = () => {
         <ReviewModal
           isOpen={showReviewModal}
           onClose={handleReviewModalClose}
-          postId={postId}
-          reviewerId={userInfo?.memberId}
-          reviewOppositeId={userInfo?.memberId === post?.memberId ? post?.buyerId : post?.memberId}
+          postId={postId ? parseInt(postId) : null}
+          reviewerId={userInfo?.memberId ? parseInt(userInfo.memberId) : null}
+          reviewOppositeId={
+            userInfo?.memberId === post?.memberId 
+              ? (post?.buyerId ? parseInt(post.buyerId) : null)
+              : (post?.memberId ? parseInt(post.memberId) : null)
+          }
           onReviewSubmitted={handleReviewSubmitted}
         />
+        
+        {/* 디버깅용 로그 */}
+        {showReviewModal && (
+          <div style={{display: 'none'}}>
+            {console.log('=== GoodsDetail ReviewModal 데이터 ===')}
+            {console.log('postId:', postId, '타입:', typeof postId)}
+            {console.log('userInfo?.memberId:', userInfo?.memberId, '타입:', typeof userInfo?.memberId)}
+            {console.log('post?.memberId:', post?.memberId, '타입:', typeof post?.memberId)}
+            {console.log('post?.buyerId:', post?.buyerId, '타입:', typeof post?.buyerId)}
+            {console.log('전달되는 postId:', postId ? parseInt(postId) : null)}
+            {console.log('전달되는 reviewerId:', userInfo?.memberId ? parseInt(userInfo.memberId) : null)}
+            {console.log('전달되는 reviewOppositeId:', 
+              userInfo?.memberId === post?.memberId 
+                ? (post?.buyerId ? parseInt(post.buyerId) : null)
+                : (post?.memberId ? parseInt(post.memberId) : null)
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -33,10 +33,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Calculate as CalculateIcon
 } from '@mui/icons-material';
 import api from '../../lib/api';
 import { AuthContext } from '../../context/AuthContext';
+import CreditTierDisplay from '../CreditTierDisplay';
 
 const UserManagementTab = () => {
   const { userInfo } = useContext(AuthContext);
@@ -53,6 +55,7 @@ const UserManagementTab = () => {
   const [banReason, setBanReason] = useState('');
   const [editForm, setEditForm] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [recalculatingTier, setRecalculatingTier] = useState(false);
 
   // 회원 목록 조회
   const fetchUsers = async () => {
@@ -184,6 +187,82 @@ const UserManagementTab = () => {
     }
   };
 
+  // 신용도 등급 재계산
+  const handleRecalculateTier = async (userId) => {
+    try {
+      setRecalculatingTier(true);
+      const response = await api.post(`/api/credit-tier/${userId}/recalculate`);
+      
+      if (response.data.success) {
+        setSnackbar({
+          open: true,
+          message: '신용도 등급이 재계산되었습니다.',
+          severity: 'success'
+        });
+        
+        // 로그 기록
+        await api.post('/api/admin/action-logs', {
+          adminId: userInfo.memberId,
+          actionType: 'CREDIT_TIER_RECALCULATE',
+          targetEntityType: 'MEMBER',
+          targetEntityId: userId,
+          details: '신용도 등급 재계산'
+        });
+        
+        fetchUsers(); // 목록 새로고침
+      }
+    } catch (error) {
+      console.error('신용도 등급 재계산 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '신용도 등급 재계산에 실패했습니다.',
+        severity: 'error'
+      });
+    } finally {
+      setRecalculatingTier(false);
+    }
+  };
+
+  // 전체 신용도 등급 일괄 업데이트
+  const handleUpdateAllCreditTiers = async () => {
+    if (!window.confirm('모든 회원의 신용도 등급을 일괄 업데이트하시겠습니까? 이 작업은 시간이 오래 걸릴 수 있습니다.')) {
+      return;
+    }
+
+    try {
+      setRecalculatingTier(true);
+      const response = await api.post('/api/credit-tier/update-all');
+      
+      if (response.data.success) {
+        setSnackbar({
+          open: true,
+          message: '모든 회원의 신용도 등급이 업데이트되었습니다.',
+          severity: 'success'
+        });
+        
+        // 로그 기록
+        await api.post('/api/admin/action-logs', {
+          adminId: userInfo.memberId,
+          actionType: 'CREDIT_TIER_BULK_UPDATE',
+          targetEntityType: 'SYSTEM',
+          targetEntityId: 0,
+          details: '전체 회원 신용도 등급 일괄 업데이트'
+        });
+        
+        fetchUsers(); // 목록 새로고침
+      }
+    } catch (error) {
+      console.error('전체 신용도 등급 업데이트 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '전체 신용도 등급 업데이트에 실패했습니다.',
+        severity: 'error'
+      });
+    } finally {
+      setRecalculatingTier(false);
+    }
+  };
+
   // 회원 삭제
   const handleDelete = async (userId) => {
     try {
@@ -234,8 +313,10 @@ const UserManagementTab = () => {
   const getTierText = (tier) => {
     switch (tier) {
       case '초보상인': return '초보상인';
-      case '중급상인': return '중급상인';
-      case '고급상인': return '고급상인';
+      case '거래꾼': return '거래꾼';
+      case '장인': return '장인';
+      case '마스터': return '마스터';
+      case '거래왕': return '거래왕';
       default: return tier;
     }
   };
@@ -246,14 +327,25 @@ const UserManagementTab = () => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">회원 관리</Typography>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchUsers}
-              disabled={loading}
-            >
-              새로고침
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<CalculateIcon />}
+                onClick={handleUpdateAllCreditTiers}
+                disabled={recalculatingTier}
+                color="secondary"
+              >
+                전체 등급 업데이트
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={fetchUsers}
+                disabled={loading}
+              >
+                새로고침
+              </Button>
+            </Box>
           </Box>
 
           {/* 검색 및 필터 */}
@@ -299,7 +391,20 @@ const UserManagementTab = () => {
                       <TableCell>{user.nickname || 'N/A'}</TableCell>
                       <TableCell>{user.email || 'N/A'}</TableCell>
                       <TableCell>{user.phoneNumber || '-'}</TableCell>
-                      <TableCell>{getTierText(user.tier)}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CreditTierDisplay memberId={user.memberId} showDetails={false} />
+                          <IconButton 
+                            size="small" 
+                            color="secondary"
+                            onClick={() => handleRecalculateTier(user.memberId)}
+                            disabled={recalculatingTier}
+                            title="신용도 등급 재계산"
+                          >
+                            <CalculateIcon />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         <Chip 
                           label={getStatusText(user.status)} 
@@ -420,8 +525,10 @@ const UserManagementTab = () => {
                 label="등급"
               >
                 <MenuItem value="초보상인">초보상인</MenuItem>
-                <MenuItem value="중급상인">중급상인</MenuItem>
-                <MenuItem value="고급상인">고급상인</MenuItem>
+                <MenuItem value="거래꾼">거래꾼</MenuItem>
+                <MenuItem value="장인">장인</MenuItem>
+                <MenuItem value="마스터">마스터</MenuItem>
+                <MenuItem value="거래왕">거래왕</MenuItem>
               </Select>
             </FormControl>
           </Box>

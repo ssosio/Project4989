@@ -6,6 +6,7 @@ import TransactionSection from './TransactionSection';
 import BiddingSection from './BiddingSection';
 import WishlistSection from './WishlistSection';
 import PurchaseHistorySection from './PurchaseHistorySection';
+import CreditTierDisplay from '../components/CreditTierDisplay';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {
@@ -61,6 +62,9 @@ const MyPageMain = () => {
           <Typography variant="body1" color="text.secondary">
             안녕하세요, {userInfo.nickname}님!
           </Typography>
+          <Box sx={{ mt: 2 }}>
+            <CreditTierDisplay memberId={userInfo.memberId} showDetails={true} />
+          </Box>
         </Box>
 
         {/* 탭 네비게이션 */}

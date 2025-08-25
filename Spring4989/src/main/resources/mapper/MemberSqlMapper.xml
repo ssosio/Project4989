@@ -250,4 +250,9 @@
 		   OR email LIKE CONCAT('%', #{search}, '%')
 	</select>
 	
+	<!-- 모든 회원 ID 조회 (신용도 등급 관리용) -->
+	<select id="getAllMemberIds" resultType="int">
+		SELECT member_id FROM members
+	</select>
+	
 </mapper>
