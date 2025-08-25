@@ -734,7 +734,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         fontSize: '16px'
                     }}>
                         {otherUserInfo?.profileImage ? (
-                            <img src={otherUserInfo.profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={'http://localhost:4989' + otherUserInfo.profileImage} alt="프로필" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             otherUserInfo?.nickname?.charAt(0) || 'U'
                         )}

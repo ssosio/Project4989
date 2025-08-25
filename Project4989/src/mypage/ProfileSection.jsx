@@ -166,7 +166,7 @@ const ProfileSection = ({ userInfo }) => {
     try {
       setIsLoadingAddresses(true);
       const token = localStorage.getItem('jwtToken');
-      
+
       if (!token) {
         console.log('No token found for address fetch!');
         return;
@@ -177,9 +177,9 @@ const ProfileSection = ({ userInfo }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       console.log('API 응답 원본 데이터:', response.data);
-      
+
       // API 응답을 UI에 맞게 변환 (동까지만 표시)
       const formattedAddresses = response.data.map(item => ({
         id: item.member_region_id,
@@ -188,10 +188,10 @@ const ProfileSection = ({ userInfo }) => {
         regionId: item.region_id,
         isPrimary: item.is_primary === 1 || item.is_primary === true
       }));
-      
+
       console.log('변환된 주소 데이터:', formattedAddresses);
       console.log('is_primary 값들:', response.data.map(item => ({ id: item.member_region_id, is_primary: item.is_primary, isPrimary: item.is_primary === 1 })));
-      
+
       setAddresses(formattedAddresses);
       console.log('주소 목록 로드 성공:', formattedAddresses);
     } catch (error) {
@@ -237,17 +237,17 @@ const ProfileSection = ({ userInfo }) => {
 
       // 새로운 토큰과 메시지 받기
       const { message: responseMessage, token: newToken } = response.data;
-      
+
       // 새로운 토큰을 localStorage에 저장
       localStorage.setItem('jwtToken', newToken);
-      
+
       // axios 헤더에 새로운 토큰 설정
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
+
       // 새로운 토큰으로 사용자 정보 디코딩
       const { jwtDecode } = await import('jwt-decode');
       const decodedToken = jwtDecode(newToken);
-      
+
       // 업데이트된 사용자 정보로 전역 상태 업데이트
       const updatedUserInfo = {
         loginId: decodedToken.sub,
@@ -256,7 +256,7 @@ const ProfileSection = ({ userInfo }) => {
         role: decodedToken.role,
         profileImageUrl: decodedToken.profileImageUrl
       };
-      
+
       // AuthContext의 updateUserInfo 함수 호출
       updateUserInfo(updatedUserInfo);
 
@@ -405,17 +405,17 @@ const ProfileSection = ({ userInfo }) => {
 
       // 새로운 토큰과 메시지 받기
       const { message: responseMessage, token: newToken } = response.data;
-      
+
       // 새로운 토큰을 localStorage에 저장
       localStorage.setItem('jwtToken', newToken);
-      
+
       // axios 헤더에 새로운 토큰 설정
       axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
+
       // 새로운 토큰으로 사용자 정보 디코딩
       const { jwtDecode } = await import('jwt-decode');
       const decodedToken = jwtDecode(newToken);
-      
+
       // 업데이트된 사용자 정보로 전역 상태 업데이트
       const updatedUserInfo = {
         loginId: decodedToken.sub,
@@ -424,7 +424,7 @@ const ProfileSection = ({ userInfo }) => {
         role: decodedToken.role,
         profileImageUrl: decodedToken.profileImageUrl
       };
-      
+
       // AuthContext의 updateUserInfo 함수 호출
       updateUserInfo(updatedUserInfo);
 
@@ -504,14 +504,14 @@ const ProfileSection = ({ userInfo }) => {
         }
       });
 
-      if (response.data.imageUrl) {
+      if (response.data.profileImageUrl) {
         // 프로필 이미지 URL 업데이트
-        setProfileData(prev => ({ ...prev, profileImageUrl: response.data.imageUrl }));
+        setProfileData(prev => ({ ...prev, profileImageUrl: response.data.profileImageUrl }));
 
         // userInfo도 업데이트하여 헤더에 즉시 반영
         const updatedUserInfo = {
           ...userInfo,
-          profileImageUrl: response.data.imageUrl
+          profileImageUrl: response.data.profileImageUrl
         };
         updateUserInfo(updatedUserInfo);
 
@@ -537,7 +537,7 @@ const ProfileSection = ({ userInfo }) => {
     if (!window.confirm('정말로 이 주소를 삭제하시겠습니까?')) {
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('jwtToken');
       if (!token) {
@@ -551,12 +551,12 @@ const ProfileSection = ({ userInfo }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       // 성공 시 주소 목록 새로고침 (DB에서 최신 상태 가져오기)
       fetchMemberAddresses();
-      
+
       setMessage({ type: 'success', text: '주소가 삭제되었습니다.' });
-      
+
       // 성공 메시지 3초 후 제거
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
@@ -576,20 +576,20 @@ const ProfileSection = ({ userInfo }) => {
     // 주소 목록 새로고침
     fetchMemberAddresses();
   };
-  
+
   // 일반주소를 기본주소로 변경
   const handleSetAsPrimary = async (addressId) => {
     if (!window.confirm('이 주소를 기본주소로 변경하시겠습니까?')) {
       return;
     }
-    
+
     try {
       const token = localStorage.getItem('jwtToken');
       if (!token) {
         setMessage({ type: 'error', text: '로그인이 필요합니다.' });
         return;
       }
-      
+
       const response = await axios.put(
         `http://localhost:4989/api/member-region/addresses/${addressId}/set-primary?loginId=${userInfo.loginId}`,
         {},
@@ -599,12 +599,12 @@ const ProfileSection = ({ userInfo }) => {
           }
         }
       );
-      
+
       if (response.status === 200) {
         setMessage({ type: 'success', text: '기본주소가 성공적으로 변경되었습니다.' });
         // 주소 목록 새로고침
         fetchMemberAddresses();
-        
+
         // 성공 메시지 3초 후 제거
         setTimeout(() => setMessage({ type: '', text: '' }), 3000);
       }
@@ -631,7 +631,7 @@ const ProfileSection = ({ userInfo }) => {
             <CardContent sx={{ textAlign: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
-                  src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}` : 'https://placehold.co/150x150')}
+                  src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}?t=${Date.now()}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}?t=${Date.now()}` : 'https://placehold.co/150x150')}
                   sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
                   onError={(e) => {
                     console.log('Avatar image load error:', e);
@@ -897,10 +897,10 @@ const ProfileSection = ({ userInfo }) => {
                           </IconButton>
 
                           {/* 주소 내용 - 동까지만 표시 */}
-                          <Box sx={{ 
-                            pr: 3, 
-                            flex: 1, 
-                            mt: address.isPrimary ? 2.5 : 0 
+                          <Box sx={{
+                            pr: 3,
+                            flex: 1,
+                            mt: address.isPrimary ? 2.5 : 0
                           }}>
                             <Typography
                               variant="body2"
