@@ -74,6 +74,9 @@ public interface AuctionMapper {
 	// 보증금 단건 조회
 	public AuctionGuaranteeDTO findGuarantee(@Param("postId") long postId,
 	                                  @Param("memberId") long memberId);
+	
+	//유찰 시 해당 글의 PAID 보증금 전체 조회
+	public List<AuctionGuaranteeDTO> findPaidGuaranteesByPost(@Param("postId") long postId);
 
 	// 내 게시글 타입별 개수 조회 (위쪽 필터용)
 	public Map<String, Object> getMyPostsCounts(@Param("memberId") long memberId);

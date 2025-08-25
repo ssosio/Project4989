@@ -48,10 +48,16 @@ const AuctionDetail = () => {
 
   const [bidHistory, setBidHistory] = useState([]);
 
+  //보증금 결제용
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMerchantUid, setPaymentMerchantUid] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  //escrow 결제용
+  const [isProcessingEscrow, setIsProcessingEscrow] = useState(false);
+  const [escrowAmount, setEscrowAmount] = useState(0);
+  const [escrowMerchantUid, setEscrowMerchantUid] = useState('');
 
   const SERVER_IP = '192.168.10.138';
   const SERVER_PORT = '4989';
@@ -69,7 +75,16 @@ const AuctionDetail = () => {
   });
 
   const normalizeHighestBid = (b) =>
-    b ? { ...b, bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0) } : null;
+  b
+    ? {
+        ...b,
+        bidderId: Number(
+          b.bidderId ?? b.bidder_id ?? b.memberId ?? b.member_id ?? 0
+        ),
+        bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0),
+        bidTime: b.bidTime ?? b.bid_time ?? null,
+      }
+    : null;
 
   const getTimeAgo = (bidTime) => {
     const now = new Date();
@@ -273,14 +288,21 @@ const AuctionDetail = () => {
         if (data.auctionDetail) setAuctionDetail(data.auctionDetail);
         break;
       }
-      case 'AUCTION_END': {
+     case 'AUCTION_END': {
         setTimeRemaining('경매 종료');
         setAuctionDetail((prev) => ({ ...prev, status: 'SOLD', winnerId: data.winnerId }));
         if (data.winner) setWinnerNickname(data.winner.nickname || `ID: ${data.winner.id}`);
         setBidMessage('경매가 종료되었습니다!');
         setBidMessageType('success');
+
+        // ⬇️ 내가 낙찰자면 에스크로 결제 안내 토스트
+        if (String(data.winnerId) === String(userInfo?.memberId)) {
+          setBidMessage('축하합니다! 낙찰자입니다. 아래 "잔금(에스크로) 결제" 버튼으로 결제 진행해주세요.');
+          setBidMessageType('info');
+        }
         break;
       }
+
       case 'USER_COUNT_UPDATE': {
         setUserCount(data.userCount);
         break;
@@ -446,6 +468,56 @@ const AuctionDetail = () => {
       setBidMessageType('error');
     }
   };
+
+  // 잔금(에스크로) 결제 시작
+const startEscrowPayment = async () => {
+  try {
+    // 1) 서버에 에스크로 전표 생성 요청 (잔금 = 최종가 - 보증금)
+    const { data } = await api.post(`/api/escrow/order/${postId}/me`);
+
+    const amount = Number(data?.amount ?? 0);
+    const mu = data?.merchantUid || data?.merchant_uid;
+    if (!mu) throw new Error('merchantUid 누락');
+
+    // 2) 잔금이 0원이면 결제창 열 필요 없이 완료 처리
+    if (amount <= 0) {
+      // 서버가 내부적으로 처리했다면 굳이 confirm은 없음. 바로 성공 토스트만.
+      setBidMessage('보증금으로 전액 충당되어 잔금 결제가 필요 없습니다.');
+      setBidMessageType('success');
+      return;
+    }
+
+    // 3) 잔금 > 0 → 결제 컴포넌트 띄우기
+    setEscrowAmount(amount);
+    setEscrowMerchantUid(mu);
+    setIsProcessingEscrow(true);   // <PortOnePayment mode="ESCROW"...> 렌더 트리거
+  } catch (err) {
+    console.error('에스크로 전표 생성 실패:', err?.response?.data || err);
+    setBidMessage('에스크로 결제를 시작할 수 없습니다. 잠시 후 다시 시도해주세요.');
+    setBidMessageType('error');
+  }
+};
+
+const handleEscrowComplete = async () => {
+  setIsProcessingEscrow(false);
+  setBidMessage('에스크로 결제가 완료되었습니다.');
+  setBidMessageType('success');
+  try {
+    const [detail, hb] = await Promise.all([
+      api.get(`/auction/detail/${postId}`),
+      api.get(`/auction/highest-bid/${postId}`)
+    ]);
+    setAuctionDetail(detail.data);
+    setHighestBid(hb.data);
+  } catch {}
+};
+
+const handleEscrowCancel = () => {
+  setIsProcessingEscrow(false);
+  setBidMessage('에스크로 결제가 취소되었습니다.');
+  setBidMessageType('info');
+};
+
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -1011,6 +1083,38 @@ const AuctionDetail = () => {
                 </button>
               )}
             </div>
+
+                        {/* 💳 잔금(에스크로) 결제 버튼 — 🔚 경매 종료 버튼 “바로 아래”에 추가 */}
+            <div style={{ marginTop: 12, textAlign: 'center' }}>
+              {(auctionDetail?.status === 'SOLD' &&
+                String(auctionDetail?.winnerId) === String(userInfo?.memberId)) && (
+                <button
+                  onClick={startEscrowPayment}
+                  style={{
+                    background: '#d1e7dd',
+                    color: '#0f5132',
+                    border: '1px solid #badbcc',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#bcdad0';
+                    e.target.style.borderColor = '#a6cec3';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#d1e7dd';
+                    e.target.style.borderColor = '#badbcc';
+                  }}
+                >
+                  💳 잔금(에스크로) 결제
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
@@ -1119,6 +1223,20 @@ const AuctionDetail = () => {
           onPaymentCancel={handlePaymentCancel}
         />
       )}
+
+            {/* 잔금(에스크로) 결제창 */}
+      {isProcessingEscrow && (
+        <PortOnePayment
+          mode="ESCROW"
+          postId={parseInt(postId, 10)}
+          memberId={userInfo?.memberId}
+          amount={escrowAmount}
+          merchantUid={escrowMerchantUid}
+          onPaymentComplete={handleEscrowComplete}
+          onPaymentCancel={handleEscrowCancel}
+        />
+      )}
+
     </div>
   );
 };

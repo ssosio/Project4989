@@ -12,4 +12,14 @@
      SET status='PAID', imp_uid=#{impUid}, updated_at=NOW()
    WHERE merchant_uid=#{merchantUid}
 </update>
+
+<select id="findByPostAndBuyer" resultType="Escrow">
+  SELECT id, post_id, buyer_id, merchant_uid, amount, status
+  FROM escrow_orders
+  WHERE post_id = #{postId}
+    AND buyer_id = #{memberId}
+  ORDER BY id DESC
+  LIMIT 1
+</select>
+
 </mapper>

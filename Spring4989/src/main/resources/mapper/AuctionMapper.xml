@@ -266,6 +266,10 @@
 	  WHERE post_id = #{postId} AND member_id = #{memberId}
 	  LIMIT 1
 	</select>
+	
+	<select id="findPaidGuaranteesByPost" parameterType="long" resultType="GuaranteeDTO">
+		select * from auction_guarantee WHERE post_id = #{postId}  AND status = 'PAID'
+	</select>
 
 	<!-- 내 게시글 타입별 개수 조회 (위쪽 필터용) -->
 	<select id="getMyPostsCounts" resultType="map">

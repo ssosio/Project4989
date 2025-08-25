@@ -171,66 +171,58 @@ public class AuctionService implements AuctionServiceInter {
 	   @Override
 	   @Transactional
 	   public String endAuction(long postId) {
-		   try {
-		        // 1) 경매 조회 & 이미 종료 여부
-		        PostsDto auction = auctionMapper.getAuctionDetail(postId);
-		        if (auction == null) return "경매글을 찾을 수 없습니다.";
-		        if ("SOLD".equals(auction.getStatus())) return "이미 종료된 경매입니다.";
+	       try {
+	           // 1) 경매 조회 & 이미 종료 여부
+	           PostsDto auction = auctionMapper.getAuctionDetail(postId);
+	           if (auction == null) return "경매글을 찾을 수 없습니다.";
+	           if ("SOLD".equalsIgnoreCase(auction.getStatus())) return "이미 종료된 경매입니다.";
 
-		        // 2) 최고 입찰자 조회
-		        AuctionDto highestBid = auctionMapper.getHighestBid(postId);
+	           // 2) 최고 입찰자 조회
+	           AuctionDto highestBid = auctionMapper.getHighestBid(postId);
 
-		        if (highestBid != null) {
-		            long winnerId = highestBid.getBidderId();
+	           if (highestBid != null) {
+	               long winnerId = highestBid.getBidderId();
 
-		            // 3) 낙찰자 지정 & SOLD + 종료시간 기록
-		            auctionMapper.updateWinnerId(postId, winnerId);
-		            auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
+	               // 3) 낙찰자 지정 & SOLD + 종료시간 기록
+	               auctionMapper.updateWinnerId(postId, winnerId);
+	               auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
 
-		            // 4) 비낙찰자 환불
-		            List<AuctionGuaranteeDTO> losers = auctionMapper.findNonWinnerGuarantees(postId, winnerId);
-		            for (AuctionGuaranteeDTO loser : losers) {
-		                try {
-		                    // PG 환불
-		                    portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
-		                    // DB 상태 REFUNDED
-		                    auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUNDED");
-		                } catch (Exception ex) {
-		                	//실패 상태 기록
-		                	auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUND_FAILED");
-		                    // 환불 실패는 로그만 남기고 다음 대상 처리 (재시도 큐/알림 붙이면 더 좋음)
-		                    System.err.println("환불 실패 guaranteeId=" + loser.getGuaranteeId() + " : " + ex.getMessage());
-		                }
-		            }
+	               // 4) 비낙찰자 환불(공통 함수)
+	               refundNonWinners(postId, winnerId);
 
-		            // 5) 낙찰자 보증금 HOLD
-		            AuctionGuaranteeDTO winnerG = auctionMapper.findGuarantee(postId, winnerId);
-		            if (winnerG != null) {
-		                auctionMapper.updateGuaranteeStatus(winnerG.getGuaranteeId(), "HOLD");
-		            } else {
-		                System.err.println("낙찰자 보증금 없음 postId=" + postId + ", winnerId=" + winnerId);
-		            }
+	               // 5) 낙찰자 보증금 HOLD (에스크로 결제 완료 시 APPLIED로 바뀜)
+	               AuctionGuaranteeDTO winnerG = auctionMapper.findGuarantee(postId, winnerId);
+	               if (winnerG != null) {
+	                   // 이미 APPLIED/HOLD 등으로 변경된 경우가 아니면 HOLD로
+	                   String st = winnerG.getStatus();
+	                   if (st == null || "PAID".equalsIgnoreCase(st)) {
+	                       auctionMapper.updateGuaranteeStatus(winnerG.getGuaranteeId(), "HOLD");
+	                   }
+	               } else {
+	                   System.err.println("낙찰자 보증금 없음 postId=" + postId + ", winnerId=" + winnerId);
+	               }
 
-		            // 6) 소켓 알림 (헬퍼로 통일)
-		            sendAuctionEndMessage(postId, winnerId);
-		            
-		            //  낙찰자 에스크로 전표 생성
-		            createEscrowOrderForWinner(postId, winnerId);
+	               // 6) 소켓 알림
+	               sendAuctionEndMessage(postId, winnerId);
 
-		            return "경매가 성공적으로 종료되었습니다. 낙찰자: ID " + winnerId;
-		        } else {
-		            // 입찰자 없음 → SOLD + 종료시간만
-		            auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
+	               // 7) 낙찰자 에스크로 전표 생성 (금액 = 최종가 - 보증금)
+	               createEscrowOrderForWinner(postId, winnerId);
 
-		            // 소켓 알림 (낙찰자 없음)
-		            sendAuctionEndMessage(postId, null);
+	               return "경매가 성공적으로 종료되었습니다. 낙찰자: ID " + winnerId;
+	           } else {
+	               // 입찰자 없음 → 상태만 종료 처리
+	               auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
 
-		            return "경매가 종료되었습니다. (입찰자 없음)";
-		        }
-		    } catch (Exception e) {
-		        return "경매 종료 처리에 실패했습니다: " + e.getMessage();
-		    }
+	               // 소켓 알림 (낙찰자 없음)
+	               sendAuctionEndMessage(postId, null);
+
+	               return "경매가 종료되었습니다. (입찰자 없음)";
+	           }
+	       } catch (Exception e) {
+	           return "경매 종료 처리에 실패했습니다: " + e.getMessage();
+	       }
 	   }
+
 	
 	
 	// 매 1분마다 실행 (경매 종료 체크)
@@ -284,20 +276,26 @@ public class AuctionService implements AuctionServiceInter {
 		}
 		
 		//낙찰 거래 최종처리: 정상거래면 환불, 노쇼면 몰수
-	@Transactional
-	public void finalizeWinnerGuarantee(long postId, long winnerId, String action) {
-	    AuctionGuaranteeDTO g = auctionMapper.findGuarantee(postId, winnerId);
-	    if (g == null) return;
+		@Transactional
+		public void finalizeWinnerGuarantee(long postId, long winnerId, String action) {
+		    AuctionGuaranteeDTO g = auctionMapper.findGuarantee(postId, winnerId);
+		    if (g == null) return;
+
 		    switch (action) {
-		        case "REFUND":   // 정상 거래 완료 → 환불
-		            portOneService.refundPayment(g.getImpUid(), g.getAmount());	
+		        case "APPLY":   // 차감 적용(환불 아님)
+		            auctionMapper.updateGuaranteeStatus(g.getGuaranteeId(), "APPLIED");
+		            break;
+
+		        case "REFUND":  // 정상 거래 후 보증금 환불이 필요한 정책일 때만 사용
+		            portOneService.refundPayment(g.getImpUid(), g.getAmount());
 		            auctionMapper.updateGuaranteeStatus(g.getGuaranteeId(), "REFUNDED");
 		            break;
-		        case "FORFEIT":  // 노쇼/파기 → 몰수 (ENUM에 FORFEITED 있으면)
+
+		        case "FORFEIT": // 노쇼/파기 등 몰수
 		            auctionMapper.updateGuaranteeStatus(g.getGuaranteeId(), "FORFEITED");
 		            break;
-	    }
-	}
+		    }
+		}
 		
 	@Override
 	public List<Map<String, Object>> getAuctionPhotos(long postId) {
@@ -324,15 +322,30 @@ public class AuctionService implements AuctionServiceInter {
 		auctionMapper.insertGuarantee(dto);
 	}
 	
-	//낙찰 실패자 환불 일괄 처리(종료시 호출)
-	public void refundNonWinners(long postId,long winnerId) {
-		List<AuctionGuaranteeDTO> losers = findNonWinnerGuarantees(postId, winnerId);
-		for(AuctionGuaranteeDTO loser : losers) {
-			portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
-			updateGuaranteeStatus(loser.getGuaranteeId(),"REFUNDED");
-		}
-		
+	@Transactional
+	public void refundNonWinners(long postId, long winnerId) {
+	    List<AuctionGuaranteeDTO> losers = auctionMapper.findNonWinnerGuarantees(postId, winnerId);
+	    if (losers == null || losers.isEmpty()) return;
+
+	    for (AuctionGuaranteeDTO loser : losers) {
+	        if (loser == null) continue;
+
+	        String st = loser.getStatus();
+	        // 이미 처리된 건들은 스킵 (PAID만 환불 대상)
+	        if (st != null && !"PAID".equalsIgnoreCase(st)) continue;
+
+	        try {
+	            // 전액 환불
+	            portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
+	            auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUNDED");
+	        } catch (Exception ex) {
+	            // 개별 실패는 기록만 하고 계속 진행
+	            auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUND_FAILED");
+	            System.err.println("비낙찰자 환불 실패 guaranteeId=" + loser.getGuaranteeId() + " : " + ex.getMessage());
+	        }
+	    }
 	}
+
 
 
 	

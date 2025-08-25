@@ -3,7 +3,6 @@ package boot.sagu.controller;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +34,6 @@ import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
-import boot.sagu.dto.PortOneConfirmRequest;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
 import boot.sagu.service.EscrowService;
@@ -132,10 +130,17 @@ public class AuctionController {
 
 
 	//수동 경매 종료 API
-	@PostMapping("/auction/end/{postId}")
-	public String endAuction(@PathVariable("postId") long postId) {
-		return auctionService.endAuction(postId);
-	}
+	 @PostMapping("/auction/end/{postId}")
+	    public ResponseEntity<?> endAuction(@PathVariable long postId,
+	                                        @RequestHeader(value = "Authorization", required = false) String bearer) {
+	        try {
+	            // (선택) bearer로 작성자 검증 넣고 싶으면 여기에서
+	            auctionService.endAuction(postId);  // ★ 종료 단일 로직 (입찰 없으면 유찰처리 + 보증금 환불)
+	            return ResponseEntity.ok("경매 종료 처리 완료");
+	        } catch (Exception e) {
+	            return ResponseEntity.badRequest().body("경매 종료 실패: " + e.getMessage());
+	        }
+	    }
 	
 	// 방 입장/퇴장은 WebSocket으로 처리됨 (REST API 제거)
 	@GetMapping("/auction/photos/{postId}")
@@ -399,13 +404,6 @@ public class AuctionController {
 	}
 
     
-    //수동 종료(운영/관리자용)
-    @PostMapping("/auction/{postId}/end")
-    public ResponseEntity<?> end(@PathVariable long postId) {
-        String msg = auctionService.endAuction(postId);
-        return ResponseEntity.ok(Map.of("message", msg));
-    }
-    
     //낙찰 거래 최종처리(정상완료 환불 or 노쇼 몰수)
     @PostMapping("/auction/{postId}/winner/{winnerId}/finalize")
     public ResponseEntity<?> finalizeWinner(
@@ -528,6 +526,8 @@ public class AuctionController {
         return ResponseEntity.ok("ok");
       }
     }
+    
+    
 
 
 
@@ -708,5 +708,55 @@ public class AuctionController {
 			e.printStackTrace();
 			return ResponseEntity.status(500).build();
 		}
+	}
+	
+	// 낙찰자 본인 에스크로 주문 조회
+	@GetMapping("/api/escrow/order/{postId}/me")
+	public ResponseEntity<?> getMyEscrowOrder(
+	        @PathVariable("postId") long postId,
+	        @RequestHeader("Authorization") String authorization
+	) {
+	    if (authorization == null || !authorization.startsWith("Bearer ")) {
+	        return ResponseEntity.status(401).body(Map.of("status","ERROR","message","로그인이 필요합니다."));
+	    }
+	    long memberId = jwtUtil.extractMemberId(authorization.substring(7));
+
+	    var o = escrowService.findMyEscrowOrder(postId, memberId); // 아래 2) 참고
+	    if (o == null) {
+	        return ResponseEntity.ok(Map.of("exists", false));
+	    }
+	    return ResponseEntity.ok(Map.of(
+	        "exists", true,
+	        "merchantUid", o.getMerchantUid(),
+	        "amount", o.getAmount(),         // 최종가-보증금
+	        "status", o.getStatus()          // CREATED | PENDING | PAID ...
+	    ));
+	}
+	
+	@PostMapping("/api/escrow/order/{postId}/me")
+	public ResponseEntity<?> createEscrowOrderForMe(
+	        @PathVariable("postId") long postId,
+	        @RequestHeader(value = "Authorization", required = false) String authorization
+	) {
+	    try {
+	        if (authorization == null || !authorization.startsWith("Bearer ")) {
+	            return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
+	        }
+	        String jwt = authorization.substring(7);
+	        Integer memberId = jwtUtil.extractMemberId(jwt);
+	        if (memberId == null || memberId <= 0) {
+	            return ResponseEntity.status(401).body(Map.of("message", "유효하지 않은 토큰입니다."));
+	        }
+
+	        // 전표 생성(최종가-보증금 계산, merchantUid 생성, PortOne prepare 등)
+	        Map<String, Object> order = escrowService.createOrderForWinner(postId, memberId);
+
+	        // { amount, merchantUid } 형태로 응답
+	        return ResponseEntity.ok(order);
+	    } catch (IllegalStateException ise) {
+	        return ResponseEntity.badRequest().body(Map.of("message", ise.getMessage()));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(500).body(Map.of("message", "전표 생성 실패: " + e.getMessage()));
+	    }
 	}
 }

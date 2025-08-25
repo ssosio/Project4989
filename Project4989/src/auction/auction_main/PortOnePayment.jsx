@@ -24,9 +24,15 @@ function loadPortOneScript() {
   });
 }
 
+/**
+ * mode: 'DEPOSIT' | 'ESCROW'
+ *  - DEPOSIT(보증금): 결제 성공 시 /api/auctions/portone/confirm 호출
+ *  - ESCROW(에스크로): 웹훅으로 처리되므로 프론트에서 별도 confirm 호출 불필요
+ */
 export default function PortOnePayment({
+  mode = 'DEPOSIT',
   postId,
-  memberId,
+  // memberId는 서버가 JWT로 판별하므로 굳이 안 써도 됨. (사용자 정보는 영수증 표기용)
   amount,
   merchantUid,
   onPaymentComplete,
@@ -40,7 +46,7 @@ export default function PortOnePayment({
     if (launchedRef.current) return;
     launchedRef.current = true;
 
-    const guardKey = `__portone_open_${postId}_${memberId}`;
+    const guardKey = `__portone_open_${mode}_${postId}_${merchantUid}`;
     if (window[guardKey]) return;
     window[guardKey] = true;
 
@@ -52,7 +58,7 @@ export default function PortOnePayment({
         const { IMP } = window;
         IMP.init(PORTONE_CONFIG.IMP_CODE);
 
-        // 로그인 토큰 존재 확인(실제 전송은 api 인스턴스가 함)
+        // 로그인 체크 (토큰은 api 인스턴스가 헤더로 보냄)
         const raw = localStorage.getItem('jwtToken') || localStorage.getItem('accessToken');
         if (!raw) {
           alert('로그인이 필요합니다. 로그인 후 다시 시도해주세요.');
@@ -72,13 +78,15 @@ export default function PortOnePayment({
           return;
         }
 
+        const payName = mode === 'ESCROW' ? '에스크로 결제' : '경매 보증금';
+
         IMP.request_pay(
           {
             pg: PORTONE_CONFIG.PG,
             pay_method: PORTONE_CONFIG.PAY_METHOD,
             merchant_uid: merchantUid,
             amount: Number(amount),
-            name: '경매 보증금',
+            name: payName,
             buyer_email,
             buyer_name,
             buyer_tel,
@@ -89,17 +97,24 @@ export default function PortOnePayment({
 
             if (rsp.success) {
               try {
-                await api.post('/api/auctions/portone/confirm', {
-                  postId: Number(postId),
-                  memberId: Number(memberId),
-                  impUid: rsp.imp_uid,
-                  merchantUid,
-                  paidAmount: rsp.paid_amount,
-                });
+                if (mode === 'DEPOSIT') {
+                  // ✅ 보증금은 confirm API로 서버 검증 + 적립 (memberId는 서버가 JWT에서 추출)
+                  await api.post('/api/auctions/portone/confirm', {
+                    postId: Number(postId),
+                    impUid: rsp.imp_uid,
+                    merchantUid,
+                    paidAmount: rsp.paid_amount,
+                  });
+                } else {
+                  // ✅ 에스크로는 웹훅이 escrowService.handleEscrowPaid()로 처리
+                  // 필요시 여기서 /api/escrow/order/{postId}/me 재조회로 상태 갱신 가능
+                  // await api.get(`/api/escrow/order/${postId}/me`);
+                }
+
                 onPaymentComplete?.();
               } catch (err) {
-                console.error('결제 검증/전달 실패:', err);
-                alert(`${PAYMENT_ERROR_MESSAGES.FAILED} (검증 실패)`);
+                console.error('결제 후 처리 실패:', err);
+                alert(`${PAYMENT_ERROR_MESSAGES.FAILED} (검증/후처리 실패)`);
                 onPaymentCancel?.(rsp);
               }
             } else {
@@ -126,11 +141,13 @@ export default function PortOnePayment({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const title = mode === 'ESCROW' ? '에스크로 결제' : '보증금 결제';
+
   return (
     <div className="payment-container">
       <div className="payment-content">
-        <h2>보증금 결제</h2>
-        <p>경매 참여를 위해 보증금을 결제해주세요.</p>
+        <h2>{title}</h2>
+        <p>{mode === 'ESCROW' ? '낙찰 금액 결제(차감형)입니다.' : '경매 참여를 위해 보증금을 결제해주세요.'}</p>
         <div className="payment-details">
           <p><strong>결제 금액:</strong> {Number(amount).toLocaleString()}원</p>
           <p><strong>결제 수단:</strong> KG이니시스 (카드)</p>
