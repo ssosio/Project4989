@@ -64,10 +64,32 @@
   line-height: 1.6;
 }
 
+/* 메인 컨텐츠 영역 */
+.real-estate-main-content {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+/* 왼쪽 사이드바 */
+.real-estate-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 20px;
+}
+
+/* 오른쪽 메인 컨텐츠 */
+.real-estate-content {
+  flex: 1;
+  min-width: 0;
+}
+
 /* 필터 UI */
 .estates-filters {
   position: static;
   width: 100%;
+  height: 600px;
   padding: 20px;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
@@ -77,10 +99,18 @@
   z-index: 100;
   margin-bottom: 30px;
   display: flex;
-  flex-direction: row;
-  justify-content: center;
+  flex-direction: column;
   gap: 20px;
-  flex-wrap: wrap;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Webkit 브라우저에서 스크롤바 숨기기 */
+.estates-filters::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
 }
 
 .filter-group {
@@ -88,7 +118,7 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 0;
-  min-width: 120px;
+  width: 100%;
 }
 
 .filter-label {
@@ -133,8 +163,8 @@
 /* 필터 초기화 버튼 */
 .filter-reset-container {
   display: flex;
-  align-items: flex-end;
-  margin-top: 20px;
+  justify-content: center;
+  margin-bottom: 15px;
 }
 
 .filter-reset-btn {
@@ -163,6 +193,26 @@
   transform: translateY(0);
 }
 
+/* 스크롤바 스타일링 - 호버 시에만 표시 */
+.estates-filters:hover::-webkit-scrollbar {
+  width: 8px;
+}
+
+.estates-filters:hover::-webkit-scrollbar-track {
+  background: rgba(74, 144, 226, 0.1);
+  border-radius: 4px;
+}
+
+.estates-filters:hover::-webkit-scrollbar-thumb {
+  background: rgba(74, 144, 226, 0.3);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.estates-filters:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 144, 226, 0.5);
+}
+
 /* 등록 버튼 */
 .real-estate-register-btn {
   padding: 14px 28px;
@@ -177,10 +227,11 @@
   font-family: inherit;
   position: relative;
   overflow: hidden;
-  margin-bottom: 30px;
+  margin-bottom: 130px;
   display: block;
   margin-left: auto;
   margin-right: auto;
+  margin-top: 50px;
 }
 
 .real-estate-register-btn::before {
@@ -491,18 +542,26 @@
     font-size: 2rem;
   }
 
-  .estates-filters {
+  /* 모바일에서는 사이드바를 위로 이동 */
+  .real-estate-main-content {
     flex-direction: column;
+    gap: 20px;
+  }
+
+  .real-estate-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .estates-filters {
+    flex-direction: row;
+    justify-content: center;
     gap: 15px;
+    flex-wrap: wrap;
   }
 
   .filter-group {
-    min-width: auto;
-  }
-
-  .filter-reset-container {
-    margin-top: 15px;
-    justify-content: center;
+    min-width: 120px;
   }
 
   .real-estate-grid {
@@ -653,19 +712,20 @@
   right: 30px;
   width: 50px;
   height: 50px;
-  background: #4A90E2;
+  background: linear-gradient(135deg, #4A90E2, #357ABD);
   color: white;
   border: none;
   border-radius: 50%;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+  box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
   transition: all 0.3s ease;
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .scroll-to-top-btn:hover {

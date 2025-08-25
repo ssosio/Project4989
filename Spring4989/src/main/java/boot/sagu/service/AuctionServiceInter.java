@@ -50,5 +50,17 @@ public interface AuctionServiceInter {
 	
 	   public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
 	   
-	
+
+	   public int existsGuaranteeByImpUid(String impUid);
+	   
+	   // ==================================마이페이지 입찰 내역 관련 메서드==================================
+	   
+	   // 내 입찰 기록 조회 (페이징 포함)
+	   public List<Map<String, Object>> getMyBids(int memberId, String status, int offset, int limit);
+	   
+	   // 내 입찰 기록 총 개수
+	   public int getMyBidsTotalCount(int memberId);
+	   
+	   // 내 입찰 기록 상태별 개수
+	   public Map<String, Object> getMyBidsStatusCounts(int memberId);
 }

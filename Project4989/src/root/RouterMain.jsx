@@ -19,6 +19,7 @@ import AuthCallback from '../login/AuthCallback'
 import UpdatePost from '../board/UpdatePost'
 import MyPage from '../mypage'
 import AdminPage from '../pages/AdminPage'
+import SearchBox from '../board/SearchBox'
 
 const RouterMain = ({ handleLoginSuccess }) => {
   return (
@@ -42,6 +43,7 @@ const RouterMain = ({ handleLoginSuccess }) => {
           <Route path='/board/GoodsDetail' element={<GoodsDetail />} />
           <Route path='/map' element={<Map />} />
           <Route path='/board/update' element={<UpdatePost />} />
+          <Route path='/board/search' element={<SearchBox />} />
         </Route>
       </Routes>
     </div>

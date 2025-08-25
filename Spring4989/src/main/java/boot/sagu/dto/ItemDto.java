@@ -12,5 +12,4 @@ public class ItemDto {
    private Long postId;
    private int categoryId;
    private String conditions;
-
 }
