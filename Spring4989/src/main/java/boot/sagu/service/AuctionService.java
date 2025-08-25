@@ -563,4 +563,26 @@ public class AuctionService implements AuctionServiceInter {
 		return auctionMapper.getMyBidsStatusCounts(memberId);
 	}
 
+	// ==================================마이페이지 찜한 상품 관련 메서드==================================
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesCounts(int memberId) {
+		return auctionMapper.getMyFavoritesCounts(memberId);
+	}
+	
+	// 내 찜한 상품 목록 조회 (페이징 포함)
+	public List<Map<String, Object>> getMyFavorites(Map<String, Object> params) {
+		return auctionMapper.getMyFavorites(params);
+	}
+	
+	// 내 찜한 상품 총 개수 조회 (페이징용)
+	public int getMyFavoritesTotalCount(Map<String, Object> params) {
+		return auctionMapper.getMyFavoritesTotalCount(params);
+	}
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesTypeCounts(int memberId) {
+		return auctionMapper.getMyFavoritesTypeCounts(memberId);
+	}
+
 }

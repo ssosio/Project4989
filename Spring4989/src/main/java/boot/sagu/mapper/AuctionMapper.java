@@ -103,4 +103,18 @@ public interface AuctionMapper {
 	// 내 입찰 기록 상태별 개수
 	public Map<String, Object> getMyBidsStatusCounts(@Param("memberId") int memberId);
 
+	// ==================================마이페이지 찜한 상품 관련 메서드==================================
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesCounts(@Param("memberId") int memberId);
+	
+	// 내 찜한 상품 목록 조회 (페이징 포함)
+	public List<Map<String, Object>> getMyFavorites(Map<String, Object> params);
+	
+	// 내 찜한 상품 총 개수 조회 (페이징용)
+	public int getMyFavoritesTotalCount(Map<String, Object> params);
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesTypeCounts(@Param("memberId") int memberId);
+
 }

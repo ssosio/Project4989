@@ -461,5 +461,118 @@
 		WHERE ab.bidder_id = #{memberId}
 	</select>
 
+	<!-- ==================================마이페이지 찜한 상품 관련 =================================== -->
+	
+	<!-- 내 찜한 상품 타입별 개수 조회 -->
+	<select id="getMyFavoritesCounts" parameterType="int" resultType="java.util.Map">
+		SELECT 
+			COUNT(*) as total,
+			SUM(CASE WHEN p.trade_type = 'AUCTION' THEN 1 ELSE 0 END) as auction,
+			SUM(CASE WHEN p.trade_type = 'SALE' THEN 1 ELSE 0 END) as general,
+			SUM(CASE WHEN p.trade_type = 'SHARE' THEN 1 ELSE 0 END) as share,
+			SUM(CASE WHEN p.status = 'ON_SALE' THEN 1 ELSE 0 END) as available
+		FROM favorites f
+		JOIN posts p ON f.post_id = p.post_id
+		WHERE f.member_id = #{memberId}
+	</select>
+	
+	<!-- 내 찜한 상품 목록 조회 (페이징 포함) -->
+	<select id="getMyFavorites" parameterType="java.util.Map" resultType="java.util.Map">
+		SELECT 
+			f.favorite_id,
+			f.member_id,
+			f.post_id,
+			f.created_at as favorite_created_at,
+			p.title,
+			p.content as description,
+			p.price,
+			p.trade_type as post_type,
+			p.status,
+			p.auction_end_time,
+			p.created_at as post_created_at,
+			p.view_count,
+			m.nickname,
+			COALESCE(pp.photo_url, '') as main_photo_url
+		FROM favorites f
+		JOIN posts p ON f.post_id = p.post_id
+		JOIN members m ON p.member_id = m.member_id
+		LEFT JOIN (
+			SELECT post_id, photo_url,
+				ROW_NUMBER() OVER (PARTITION BY post_id ORDER BY is_main DESC, photo_id ASC) as rn
+			FROM post_photos
+		) pp ON p.post_id = pp.post_id AND pp.rn = 1
+		WHERE f.member_id = #{memberId}
+		<if test="type != null and type != 'all'">
+			<choose>
+				<when test="type == 'auction'">
+					AND p.trade_type = 'AUCTION'
+				</when>
+				<when test="type == 'general'">
+					AND p.trade_type = 'SALE'
+				</when>
+				<when test="type == 'share'">
+					AND p.trade_type = 'SHARE'
+				</when>
+			</choose>
+		</if>
+		<if test="search != null and search != ''">
+			AND (p.title LIKE CONCAT('%', #{search}, '%') OR p.content LIKE CONCAT('%', #{search}, '%'))
+		</if>
+		<choose>
+			<when test="sort == 'date'">
+				ORDER BY f.created_at DESC
+			</when>
+			<when test="sort == 'price-low'">
+				ORDER BY p.price ASC
+			</when>
+			<when test="sort == 'price-high'">
+				ORDER BY p.price DESC
+			</when>
+			<when test="sort == 'name'">
+				ORDER BY p.title ASC
+			</when>
+			<otherwise>
+				ORDER BY f.created_at DESC
+			</otherwise>
+		</choose>
+		LIMIT #{offset}, #{limit}
+	</select>
+	
+	<!-- 내 찜한 상품 총 개수 조회 (페이징용) -->
+	<select id="getMyFavoritesTotalCount" parameterType="java.util.Map" resultType="int">
+		SELECT COUNT(*)
+		FROM favorites f
+		JOIN posts p ON f.post_id = p.post_id
+		WHERE f.member_id = #{memberId}
+		<if test="type != null and type != 'all'">
+			<choose>
+				<when test="type == 'auction'">
+					AND p.trade_type = 'AUCTION'
+				</when>
+				<when test="type == 'general'">
+					AND p.trade_type = 'SALE'
+				</when>
+				<when test="type == 'share'">
+					AND p.trade_type = 'SHARE'
+				</when>
+			</choose>
+		</if>
+		<if test="search != null and search != ''">
+			AND (p.title LIKE CONCAT('%', #{search}, '%') OR p.content LIKE CONCAT('%', #{search}, '%'))
+		</if>
+	</select>
+	
+	<!-- 내 찜한 상품 타입별 개수 조회 -->
+	<select id="getMyFavoritesTypeCounts" parameterType="int" resultType="java.util.Map">
+		SELECT 
+			COUNT(*) as total,
+			SUM(CASE WHEN p.trade_type = 'AUCTION' THEN 1 ELSE 0 END) as auction,
+			SUM(CASE WHEN p.trade_type = 'SALE' THEN 1 ELSE 0 END) as general,
+			SUM(CASE WHEN p.trade_type = 'SHARE' THEN 1 ELSE 0 END) as share
+		FROM favorites f
+		JOIN posts p ON f.post_id = p.post_id
+		WHERE f.member_id = #{memberId}
+	</select>
+
 	
 </mapper> 

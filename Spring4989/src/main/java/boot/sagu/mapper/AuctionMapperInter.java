@@ -36,4 +36,15 @@ public interface AuctionMapperInter {
     Map<String, Object> getMyPostsStatusCounts(Map<String, Object> params);
     List<PostsDto> getMyPosts(Map<String, Object> params);
     int getMyPostsTotalCount(Map<String, Object> params);
+    
+    // 마이페이지 입찰 내역 관련 메서드들
+    List<Map<String, Object>> getMyBids(int memberId, String status, int offset, int limit);
+    int getMyBidsTotalCount(int memberId);
+    Map<String, Object> getMyBidsStatusCounts(int memberId);
+    
+    // 마이페이지 찜한 상품 관련 메서드들
+    Map<String, Object> getMyFavoritesCounts(int memberId);
+    List<Map<String, Object>> getMyFavorites(Map<String, Object> params);
+    int getMyFavoritesTotalCount(Map<String, Object> params);
+    Map<String, Object> getMyFavoritesTypeCounts(int memberId);
 }

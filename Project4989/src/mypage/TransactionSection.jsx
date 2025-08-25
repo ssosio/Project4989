@@ -14,6 +14,7 @@ import {
   CardMedia,
   CardActionArea
 } from '@mui/material';
+import './TransactionSection.css';
 import { 
   ShoppingCart, 
   Gavel, 
@@ -272,32 +273,19 @@ const TransactionSection = ({ userInfo }) => {
   };
 
   return (
-    <Box sx={{ p: 3, bgcolor: '#f8f9fa', minHeight: '100vh' }}>
+    <Box className="transaction-section-container">
       {/* 타입별 필터 */}
-      <Box sx={{ mb: 4, p: 3, bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+      <Box className="transaction-filter-section">
+        <Typography variant="h6" className="transaction-filter-title">
           게시글 타입
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} className="transaction-filter-buttons">
           <Grid item>
             <Button
               variant={typeFilter === 'all' ? 'contained' : 'outlined'}
               onClick={() => handleTypeFilterChange('all')}
               startIcon={<AllInclusive />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: typeFilter === 'all' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${typeFilter === 'all' ? 'active' : ''}`}
             >
               전체 ({totalCounts.total})
             </Button>
@@ -307,20 +295,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={typeFilter === 'AUCTION' ? 'contained' : 'outlined'}
               onClick={() => handleTypeFilterChange('AUCTION')}
               startIcon={<Gavel />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: typeFilter === 'AUCTION' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${typeFilter === 'AUCTION' ? 'active' : ''}`}
             >
               경매 ({totalCounts.auction})
             </Button>
@@ -330,20 +305,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={typeFilter === 'SALE' ? 'contained' : 'outlined'}
               onClick={() => handleTypeFilterChange('SALE')}
               startIcon={<ShoppingCart />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: typeFilter === 'SALE' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${typeFilter === 'SALE' ? 'active' : ''}`}
             >
               일반거래 ({totalCounts.sale})
             </Button>
@@ -353,20 +315,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={typeFilter === 'SHARE' ? 'contained' : 'outlined'}
               onClick={() => handleTypeFilterChange('SHARE')}
               startIcon={<CardGiftcard />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: typeFilter === 'SHARE' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${typeFilter === 'SHARE' ? 'active' : ''}`}
             >
               나눔 ({totalCounts.share})
             </Button>
@@ -375,29 +324,16 @@ const TransactionSection = ({ userInfo }) => {
       </Box>
 
       {/* 상태별 필터 */}
-      <Box sx={{ mb: 4, p: 3, bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+      <Box className="transaction-filter-section">
+        <Typography variant="h6" className="transaction-filter-title">
           게시글 상태
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} className="transaction-filter-buttons">
           <Grid item>
             <Button
               variant={statusFilter === 'all' ? 'contained' : 'outlined'}
               onClick={() => handleStatusFilterChange('all')}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: statusFilter === 'all' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
             >
               전체 ({currentTypeTotalCount})
             </Button>
@@ -407,20 +343,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={statusFilter === 'ON_SALE' ? 'contained' : 'outlined'}
               onClick={() => handleStatusFilterChange('ON_SALE')}
               startIcon={<Visibility />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: statusFilter === 'ON_SALE' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${statusFilter === 'ON_SALE' ? 'active' : ''}`}
             >
               판매중 ({currentStatusCounts.on_sale})
             </Button>
@@ -430,20 +353,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={statusFilter === 'RESERVED' ? 'contained' : 'outlined'}
               onClick={() => handleStatusFilterChange('RESERVED')}
               startIcon={<Schedule />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: statusFilter === 'RESERVED' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${statusFilter === 'RESERVED' ? 'active' : ''}`}
             >
               예약중 ({currentStatusCounts.reserved})
             </Button>
@@ -453,20 +363,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={statusFilter === 'SOLD' ? 'contained' : 'outlined'}
               onClick={() => handleStatusFilterChange('SOLD')}
               startIcon={<CheckCircle />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: statusFilter === 'SOLD' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${statusFilter === 'SOLD' ? 'active' : ''}`}
             >
               거래완료 ({currentStatusCounts.sold})
             </Button>
@@ -476,20 +373,7 @@ const TransactionSection = ({ userInfo }) => {
               variant={statusFilter === 'cancelled' ? 'contained' : 'outlined'}
               onClick={() => handleStatusFilterChange('cancelled')}
               startIcon={<Cancel />}
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontWeight: 600,
-                textTransform: 'none',
-                fontSize: '0.9rem',
-                boxShadow: statusFilter === 'cancelled' ? '0 4px 12px rgba(0,0,0,0.15)' : 'none',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                },
-                transition: 'all 0.3s ease'
-              }}
+              className={`transaction-filter-btn ${statusFilter === 'cancelled' ? 'active' : ''}`}
             >
               유찰 ({currentStatusCounts.cancelled})
             </Button>
@@ -498,23 +382,23 @@ const TransactionSection = ({ userInfo }) => {
       </Box>
 
       {/* 게시글 목록 */}
-      <Box sx={{ p: 3, bgcolor: 'white', borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+      <Box className="transaction-posts-container">
+        <Typography variant="h6" className="transaction-posts-title">
           게시글 목록 ({totalCount}개)
         </Typography>
         
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
-            <Box sx={{ textAlign: 'center' }}>
-              <CircularProgress size={60} sx={{ color: '#3498db', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600 }}>
+          <Box className="transaction-loading-container">
+            <Box className="transaction-loading-content">
+              <CircularProgress size={60} className="transaction-loading-spinner" />
+              <Typography variant="h6" color="text.secondary" className="transaction-loading-text">
                 게시글을 불러오는 중...
               </Typography>
             </Box>
           </Box>
         ) : posts.length === 0 ? (
-          <Box sx={{ textAlign: 'center', p: 6 }}>
-            <Typography variant="h5" color="text.secondary" sx={{ fontWeight: 600, mb: 2 }}>
+          <Box className="transaction-empty-container">
+            <Typography variant="h5" color="text.secondary" className="transaction-empty-title">
               📭 게시글이 없습니다
             </Typography>
             <Typography variant="body1" color="text.secondary">
@@ -523,7 +407,7 @@ const TransactionSection = ({ userInfo }) => {
           </Box>
         ) : (
           <>
-            <Grid container spacing={3} sx={{ justifyContent: 'flex-start' }}>
+            <Grid container spacing={3} className="transaction-posts-grid">
               {posts.map((post) => {
                 const statusInfo = getStatusInfo(post.status, post.tradeType, post.winnerId);
                 const typeInfo = getTypeInfo(post.tradeType);
@@ -531,38 +415,18 @@ const TransactionSection = ({ userInfo }) => {
                 return (
                   <Grid item xs={12} sm={6} md={4} key={post.postId}>
                     <Card 
-                      sx={{ 
-                        height: '500px', // 고정 높이 설정
-                        display: 'flex', 
-                        flexDirection: 'column',
-                        width: '100%',
-                        borderRadius: 3,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-8px)',
-                          boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                        },
-                        cursor: 'pointer',
-                        overflow: 'hidden'
-                      }}
+                      className="transaction-post-card"
                       onClick={() => handlePostClick(post)}
                     >
                        {/* 이미지 - 고정 높이 */}
-                       <Box sx={{ height: '200px', overflow: 'hidden' }}>
+                       <Box className="transaction-post-image-container">
                          {postImages[post.postId] && !imageErrors.has(post.postId) ? (
                            <CardMedia
                              component="img"
                              height="200"
                              image={postImages[post.postId].url}
                              alt={post.title}
-                             sx={{ 
-                               objectFit: 'cover',
-                               transition: 'transform 0.3s ease-in-out',
-                               '&:hover': {
-                                 transform: 'scale(1.05)'
-                               }
-                             }}
+                             className="transaction-post-image"
                              onError={(e) => {
                                console.log('이미지 로드 실패:', postImages[post.postId].originalUrl);
                                console.log('실패한 이미지 URL:', e.target.src);
@@ -573,83 +437,35 @@ const TransactionSection = ({ userInfo }) => {
                              }}
                            />
                          ) : (
-                           <Box
-                             sx={{
-                               height: 200,
-                               background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-                               display: 'flex',
-                               alignItems: 'center',
-                               justifyContent: 'center',
-                               color: '#666',
-                               fontSize: '1.1rem',
-                               fontWeight: 500
-                             }}
-                           >
+                           <Box className="transaction-post-no-image">
                              <Typography variant="body1">이미지 없음</Typography>
                            </Box>
                          )}
                        </Box>
                        
-                       <CardContent sx={{ 
-                         flexGrow: 1, 
-                         display: 'flex', 
-                         flexDirection: 'column',
-                         p: 2,
-                         '&:last-child': { pb: 2 },
-                         height: '300px', // 고정 높이 (500px - 200px 이미지)
-                         overflow: 'hidden'
-                       }}>
+                       <CardContent className="transaction-post-content">
                          {/* 칩들 - 고정 높이 */}
-                         <Box sx={{ 
-                           display: 'flex', 
-                           gap: 1, 
-                           mb: 1, 
-                           flexWrap: 'wrap',
-                           height: '32px', // 고정 높이
-                           alignItems: 'center'
-                         }}>
+                         <Box className="transaction-post-chips">
                            <Chip
                              icon={typeInfo.icon}
                              label={typeInfo.label}
                              color={typeInfo.color}
                              size="small"
-                             sx={{ 
-                               borderRadius: 2,
-                               fontWeight: 600,
-                               fontSize: '0.75rem',
-                               height: '24px'
-                             }}
+                             className="transaction-post-chip"
                            />
                            <Chip
                              icon={statusInfo.icon}
                              label={statusInfo.label}
                              color={statusInfo.color}
                              size="small"
-                             sx={{ 
-                               borderRadius: 2,
-                               fontWeight: 600,
-                               fontSize: '0.75rem',
-                               height: '24px'
-                             }}
+                             className="transaction-post-chip"
                            />
                          </Box>
                          
                          {/* 제목 - 고정 높이 */}
                          <Typography 
                            variant="h6" 
-                           sx={{ 
-                             mb: 1, 
-                             fontSize: '1rem', 
-                             fontWeight: 700,
-                             overflow: 'hidden',
-                             textOverflow: 'ellipsis',
-                             whiteSpace: 'nowrap',
-                             lineHeight: '1.3',
-                             color: '#2c3e50',
-                             height: '24px', // 고정 높이
-                             display: 'flex',
-                             alignItems: 'center'
-                           }}
+                           className="transaction-post-title"
                          >
                            {post.title}
                          </Typography>
@@ -658,42 +474,16 @@ const TransactionSection = ({ userInfo }) => {
                          <Typography 
                            variant="body2" 
                            color="text.secondary" 
-                           sx={{ 
-                             mb: 1.5, 
-                             overflow: 'hidden',
-                             textOverflow: 'ellipsis',
-                             display: '-webkit-box',
-                             WebkitLineClamp: 2,
-                             WebkitBoxOrient: 'vertical',
-                             lineHeight: '1.4',
-                             fontSize: '0.8rem',
-                             height: '32px', // 고정 높이 (2줄)
-                             flexShrink: 0
-                           }}
+                           className="transaction-post-description"
                          >
                            {post.content || '설명 없음'}
                          </Typography>
                          
                          {/* 가격 정보 - 고정 높이 */}
-                         <Box sx={{ 
-                           mb: 1, 
-                           p: 1, 
-                           bgcolor: '#f8f9fa', 
-                           borderRadius: 2,
-                           height: '40px',
-                           display: 'flex',
-                           alignItems: 'center'
-                         }}>
+                         <Box className="transaction-post-price">
                            <Typography 
                              variant="body1" 
-                             sx={{ 
-                               display: 'flex', 
-                               alignItems: 'center', 
-                               gap: 1,
-                               fontWeight: 700,
-                               color: '#e74c3c',
-                               fontSize: '0.9rem'
-                             }}
+                             className="transaction-post-price-text"
                            >
                              <AttachMoney fontSize="small" />
                              {formatPrice(post.price)}
@@ -701,21 +491,11 @@ const TransactionSection = ({ userInfo }) => {
                          </Box>
                          
                          {/* 추가 정보 - 고정 높이 */}
-                         <Box sx={{ 
-                           mb: 1,
-                           height: '20px',
-                           display: 'flex',
-                           alignItems: 'center'
-                         }}>
+                         <Box className="transaction-post-view-count">
                            <Typography 
                              variant="body2" 
                              color="text.secondary" 
-                             sx={{ 
-                               display: 'flex', 
-                               alignItems: 'center', 
-                               gap: 0.5,
-                               fontSize: '0.75rem'
-                             }}
+                             className="transaction-post-view-count-text"
                            >
                              <RemoveRedEye fontSize="small" />
                              조회수: {post.viewCount || 0}
@@ -723,24 +503,18 @@ const TransactionSection = ({ userInfo }) => {
                          </Box>
                          
                          {/* 날짜 정보 - 고정 높이 */}
-                         <Box sx={{ 
-                           mb: 1,
-                           height: '40px',
-                           display: 'flex',
-                           flexDirection: 'column',
-                           justifyContent: 'center'
-                         }}>
+                         <Box className="transaction-post-dates">
                            <Typography 
                              variant="body2" 
                              color="text.secondary"
-                             sx={{ fontSize: '0.75rem', mb: 0.5 }}
+                             className="transaction-post-date-text"
                            >
                              작성일: {formatDate(post.createdAt)}
                            </Typography>
                            <Typography 
                              variant="body2" 
                              color="text.secondary"
-                             sx={{ fontSize: '0.75rem' }}
+                             className="transaction-post-date-text"
                            >
                              마감일: {post.auctionEndTime ? formatDate(post.auctionEndTime) : '없음'}
                            </Typography>
@@ -750,17 +524,7 @@ const TransactionSection = ({ userInfo }) => {
                          <Typography 
                            variant="body2" 
                            color="text.secondary" 
-                           sx={{ 
-                             display: 'flex', 
-                             alignItems: 'center', 
-                             gap: 0.5,
-                             fontSize: '0.75rem',
-                             p: 0.5,
-                             bgcolor: '#f1f3f4',
-                             borderRadius: 1,
-                             height: '24px',
-                             flexShrink: 0
-                           }}
+                           className="transaction-post-buyer"
                          >
                            <Person fontSize="small" />
                            구매자: {post.buyerName || '없음'}
@@ -774,31 +538,14 @@ const TransactionSection = ({ userInfo }) => {
             
             {/* 페이징 */}
             {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, p: 3 }}>
+              <Box className="transaction-pagination-container">
                 <Pagination 
                   count={totalPages} 
                   page={currentPage} 
                   onChange={handlePageChange}
                   color="primary"
                   size="large"
-                  sx={{
-                    '& .MuiPaginationItem-root': {
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      fontSize: '1rem',
-                      minWidth: 40,
-                      height: 40,
-                      '&.Mui-selected': {
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                        transform: 'scale(1.1)'
-                      },
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                      },
-                      transition: 'all 0.3s ease'
-                    }
-                  }}
+                  className="transaction-pagination-item"
                 />
               </Box>
             )}

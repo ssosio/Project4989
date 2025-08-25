@@ -599,4 +599,63 @@ public class AuctionController {
         }
     }
 
+	// ==================================마이페이지 찜한 상품 관련 API==================================
+    
+    // 내 찜한 상품 개수 조회
+    @GetMapping("/auction/my-favorites-counts/{memberId}")
+    public ResponseEntity<Map<String, Object>> getMyFavoritesCounts(@PathVariable("memberId") int memberId) {
+        try {
+            Map<String, Object> counts = auctionService.getMyFavoritesCounts(memberId);
+            return ResponseEntity.ok(counts);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "찜한 상품 개수 조회 실패: " + e.getMessage()
+            ));
+        }
+    }
+    
+    // 내 찜한 상품 목록 조회 (페이징 포함)
+    @GetMapping("/auction/my-favorites/{memberId}")
+    public ResponseEntity<Map<String, Object>> getMyFavorites(
+            @PathVariable("memberId") int memberId,
+            @RequestParam(value = "type", required = false, defaultValue = "all") String type,
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(value = "sort", required = false, defaultValue = "date") String sort,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
+            @RequestParam(value = "size", required = false, defaultValue = "12") int size
+    ) {
+        try {
+            int offset = (page - 1) * size;
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("memberId", memberId);
+            params.put("type", type);
+            params.put("search", search);
+            params.put("sort", sort);
+            params.put("offset", offset);
+            params.put("limit", size);
+            
+            List<Map<String, Object>> favorites = auctionService.getMyFavorites(params);
+            int totalCount = auctionService.getMyFavoritesTotalCount(params);
+            int totalPages = (int) Math.ceil((double) totalCount / size);
+            
+            // 타입별 카운트 조회
+            Map<String, Object> typeCounts = auctionService.getMyFavoritesTypeCounts(memberId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("favorites", favorites);
+            response.put("totalCount", totalCount);
+            response.put("totalPages", totalPages);
+            response.put("currentPage", page);
+            response.put("pageSize", size);
+            response.put("typeCounts", typeCounts);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "찜한 상품 조회 실패: " + e.getMessage()
+            ));
+        }
+    }
+
 }

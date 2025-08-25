@@ -19,6 +19,7 @@ import {
   Pagination,
   CircularProgress
 } from '@mui/material';
+import './BiddingSection.css';
 import {
   Gavel as GavelIcon,
   AccessTime as AccessTimeIcon,
@@ -200,9 +201,9 @@ const BiddingSection = ({ userInfo }) => {
 
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box className="bidding-section-container">
       {/* 통계 카드 */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Grid container spacing={2} className="bidding-tabs-container">
         <Grid item xs={6} sm={3}>
           <Card sx={{ textAlign: 'center', p: 2, borderRadius: 2 }}>
             <Typography variant="h6" color="primary.main" sx={{ fontWeight: 700 }}>
@@ -257,8 +258,8 @@ const BiddingSection = ({ userInfo }) => {
 
       {/* 로딩 상태 */}
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
+        <Box className="bidding-loading-container">
+          <CircularProgress className="bidding-loading-spinner" />
         </Box>
       )}
 
@@ -270,10 +271,10 @@ const BiddingSection = ({ userInfo }) => {
       )}
 
       {/* 입찰 기록 목록 */}
-      <TabPanel value={activeTab} index={activeTab}>
+      <TabPanel value={activeTab} index={activeTab} className="bidding-tab-panel">
         {biddings.length === 0 ? (
-          <Box sx={{ textAlign: 'center', p: 4 }}>
-            <Typography variant="h6" color="text.secondary">
+          <Box className="bidding-empty-container">
+            <Typography variant="h6" color="text.secondary" className="bidding-empty-title">
               {activeTab === 0 ? '입찰한 경매가 없습니다.' : 
                activeTab === 1 ? '진행중인 입찰이 없습니다.' :
                activeTab === 2 ? '낙찰완료된 경매가 없습니다.' : '낙찰실패한 경매가 없습니다.'}
@@ -281,67 +282,26 @@ const BiddingSection = ({ userInfo }) => {
           </Box>
         ) : (
           <>
-                         <Grid container spacing={3}>
+            <Grid container spacing={3} className="bidding-posts-grid">
                {biddings.map((bidding) => {
                  const statusInfo = getStatusInfo(bidding.auction_status);
                  return (
-                   <Grid item xs={4} key={bidding.bid_id}>
-                                           <Card 
-                        sx={{ 
-                          height: '400px', 
-                          minHeight: '400px',
-                          maxHeight: '400px',
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: 4
-                          }
-                        }}
+                   <Grid item key={bidding.bid_id}>
+                     <Card 
+                       className="bidding-post-card"
                        onClick={() => handleCardClick(bidding.post_id)}
                      >
-                                                                     {/* 이미지 영역 */}
-                        <Box
-                          sx={{
-                            height: '200px',
-                            minHeight: '200px',
-                            maxHeight: '200px',
-                            backgroundColor: '#f5f5f5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            overflow: 'hidden',
-                            position: 'relative'
-                          }}
-                        >
+                        {/* 이미지 영역 */}
+                        <Box className="bidding-post-image-container">
                           {postImages[bidding.post_id] ? (
                             <CardMedia
                               component="img"
                               image={postImages[bidding.post_id].url}
                               alt={bidding.title}
-                              sx={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover'
-                              }}
+                              className="bidding-post-image"
                             />
                           ) : (
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#999',
-                                height: '100%',
-                                width: '100%',
-                                backgroundColor: '#f5f5f5'
-                              }}
-                            >
+                            <Box className="bidding-post-no-image">
                               <GavelIcon sx={{ fontSize: 48, mb: 1, color: '#ccc' }} />
                               <Typography variant="body2" color="text.secondary">
                                 사진 없음
@@ -350,63 +310,47 @@ const BiddingSection = ({ userInfo }) => {
                           )}
                         </Box>
 
-                                             <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                                                 {/* 제목 */}
-                         <Typography
-                           variant="h6"
-                           sx={{
-                             overflow: 'hidden',
-                             textOverflow: 'ellipsis',
-                             display: '-webkit-box',
-                             WebkitLineClamp: 2,
-                             WebkitBoxOrient: 'vertical',
-                             lineHeight: '1.3',
-                             color: '#2c3e50',
-                             height: '48px',
-                             fontSize: '1rem',
-                             fontWeight: 700,
-                             mb: 1,
-                             flexShrink: 0
-                           }}
-                         >
-                           {bidding.title}
-                         </Typography>
+                        <CardContent className="bidding-post-content">
+                          {/* 제목 */}
+                          <Typography
+                            variant="h6"
+                            className="bidding-post-title"
+                          >
+                            {bidding.title}
+                          </Typography>
 
-                                                 {/* 하단 정보 영역 */}
-                         <Box sx={{ mt: 'auto' }}>
-                           {/* 내 입찰 금액 */}
-                           <Box sx={{ mb: 1 }}>
-                             <Typography variant="body2" color="text.secondary" gutterBottom>
-                               내 입찰 금액
-                             </Typography>
-                             <Typography variant="h6" color="primary.main" sx={{ fontWeight: 700 }}>
-                               {formatPrice(bidding.bid_amount)}원
-                             </Typography>
-                           </Box>
+                          {/* 하단 정보 영역 */}
+                          <Box sx={{ mt: 'auto' }}>
+                            {/* 내 입찰 금액 */}
+                            <Box className="bidding-post-bid-info">
+                              <Typography variant="body2" color="text.secondary" className="bidding-post-bid-text">
+                                내 입찰 금액: {formatPrice(bidding.bid_amount)}원
+                              </Typography>
+                            </Box>
 
-                           {/* 상태 및 입찰자 순위 */}
-                           <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-                             <Chip
-                               icon={statusInfo.icon}
-                               label={statusInfo.label}
-                               color={statusInfo.color}
-                               size="small"
-                               variant="outlined"
-                             />
-                             <Chip
-                               label={bidding.bidder_rank}
-                               color={getBidderRankColor(bidding.bidder_rank)}
-                               size="small"
-                               variant="outlined"
-                             />
-                           </Box>
+                            {/* 상태 및 입찰자 순위 */}
+                            <Box className="bidding-post-chips">
+                              <Chip
+                                icon={statusInfo.icon}
+                                label={statusInfo.label}
+                                color={statusInfo.color}
+                                size="small"
+                                className="bidding-post-chip"
+                              />
+                              <Chip
+                                label={`순위: ${bidding.bidder_rank}`}
+                                color={getBidderRankColor(bidding.bidder_rank)}
+                                size="small"
+                                className="bidding-post-chip"
+                              />
+                            </Box>
 
-                           {/* 입찰일 */}
-                           <Typography variant="caption" color="text.secondary">
-                             입찰일: {new Date(bidding.bid_time).toLocaleDateString('ko-KR')}
-                           </Typography>
-                         </Box>
-                      </CardContent>
+                            {/* 입찰일 */}
+                            <Typography variant="caption" color="text.secondary" className="bidding-post-date-text">
+                              입찰일: {new Date(bidding.bid_time).toLocaleDateString('ko-KR')}
+                            </Typography>
+                          </Box>
+                        </CardContent>
                     </Card>
                   </Grid>
                 );
@@ -415,13 +359,14 @@ const BiddingSection = ({ userInfo }) => {
 
             {/* 페이지네이션 */}
             {totalPages > 1 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+              <Box className="bidding-pagination-container">
                 <Pagination
                   count={totalPages}
                   page={currentPage}
                   onChange={handlePageChange}
                   color="primary"
                   size="large"
+                  className="bidding-pagination-item"
                 />
               </Box>
             )}
