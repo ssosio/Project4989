@@ -191,6 +191,10 @@
   							VALUES (#{postId}, #{memberId}, #{amount}, #{impUid},#{merchantUid},'PAID',now())
 	</insert>
 	
+	<select id="existsGuaranteeByImpUid" parameterType="string" resultType="int">
+	  SELECT COUNT(*) FROM auction_guarantees WHERE imp_uid = #{impUid}
+	</select>
+	
 	<!-- 게시글에서 입찰자중 낙찰자가 아닌사람들의 모든정보 조회 -->
 	<select id="findNonWinnerGuarantees" resultType="GuaranteeDTO">
   		select * from auction_guarantees where post_id=#{postId} 
@@ -261,6 +265,10 @@
 	  SELECT * FROM auction_guarantees
 	  WHERE post_id = #{postId} AND member_id = #{memberId}
 	  LIMIT 1
+	</select>
+	
+	<select id="findPaidGuaranteesByPost" parameterType="long" resultType="GuaranteeDTO">
+		select * from auction_guarantee WHERE post_id = #{postId}  AND status = 'PAID'
 	</select>
 
 	<!-- ==================================마이페이지 판매 내역 관련 =================================== -->

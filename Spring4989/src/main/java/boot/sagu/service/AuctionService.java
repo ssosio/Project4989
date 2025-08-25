@@ -4,11 +4,13 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -19,10 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import boot.sagu.dto.AuctionDto;
 import boot.sagu.dto.AuctionGuaranteeDTO;
+import boot.sagu.dto.EscrowOrderDTO;
 import boot.sagu.dto.FavoritesDto;
 import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.mapper.AuctionMapper;
+import boot.sagu.mapper.EscrowMapper;
 import boot.sagu.mapper.MemberMapper;
 import boot.sagu.service.PortOneService.PortOnePayment;
 
@@ -44,6 +48,9 @@ public class AuctionService implements AuctionServiceInter {
 	
 	@Autowired
 	private PortOneService portOneService;
+	
+	@Autowired
+	private EscrowMapper escrowMapper;
 	
 	@Override
 	public List<PostsDto> getAuctionPosts() {
@@ -164,63 +171,58 @@ public class AuctionService implements AuctionServiceInter {
 	   @Override
 	   @Transactional
 	   public String endAuction(long postId) {
-		   try {
-		        // 1) 경매 조회 & 이미 종료 여부
-		        PostsDto auction = auctionMapper.getAuctionDetail(postId);
-		        if (auction == null) return "경매글을 찾을 수 없습니다.";
-		        if ("SOLD".equals(auction.getStatus())) return "이미 종료된 경매입니다.";
+	       try {
+	           // 1) 경매 조회 & 이미 종료 여부
+	           PostsDto auction = auctionMapper.getAuctionDetail(postId);
+	           if (auction == null) return "경매글을 찾을 수 없습니다.";
+	           if ("SOLD".equalsIgnoreCase(auction.getStatus())) return "이미 종료된 경매입니다.";
 
-		        // 2) 최고 입찰자 조회
-		        AuctionDto highestBid = auctionMapper.getHighestBid(postId);
+	           // 2) 최고 입찰자 조회
+	           AuctionDto highestBid = auctionMapper.getHighestBid(postId);
 
-		        if (highestBid != null) {
-		            long winnerId = highestBid.getBidderId();
+	           if (highestBid != null) {
+	               long winnerId = highestBid.getBidderId();
 
-		            // 3) 낙찰자 지정 & SOLD + 종료시간 기록
-		            auctionMapper.updateWinnerId(postId, winnerId);
-		            auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
+	               // 3) 낙찰자 지정 & SOLD + 종료시간 기록
+	               auctionMapper.updateWinnerId(postId, winnerId);
+	               auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
 
-		            // 4) 비낙찰자 환불
-		            List<AuctionGuaranteeDTO> losers = auctionMapper.findNonWinnerGuarantees(postId, winnerId);
-		            for (AuctionGuaranteeDTO loser : losers) {
-		                try {
-		                    // PG 환불
-		                    portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
-		                    // DB 상태 REFUNDED
-		                    auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUNDED");
-		                } catch (Exception ex) {
-		                	//실패 상태 기록
-		                	auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUND_FAILED");
-		                    // 환불 실패는 로그만 남기고 다음 대상 처리 (재시도 큐/알림 붙이면 더 좋음)
-		                    System.err.println("환불 실패 guaranteeId=" + loser.getGuaranteeId() + " : " + ex.getMessage());
-		                }
-		            }
+	               // 4) 비낙찰자 환불(공통 함수)
+	               refundNonWinners(postId, winnerId);
 
-		            // 5) 낙찰자 보증금 HOLD
-		            AuctionGuaranteeDTO winnerG = auctionMapper.findGuarantee(postId, winnerId);
-		            if (winnerG != null) {
-		                auctionMapper.updateGuaranteeStatus(winnerG.getGuaranteeId(), "HOLD");
-		            } else {
-		                System.err.println("낙찰자 보증금 없음 postId=" + postId + ", winnerId=" + winnerId);
-		            }
+	               // 5) 낙찰자 보증금 HOLD (에스크로 결제 완료 시 APPLIED로 바뀜)
+	               AuctionGuaranteeDTO winnerG = auctionMapper.findGuarantee(postId, winnerId);
+	               if (winnerG != null) {
+	                   // 이미 APPLIED/HOLD 등으로 변경된 경우가 아니면 HOLD로
+	                   String st = winnerG.getStatus();
+	                   if (st == null || "PAID".equalsIgnoreCase(st)) {
+	                       auctionMapper.updateGuaranteeStatus(winnerG.getGuaranteeId(), "HOLD");
+	                   }
+	               } else {
+	                   System.err.println("낙찰자 보증금 없음 postId=" + postId + ", winnerId=" + winnerId);
+	               }
 
-		            // 6) 소켓 알림 (헬퍼로 통일)
-		            sendAuctionEndMessage(postId, winnerId);
+	               // 6) 소켓 알림
+	               sendAuctionEndMessage(postId, winnerId);
 
-		            return "경매가 성공적으로 종료되었습니다. 낙찰자: ID " + winnerId;
-		        } else {
-		            // 입찰자 없음 → SOLD + 종료시간만
-		            auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
+	               // 7) 낙찰자 에스크로 전표 생성 (금액 = 최종가 - 보증금)
+	               createEscrowOrderForWinner(postId, winnerId);
 
-		            // 소켓 알림 (낙찰자 없음)
-		            sendAuctionEndMessage(postId, null);
+	               return "경매가 성공적으로 종료되었습니다. 낙찰자: ID " + winnerId;
+	           } else {
+	               // 입찰자 없음 → 상태만 종료 처리
+	               auctionMapper.updateAuctionStatusAndEndTime(postId, "SOLD");
 
-		            return "경매가 종료되었습니다. (입찰자 없음)";
-		        }
-		    } catch (Exception e) {
-		        return "경매 종료 처리에 실패했습니다: " + e.getMessage();
-		    }
+	               // 소켓 알림 (낙찰자 없음)
+	               sendAuctionEndMessage(postId, null);
+
+	               return "경매가 종료되었습니다. (입찰자 없음)";
+	           }
+	       } catch (Exception e) {
+	           return "경매 종료 처리에 실패했습니다: " + e.getMessage();
+	       }
 	   }
+
 	
 	
 	// 매 1분마다 실행 (경매 종료 체크)
@@ -274,20 +276,26 @@ public class AuctionService implements AuctionServiceInter {
 		}
 		
 		//낙찰 거래 최종처리: 정상거래면 환불, 노쇼면 몰수
-	@Transactional
-	public void finalizeWinnerGuarantee(long postId, long winnerId, String action) {
-	    AuctionGuaranteeDTO g = auctionMapper.findGuarantee(postId, winnerId);
-	    if (g == null) return;
+		@Transactional
+		public void finalizeWinnerGuarantee(long postId, long winnerId, String action) {
+		    AuctionGuaranteeDTO g = auctionMapper.findGuarantee(postId, winnerId);
+		    if (g == null) return;
+
 		    switch (action) {
-		        case "REFUND":   // 정상 거래 완료 → 환불
-		            portOneService.refundPayment(g.getImpUid(), g.getAmount());	
+		        case "APPLY":   // 차감 적용(환불 아님)
+		            auctionMapper.updateGuaranteeStatus(g.getGuaranteeId(), "APPLIED");
+		            break;
+
+		        case "REFUND":  // 정상 거래 후 보증금 환불이 필요한 정책일 때만 사용
+		            portOneService.refundPayment(g.getImpUid(), g.getAmount());
 		            auctionMapper.updateGuaranteeStatus(g.getGuaranteeId(), "REFUNDED");
 		            break;
-		        case "FORFEIT":  // 노쇼/파기 → 몰수 (ENUM에 FORFEITED 있으면)
+
+		        case "FORFEIT": // 노쇼/파기 등 몰수
 		            auctionMapper.updateGuaranteeStatus(g.getGuaranteeId(), "FORFEITED");
 		            break;
-	    }
-	}
+		    }
+		}
 		
 	@Override
 	public List<Map<String, Object>> getAuctionPhotos(long postId) {
@@ -314,15 +322,30 @@ public class AuctionService implements AuctionServiceInter {
 		auctionMapper.insertGuarantee(dto);
 	}
 	
-	//낙찰 실패자 환불 일괄 처리(종료시 호출)
-	public void refundNonWinners(long postId,long winnerId) {
-		List<AuctionGuaranteeDTO> losers = findNonWinnerGuarantees(postId, winnerId);
-		for(AuctionGuaranteeDTO loser : losers) {
-			portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
-			updateGuaranteeStatus(loser.getGuaranteeId(),"REFUNDED");
-		}
-		
+	@Transactional
+	public void refundNonWinners(long postId, long winnerId) {
+	    List<AuctionGuaranteeDTO> losers = auctionMapper.findNonWinnerGuarantees(postId, winnerId);
+	    if (losers == null || losers.isEmpty()) return;
+
+	    for (AuctionGuaranteeDTO loser : losers) {
+	        if (loser == null) continue;
+
+	        String st = loser.getStatus();
+	        // 이미 처리된 건들은 스킵 (PAID만 환불 대상)
+	        if (st != null && !"PAID".equalsIgnoreCase(st)) continue;
+
+	        try {
+	            // 전액 환불
+	            portOneService.refundPayment(loser.getImpUid(), loser.getAmount());
+	            auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUNDED");
+	        } catch (Exception ex) {
+	            // 개별 실패는 기록만 하고 계속 진행
+	            auctionMapper.updateGuaranteeStatus(loser.getGuaranteeId(), "REFUND_FAILED");
+	            System.err.println("비낙찰자 환불 실패 guaranteeId=" + loser.getGuaranteeId() + " : " + ex.getMessage());
+	        }
+	    }
 	}
+
 
 
 	
@@ -349,28 +372,116 @@ public class AuctionService implements AuctionServiceInter {
 	
 	//(웹훅) 결제 검증 후 보증금 저장: imp_uid 조회 → 상태/금액/merchant_uid 검증 → DB insert
 	// 결제 검증 + 보증금 저장
+	// AuctionService.java
 	@Transactional
-	public void handlePortOneWebhook(long postId, long memberId, String impUid, String merchantUidFromClient) {
+	public void handlePortOneWebhook(Long postId, Long memberId, String impUid, String merchantUidFromClient) {
+	    // 0) 기본 방어
+	    if (impUid == null && merchantUidFromClient == null) {
+	        // 둘 다 없으면 더 진행 불가
+	        return;
+	    }
+	    if (merchantUidFromClient == null) merchantUidFromClient = "";
+
+	    // 1) merchant_uid에서 postId/memberId 보조 파싱 (타임스탬프 유무 모두 허용)
+	    // 허용 형태: guarantee|escrow _ {postId} _ {memberId} (_{숫자})?   ← 뒤에 _1234567890 붙어도 OK
+	    final Pattern MU = Pattern.compile("^(guarantee|escrow)_(\\d+)_(\\d+)(?:_\\d+)?$");
+	    Matcher m = MU.matcher(merchantUidFromClient);
+	    if (m.matches()) {
+	        if (postId == null)   postId   = Long.parseLong(m.group(2));
+	        if (memberId == null) memberId = Long.parseLong(m.group(3));
+	    }
+	    if (postId == null || memberId == null) {
+	        // 식별 불가 → 종료
+	        return;
+	    }
+
+	    // 2) 멱등성: 이미 동일 imp_uid 저장되어 있으면 조용히 성공 처리
+	    if (impUid != null && auctionMapper.existsGuaranteeByImpUid(impUid) > 0) {
+	        return;
+	    }
+	    // (선택) 이미 해당 (postId, memberId)로 PAID/HOLD 이력이 있으면 조용히 성공 처리
+	    if (auctionMapper.countAuctionGuaranteeByPostAndMember(postId, memberId) > 0) {
+	        return;
+	    }
+
+	    // 3) 포트원 조회 (imp_uid 기준)
 	    PortOnePayment pay = portOneService.getPayment(impUid);
+	    if (pay == null) {
+	        throw new IllegalStateException("결제정보 조회 실패");
+	    }
 	    if (!"paid".equalsIgnoreCase(pay.getStatus())) {
 	        throw new IllegalStateException("결제상태가 paid가 아님");
 	    }
+
+	    // 4) 금액/merchant_uid 검증 (시작가의 10%)
 	    int startPrice = auctionMapper.getStartPrice(postId);
-	    int expected = Math.max(1, (int)Math.round(startPrice * 0.1));
-	    if (pay.getAmount() != expected || !pay.getMerchantUid().equals(merchantUidFromClient)) {
-	    	 // 위변조 의심 → 즉시 취소 권장
-	        portOneService.cancelPayment(impUid, "보증금 검증 실패", null);
+	    int expected   = Math.max(1, (int) Math.round(startPrice * 0.1));
+
+	    // 머천트 UID 정규화(뒤쪽 타임스탬프는 제거하고 비교)
+	    String normClientMU = normalizeMerchantUid(merchantUidFromClient);
+	    String normPaidMU   = normalizeMerchantUid(pay.getMerchantUid());
+
+	    if (pay.getAmount() != expected || !normClientMU.equals(normPaidMU)) {
+	        // 위변조 의심 → 즉시 취소 권장
+	        portOneService.cancelPayment(pay.getImpUid(), "보증금 검증 실패", null);
 	        throw new IllegalStateException("결제 검증 실패");
 	    }
 
+	    // 5) 저장
 	    AuctionGuaranteeDTO dto = new AuctionGuaranteeDTO();
 	    dto.setPostId(postId);
 	    dto.setMemberId(memberId);
 	    dto.setAmount(BigDecimal.valueOf(pay.getAmount()));
-	    dto.setImpUid(impUid);
+	    dto.setImpUid(pay.getImpUid());
 	    dto.setMerchantUid(pay.getMerchantUid());
 	    dto.setStatus("PAID");
 	    auctionMapper.insertGuarantee(dto);
+
+	    // (디버깅 도움 로그 — 필요 없으면 지워도 됨)
+	    System.out.println("[GUARANTEE] saved postId=" + postId + ", memberId=" + memberId
+	        + ", impUid=" + pay.getImpUid() + ", merchantUid=" + pay.getMerchantUid()
+	        + ", amount=" + pay.getAmount());
+	}
+
+	private String normalizeMerchantUid(String mu) {
+	    if (mu == null) return "";
+	    // guarantee_123_45_1716799999999 → guarantee_123_45 로 정규화
+	    return mu.replaceFirst("^(guarantee|escrow)_(\\d+)_(\\d+)(?:_\\d+)?$", "$1_$2_$3");
+	}
+
+	
+	@Transactional
+	public EscrowOrderDTO createEscrowOrderForWinner(long postId, long winnerId) {
+		  //  최고가 확인(입찰 없으면 생성하지 않음)
+	    AuctionDto highest = auctionMapper.getHighestBid(postId);
+	    if (highest == null || highest.getBidAmount() == null) {
+	        return null; // 입찰자 없음 → 에스크로 생성 X
+	    }
+	    if (highest.getBidderId() != winnerId) {
+	        // 데이터 불일치 방어(선택)
+	        return null;
+	    }
+
+	    int finalPrice = highest.getBidAmount().intValue();
+	    String merchantUid = "escrow_" + postId + "_" + winnerId + "_" + Instant.now().toEpochMilli();
+
+	    EscrowOrderDTO order = new EscrowOrderDTO();
+	    order.setPostId(postId);
+	    order.setBuyerId(winnerId);
+	    order.setAmount(BigDecimal.valueOf(finalPrice));
+	    order.setMerchantUid(merchantUid);
+	    order.setStatus("PENDING");
+
+	    escrowMapper.insertEscrowOrder(order);
+
+	    // (선택) 낙찰자에게 에스크로 정보 푸시
+	    Map<String,Object> msg = new HashMap<>();
+	    msg.put("type","ESCROW_READY");
+	    msg.put("merchantUid", merchantUid);
+	    msg.put("amount", finalPrice);
+	    messagingTemplate.convertAndSend("/topic/auction/" + postId + "/winner/" + winnerId, msg);
+
+	    return order;
 	}
 	
 	
@@ -583,6 +694,12 @@ public class AuctionService implements AuctionServiceInter {
 	// 내 찜한 상품 타입별 개수 조회
 	public Map<String, Object> getMyFavoritesTypeCounts(int memberId) {
 		return auctionMapper.getMyFavoritesTypeCounts(memberId);
+	}
+
+	@Override
+	public int existsGuaranteeByImpUid(String impUid) {
+		// TODO Auto-generated method stub
+		return auctionMapper.existsGuaranteeByImpUid(impUid);
 	}
 
 }

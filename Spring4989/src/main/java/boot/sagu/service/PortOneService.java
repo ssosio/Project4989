@@ -183,6 +183,29 @@ public class PortOneService {
         pay.setStatus((String) response.get("status"));
         return pay;
     }
+    
+    public PortOnePayment getPaymentByMerchantUid(String merchantUid) {
+        String token = getAccessToken();
+        String url = base + "/payments/find/" + merchantUid; // 포트원 v1: merchant_uid로 조회
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        ResponseEntity<Map> res =
+            restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
+        Map body = res.getBody();
+        if (body == null || body.get("response") == null) return null;
+
+        Map response = (Map) body.get("response");
+        PortOnePayment pay = new PortOnePayment();
+        pay.setImpUid((String) response.get("imp_uid"));
+        pay.setMerchantUid((String) response.get("merchant_uid"));
+        Object amt = response.get("amount");
+        if (amt != null) pay.setAmount(((Number) amt).intValue());
+        pay.setStatus((String) response.get("status"));
+        return pay;
+    }
+ 
+
 
     // ---------- 결제 취소(환불) ----------
     public void cancelPayment(String impUid, String reason, BigDecimal amount) {

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import { AuthContext } from '../../context/AuthContext';
 import './auction.css';
-import api from '../../lib/api';            // ★ axios 대신 우리가 만든 인스턴스 사용
+import api from '../../lib/api';
 import PortOnePayment from './PortOnePayment';
 
 const AuctionDetail = () => {
@@ -48,37 +48,61 @@ const AuctionDetail = () => {
 
   const [bidHistory, setBidHistory] = useState([]);
 
+  //보증금 결제용
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentMerchantUid, setPaymentMerchantUid] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  const SERVER_IP = 'localhost';
-  const SERVER_PORT = '4989';
-  const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4989'; // 예: http://localhost:4989
+  //escrow 결제용
+  const [isProcessingEscrow, setIsProcessingEscrow] = useState(false);
+  const [escrowAmount, setEscrowAmount] = useState(0);
+  const [escrowMerchantUid, setEscrowMerchantUid] = useState('');
 
-  // 시간 차이 계산
+  const SERVER_IP = '192.168.10.138';
+  const SERVER_PORT = '4989';
+
+  const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+
+  const normalizeDetail = (d = {}) => ({
+    ...d,
+    memberId: d.memberId ?? d.member_id ?? d.writerId ?? d.writer_id,
+    createdAt: d.createdAt ?? d.created_at ?? d.createDate ?? d.created_date,
+    auctionEndTime: d.auctionEndTime ?? d.auction_end_time ?? d.endTime ?? d.end_time,
+    price: d.price ?? d.startPrice ?? d.start_price ?? 0,
+    winnerId: d.winnerId ?? d.winner_id,
+    viewCount: d.viewCount ?? d.view_count ?? 0,
+  });
+
+  const normalizeHighestBid = (b) =>
+  b
+    ? {
+        ...b,
+        bidderId: Number(
+          b.bidderId ?? b.bidder_id ?? b.memberId ?? b.member_id ?? 0
+        ),
+        bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0),
+        bidTime: b.bidTime ?? b.bid_time ?? null,
+      }
+    : null;
+
   const getTimeAgo = (bidTime) => {
     const now = new Date();
     const bidDate = new Date(bidTime);
     const diffInMinutes = Math.floor((now - bidDate) / (1000 * 60));
-
     if (diffInMinutes < 1) return '방금 전';
     if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}시간 전`;
-
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}일 전`;
   };
 
-  // 최초 로딩
   useEffect(() => {
     (async () => {
       try {
-        // 상세
         const detailRes = await api.get(`/auction/detail/${postId}`);
-        setAuctionDetail(detailRes.data);
+        setAuctionDetail(normalizeDetail(detailRes.data));
         setLoading(false);
       } catch (err) {
         console.error('경매 상세 정보 조회 실패:', err);
@@ -86,16 +110,14 @@ const AuctionDetail = () => {
       }
 
       try {
-        // 최고가
         const hbRes = await api.get(`/auction/highest-bid/${postId}`);
-        setHighestBid(hbRes.data);
+        setHighestBid(normalizeHighestBid(hbRes.data));
       } catch (err) {
         console.error('최고가 조회 실패:', err);
         setHighestBid(null);
       }
 
       try {
-        // 방 입장
         const joinRes = await api.post(`/auction/room/join/${postId}`, { sessionId });
         if (joinRes.data?.success) setUserCount(joinRes.data.userCount);
       } catch (err) {
@@ -106,15 +128,11 @@ const AuctionDetail = () => {
       getBidHistory();
     })();
 
-    // beforeunload(새로고침/탭닫기) 시에는 sendBeacon 사용
     const handleBeforeUnload = () => {
-      navigator.sendBeacon(
-        `${BASE}/auction/room/leave/${postId}/${sessionId}`
-      );
+      navigator.sendBeacon(`${BASE}/auction/room/leave/${postId}/${sessionId}`);
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // 언마운트 시(페이지 이동) leave
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       api.post(`/auction/room/leave/${postId}`, { sessionId }).catch((err) => {
@@ -123,56 +141,42 @@ const AuctionDetail = () => {
     };
   }, [postId, sessionId, userInfo]);
 
-  // 작성자 닉네임
   useEffect(() => {
     if (auctionDetail?.memberId) {
       api
         .get(`/auction/member/${auctionDetail.memberId}`)
         .then((res) => setAuthorNickname(res.data.nickname))
-        .catch((err) => {
-          console.error('작성자 닉네임 조회 실패:', err);
-          setAuthorNickname(`ID: ${auctionDetail.memberId}`);
-        });
+        .catch(() => setAuthorNickname(`ID: ${auctionDetail.memberId}`));
     }
   }, [auctionDetail?.memberId]);
 
-  // 낙찰자 닉네임
   useEffect(() => {
     if (auctionDetail?.winnerId) {
       api
         .get(`/auction/member/${auctionDetail.winnerId}`)
         .then((res) => setWinnerNickname(res.data.nickname))
-        .catch((err) => {
-          console.error('낙찰자 닉네임 조회 실패:', err);
-          setWinnerNickname(`ID: ${auctionDetail.winnerId}`);
-        });
+        .catch(() => setWinnerNickname(`ID: ${auctionDetail.winnerId}`));
     } else {
       setWinnerNickname('');
     }
   }, [auctionDetail?.winnerId]);
 
-  // 최고 입찰자 닉네임
   useEffect(() => {
     if (highestBid?.bidderId) {
       api
         .get(`/auction/member/${highestBid.bidderId}`)
         .then((res) => setHighestBidderNickname(res.data.nickname))
-        .catch((err) => {
-          console.error('최고 입찰자 닉네임 조회 실패:', err);
-          setHighestBidderNickname(`ID: ${highestBid.bidderId}`);
-        });
+        .catch(() => setHighestBidderNickname(`ID: ${highestBid.bidderId}`));
     } else {
       setHighestBidderNickname('');
     }
   }, [highestBid?.bidderId]);
 
-  // 입찰 기록 표시용 "n분 전"
   useEffect(() => {
     const interval = setInterval(() => setBidHistory((prev) => [...prev]), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // 방 인원수 주기 갱신
   useEffect(() => {
     const interval = setInterval(() => {
       api
@@ -185,7 +189,6 @@ const AuctionDetail = () => {
     return () => clearInterval(interval);
   }, [postId]);
 
-  // 마감 타이머
   useEffect(() => {
     if (!auctionDetail?.auctionEndTime) {
       setTimeRemaining('마감시간 미정');
@@ -195,12 +198,10 @@ const AuctionDetail = () => {
       const endTime = new Date(auctionDetail.auctionEndTime);
       const now = new Date();
       const diff = endTime - now;
-
       if (diff <= 0) {
         setTimeRemaining('경매 종료');
         return;
       }
-
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -217,7 +218,6 @@ const AuctionDetail = () => {
     return () => clearInterval(timer);
   }, [auctionDetail?.auctionEndTime]);
 
-  // 토스트 자동 제거
   useEffect(() => {
     if (!bidMessage) return;
     const t = setTimeout(() => {
@@ -227,7 +227,6 @@ const AuctionDetail = () => {
     return () => clearTimeout(t);
   }, [bidMessage]);
 
-  // 소켓 연결
   useEffect(() => {
     const client = new Client({
       brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
@@ -268,7 +267,6 @@ const AuctionDetail = () => {
     };
   }, [postId, sessionId, userInfo]);
 
-  // 소켓 메시지 처리
   const handleSocketMessage = (data) => {
     switch (data.type) {
       case 'BID_UPDATE': {
@@ -290,14 +288,21 @@ const AuctionDetail = () => {
         if (data.auctionDetail) setAuctionDetail(data.auctionDetail);
         break;
       }
-      case 'AUCTION_END': {
+     case 'AUCTION_END': {
         setTimeRemaining('경매 종료');
         setAuctionDetail((prev) => ({ ...prev, status: 'SOLD', winnerId: data.winnerId }));
         if (data.winner) setWinnerNickname(data.winner.nickname || `ID: ${data.winner.id}`);
         setBidMessage('경매가 종료되었습니다!');
         setBidMessageType('success');
+
+        // ⬇️ 내가 낙찰자면 에스크로 결제 안내 토스트
+        if (String(data.winnerId) === String(userInfo?.memberId)) {
+          setBidMessage('축하합니다! 낙찰자입니다. 아래 "잔금(에스크로) 결제" 버튼으로 결제 진행해주세요.');
+          setBidMessageType('info');
+        }
         break;
       }
+
       case 'USER_COUNT_UPDATE': {
         setUserCount(data.userCount);
         break;
@@ -310,8 +315,9 @@ const AuctionDetail = () => {
   const formatDate = (d) => {
     if (!d || d === 'null' || d === '') return '-';
     try {
-      const date = new Date(d);
-      if (date.getTime() === 0 || isNaN(date.getTime())) return '-';
+      const safe = typeof d === 'string' && d.includes(' ') ? d.replace(' ', 'T') : d;
+      const date = new Date(safe);
+      if (isNaN(date.getTime())) return '-';
       return date.toLocaleString('ko-KR');
     } catch {
       return '-';
@@ -385,14 +391,13 @@ const AuctionDetail = () => {
 
     try {
       const res = await api.post(`/auction/${postId}/bids`, {
-        postId: parseInt(postId, 10),
-        bidderId: Number(currentUserId),
-        bidAmount: Number(bidAmount),
+        bid_amount: Number(bidAmount) // 바디는 이 키 하나만
       });
 
       if (res.data?.status === 'NEED_GUARANTEE') {
         const guaranteeAmount = res.data.guaranteeAmount || Math.max(1, Math.round((auctionDetail?.price || 0) * 0.1));
         setPaymentAmount(guaranteeAmount);
+        setPaymentMerchantUid(res.data.merchantUid); // 서버가 내려준 merchantUid 그대로 사용
         setShowPaymentModal(true);
         return;
       }
@@ -410,8 +415,6 @@ const AuctionDetail = () => {
     } catch (error) {
       const status = error.response?.status;
       const data = error.response?.data;
-      console.error('입찰 실패 status/data:', status, data);
-
       const msg = data?.message || data?.error || (error.message || '알 수 없는 오류가 발생했습니다.');
 
       if (status === 401) {
@@ -420,6 +423,7 @@ const AuctionDetail = () => {
       } else if (status === 402 && data?.status === 'NEED_GUARANTEE') {
         const guaranteeAmount = data.guaranteeAmount || Math.max(1, Math.round((auctionDetail?.price || 0) * 0.1));
         setPaymentAmount(guaranteeAmount);
+        setPaymentMerchantUid(data.merchantUid);
         setBidMessage('보증금 결제가 필요합니다. 결제를 진행해주세요.');
         setBidMessageType('info');
         setShowPaymentModal(true);
@@ -452,23 +456,68 @@ const AuctionDetail = () => {
         try {
           const w = await api.get(`/auction/member/${hb.data.bidderId}`);
           setWinnerNickname(w.data.nickname || `ID: ${hb.data.bidderId}`);
-        } catch (memberErr) {
-          console.error('낙찰자 정보 조회 실패:', memberErr);
+        } catch {
           setWinnerNickname(`ID: ${hb.data.bidderId}`);
         }
       }
 
       window.location.reload();
     } catch (error) {
-      console.error('경매 종료 실패:', error);
-      console.error('에러 상세:', error.response?.data);
-      console.error('에러 상태:', error.response?.status);
-
       if (error.response?.data) setBidMessage(error.response.data);
       else setBidMessage('경매 종료에 실패했습니다.');
       setBidMessageType('error');
     }
   };
+
+  // 잔금(에스크로) 결제 시작
+const startEscrowPayment = async () => {
+  try {
+    // 1) 서버에 에스크로 전표 생성 요청 (잔금 = 최종가 - 보증금)
+    const { data } = await api.post(`/api/escrow/order/${postId}/me`);
+
+    const amount = Number(data?.amount ?? 0);
+    const mu = data?.merchantUid || data?.merchant_uid;
+    if (!mu) throw new Error('merchantUid 누락');
+
+    // 2) 잔금이 0원이면 결제창 열 필요 없이 완료 처리
+    if (amount <= 0) {
+      // 서버가 내부적으로 처리했다면 굳이 confirm은 없음. 바로 성공 토스트만.
+      setBidMessage('보증금으로 전액 충당되어 잔금 결제가 필요 없습니다.');
+      setBidMessageType('success');
+      return;
+    }
+
+    // 3) 잔금 > 0 → 결제 컴포넌트 띄우기
+    setEscrowAmount(amount);
+    setEscrowMerchantUid(mu);
+    setIsProcessingEscrow(true);   // <PortOnePayment mode="ESCROW"...> 렌더 트리거
+  } catch (err) {
+    console.error('에스크로 전표 생성 실패:', err?.response?.data || err);
+    setBidMessage('에스크로 결제를 시작할 수 없습니다. 잠시 후 다시 시도해주세요.');
+    setBidMessageType('error');
+  }
+};
+
+const handleEscrowComplete = async () => {
+  setIsProcessingEscrow(false);
+  setBidMessage('에스크로 결제가 완료되었습니다.');
+  setBidMessageType('success');
+  try {
+    const [detail, hb] = await Promise.all([
+      api.get(`/auction/detail/${postId}`),
+      api.get(`/auction/highest-bid/${postId}`)
+    ]);
+    setAuctionDetail(detail.data);
+    setHighestBid(hb.data);
+  } catch {}
+};
+
+const handleEscrowCancel = () => {
+  setIsProcessingEscrow(false);
+  setBidMessage('에스크로 결제가 취소되었습니다.');
+  setBidMessageType('info');
+};
+
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -601,11 +650,8 @@ const AuctionDetail = () => {
     setIsProcessingPayment(false);
 
     try {
-      // 결제 이후 실제 입찰 재시도
       await api.post(`/auction/${postId}/bids`, {
-        postId: parseInt(postId, 10),
-        bidderId: userInfo?.memberId,
-        bidAmount: bidAmount,
+        bid_amount: Number(bidAmount) // 결제 후 재시도도 동일 키만
       });
 
       setBidMessage('보증금 결제가 완료되었고, 입찰이 성공했습니다!');
@@ -619,7 +665,6 @@ const AuctionDetail = () => {
       setAuctionDetail(detail.data);
       setHighestBid(hb.data);
     } catch (error) {
-      console.error('입찰 실패:', error);
       const data = error.response?.data;
       const msg = data?.message || data?.error || '보증금은 결제되었지만 입찰에 실패했습니다. 다시 시도해주세요.';
       setBidMessage(msg);
@@ -685,9 +730,7 @@ const AuctionDetail = () => {
 
   return (
     <div className="auction-detail-container">
-      {/* 메인 콘텐츠 */}
       <div className="detail-content">
-        {/* 왼쪽 - 상품 정보 */}
         <div className="product-info-section">
           <div className="product-header">
             <div className="title-heart-container">
@@ -767,7 +810,6 @@ const AuctionDetail = () => {
               </div>
             </div>
 
-            {/* 메타 */}
             <div className="product-meta-section">
               <div className="meta-row">
                 <div className="meta-item author-date">
@@ -816,7 +858,6 @@ const AuctionDetail = () => {
             </div>
           </div>
 
-          {/* 설명 + 이미지 */}
           <div className="product-description-image-section">
             <div className="product-content">
               <h3 className="content-title">상품 설명</h3>
@@ -882,7 +923,6 @@ const AuctionDetail = () => {
           </button>
         </div>
 
-        {/* 오른쪽 - 타이머/최고가 */}
         <div className="product-image-section">
           <div className="timer-section-overlay">
             <div className="timer-title">남은 시간 (경매 마감까지)</div>
@@ -962,7 +1002,6 @@ const AuctionDetail = () => {
               </div>
             </div>
 
-            {/* 금액 버튼 */}
             <div className="bid-amount-buttons">
               {timeRemaining !== '경매 종료' ? (
                 <>
@@ -979,7 +1018,6 @@ const AuctionDetail = () => {
               )}
             </div>
 
-            {/* 입찰 입력/버튼 */}
             <div className="bid-input-section">
               {timeRemaining !== '경매 종료' ? (
                 <>
@@ -1002,12 +1040,10 @@ const AuctionDetail = () => {
               )}
             </div>
 
-            {/* 토스트 */}
             <div className="toast-message-area">
               {bidMessage && <div className={`bid-message ${bidMessageType}`}>{bidMessage}</div>}
             </div>
 
-            {/* 종료 버튼 */}
             <div style={{ marginTop: 20, textAlign: 'center', minHeight: 56 }}>
               {(() => {
                 const condition1 = timeRemaining !== '경매 종료';
@@ -1047,11 +1083,42 @@ const AuctionDetail = () => {
                 </button>
               )}
             </div>
+
+                        {/* 💳 잔금(에스크로) 결제 버튼 — 🔚 경매 종료 버튼 “바로 아래”에 추가 */}
+            <div style={{ marginTop: 12, textAlign: 'center' }}>
+              {(auctionDetail?.status === 'SOLD' &&
+                String(auctionDetail?.winnerId) === String(userInfo?.memberId)) && (
+                <button
+                  onClick={startEscrowPayment}
+                  style={{
+                    background: '#d1e7dd',
+                    color: '#0f5132',
+                    border: '1px solid #badbcc',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#bcdad0';
+                    e.target.style.borderColor = '#a6cec3';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = '#d1e7dd';
+                    e.target.style.borderColor = '#badbcc';
+                  }}
+                >
+                  💳 잔금(에스크로) 결제
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* 이미지 모달 */}
       {imageModalOpen && (
         <div className="image-modal-overlay" onClick={closeImageModal}>
           <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1094,7 +1161,6 @@ const AuctionDetail = () => {
         </div>
       )}
 
-      {/* 비번 확인 모달 */}
       {showPasswordModal && (
         <div className="password-modal-overlay">
           <div className="password-modal">
@@ -1117,7 +1183,6 @@ const AuctionDetail = () => {
         </div>
       )}
 
-      {/* 보증금 결제 모달 */}
       {showPaymentModal && (
         <div className="payment-modal">
           <div className="payment-modal-content">
@@ -1148,16 +1213,30 @@ const AuctionDetail = () => {
         </div>
       )}
 
-      {/* 포트원 결제 컴포넌트 */}
       {isProcessingPayment && (
         <PortOnePayment
           postId={parseInt(postId, 10)}
           memberId={userInfo?.memberId}
           amount={paymentAmount}
+          merchantUid={paymentMerchantUid}
           onPaymentComplete={handlePaymentComplete}
           onPaymentCancel={handlePaymentCancel}
         />
       )}
+
+            {/* 잔금(에스크로) 결제창 */}
+      {isProcessingEscrow && (
+        <PortOnePayment
+          mode="ESCROW"
+          postId={parseInt(postId, 10)}
+          memberId={userInfo?.memberId}
+          amount={escrowAmount}
+          merchantUid={escrowMerchantUid}
+          onPaymentComplete={handleEscrowComplete}
+          onPaymentCancel={handleEscrowCancel}
+        />
+      )}
+
     </div>
   );
 };

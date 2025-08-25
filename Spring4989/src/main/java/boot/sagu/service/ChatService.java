@@ -169,6 +169,12 @@ public class ChatService implements ChatServiceInter{
 
 	        return null; // 예외적인 경우
 	    }
+
+		@Override
+		public int countChat() {
+			// TODO Auto-generated method stub
+			return chatmapper.countChat();
+		}
 }
 
 	

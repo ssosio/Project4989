@@ -36,7 +36,7 @@ public class ChatFileUploadService {
     private SimpMessagingTemplate messagingTemplate;
 
     // ⭐ 수정: yml에 설정하지 않고 코드에서 직접 URL을 설정
-    private final String SERVER_BASE_URL = "http://192.168.10.136:4989";
+    	private final String SERVER_BASE_URL = "http://192.168.10.136:4989";
 
     // 파일 저장 경로
     private final String UPLOAD_BASE_PATH = "C:/SIST0217/Project4989/Spring4989/src/main/resources/static/chatsave/";

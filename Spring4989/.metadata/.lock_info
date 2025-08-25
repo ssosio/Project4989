@@ -1,4 +1,11 @@
-#Fri Aug 08 12:29:52 GMT+09:00 2025
-host=DESKTOP-D2PBRFF
-process-id=15000
+<<<<<<< HEAD
+#Sun Aug 24 17:55:05 KST 2025
+host=DESKTOP-CPA5EBL
+process-id=21928
+user=Administrator
+=======
+#Fri Aug 22 14:21:52 GMT+09:00 2025
+host=DESKTOP-223C4PF
+process-id=17552
 user=user
+>>>>>>> 3689504cc7c5037e458b6f39fe24fa21f556728a

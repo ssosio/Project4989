@@ -21,6 +21,8 @@ spring:
     include: 
       - oauth
       - coolsms
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 #mybatis
 mybatis:
@@ -28,7 +30,6 @@ mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-
 #jwt
 jwt:
   secret: 'your-very-long-and-secure-secret-key-that-is-at-least-256-bits'

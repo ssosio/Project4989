@@ -8,11 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +25,7 @@ import boot.sagu.config.JwtUtil;
 import boot.sagu.dto.CarDto;
 import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.MemberDto;
+import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
 import boot.sagu.dto.ReportsDto;
@@ -35,6 +38,7 @@ import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/post")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
 public class PostsController {
 	
 	@Autowired
@@ -64,6 +68,123 @@ public class PostsController {
 	@GetMapping("/list")
 	public List<Map<String, Object>> list() {
 	    return postService.getPostListWithNick();
+	}
+	
+	@GetMapping("/search")
+	public ResponseEntity<Map<String, Object>> search(
+			@RequestParam(value = "keyword", required = false) String keyword,
+			@RequestParam(value = "postType", required = false) String postType,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "tradeType", required = false) String tradeType,
+			@RequestParam(value = "minPrice", required = false) Integer minPrice,
+			@RequestParam(value = "maxPrice", required = false) Integer maxPrice,
+			@RequestParam(value = "minYear", required = false) Integer minYear,
+			@RequestParam(value = "maxYear", required = false) Integer maxYear,
+			@RequestParam(value = "minArea", required = false) Integer minArea,
+			@RequestParam(value = "maxArea", required = false) Integer maxArea,
+			@RequestParam(value = "categoryId", required = false) String categoryId,
+			@RequestParam(value = "sortBy", required = false) String sortBy,
+			@RequestParam(value = "sortOrder", required = false) String sortOrder,
+			@RequestParam(value = "page", defaultValue = "1") int page,
+			@RequestParam(value = "size", defaultValue = "12") int size,
+			@RequestHeader(value="Authorization", required=false) String authorization,
+			@ModelAttribute MemberRegionDto mrdto) {
+		
+		try {
+			// 검색 파라미터를 Map으로 구성
+			Map<String, Object> searchParams = new HashMap<>();
+			searchParams.put("keyword", keyword);
+			searchParams.put("postType", postType);
+			searchParams.put("status", status);
+			searchParams.put("tradeType", tradeType);
+			searchParams.put("minPrice", minPrice);
+			searchParams.put("maxPrice", maxPrice);
+			searchParams.put("minYear", minYear);
+			searchParams.put("maxYear", maxYear);
+			searchParams.put("minArea", minArea);
+			searchParams.put("maxArea", maxArea);
+			searchParams.put("categoryId", categoryId);
+			searchParams.put("sortBy", sortBy);
+			searchParams.put("sortOrder", sortOrder);
+			searchParams.put("page", page);
+			searchParams.put("size", size);
+			
+			// ✅ 로그인 시에만 memberId 주입 (regionId는 사용하지 않음)
+	        Long memberId = null;
+	        if (authorization != null && authorization.startsWith("Bearer ")) {
+	            try {
+	                String token = authorization.substring(7);
+	                memberId = ((long)jwtUtil.extractMemberId(token));
+	            } catch (Exception ignored) {}
+	        }
+	        searchParams.put("memberId", memberId); // 로그인이면 값, 아니면 null
+			
+			// ✅ regionId 처리 (로그인시에만 지역 제한)
+			/*
+			 * Long memberId = null; try { if (authorization != null &&
+			 * authorization.startsWith("Bearer ")) { String token =
+			 * authorization.substring(7); memberId =
+			 * ((long)jwtUtil.extractMemberId(token)); // 유효성 검사 포함 if (memberId != 0 &&
+			 * mrdto.getRegionId() != 0) {
+			 * 
+			 * } } } catch (Exception ignore) { // 토큰 무효/만료 → regionId 그대로 null }
+			 * 
+			 * searchParams.put("memberId", memberId );
+			 */
+			
+			List<PostsDto> searchResults = postService.searchAll(searchParams);
+			int totalCount = postService.countSearchAll(searchParams);
+			
+			Map<String, Object> response = new HashMap<>();
+			response.put("content", searchResults);
+			response.put("totalElements", totalCount);
+			response.put("currentPage", page);
+			response.put("size", size);
+			response.put("totalPages", (int) Math.ceil((double) totalCount / size));
+			
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			Map<String, Object> errorResponse = new HashMap<>();
+			errorResponse.put("error", "검색 중 오류가 발생했습니다: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+		}
+	}
+	
+	// 테스트용 간단한 검색 엔드포인트
+	@GetMapping("/search-simple")
+	public ResponseEntity<Map<String, Object>> searchSimple(
+			@RequestParam(value = "keyword", required = false) String keyword,
+			@RequestParam(value = "page", defaultValue = "1") int page,
+			@RequestParam(value = "size", defaultValue = "12") int size) {
+		
+		try {
+			// 간단한 검색 파라미터를 Map으로 구성
+			Map<String, Object> searchParams = new HashMap<>();
+			searchParams.put("keyword", keyword);
+			searchParams.put("postType", "ALL");
+			searchParams.put("status", "ALL");
+			searchParams.put("tradeType", "ALL");
+			searchParams.put("categoryId", "ALL");
+			searchParams.put("sortBy", "");
+			searchParams.put("sortOrder", "");
+			searchParams.put("size", size);
+			
+			List<PostsDto> searchResults = postService.searchAll(searchParams);
+			int totalCount = postService.countSearchAll(searchParams);
+			
+			Map<String, Object> response = new HashMap<>();
+			response.put("content", searchResults);
+			response.put("totalElements", totalCount);
+			response.put("currentPage", page);
+			response.put("size", size);
+			response.put("totalPages", (int) Math.ceil((double) totalCount / size));
+			
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			Map<String, Object> errorResponse = new HashMap<>();
+			errorResponse.put("error", "검색 중 오류가 발생했습니다: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+		}
 	}
 	
 	@PostMapping("/upload")
@@ -215,23 +336,119 @@ public class PostsController {
 	    return ResponseEntity.ok().build();
 	}
 	
-	//검색
-	 @GetMapping("/search")
-	    public Map<String, Object> search(
-	        @RequestParam String keyword,
-	        @RequestParam(defaultValue = "ALL") String postType, // ALL/CARS/ESTATE/ITEMS
-	        @RequestParam(defaultValue = "1") int page,
-	        @RequestParam(defaultValue = "10") int size
-	    ) {
-	        List<PostsDto> rows = postService.searchAll(keyword, postType, page, size);
-	        int total = postService.countSearchAll(keyword, postType);
 
-	        Map<String, Object> resp = new HashMap<>();
-	        resp.put("rows", rows);
-	        resp.put("total", total);
-	        resp.put("page", page);
-	        resp.put("size", size);
-	        return resp;
-	    }
+	
+	// 채팅방 참여자 조회 API (판매완료 시 거래자 선택용)
+	@GetMapping("/chatParticipants")
+	public ResponseEntity<Map<String, Object>> getChatParticipants(
+			@RequestParam("postId") Long postId,
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			
+			// 권한 확인 (작성자 본인만 가능)
+			Long ownerId = postService.findPostOwnerId(postId);
+			if (ownerId == null || !ownerId.equals(memberId)) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN)
+					.body(Map.of("success", false, "message", "권한이 없습니다."));
+			}
+			
+			// 채팅방 참여자 조회
+			List<Map<String, Object>> participants = postService.getChatParticipants(postId);
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true, 
+				"participants", participants
+			));
+			
+		} catch (Exception e) {
+			System.err.println("채팅방 참여자 조회 중 오류 발생: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "서버 오류가 발생했습니다."));
+		}
+	}
+
+	// 판매 상태 변경 API (거래자 선택 포함)
+	@PutMapping("/updateStatus")
+	public ResponseEntity<Map<String, Object>> updatePostStatus(
+			@RequestParam("postId") Long postId,
+			@RequestParam("status") String status,
+			@RequestParam(value = "buyerId", required = false) Long buyerId,
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			
+			// 권한 확인 및 상태 변경 실행
+			boolean success = postService.updatePostStatus(postId, status, buyerId, memberId);
+			
+			if (success) {
+				return ResponseEntity.ok(Map.of("success", true, "message", "상태가 성공적으로 변경되었습니다."));
+			} else {
+				return ResponseEntity.badRequest()
+					.body(Map.of("success", false, "message", "상태 변경에 실패했습니다."));
+			}
+			
+		} catch (Exception e) {
+			System.err.println("상태 변경 중 오류 발생: " + e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "서버 오류가 발생했습니다."));
+		}
+	}
+	
+	// 구매내역 조회 API
+	@GetMapping("/purchaseHistory")
+	public ResponseEntity<Map<String, Object>> getPurchaseHistory(
+			@RequestHeader("Authorization") String authorization) {
+		
+		try {
+			// System.out.println("🔍 구매내역 조회 API 호출됨");
+			
+			// JWT 토큰에서 사용자 ID 추출
+			if (authorization == null || !authorization.startsWith("Bearer ")) {
+				// System.err.println("❌ 인증 토큰이 없음");
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+			}
+			
+			String token = authorization.substring(7);
+			long memberId = jwtUtil.extractMemberId(token);
+			// System.out.println("👤 조회 요청 사용자 ID: " + memberId);
+			
+			// 구매내역 조회
+			List<Map<String, Object>> purchases = postService.getPurchaseHistory(memberId);
+			// System.out.println("🛒 조회된 구매내역 개수: " + (purchases != null ? purchases.size() : "null"));
+			
+			if (purchases != null && !purchases.isEmpty()) {
+				// System.out.println("📋 첫 번째 구매내역: " + purchases.get(0));
+			}
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"purchases", purchases
+			));
+			
+		} catch (Exception e) {
+			// System.err.println("❌ 구매내역 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "구매내역 조회 중 오류가 발생했습니다."));
+		}
+	}
 	
 }

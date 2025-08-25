@@ -16,9 +16,5 @@ public class CarDto {
 	private int mileage;
 	private String fuelType;
 	private String transmission;
-	private int location;
-	private String detail_location;
-	private double latitude;
-	private double longitude;
 
 }
