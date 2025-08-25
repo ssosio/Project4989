@@ -42,9 +42,9 @@ public interface AuctionMapper {
 	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기 	
 	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postId")long postId,@Param("winnerId")long winnerId);
 	//보증금 상태관리
-	public int updateGuaranteeStatus(@Param("guaranteedId")long guaranteeId,@Param("status") String status);
+	public int updateGuaranteeStatus(@Param("guaranteeId")long guaranteeId,@Param("status") String status);
 	//경매 시작가
-	public int getStartPrice(@Param("postId") Long postId);
+	public int getStartPrice(@Param("postId") long postId);
 	
 
 	// 경매 삭제
@@ -74,14 +74,38 @@ public interface AuctionMapper {
 	// 보증금 단건 조회
 	public AuctionGuaranteeDTO findGuarantee(@Param("postId") long postId,
 	                                  @Param("memberId") long memberId);
+	
+	//유찰 시 해당 글의 PAID 보증금 전체 조회
+	public List<AuctionGuaranteeDTO> findPaidGuaranteesByPost(@Param("postId") long postId);
 
-	// 내 게시글 타입별 개수 조회 (위쪽 필터용)
-	public Map<String, Object> getMyPostsCounts(@Param("memberId") long memberId);
+	// ==================================마이페이지 판매 내역 관련 메서드==================================
+	
+	// 내 게시글 타입별 개수 조회
+	public Map<String, Object> getMyPostsCounts(@Param("memberId") int memberId);
+	
+	// 내 게시글 상태별 개수 조회 (타입 필터 적용)
+	public Map<String, Object> getMyPostsStatusCounts(Map<String, Object> params);
+	
+	// 내 게시글 목록 조회 (페이징 포함)
+	public List<PostsDto> getMyPosts(Map<String, Object> params);
+	
+	// 내 게시글 총 개수 조회 (페이징용)
+	public int getMyPostsTotalCount(Map<String, Object> params);
 
-	// 내 게시글 조회 (마이페이지 거래내역용)
-	public List<Map<String, Object>> getMyPosts(@Param("memberId") long memberId, 
-	                                           @Param("type") String type, 
-	                                           @Param("status") String status);
+	// ==================================마이페이지 입찰 내역 관련 메서드==================================
+	
+	// 내 입찰 기록 조회 (페이징 포함)
+	public List<Map<String, Object>> getMyBids(@Param("memberId") int memberId, 
+	                                           @Param("status") String status,
+	                                           @Param("offset") int offset, 
+	                                           @Param("limit") int limit);
+	
+	// 내 입찰 기록 총 개수
+	public int getMyBidsTotalCount(@Param("memberId") int memberId);
+	
+	// 내 입찰 기록 상태별 개수
+	public Map<String, Object> getMyBidsStatusCounts(@Param("memberId") int memberId);
+
 
 	// 경매 게시글만 조회
 	public List<Map<String, Object>> getMyAuctionPosts(@Param("memberId") long memberId,
@@ -97,5 +121,22 @@ public interface AuctionMapper {
 
 	// 유찰 게시글만 조회 (경매에서만 발생)
 	public List<Map<String, Object>> getMyCancelledAuctionPosts(@Param("memberId") long memberId);
+	
+	public int existsGuaranteeByImpUid(@Param("impUid") String impUid);
+
+	// ==================================마이페이지 찜한 상품 관련 메서드==================================
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesCounts(@Param("memberId") int memberId);
+	
+	// 내 찜한 상품 목록 조회 (페이징 포함)
+	public List<Map<String, Object>> getMyFavorites(Map<String, Object> params);
+	
+	// 내 찜한 상품 총 개수 조회 (페이징용)
+	public int getMyFavoritesTotalCount(Map<String, Object> params);
+	
+	// 내 찜한 상품 타입별 개수 조회
+	public Map<String, Object> getMyFavoritesTypeCounts(@Param("memberId") int memberId);
+
 
 }

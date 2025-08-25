@@ -70,7 +70,7 @@ function SignupForm() {
     }
     try {
       // 백엔드에 중복 확인 요청
-      await axios.get(`http://localhost:4989/check-loginid?loginId=${formData.loginId}`);
+      await axios.get(`${import.meta.env.VITE_API_BASE}/check-loginid?loginId=${formData.loginId}`);
       setIdCheckMessage({ text: '사용 가능한 아이디입니다.', color: 'green' });
     } catch (error) {
       // 409 Conflict 오류가 발생하면 중복된 아이디임
@@ -97,7 +97,7 @@ function SignupForm() {
     }
     try {
       // 실제 SMS 발송 대신 서버 콘솔에 인증번호를 출력하는 Mocking 방식 사용
-      await axios.post('http://localhost:4989/sms/send', { phoneNumber });
+      await axios.post(`${import.meta.env.VITE_API_BASE}/sms/send`, { phoneNumber });
       alert('인증번호가 발송되었습니다.');
       setIsCodeSent(true);
     } catch (error) {
@@ -108,7 +108,7 @@ function SignupForm() {
 
   const handleVerifyCode = async () => {
     try {
-      await axios.post('http://localhost:4989/sms/verify', { phoneNumber, code: verificationCode });
+      await axios.post(`${import.meta.env.VITE_API_BASE}/sms/verify`, { phoneNumber, code: verificationCode });
       alert('인증 성공!');
       setIsVerified(true);
     } catch (error) {
