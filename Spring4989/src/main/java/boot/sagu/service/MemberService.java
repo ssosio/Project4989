@@ -85,4 +85,9 @@ public class MemberService implements MemberServiceInter {
 		
 		return profileImageUrl;
 	}
+	
+	@Override
+	public MemberDto getMemberById(Long memberId) {
+	    return memberMapper.getMemberById(memberId);
+	}
 }

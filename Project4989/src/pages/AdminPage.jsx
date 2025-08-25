@@ -156,12 +156,7 @@ const AdminPage = () => {
 
         {/* 회원 관리 탭 */}
         <TabPanel value={tabValue} index={1}>
-          <UserManagementTab 
-            recentUsers={recentUsers} 
-            getStatusText={getStatusText} 
-            getStatusColor={getStatusColor} 
-            onUserDetail={handleUserDetail}
-          />
+          <UserManagementTab />
         </TabPanel>
 
         {/* 게시글 관리 탭 */}
