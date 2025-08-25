@@ -156,7 +156,7 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                 <TableCell>카테고리</TableCell>
                 <TableCell>작성자</TableCell>
                 <TableCell>상태</TableCell>
-                <TableCell>신고</TableCell>
+                {/* <TableCell>신고</TableCell> */}
                 <TableCell>작업</TableCell>
               </TableRow>
             </TableHead>
@@ -188,7 +188,7 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                       size="small" 
                     />
                   </TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     {post.reports > 0 ? (
                       <Badge badgeContent={post.reports} color="error">
                         <ReportIcon color="action" />
@@ -196,7 +196,7 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                     ) : (
                       <Chip label="0" size="small" variant="outlined" />
                     )}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <IconButton size="small" onClick={() => onPostDetail(post)}>
                       <VisibilityIcon />

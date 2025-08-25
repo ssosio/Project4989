@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function SearchBox() {
   const navigate = useNavigate();
@@ -23,6 +24,25 @@ export default function SearchBox() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
+
+  // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
+    const { userInfo } = useContext(AuthContext);
+    // const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
+  
+    const token =
+      userInfo?.token ??
+      localStorage.getItem("jwtToken");
+
+      // ✅ 토큰을 자동으로 실어주는 axios 인스턴스
+  const api = useMemo(() => {
+    const inst = axios.create({ baseURL: "http://localhost:4989" });
+    inst.interceptors.request.use((cfg) => {
+      if (token) cfg.headers.Authorization = `Bearer ${token}`;
+      return cfg;
+    });
+    return inst;
+  }, [token]);
+
 
   // URL 파라미터가 변경될 때 검색어 업데이트
   useEffect(() => {
@@ -72,7 +92,7 @@ export default function SearchBox() {
               size 
             };
         
-        const { data } = await axios.get(apiUrl, { params });
+        const { data } = await axios.get(apiUrl, { params});
         setRows(data.content || []);
         setTotal(data.totalElements || 0);
       } catch (e) {

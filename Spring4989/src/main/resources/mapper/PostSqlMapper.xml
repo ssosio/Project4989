@@ -318,12 +318,14 @@
 
   <where>
     <!-- ✅ 지역 매칭 필수: posts.location 이 member_regions.region_id 에 존재 -->
-    <!-- AND EXISTS (
-      SELECT 1
-      FROM member_regions mr
-      WHERE mr.region_id = p.location
-    )
- -->
+    <if test="memberId != null">
+      AND EXISTS (
+        SELECT 1
+        FROM member_regions mr
+        WHERE mr.region_id = p.location
+          AND mr.member_id = #{memberId}
+      )
+    </if>
     <!-- 키워드 검색 -->
     <if test="kw != ''">
       AND (
@@ -468,8 +470,19 @@
 		LEFT JOIN categories cat ON ui.category_id = cat.category_id
 		
 		<where>
+		<!-- ✅ 지역 매칭 필수: posts.location 이 member_regions.region_id 에 존재 -->
+		    <if test="memberId != null">
+		      AND EXISTS (
+		        SELECT 1
+		        FROM member_regions mr
+		        WHERE mr.region_id = p.location
+		          AND mr.member_id = #{memberId}
+		      )
+		    </if>
+		
 			<!-- 키워드 검색 -->
 			<if test="kw != ''">
+			AND
 				(
 					-- posts 테이블 검색
 					LOWER(p.title) LIKE CONCAT('%', LOWER(#{kw}), '%')

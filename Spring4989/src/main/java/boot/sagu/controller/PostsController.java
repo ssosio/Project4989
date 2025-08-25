@@ -109,27 +109,27 @@ public class PostsController {
 			searchParams.put("page", page);
 			searchParams.put("size", size);
 			
-			// ✅ regionId 처리 (로그인시에만 지역 제한)
-	        Integer regionId = 0;
-	        try {
-	            if (authorization != null && authorization.startsWith("Bearer ")) {
+			// ✅ 로그인 시에만 memberId 주입 (regionId는 사용하지 않음)
+	        Long memberId = null;
+	        if (authorization != null && authorization.startsWith("Bearer ")) {
+	            try {
 	                String token = authorization.substring(7);
-	                long loginId = jwtUtil.extractMemberId(token); // 유효성 검사 포함
-	                if (loginId != 0 && mrdto.getRegionId() != 0) {
-	                    regionId = mrdto.getRegionId();
-	                }
-	            }
-	        } catch (Exception ignore) {
-	            // 토큰 무효/만료 → regionId 그대로 null
+	                memberId = ((long)jwtUtil.extractMemberId(token));
+	            } catch (Exception ignored) {}
 	        }
-	        searchParams.put("regionId", regionId);
+	        searchParams.put("memberId", memberId); // 로그인이면 값, 아니면 null
+			
+			// ✅ regionId 처리 (로그인시에만 지역 제한)
 			/*
-			 * Integer regionId = 0; try { if (authorization != null &&
+			 * Long memberId = null; try { if (authorization != null &&
 			 * authorization.startsWith("Bearer ")) { String token =
-			 * authorization.substring(7); long loginId = jwtUtil.extractMemberId(token); //
-			 * 유효성 검사 포함 if (loginId != 0 && mrdto.getRegionId() != 0) { regionId =
-			 * mrdto.getRegionId(); } } } catch (Exception ignore) { // 토큰 무효/만료 → regionId
-			 * 그대로 null } searchParams.put("regionId", regionId);
+			 * authorization.substring(7); memberId =
+			 * ((long)jwtUtil.extractMemberId(token)); // 유효성 검사 포함 if (memberId != 0 &&
+			 * mrdto.getRegionId() != 0) {
+			 * 
+			 * } } } catch (Exception ignore) { // 토큰 무효/만료 → regionId 그대로 null }
+			 * 
+			 * searchParams.put("memberId", memberId );
 			 */
 			
 			List<PostsDto> searchResults = postService.searchAll(searchParams);
