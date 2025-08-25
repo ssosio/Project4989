@@ -32,9 +32,9 @@ public class ChatService implements ChatServiceInter{
 	ChatMessageMapper chatmessagemapper;
 
 	@Override
-	public List<ChatDto> getAllChat(String login_id) {
-		System.out.println("ChatService.getAllChat 호출 - login_id: " + login_id);
-		List<ChatDto> result = chatmapper.getAllChat(login_id);
+	public List<ChatDto> getAllChat(String loginId) {
+		System.out.println("ChatService.getAllChat 호출 - loginId: " + loginId);
+		List<ChatDto> result = chatmapper.getAllChat(loginId);
 		System.out.println("매퍼에서 반환된 결과: " + result);
 		if (result != null) {
 			System.out.println("결과 크기: " + result.size());
@@ -42,11 +42,11 @@ public class ChatService implements ChatServiceInter{
 				ChatDto chat = result.get(i);
 				System.out.println("결과[" + i + "]: " + chat);
 				if (chat != null) {
-					System.out.println("  - chat_room_id: " + chat.getChat_room_id());
-					System.out.println("  - product_id: " + chat.getProduct_id());
-					System.out.println("  - seller_id: " + chat.getSeller_id());
-					System.out.println("  - buyer_id: " + chat.getBuyer_id());
-					System.out.println("  - opponent_nickname: " + chat.getOpponent_nickname());
+					System.out.println("  - chatRoomId: " + chat.getChatRoomId());
+					System.out.println("  - productId: " + chat.getProductId());
+					System.out.println("  - sellerId: " + chat.getSellerId());
+					System.out.println("  - buyerId: " + chat.getBuyerId());
+					System.out.println("  - opponentNickname: " + chat.getOpponentNickname());
 				}
 			}
 		}
@@ -82,10 +82,10 @@ public class ChatService implements ChatServiceInter{
 	        
 	        // 3. 시스템 메시지 추가
 	        ChatMessageDto systemMessage = new ChatMessageDto();
-	        systemMessage.setChat_room_id(chatRoomId);
-	        systemMessage.setSender_id(currentMemberId);
+	        systemMessage.setChatRoomId(chatRoomId);
+	        systemMessage.setSenderId(currentMemberId);
 	        String messageContent = nickName + "님이 채팅방을 나갔습니다.";
-	        systemMessage.setMessage_content(messageContent); 
+	        systemMessage.setMessageContent(messageContent); 
 	        chatmessagemapper.insertSystemMessage(systemMessage);
 	        
 	        // 4. ✨ 새로 추가된 로직: 두 사용자의 탈퇴 상태 확인 및 메시지 삭제
@@ -130,10 +130,10 @@ public class ChatService implements ChatServiceInter{
 
 	        // 2. 생성된 chat_room_id를 사용하여 첫 메시지 저장
 	        Map<String, Object> messageParams = new HashMap<>();
-	        messageParams.put("chatRoomId", chatDto.getChat_room_id());
-	        messageParams.put("senderId", messageDto.getSender_id());
-	        messageParams.put("messageType", messageDto.getMessage_type());
-	        messageParams.put("messageContent", messageDto.getMessage_content());
+	        messageParams.put("chatRoomId", chatDto.getChatRoomId());
+	        messageParams.put("senderId", messageDto.getSenderId());
+	        messageParams.put("messageType", messageDto.getMessageType());
+	        messageParams.put("messageContent", messageDto.getMessageContent());
 	        messageParams.put("isRead", 1); // 첫 메시지는 보낸 사람이 직접 보낸 것이므로 읽음 처리
 
 	        chatmessagemapper.insertFirstChatMessage(messageParams);

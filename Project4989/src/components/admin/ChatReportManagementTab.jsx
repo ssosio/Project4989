@@ -67,8 +67,8 @@ const ChatReportManagementTab = () => {
 
         // 고유한 사용자 ID들 추출
         const userIds = [...new Set([
-          ...validDeclarations.map(d => d.declaration_memberid),
-          ...validDeclarations.map(d => d.declaration_opposite_memberid)
+          ...validDeclarations.map(d => d.declarationMemberId),
+          ...validDeclarations.map(d => d.declarationOppositeMemberId)
         ])].filter(id => id && !userInfoMap[id]);
 
         console.log('>>> [DEBUG] 조회할 사용자 ID들:', userIds);
@@ -426,59 +426,60 @@ const ChatReportManagementTab = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {currentItems.map((declaration) => ( // Use currentItems for pagination
-                  <TableRow key={safeGetValue(declaration, 'declaration_id')}>
-                    <TableCell>{safeGetValue(declaration, 'declaration_id')}</TableCell>
-                    <TableCell>{safeGetValue(declaration, 'declaration_chat_room_id')}</TableCell>
-                    <TableCell>
-                      {getUserDisplayName(safeGetValue(declaration, 'declaration_memberid'), userInfoMap)}
-                    </TableCell>
-                    <TableCell>
-                      {getUserDisplayName(safeGetValue(declaration, 'declaration_opposite_memberid'), userInfoMap)}
-                    </TableCell>
+                {currentItems.map((declaration) => (
+                  <TableRow key={declaration.declarationId}>
+                    <TableCell>{declaration.declarationId}</TableCell>
+                    <TableCell>{declaration.declarationChatRoomId}</TableCell>
                     <TableCell>
                       <Button
-                        variant="text"
-                        color={getDeclarationTypeColor(safeGetValue(declaration, 'declaration_type'))}
                         size="small"
+                        variant="text"
+                        color="primary"
                         onClick={() => handleContentClick(declaration)}
-                        sx={{
-                          textTransform: 'none',
-                          fontWeight: 'bold',
-                          '&:hover': {
-                            backgroundColor: `${getDeclarationTypeColor(safeGetValue(declaration, 'declaration_type'))}.light`,
-                            color: 'white'
-                          }
-                        }}
                       >
-                        {safeGetValue(declaration, 'declaration_type')}
+                        {getUserDisplayName(declaration.declarationMemberId, userInfoMap)}
                       </Button>
                     </TableCell>
                     <TableCell>
-                      {formatDate(safeGetValue(declaration, 'declaration_time'))}
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="primary"
+                        onClick={() => handleContentClick(declaration)}
+                      >
+                        {getUserDisplayName(declaration.declarationOppositeMemberId, userInfoMap)}
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={getStatusText(safeGetValue(declaration, 'status'))}
-                        color={getStatusColor(safeGetValue(declaration, 'status'))}
+                        label={declaration.declarationType}
+                        color={getDeclarationTypeColor(declaration.declarationType)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(declaration.declarationTime)}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getStatusText(declaration.status)}
+                        color={getStatusColor(declaration.status)}
                         size="small"
                       />
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                           size="small"
                           variant="outlined"
                           color="primary"
-                          onClick={() => handleInvestigateClick(safeGetValue(declaration, 'declaration_chat_room_id'))}
+                          onClick={() => handleInvestigateClick(declaration.declarationChatRoomId)}
                         >
                           조사
                         </Button>
                         <Button
                           size="small"
                           variant="outlined"
-                          color="secondary"
-                          onClick={() => handleActionClick(safeGetValue(declaration, 'declaration_id'))}
+                          color="error"
+                          onClick={() => handleActionClick(declaration.declarationId)}
                         >
                           조치
                         </Button>
@@ -564,7 +565,7 @@ const ChatReportManagementTab = () => {
               }}
             >
               <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {selectedContent?.declaration_content || '신고 내용이 없습니다.'}
+                {selectedContent?.declarationContent || '신고 내용이 없습니다.'}
               </Typography>
             </Box>
           </Box>
@@ -575,7 +576,7 @@ const ChatReportManagementTab = () => {
                 📅 신고 시간
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                {formatDate(selectedContent?.declaration_time) || '-'}
+                {formatDate(selectedContent?.declarationTime) || '-'}
               </Typography>
             </Box>
             <Box sx={{ flex: 1, minWidth: '200px' }}>
@@ -583,7 +584,7 @@ const ChatReportManagementTab = () => {
                 🏷️ 신고 유형
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                {selectedContent?.declaration_type || '-'}
+                {selectedContent?.declarationType || '-'}
               </Typography>
             </Box>
           </Box>

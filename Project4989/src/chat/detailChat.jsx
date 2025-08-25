@@ -96,7 +96,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
     const chatRoomId = chatRoom?.chatRoomId;
     const isAdminInvestigation = chatRoom?.isAdminInvestigation || false;
-    const SERVER_IP = '192.168.10.136';
+    const SERVER_IP = '175.212.203.114';
     const SERVER_PORT = '4989';
 
     const handleMenuOpen = (event) => {
@@ -122,9 +122,9 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     const handleMessageMenuOpen = (event, message) => {
         event.preventDefault();
         // ⭐ 변경: 자신이 보낸 메시지인 경우에만 메뉴를 엽니다.
-        if (String(message.sender_id) === String(userInfo.memberId)) {
+        if (String(message.senderId) === String(userInfo.memberId)) {
             setMessageMenuAnchorEl({ mouseX: event.clientX, mouseY: event.clientY });
-            setSelectedMessageId(message.message_id);
+            setSelectedMessageId(message.messageId);
         }
     };
 
@@ -141,16 +141,16 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         }
         const qLower = query.toLowerCase();
         const results = messages.filter(msg =>
-            msg?.message_type === 'text' &&
-            msg?.message_content &&
-            msg.message_content.toLowerCase().includes(qLower)
+            msg?.messageType === 'text' &&
+            msg?.messageContent &&
+            msg.messageContent.toLowerCase().includes(qLower)
         );
         setSearchResults(results);
         setCurrentResultIndex(0); // 새로운 검색 시에만 초기화
 
         // 첫 번째 결과로 스크롤
         if (results.length > 0) {
-            setTimeout(() => scrollToMessage(results[0].message_id), 100);
+            setTimeout(() => scrollToMessage(results[0].messageId), 100);
         }
     }, [messages]); // 메시지 목록이 업데이트될 때만 함수를 재생성
 
@@ -218,8 +218,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 const updatedMessage = response.data;
                 setMessages((prevMessages) =>
                     prevMessages.map((msg) =>
-                        msg.message_id === selectedMessageId
-                            ? { ...msg, message_content: '삭제된 메시지입니다.', message_type: 'deleted' }
+                        msg.messageId === selectedMessageId
+                            ? { ...msg, messageContent: '삭제된 메시지입니다.', messageType: 'deleted' }
                             : msg
                     )
                 );
@@ -286,11 +286,11 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         }
         try {
             const reportData = {
-                declaration_chat_room_id: chatRoomId,
-                declaration_memberid: userInfo.memberId,
-                declaration_opposite_memberid: otherUserInfo.memberId,
-                declaration_type: reportReason,
-                declaration_content: reportDetail
+                declarationChatRoomId: chatRoomId,
+                declarationMemberId: userInfo.memberId,
+                declarationOppositeMemberId: otherUserInfo.memberId,
+                declarationType: reportReason,
+                declarationContent: reportDetail
             };
             const response = await axios.post(
                 `http://${SERVER_IP}:${SERVER_PORT}/api/chat-declarations/submit`,
@@ -313,13 +313,13 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
     const markMessagesAsRead = () => {
         const hasUnreadMessages = messages.some(msg =>
-            String(msg.sender_id) !== String(userInfo.memberId) && msg.is_read === 0
+            String(msg.senderId) !== String(userInfo.memberId) && msg.isRead === 0
         );
 
         if (hasUnreadMessages) {
             setMessages(prevMessages =>
                 prevMessages.map(msg =>
-                    msg.sender_id !== userInfo.memberId ? { ...msg, is_read: 1 } : msg
+                    msg.senderId !== userInfo.memberId ? { ...msg, isRead: 1 } : msg
                 )
             );
         }
@@ -410,10 +410,10 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
         const webSocketMessage = {
             type: 'CHAT',
-            chat_room_id: chatRoomId,
-            sender_id: userInfo.memberId,
-            message_content: message,
-            message_type: 'text',
+            chatRoomId: chatRoomId,
+            senderId: userInfo.memberId,
+            messageContent: message,
+            messageType: 'text',
         };
 
         // 🔧 수정: 낙관적 업데이트 제거하여 중복 출력 방지
@@ -499,16 +499,16 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         const fetchChatData = async () => {
             setLoading(true);
             try {
-                const messageResponse = await axios.get(`http://${SERVER_IP}:${SERVER_PORT}/listMessage?chat_room_id=${chatRoomId}`);
-                const otherUserResponse = await axios.get(`http://${SERVER_IP}:${SERVER_PORT}/chat/otherUser?chat_room_id=${chatRoomId}&member_id=${userInfo.memberId}`);
+                const messageResponse = await axios.get(`http://${SERVER_IP}:${SERVER_PORT}/listMessage?chatRoomId=${chatRoomId}`);
+                const otherUserResponse = await axios.get(`http://${SERVER_IP}:${SERVER_PORT}/chat/otherUser?chatRoomId=${chatRoomId}&memberId=${userInfo.memberId}`);
                 const rawMessages = Array.isArray(messageResponse.data) ? messageResponse.data.filter(msg => msg !== null && msg !== undefined) : [];
                 const processedMessages = rawMessages.map(msg => {
-                    if (msg.deleted_at !== null && msg.deleted_at !== undefined) {
+                    if (msg.deletedAt !== null && msg.deletedAt !== undefined) {
                         return msg;
-                    } else if (msg.message_type === 'image' && msg.message_content && !msg.message_content.startsWith('http')) {
+                    } else if (msg.messageType === 'image' && msg.messageContent && !msg.messageContent.startsWith('http')) {
                         return {
                             ...msg,
-                            message_content: `http://${SERVER_IP}:${SERVER_PORT}${msg.message_content}`
+                            messageContent: `http://${SERVER_IP}:${SERVER_PORT}${msg.messageContent}`
                         };
                     } else {
                         return msg;
@@ -554,8 +554,8 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 if (receivedMessage.type === 'DELETE') {
                     setMessages(prevMessages =>
                         prevMessages.map(msg =>
-                            msg.message_id === receivedMessage.messageId
-                                ? { ...msg, message_content: '삭제된 메시지입니다.', message_type: 'deleted', deleted_at: new Date().toISOString() }
+                            msg.messageId === receivedMessage.messageId
+                                ? { ...msg, messageContent: '삭제된 메시지입니다.', messageType: 'deleted', deletedAt: new Date().toISOString() }
                                 : msg
                         )
                     );
@@ -565,27 +565,27 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                 } else if (receivedMessage.type === 'READ_UPDATE') {
                     setMessages(prevMessages =>
                         prevMessages.map(msg => {
-                            // 동시에 해당 메시지가 내가 보낸 메시지(msg.sender_id)일 경우
+                            // 동시에 해당 메시지가 내가 보낸 메시지(msg.senderId)일 경우
                             if (String(receivedMessage.senderId) !== String(userInfo.memberId) &&
-                                String(msg.sender_id) === String(userInfo.memberId)) {
-                                return { ...msg, is_read: 1 };
+                                String(msg.senderId) === String(userInfo.memberId)) {
+                                return { ...msg, isRead: 1 };
                             }
                             return msg;
                         })
                     );
                 } else if (receivedMessage.type === 'CHAT' || receivedMessage.type === 'IMAGE') {
                     const convertedMessage = {
-                        message_id: receivedMessage.messageId,
-                        chat_room_id: receivedMessage.chatRoomId,
-                        sender_id: receivedMessage.senderId,
-                        message_type: receivedMessage.messageType,
-                        message_content: receivedMessage.messageContent,
-                        created_at: receivedMessage.timestamp,
-                        is_read: 0
+                        messageId: receivedMessage.messageId,
+                        chatRoomId: receivedMessage.chatRoomId,
+                        senderId: receivedMessage.senderId,
+                        messageType: receivedMessage.messageType,
+                        messageContent: receivedMessage.messageContent,
+                        createdAt: receivedMessage.timestamp,
+                        isRead: 0
                     };
                     setMessages(prevMessages => {
                         const isDuplicate = prevMessages.some(
-                            msg => msg.message_id && msg.message_id === convertedMessage.message_id
+                            msg => msg.messageId && msg.messageId === convertedMessage.messageId
                         );
                         return isDuplicate ? prevMessages : [...prevMessages, convertedMessage];
                     });
@@ -637,7 +637,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
     useEffect(() => {
         if (messages.length > 0) {
             const lastMessage = messages[messages.length - 1];
-            if (lastMessage && String(lastMessage.sender_id) === String(userInfo?.memberId)) {
+            if (lastMessage && String(lastMessage.senderId) === String(userInfo?.memberId)) {
                 // 본인이 보낸 메시지일 때만 스크롤
                 setTimeout(() => {
                     scrollToBottom();
@@ -680,7 +680,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
 
         const token = localStorage.getItem('accessToken');
 
-        fetch(`http://${SERVER_IP}:${SERVER_PORT}/read?chat_room_id=${chatRoomId}&member_id=${userInfo.memberId}`, {
+        fetch(`http://${SERVER_IP}:${SERVER_PORT}/read?chatRoomId=${chatRoomId}&memberId=${userInfo.memberId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -702,14 +702,14 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
         if (searchResults.length === 0) return;
         const nextIndex = (currentResultIndex + 1) % searchResults.length;
         setCurrentResultIndex(nextIndex);
-        scrollToMessage(searchResults[nextIndex].message_id);
+        scrollToMessage(searchResults[nextIndex].messageId);
     };
 
     const handlePrevResult = () => {
         if (searchResults.length === 0) return;
         const prevIndex = (currentResultIndex - 1 + searchResults.length) % searchResults.length;
         setCurrentResultIndex(prevIndex);
-        scrollToMessage(searchResults[prevIndex].message_id);
+        scrollToMessage(searchResults[prevIndex].messageId);
     };
 
     if (!open) return null;
@@ -886,21 +886,21 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                             </Box>
                         ) : (messages || []).map((msg) => {
                             if (!msg) return null;
-                            const isOwnMessage = msg?.sender_id === userInfo?.memberId;
-                            const isDeletedMessage = msg.message_type === 'deleted';
+                            const isOwnMessage = msg?.senderId === userInfo?.memberId;
+                            const isDeletedMessage = msg.messageType === 'deleted';
 
-                            let imageUrl = msg?.message_content;
-                            if (msg?.message_type === 'image' && imageUrl && !imageUrl.startsWith('http')) {
+                            let imageUrl = msg?.messageContent;
+                            if (msg?.messageType === 'image' && imageUrl && !imageUrl.startsWith('http')) {
                                 imageUrl = `http://${SERVER_IP}:${SERVER_PORT}${imageUrl}`;
                             }
 
                             // 하이라이트 여부
-                            const isMatch = searchQuery && msg.message_type === 'text' &&
-                                msg.message_content?.toLowerCase().includes(searchQuery.toLowerCase());
+                            const isMatch = searchQuery && msg.messageType === 'text' &&
+                                msg.messageContent?.toLowerCase().includes(searchQuery.toLowerCase());
 
                             return (
                                 <Box
-                                    key={msg.message_id || Math.random()}
+                                    key={msg.messageId || Math.random()}
                                     sx={{
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -913,15 +913,15 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                     }}
                                     onContextMenu={(event) => handleMessageMenuOpen(event, msg)}
                                     ref={el => {
-                                        if (msg.message_id) messageRefs.current[msg.message_id] = el;
+                                        if (msg.messageId) messageRefs.current[msg.messageId] = el;
                                     }}
                                 >
                                     <MessageBubble isOwn={isOwnMessage}>
                                         {isDeletedMessage ? (
                                             <Typography variant="body2" sx={{ color: '#aaa', fontStyle: 'italic' }}>
-                                                {msg.message_content}
+                                                {msg.messageContent}
                                             </Typography>
-                                        ) : msg.message_type === 'image' ? (
+                                        ) : msg.messageType === 'image' ? (
                                             <Box sx={{ maxWidth: '200px' }}>
                                                 <img
                                                     src={imageUrl}
@@ -931,7 +931,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                             </Box>
                                         ) : (
                                             <Typography variant="body2">
-                                                {msg.message_content || '메시지 내용 없음'}
+                                                {msg.messageContent || '메시지 내용 없음'}
                                             </Typography>
                                         )}
                                     </MessageBubble>
@@ -949,7 +949,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                                 variant="caption"
                                                 sx={{ color: '#666', fontSize: '11px' }}
                                             >
-                                                {formatTime(msg.created_at)}
+                                                {formatTime(msg.createdAt)}
                                             </Typography>
                                             {isOwnMessage && (
                                                 <Box
@@ -962,12 +962,12 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                                     <Typography
                                                         variant="caption"
                                                         sx={{
-                                                            color: msg.is_read === 1 ? '#3182f6' : '#ccc',
+                                                            color: msg.isRead === 1 ? '#3182f6' : '#ccc',
                                                             fontSize: '10px',
-                                                            fontWeight: msg.is_read === 1 ? 'bold' : 'normal'
+                                                            fontWeight: msg.isRead === 1 ? 'bold' : 'normal'
                                                         }}
                                                     >
-                                                        {msg.is_read === 1 ? '읽음' : '안읽음'}
+                                                        {msg.isRead === 1 ? '읽음' : '안읽음'}
                                                     </Typography>
                                                 </Box>
                                             )}
@@ -989,7 +989,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                         }
                     >
                         {/* ⭐ 변경: 자신의 메시지인 경우에만 삭제 메뉴를 보여줍니다. */}
-                        {selectedMessageId && messages.find(m => m.message_id === selectedMessageId && String(m.sender_id) === String(userInfo.memberId)) && (
+                        {selectedMessageId && messages.find(m => m.messageId === selectedMessageId && String(m.senderId) === String(userInfo.memberId)) && (
                             <MenuItem onClick={handleDeleteMessage}>
                                 <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
                                 메시지 삭제

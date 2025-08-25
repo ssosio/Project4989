@@ -164,7 +164,7 @@ export const Header = () => {
       const fetchUnreadCount = async () => {
         try {
           const response = await axios.get('/api/chat/unread-count', {
-            params: { login_id: userInfo.loginId }
+            params: { loginId: userInfo.loginId }
           });
           setUnreadMessageCount(response.data);
         } catch {

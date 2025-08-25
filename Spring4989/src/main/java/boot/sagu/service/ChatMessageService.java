@@ -32,16 +32,16 @@ public class ChatMessageService implements ChatMessageServiceInter{
 	    chatMessageMapper.insertMessage(messageDto);
 
 	    // 2. 채워진 ID를 반환
-	    return messageDto.getMessage_id();
+	    return messageDto.getMessageId();
 	}
 
 	@Override
-	public List<ChatMessageDto> getAllMessages(Long chat_room_id) {
+	public List<ChatMessageDto> getAllMessages(Long chatRoomId) {
 		System.out.println("=== ChatMessageService.getAllMessages ===");
-		System.out.println("입력받은 chat_room_id: " + chat_room_id);
+		System.out.println("입력받은 chat_room_id: " + chatRoomId);
 		
 		try {
-			List<ChatMessageDto> result = chatMessageMapper.getAllMessages(chat_room_id);
+			List<ChatMessageDto> result = chatMessageMapper.getAllMessages(chatRoomId);
 			System.out.println("Mapper에서 반환된 결과: " + result);
 			System.out.println("결과 클래스: " + (result != null ? result.getClass().getName() : "null"));
 			
@@ -55,13 +55,13 @@ public class ChatMessageService implements ChatMessageServiceInter{
 					System.out.println("메시지 " + i + ": " + msg);
 					System.out.println("메시지 " + i + " 클래스: " + (msg != null ? msg.getClass().getName() : "null"));
 					if (msg != null) {
-						System.out.println("  - message_id: " + msg.getMessage_id());
-						System.out.println("  - chat_room_id: " + msg.getChat_room_id());
-						System.out.println("  - sender_id: " + msg.getSender_id());
-						System.out.println("  - message_type: " + msg.getMessage_type());
-						System.out.println("  - message_content: " + msg.getMessage_content());
-						System.out.println("  - created_at: " + msg.getCreated_at());
-						System.out.println("  - is_read: " + msg.getIs_read());
+						System.out.println("  - message_id: " + msg.getMessageId());
+						System.out.println("  - chat_room_id: " + msg.getChatRoomId());
+						System.out.println("  - sender_id: " + msg.getSenderId());
+						System.out.println("  - message_type: " + msg.getMessageType());
+						System.out.println("  - message_content: " + msg.getMessageContent());
+						System.out.println("  - created_at: " + msg.getCreatedAt());
+						System.out.println("  - is_read: " + msg.getIsRead());
 					} else {
 						System.out.println("  - 메시지 " + i + "는 null입니다.");
 					}

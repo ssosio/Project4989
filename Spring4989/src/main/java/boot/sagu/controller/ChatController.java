@@ -48,11 +48,11 @@ public class ChatController {
     private SimpMessagingTemplate messagingTemplate;
 	
 	@GetMapping("/chatlist")
-	public List<ChatDto> getAllChat(@RequestParam("login_id") String login_id)
+	public List<ChatDto> getAllChat(@RequestParam("loginId") String loginId)
 	{
 		
 		// loginId로 사용자 정보 조회
-		MemberDto member = memberService.getMemberByLoginId(login_id);
+		MemberDto member = memberService.getMemberByLoginId(loginId);
 		if (member == null) {
 			return null;
 		}
@@ -119,8 +119,8 @@ public class ChatController {
 	        }
 	    }
 	    @GetMapping("/chat/otherUser")
-	    public ResponseEntity<?> getOtherUserInfo(@RequestParam(name = "chat_room_id") Long chatRoomId, 
-	                                            @RequestParam(name = "member_id") Long memberId) {
+	    public ResponseEntity<?> getOtherUserInfo(@RequestParam(name = "chatRoomId") Long chatRoomId,
+	                                        @RequestParam(name = "memberId") Long memberId) {
 	        try {
 	            Map<String, Object> otherUser = chatservice.getOtherUserInChatRoom(chatRoomId, memberId);
 	            
@@ -167,19 +167,19 @@ public class ChatController {
 	            String messageContent = (String) request.get("messageContent");
 	            
 	            ChatDto chatDto = new ChatDto();
-	            chatDto.setProduct_id(productId);
-	            chatDto.setSeller_id(sellerId);
-	            chatDto.setBuyer_id(buyerId);
+	            chatDto.setProductId(productId);
+	            chatDto.setSellerId(sellerId);
+	            chatDto.setBuyerId(buyerId);
 	            
 	            ChatMessageDto messageDto = new ChatMessageDto();
-	            messageDto.setSender_id(buyerId);
-	            messageDto.setMessage_content(messageContent);
-	            messageDto.setMessage_type("SYSTEM");
+	            messageDto.setSenderId(buyerId);
+	            messageDto.setMessageContent(messageContent);
+	            messageDto.setMessageType("SYSTEM");
 
 	            // 서비스 계층의 트랜잭션 메서드 호출
 	            chatservice.createChatRoomAndSendMessage(chatDto, messageDto);
 	            
-	            return ResponseEntity.ok(chatDto.getChat_room_id());
+	            return ResponseEntity.ok(chatDto.getChatRoomId());
 	        } catch (Exception e) {
 	            logger.error("첫 메시지 전송 및 채팅방 생성 중 오류 발생", e);
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

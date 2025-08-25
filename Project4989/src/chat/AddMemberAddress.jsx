@@ -154,7 +154,7 @@ const AddMemberAddress = ({ onClose, onAddressSelect, onAddressAdded, mode = "me
 
     const fetchSearchResults = async (keyword) => {
         try {
-            const response = await fetch(`http://localhost:4989/api/region/search?keyword=${keyword}`);
+            const response = await fetch(`http://localhost:4989/api/regions/find?keyword=${keyword}`);
             if (response.ok) {
                 const data = await response.json();
                 setSearchResults(data);
