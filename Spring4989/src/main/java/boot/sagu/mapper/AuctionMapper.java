@@ -42,9 +42,9 @@ public interface AuctionMapper {
 	//낙찰자가 아닌 사람들의 입찰자들의 리스트뽑기 	
 	public List<AuctionGuaranteeDTO> findNonWinnerGuarantees(@Param("postId")long postId,@Param("winnerId")long winnerId);
 	//보증금 상태관리
-	public int updateGuaranteeStatus(@Param("guaranteedId")long guaranteeId,@Param("status") String status);
+	public int updateGuaranteeStatus(@Param("guaranteeId")long guaranteeId,@Param("status") String status);
 	//경매 시작가
-	public int getStartPrice(@Param("postId") Long postId);
+	public int getStartPrice(@Param("postId") long postId);
 	
 
 	// 경매 삭제
@@ -74,6 +74,9 @@ public interface AuctionMapper {
 	// 보증금 단건 조회
 	public AuctionGuaranteeDTO findGuarantee(@Param("postId") long postId,
 	                                  @Param("memberId") long memberId);
+	
+	//유찰 시 해당 글의 PAID 보증금 전체 조회
+	public List<AuctionGuaranteeDTO> findPaidGuaranteesByPost(@Param("postId") long postId);
 
 	// ==================================마이페이지 판매 내역 관련 메서드==================================
 	
@@ -103,6 +106,24 @@ public interface AuctionMapper {
 	// 내 입찰 기록 상태별 개수
 	public Map<String, Object> getMyBidsStatusCounts(@Param("memberId") int memberId);
 
+
+	// 경매 게시글만 조회
+	public List<Map<String, Object>> getMyAuctionPosts(@Param("memberId") long memberId,
+												@Param("status") String status);
+
+	// 일반거래 게시글만 조회
+	public List<Map<String, Object>> getMyGeneralPosts(@Param("memberId") long memberId,
+												@Param("status") String status);
+
+	// 나눔 게시글만 조회
+	public List<Map<String, Object>> getMyGiveawayPosts(@Param("memberId") long memberId,
+												 @Param("status") String status);
+
+	// 유찰 게시글만 조회 (경매에서만 발생)
+	public List<Map<String, Object>> getMyCancelledAuctionPosts(@Param("memberId") long memberId);
+	
+	public int existsGuaranteeByImpUid(@Param("impUid") String impUid);
+
 	// ==================================마이페이지 찜한 상품 관련 메서드==================================
 	
 	// 내 찜한 상품 타입별 개수 조회
@@ -116,5 +137,6 @@ public interface AuctionMapper {
 	
 	// 내 찜한 상품 타입별 개수 조회
 	public Map<String, Object> getMyFavoritesTypeCounts(@Param("memberId") int memberId);
+
 
 }

@@ -1,21 +1,21 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import api from "../lib/api";
 
 export default function SearchBox() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // URL 파라미터에서 검색어 가져오기
   const urlParams = new URLSearchParams(location.search);
   const initialKeyword = urlParams.get('keyword') || "";
-  
-  const [q, setQ] = useState(initialKeyword);              // 입력값
-  const [qd, setQd] = useState(initialKeyword);            // 디바운스된 값
-  const [postType, setPostType] = useState("ALL"); // ALL/CARS/REAL_ESTATES/ITEMS
-  const [status, setStatus] = useState("ALL"); // ALL/ON_SALE/RESERVED/SOLD
-  const [tradeType, setTradeType] = useState("ALL"); // ALL/SALE/AUCTION/SHARE
+
+  const [q, setQ] = useState(initialKeyword);       // 입력값
+  const [qd, setQd] = useState(initialKeyword);     // 디바운스된 값
+  const [postType, setPostType] = useState("ALL");  // ALL/CARS/REAL_ESTATES/ITEMS
+  const [status, setStatus] = useState("ALL");      // ALL/ON_SALE/RESERVED/SOLD
+  const [tradeType, setTradeType] = useState("ALL");// ALL/SALE/AUCTION/SHARE
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [page, setPage] = useState(1);
   const size = 12;
@@ -25,26 +25,10 @@ export default function SearchBox() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 
-  // AuthContext에서 userInfo를 가져와 로그인 상태를 확인합니다.
-    const { userInfo } = useContext(AuthContext);
-    // const token = userInfo?.token; // userInfo가 있으면 토큰을 사용합니다.
-  
-    const token =
-      userInfo?.token ??
-      localStorage.getItem("jwtToken");
+  // (유지) 컨텍스트 의존성 — 동작엔 영향 없음. api.js가 토큰/리프레시 처리.
+  const { userInfo } = useContext(AuthContext);
 
-      // ✅ 토큰을 자동으로 실어주는 axios 인스턴스
-  const api = useMemo(() => {
-    const inst = axios.create({ baseURL: "http://localhost:4989" });
-    inst.interceptors.request.use((cfg) => {
-      if (token) cfg.headers.Authorization = `Bearer ${token}`;
-      return cfg;
-    });
-    return inst;
-  }, [token]);
-
-
-  // URL 파라미터가 변경될 때 검색어 업데이트
+  // URL 파라미터 변경 시 검색어 동기화
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const keyword = urlParams.get('keyword') || "";
@@ -60,8 +44,7 @@ export default function SearchBox() {
 
   // 검색 호출
   useEffect(() => {
-    // 비어있으면 초기화 (정책에 따라 전체 노출 원하면 이 부분 변경)
-    if (!qd) {
+    if (!qd) { // 비어있으면 초기화
       setRows([]);
       setTotal(0);
       return;
@@ -71,30 +54,27 @@ export default function SearchBox() {
       try {
         setLoading(true);
         setErr(null);
-        
-        // 고급 검색 옵션이 활성화된 경우 전체 검색 API 사용
-        const apiUrl = showAdvanced 
-          ? "http://localhost:4989/post/search"
-          : "http://localhost:4989/post/search-simple";
-        
-        const params = showAdvanced 
-          ? { 
-              keyword: qd, 
-              postType, 
-              status, 
-              tradeType, 
-              page, 
-              size 
-            }
-          : { 
-              keyword: qd, 
-              page, 
-              size 
-            };
-        
-        const { data } = await axios.get(apiUrl, { params});
-        setRows(data.content || []);
-        setTotal(data.totalElements || 0);
+
+        const apiUrl = showAdvanced ? "/post/search" : "/post/search-simple";
+
+        // 서버가 keyword 또는 searchTerm 둘 중 하나를 받을 수 있으니 둘 다 전송(한쪽은 무시됨)
+        const params = showAdvanced
+          ? { keyword: qd, searchTerm: qd, postType, status, tradeType, page, size }
+          : { keyword: qd, searchTerm: qd, page, size };
+
+        const { data } = await api.get(apiUrl, { params });
+
+        // api 응답은 snake->camel 자동 변환됨. 그래도 혹시 대비해 최소한의 fallback 적용.
+        const content = data?.content ?? data ?? [];
+        const normalized = content.map((post) => ({
+          ...post,
+          postId: post.postId ?? post.post_id,
+          postType: post.postType ?? post.post_type,
+          viewCount: post.viewCount ?? post.view_count,
+        }));
+
+        setRows(normalized);
+        setTotal(data?.totalElements ?? data?.total_elements ?? 0);
       } catch (e) {
         console.error("검색 오류:", e);
         setErr(e?.response?.data?.error || e.message);
@@ -107,7 +87,7 @@ export default function SearchBox() {
   // 페이지네이션 계산
   const lastPage = Math.max(1, Math.ceil(total / size));
 
-  // Enter 치면 즉시 검색(디바운스 기다리지 않고)
+  // Enter 시 즉시 검색(디바운스 무시)
   const onKeyDown = (e) => {
     if (e.key === "Enter") {
       setQd(q.trim());
@@ -115,38 +95,35 @@ export default function SearchBox() {
     }
   };
 
-  // 게시글 클릭 시 상세페이지로 이동
-  const handlePostClick = (post, event) => {
-    // 클릭 시 시각적 피드백
-    const clickedElement = event.currentTarget;
-    if (clickedElement) {
-      clickedElement.style.backgroundColor = "#e3f2fd";
-      clickedElement.style.transform = "scale(0.98)";
-    }
-    
-    // 잠시 후 페이지 이동 (시각적 피드백을 위해)
-    setTimeout(() => {
-      // postType에 따라 다른 상세페이지로 이동
-      switch (post.postType) {
-        case "CARS":
-          // 자동차는 현재 별도 상세페이지가 없으므로 기본 상세페이지 사용
-          navigate(`/board/GoodsDetail?postId=${post.postId}`);
-          break;
-        case "REAL_ESTATES":
-          // 부동산은 현재 별도 상세페이지가 없으므로 기본 상세페이지 사용
-          navigate(`/board/GoodsDetail?postId=${post.postId}`);
-          break;
-        case "ITEMS":
-          // 중고물품 상세페이지
-          navigate(`/board/GoodsDetail?postId=${post.postId}`);
-          break;
-        default:
-          // 기본 상세페이지
-          navigate(`/board/GoodsDetail?postId=${post.postId}`);
-          break;
-      }
-    }, 150);
-  };
+  // 게시글 클릭 시 상세 페이지로 이동
+ // 클릭 핸들러만 교체
+const handlePostClick = (post, event) => {
+  const el = event.currentTarget;
+  if (el) {
+    el.style.backgroundColor = "#e3f2fd";
+    el.style.transform = "scale(0.98)";
+  }
+
+  // ✅ 가능한 키 모두에서 안전하게 ID 추출
+  const pid =
+    post.postId ??
+    post.post_id ??
+    post.id ??
+    post.postID ??
+    post.post_no ??
+    post.postNo;
+
+  if (pid === undefined || pid === null) {
+    console.error("[SearchBox] postId 없음:", post);
+    alert("이 게시글에는 ID가 없어 상세로 이동할 수 없습니다.");
+    return;
+  }
+
+  setTimeout(() => {
+    navigate(`/board/GoodsDetail?postId=${pid}`);
+  }, 150);
+};
+
 
   return (
     <div style={{ maxWidth: 720, margin: "20px auto" }}>
@@ -171,10 +148,10 @@ export default function SearchBox() {
         </select>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          style={{ 
-            padding: "10px 15px", 
-            border: "1px solid #ddd", 
-            borderRadius: 8, 
+          style={{
+            padding: "10px 15px",
+            border: "1px solid #ddd",
+            borderRadius: 8,
             background: showAdvanced ? "#007bff" : "#f8f9fa",
             color: showAdvanced ? "white" : "#333",
             cursor: "pointer"
@@ -186,12 +163,12 @@ export default function SearchBox() {
 
       {/* 고급 검색 옵션 */}
       {showAdvanced && (
-        <div style={{ 
-          marginTop: 12, 
-          padding: 15, 
-          border: "1px solid #ddd", 
-          borderRadius: 8, 
-          background: "#f8f9fa" 
+        <div style={{
+          marginTop: 12,
+          padding: 15,
+          border: "1px solid #ddd",
+          borderRadius: 8,
+          background: "#f8f9fa"
         }}>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <div>
@@ -240,45 +217,48 @@ export default function SearchBox() {
         <>
           {rows.length > 0 ? (
             <ul style={{ marginTop: 12, listStyle: "none", padding: 0 }}>
-                             {rows.map((post) => (
-                                   <li key={post.postId} style={{ 
-                    padding: 12, 
-                    borderBottom: "1px solid #eee",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    borderRadius: "4px",
-                    marginBottom: "4px"
-                  }}
-                  onMouseEnter={(e) => {
-                    // li 요소에 직접 스타일 적용
-                    e.currentTarget.style.backgroundColor = "#f0f8ff";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    // li 요소에 직접 스타일 적용
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                  onClick={(e) => handlePostClick(post, e)}
+              {rows.map((post, idx) => {
+                const key = post.postId ?? post.post_id ?? post.id ?? idx;
+                const priceDisp = post.price?.toLocaleString?.() ?? post.price;
+                return (
+                  <li
+                    key={key}
+                    style={{
+                      padding: 12,
+                      borderBottom: "1px solid #eee",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      borderRadius: "4px",
+                      marginBottom: "4px"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f0f8ff";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                    onClick={(e) => handlePostClick(post, e)}
                   >
-                                     <div style={{ 
-                     fontWeight: 600, 
-                     color: "#007bff",
-                     textDecoration: "underline",
-                     cursor: "pointer"
-                   }}>
-                     [{post.postType}] {post.title}
-                   </div>
-                  <div>가격: {post.price?.toLocaleString?.() ?? post.price}원</div>
-                  <div style={{ color: "#666", fontSize: "14px" }}>
-                    {post.content && post.content.length > 100 
-                      ? post.content.substring(0, 100) + "..." 
-                      : post.content}
-                  </div>
+                    <div style={{
+                      fontWeight: 600,
+                      color: "#007bff",
+                      textDecoration: "underline",
+                      cursor: "pointer"
+                    }}>
+                      [{post.postType}] {post.title}
+                    </div>
+                    <div>가격: {priceDisp}원</div>
+                    <div style={{ color: "#666", fontSize: "14px" }}>
+                      {post.content && post.content.length > 100
+                        ? post.content.substring(0, 100) + "..."
+                        : post.content}
+                    </div>
 
-                                                                           {/* 타입별 상세 정보 */}
+                    {/* 타입별 상세 정보 */}
                     {post.postType === "CARS" && post.car && (
                       <div style={{ marginTop: 6, fontSize: "13px", color: "#555" }}>
                         🚗 {post.car.brand} {post.car.model} / {post.car.year}년식 · {post.car.mileage?.toLocaleString()}km · {post.car.fuelType}/{post.car.transmission}
@@ -286,46 +266,47 @@ export default function SearchBox() {
                     )}
                     {post.postType === "REAL_ESTATES" && post.estate && (
                       <div style={{ marginTop: 6, fontSize: "13px", color: "#555" }}>
-                        🏠 {post.estate.propertyType === 'apt' ? '아파트' : 
-                            post.estate.propertyType === 'studio' ? '오피스텔' : 
-                            post.estate.propertyType === 'oneroom' ? '원룸' : 
-                            post.estate.propertyType === 'tworoom' ? '투룸' : post.estate.propertyType} · 
-                        {post.estate.area}㎡ · {post.estate.rooms}룸 · 
-                        {post.estate.dealType === 'lease' ? '전세' : 
-                         post.estate.dealType === 'rent' ? '월세' : 
-                         post.estate.dealType === 'leaseAndrent' ? '전월세' : 
+                        🏠 {post.estate.propertyType === 'apt' ? '아파트' :
+                            post.estate.propertyType === 'studio' ? '오피스텔' :
+                            post.estate.propertyType === 'oneroom' ? '원룸' :
+                            post.estate.propertyType === 'tworoom' ? '투룸' : post.estate.propertyType} ·
+                        {post.estate.area}㎡ · {post.estate.rooms}룸 ·
+                        {post.estate.dealType === 'lease' ? '전세' :
+                         post.estate.dealType === 'rent' ? '월세' :
+                         post.estate.dealType === 'leaseAndrent' ? '전월세' :
                          post.estate.dealType === 'sale' ? '매매' : post.estate.dealType}
                       </div>
                     )}
                     {post.postType === "ITEMS" && post.item && (
                       <div style={{ marginTop: 6, fontSize: "13px", color: "#555" }}>
-                        📦 {post.item.categoryId === 1 ? '전자제품' : 
-                            post.item.categoryId === 2 ? '의류' : 
-                            post.item.categoryId === 3 ? '가구' : 
-                            post.item.categoryName || `카테고리 ${post.item.categoryId}`} · 
-                        상태: {post.item.conditions === 'best' ? '상' : 
-                               post.item.conditions === 'good' ? '중' : 
+                        📦 {post.item.categoryId === 1 ? '전자제품' :
+                            post.item.categoryId === 2 ? '의류' :
+                            post.item.categoryId === 3 ? '가구' :
+                            post.item.categoryName || `카테고리 ${post.item.categoryId}`} ·
+                        상태: {post.item.conditions === 'best' ? '상' :
+                               post.item.conditions === 'good' ? '중' :
                                post.item.conditions === 'bad' ? '하' : post.item.conditions}
                       </div>
                     )}
-                  
-                                     {/* 추가 정보 */}
-                   <div style={{ marginTop: 4, fontSize: "12px", color: "#888" }}>
-                     거래타입: {post.tradeType === 'SALE' ? '판매' : 
-                                post.tradeType === 'AUCTION' ? '경매' : 
-                                post.tradeType === 'SHARE' ? '나눔' : post.tradeType} | 
-                     상태: {post.status === 'ON_SALE' ? '판매중' : 
-                            post.status === 'RESERVED' ? '예약중' : 
-                            post.status === 'SOLD' ? '판매완료' : post.status} | 
-                     조회수: {post.viewCount}
-                   </div>
-                </li>
-              ))}
+
+                    {/* 추가 정보 */}
+                    <div style={{ marginTop: 4, fontSize: "12px", color: "#888" }}>
+                      거래타입: {post.tradeType === 'SALE' ? '판매' :
+                                 post.tradeType === 'AUCTION' ? '경매' :
+                                 post.tradeType === 'SHARE' ? '나눔' : post.tradeType} |
+                      상태: {post.status === 'ON_SALE' ? '판매중' :
+                             post.status === 'RESERVED' ? '예약중' :
+                             post.status === 'SOLD' ? '판매완료' : post.status} |
+                      조회수: {post.viewCount}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
-            <div style={{ 
-              marginTop: 20, 
-              textAlign: "center", 
+            <div style={{
+              marginTop: 20,
+              textAlign: "center",
               padding: "40px 20px",
               color: "#666",
               fontSize: "16px"
