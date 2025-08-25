@@ -58,8 +58,11 @@ public class RegionService {
         return false;
     }
 
-    // 키워드로 지역 검색
+    // 키워드로 지역 검색 (자동완성용)
     public List<RegionDto> searchRegionsByKeyword(String keyword) {
-        return regionMapper.findRegionsByKeyword(keyword);
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return regionMapper.searchRegionsByKeyword(keyword.trim());
     }
 }

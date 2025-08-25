@@ -24,4 +24,7 @@ public interface RegionMapper {
 	public void updateRegion(RegionDto dto);
 	
 	public void deleteRegion(@Param("regionId") Integer regionId);
+	
+	// 키워드로 지역 검색 (자동완성용)
+	public List<RegionDto> searchRegionsByKeyword(@Param("keyword") String keyword);
 }
