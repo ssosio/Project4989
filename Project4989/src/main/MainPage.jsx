@@ -137,14 +137,26 @@ const MainPage = () => {
                   <img 
                     src={
                       item.image ? 
-                        (item.image.startsWith('http') ? item.image : `http://localhost:4989${item.image}`) :
+                        (item.image.startsWith('http') ? `${item.image}?t=${Date.now()}` : `http://localhost:4989${item.image}?t=${Date.now()}`) :
                       item.mainPhotoUrl ? 
-                        (item.mainPhotoUrl.startsWith('http') ? item.mainPhotoUrl : `http://localhost:4989${item.mainPhotoUrl}`) :
+                        (item.mainPhotoUrl.startsWith('http') ? `${item.mainPhotoUrl}?t=${Date.now()}` : `http://localhost:4989${item.mainPhotoUrl}?t=${Date.now()}`) :
                       "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image"
                     } 
                     alt={item.title}
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image";
+                      // 무한 루프 방지: 이미 placeholder 이미지인 경우 더 이상 교체하지 않음
+                      if (!e.target.src.includes('placeholder.com')) {
+                        e.target.src = "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image";
+                        e.target.onerror = null; // onError 이벤트 제거
+                      }
+                    }}
+                    onLoad={(e) => {
+                      // 이미지 로드 성공 시 로딩 상태 표시 제거
+                      e.target.style.opacity = '1';
+                    }}
+                    style={{
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease-in-out'
                     }}
                   />
                   <div className="main-auction-badge">
