@@ -54,7 +54,7 @@
       car.fuel_type AS carFuelType,
       car.transmission AS carTransmission,
       -- 부동산 정보
-      re.real_estate_id AS realEstateId,
+      re.estate_id AS realEstateId,
       re.property_type AS realEstatePropertyType,
       re.area AS realEstateArea,
       re.rooms AS realEstateRooms,
@@ -80,7 +80,7 @@
       LEFT JOIN cars car ON car.post_id = p.post_id
       LEFT JOIN real_estates re ON re.post_id = p.post_id
       WHERE p.post_id = #{postId}
-      GROUP BY p.post_id, p.member_id, p.title, p.content, p.price, p.trade_type, p.status, p.view_count, p.created_at, p.buyer_id, p.updated_at, p.post_type, p.location, p.detail_location, p.latitude, p.longitude, m.nickname, m.member_id, ui.post_id, ui.category_id, ui.conditions, c.category_id, c.name, c.parent_id, pc.category_id, pc.name, car.car_id, car.brand, car.model, car.year, car.mileage, car.fuel_type, car.transmission, re.real_estate_id, re.property_type, re.area, re.rooms, re.floor, re.deal_type
+      GROUP BY p.post_id, p.member_id, p.title, p.content, p.price, p.trade_type, p.status, p.view_count, p.created_at, p.buyer_id, p.updated_at, p.post_type, p.location, p.detail_location, p.latitude, p.longitude, m.nickname, m.member_id, ui.post_id, ui.category_id, ui.conditions, c.category_id, c.name, c.parent_id, pc.category_id, pc.name, car.car_id, car.brand, car.model, car.year, car.mileage, car.fuel_type, car.transmission, re.estate_id, re.property_type, re.area, re.rooms, re.floor, re.deal_type
    </select>
 
    <!-- 전체리스트 -->

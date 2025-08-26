@@ -120,9 +120,9 @@ public class ReviewController {
     // 후기 존재 여부 확인 API 추가
     @GetMapping("/check")
     public ResponseEntity<Map<String, Object>> checkReviewExists(
-            @RequestParam Long postId,
-            @RequestParam Long reviewerId,
-            @RequestParam Long reviewOppositeId) {
+            @RequestParam(name = "postId") Long postId,
+            @RequestParam(name = "reviewerId") Long reviewerId,
+            @RequestParam(name = "reviewOppositeId") Long reviewOppositeId) {
         
         Map<String, Object> response = new HashMap<>();
         

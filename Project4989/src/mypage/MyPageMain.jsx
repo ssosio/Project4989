@@ -71,11 +71,23 @@ const MyPageMain = () => {
             value={tabValue}
             onChange={handleTabChange}
             aria-label="마이페이지 탭"
+            variant="fullWidth"
             sx={{
+              width: '100%',
               '& .MuiTab-root': {
                 fontSize: '1.1rem',
                 fontWeight: 500,
                 minHeight: 64,
+                flex: 1,
+                minWidth: 'auto',
+                textTransform: 'none',
+              },
+              '& .MuiTabs-flexContainer': {
+                width: '100%',
+                justifyContent: 'space-between',
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
               }
             }}
           >
