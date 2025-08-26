@@ -585,7 +585,7 @@ const Goods = () => {
                       <div className="goods-info">
                         <h3 className="goods-title-text">{p.title}</h3>
                         <div className="goods-price">
-                          {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '가격 미정'}
+                          {p.price ? new Intl.NumberFormat().format(p.price) + '원' : '무료 나눔'}
                         </div>
 
                         {/* ✅ 상세에서 온 값 안전 표시 */}
