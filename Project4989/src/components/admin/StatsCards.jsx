@@ -69,8 +69,8 @@ const StatsCards = ({ stats }) => {
   }, [])
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
-      <Grid item xs={12} sm={6} md={3}>
+    <Grid container spacing={3} sx={{ mb: 4 }} justifyContent="center">
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
@@ -85,7 +85,7 @@ const StatsCards = ({ stats }) => {
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
           color: 'white',
@@ -100,7 +100,7 @@ const StatsCards = ({ stats }) => {
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
           color: 'white',
@@ -115,7 +115,7 @@ const StatsCards = ({ stats }) => {
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
           color: 'white',
@@ -131,7 +131,7 @@ const StatsCards = ({ stats }) => {
 
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
           color: 'white',
