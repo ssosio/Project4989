@@ -105,9 +105,8 @@ const WishlistSection = ({ userInfo }) => {
     if (!itemToDelete || !userInfo?.memberId) return;
     
     try {
-      await api.post(`/auction/favorite/toggle`, {
-        memberId: userInfo.memberId,
-        postId: itemToDelete
+      await api.post(`/auction/favorite/toggle`, null, { 
+        params: { postId: itemToDelete } 
       });
       
       setDeleteDialogOpen(false);

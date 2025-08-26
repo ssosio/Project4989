@@ -156,38 +156,7 @@
         WHERE post_id = #{postId}
     </update>
     
-     <!-- 찜 상태 확인 -->
-    <select id="checkFavoriteStatus" resultType="boolean">
-        SELECT COUNT(*) > 0
-        FROM favorites
-        WHERE post_id = #{postId} AND member_id = #{memberId}
-    </select>
-    
-     <!-- 찜 추가 -->
-    <insert id="insertFavorite" parameterType="boot.sagu.dto.FavoritesDto">
-        INSERT INTO favorites (
-            member_id,
-            post_id,
-            created_at
-        ) VALUES (
-            #{memberId},
-            #{postId},
-            CONVERT_TZ(NOW(), 'UTC', 'Asia/Seoul')
-        )
-    </insert>
-    
-     <!-- 찜 삭제 -->
-    <delete id="deleteFavorite">
-        DELETE FROM favorites
-        WHERE post_id = #{postId} AND member_id = #{memberId}
-    </delete>
-    
-    <!-- 찜 개수 조회 -->
-    <select id="getFavoriteCount" parameterType="long" resultType="int">
-        SELECT COUNT(*)
-        FROM favorites
-        WHERE post_id = #{postId}
-    </select>
+
     
       <!-- 경매 사진 조회 -->
     <select id="getAuctionPhotos" parameterType="long" resultType="map">

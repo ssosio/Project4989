@@ -23,10 +23,7 @@ public interface AuctionServiceInter {
 	   // 회원 닉네임 조회
 	   public MemberDto getMemberNickname(long memberId);
 	   
-	   // 찜 관련
-	   public boolean checkFavoriteStatus(long postId, long memberId);
-	   public Map<String, Object> toggleFavorite(FavoritesDto favoritesDto);
-	   public int getFavoriteCount(long postId);
+
 	   
 	   // 입찰 처리
 	   public String placeBid(AuctionDto auctionDto);

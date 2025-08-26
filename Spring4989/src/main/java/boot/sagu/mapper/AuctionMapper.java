@@ -26,11 +26,7 @@ public interface AuctionMapper {
 	public void updateAuctionStatus(@Param("postId") long postId, @Param("status") String status); // 경매 상태 업데이트
 	public void updateAuctionStatusAndEndTime(@Param("postId") long postId, @Param("status") String status); // 수동 경매 종료 시 상태와 종료시간 업데이트
 	
-	// 찜 관련 메서드들
-	public boolean checkFavoriteStatus(@Param("postId") long postId, @Param("memberId") long memberId); // 찜 상태 확인
-	public void insertFavorite(FavoritesDto favoritesDto); // 찜 추가
-	public void deleteFavorite(@Param("postId") long postId, @Param("memberId") long memberId); // 찜 삭제
-	public int getFavoriteCount(@Param("postId") long postId); // 찜 개수 조회
+
 	
 	// 경매 사진 조회
 	public List<Map<String, Object>> getAuctionPhotos(@Param("postId") long postId);
