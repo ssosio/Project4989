@@ -78,7 +78,7 @@
       p.created_at AS createdAt,
       p.view_count AS viewCount,
       p.status AS status,
-      pp.photo_url AS photo_url,
+      COALESCE(pp.photo_url, '') AS mainPhotoUrl,
       pp.is_main AS is_main,
       m.nickname AS nickname
       FROM posts p
