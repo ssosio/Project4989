@@ -688,7 +688,6 @@ const GoodsDetail = () => {
             <div className="gooddetail-meta">
               <div className="gooddetail-meta-item">
                 <strong>작성자:</strong> {post.nickname}
-                <CreditTierDisplay memberId={post.memberId} showDetails={false} />
               </div>
               <div className="gooddetail-meta-item">
                 <strong>작성일:</strong> {post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : ''}
@@ -698,6 +697,9 @@ const GoodsDetail = () => {
                   <strong>수정일:</strong> {new Date(post.updatedAt).toLocaleString('ko-KR')}
                 </div>
               )}
+            </div>
+            <div style={{ marginLeft: '-400px' }}>
+              <CreditTierDisplay memberId={post.memberId} showDetails={false} />
             </div>
           </div>
         </div>
@@ -815,16 +817,20 @@ const GoodsDetail = () => {
                 </>
               )}
 
-              <div>
-                <div className="gooddetail-info-title">희망거래장소</div>
-                <div className="wish-address">{post.detailLocation}</div>
-                {post && post.latitude && post.longitude && (
-                  <DetailMap latitude={post.latitude} longitude={post.longitude} />
-                )}
-              </div>
             </div>
           </div>
         </div>
+
+        {/* 카카오맵 섹션 - 상품정보 밑에 별도로 배치 */}
+        {post && post.latitude && post.longitude && (
+          <div className="map-section">
+            <div className="map-container">
+              <h3 className="map-title">희망거래장소</h3>
+              <div className="wish-address">{post.detailLocation}</div>
+              <DetailMap latitude={post.latitude} longitude={post.longitude} />
+            </div>
+          </div>
+        )}
 
         {/* 신고 모달 */}
         <ReportModal

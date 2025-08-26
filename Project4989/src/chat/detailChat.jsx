@@ -759,7 +759,7 @@ const DetailChat = ({ open, onClose, chatRoom, zIndex = 1000, offset = 0, onLeav
                                     maxWidth: 250
                                 }}
                             >
-                                🛍️ {chatRoom.postTitle}
+                                🛍️ {chatRoom.postTitle.length > 10 ? `${chatRoom.postTitle.substring(0, 10)}...` : chatRoom.postTitle}
                             </Typography>
                         )}
                         {/* 관리자 조사 모드 표시 */}

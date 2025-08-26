@@ -345,7 +345,7 @@ const TransactionSection = ({ userInfo }) => {
               startIcon={<Visibility />}
               className={`transaction-filter-btn ${statusFilter === 'ON_SALE' ? 'active' : ''}`}
             >
-              판매중 ({currentStatusCounts.on_sale})
+              판매중 ({currentStatusCounts.onSale})
             </Button>
           </Grid>
           <Grid item>
@@ -470,14 +470,7 @@ const TransactionSection = ({ userInfo }) => {
                           {post.title}
                         </Typography>
 
-                        {/* 설명 - 고정 높이 */}
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          className="transaction-post-description"
-                        >
-                          {post.content || '설명 없음'}
-                        </Typography>
+
 
                         {/* 가격 정보 - 고정 높이 */}
                         <Box className="transaction-post-price">

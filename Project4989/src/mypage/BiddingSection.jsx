@@ -358,7 +358,7 @@ const BiddingSection = ({ userInfo }) => {
                           {/* 내 입찰 금액 */}
                           <Box className="bidding-post-bid-info">
                             <Typography variant="body2" color="text.secondary" className="bidding-post-bid-text">
-                              내 입찰 금액: {formatPrice(bidding.bid_amount)}원
+                              내 입찰 금액: {formatPrice(bidding.bidAmount)}원
                             </Typography>
                           </Box>
 
@@ -372,7 +372,7 @@ const BiddingSection = ({ userInfo }) => {
                               className="bidding-post-chip"
                             />
                             <Chip
-                              label={`순위: ${bidding.bidder_rank}`}
+                              label={`순위: ${bidding.bidderRank}`}
                               color={getBidderRankColor(bidding.bidder_rank)}
                               size="small"
                               className="bidding-post-chip"
@@ -381,7 +381,7 @@ const BiddingSection = ({ userInfo }) => {
 
                           {/* 입찰일 */}
                           <Typography variant="caption" color="text.secondary" className="bidding-post-date-text">
-                            입찰일: {new Date(bidding.bid_time).toLocaleDateString('ko-KR')}
+                            입찰일: {new Date(bidding.bidTime).toLocaleDateString('ko-KR')}
                           </Typography>
                         </Box>
                       </CardContent>

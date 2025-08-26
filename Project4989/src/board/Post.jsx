@@ -314,46 +314,46 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
-                                    </tr>
-                            )}
-                            {postType==='REAL_ESTATES'&&(
-                        <tr className="estates_detail">
-                                    <td>
-                                        <label>면적
-                                            <input type="text" name='area' value={area} onChange={(e) => {
-                                                setArea(e.target.value);
-                                            }} />㎡
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>방 개수
-                                            <input type="text" name='rooms' value={rooms} onChange={(e) => {
-                                                setRooms(e.target.value);
-                                            }} />
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>층
-                                            <input type="text" name='floor' value={floor} onChange={(e) => {
-                                                setFloor(e.target.value);
-                                            }} />
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>거래유형
-                                            <select name='dealType' value={dealType} onChange={(e) => {
-                                                setDealType(e.target.value);
-                                            }}>
-                                                <option value="" selected>거래유형을 선택해 주세요</option>
-                                                <option value="lease">전세</option>
-                                                <option value="rent">월세</option>
-                                                <option value="leaseAndrent">전월세</option>
-                                                <option value="buy">매매</option>
-                                            </select>
-                                        </label>
-                                    </td>
                                 </tr>
-                            )
+                            )}
+                        {postType === 'REAL_ESTATES' && (
+                            <tr className="estates_detail">
+                                <td>
+                                    <label>면적
+                                        <input type="text" name='area' value={area} onChange={(e) => {
+                                            setArea(e.target.value);
+                                        }} />㎡
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>방 개수
+                                        <input type="text" name='rooms' value={rooms} onChange={(e) => {
+                                            setRooms(e.target.value);
+                                        }} />개
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>층
+                                        <input type="text" name='floor' value={floor} onChange={(e) => {
+                                            setFloor(e.target.value);
+                                        }} />
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>거래유형
+                                        <select name='dealType' value={dealType} onChange={(e) => {
+                                            setDealType(e.target.value);
+                                        }}>
+                                            <option value="" selected>거래유형을 선택해 주세요</option>
+                                            <option value="lease">전세</option>
+                                            <option value="rent">월세</option>
+                                            <option value="leaseAndrent">전월세</option>
+                                            <option value="buy">매매</option>
+                                        </select>
+                                    </label>
+                                </td>
+                            </tr>
+                        )
                         }
                         {
                             postType === 'CARS' && (
@@ -372,56 +372,56 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
-                                    </tr>
-                            )}
-                            {postType==='CARS'&&(
-                             <tr className="car-detail">
-                                    <td>
-                                        <label>모델
-                                            <input type="text" name='model' value={model} onChange={(e) => {
-                                                setModel(e.target.value);
-                                            }} />
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>연식
-                                            <input type="number" name='year' value={year} onChange={(e) => {
-                                                setYear(e.target.value);
-                                            }} />
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>주행거리
-                                            <input type="number" name='mileage' min={50000} step={1000} value={mileage} onChange={(e) => {
-                                                setMileage(e.target.value);
-                                            }} />km
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>연료
-                                            <select name='fuelType' value={fuelType} onChange={(e) => {
-                                                setFuelType(e.target.value);
-                                            }}>
-                                                <option value="" selected>연료타입을 선택해 주세요</option>
-                                                <option value="gasoline">휘발유</option>
-                                                <option value="diesel">경유</option>
-                                                <option value="electric">전기</option>
-                                            </select>
-                                        </label>
-                                    </td>
-                                    <td>
-                                        <label>변속기
-                                            <select name='transmission' value={transmission} onChange={(e) => {
-                                                setTransmission(e.target.value);
-                                            }}>
-                                                <option value="" selected>변속기타입을 선택해 주세요</option>
-                                                <option value="auto">오토</option>
-                                                <option value="stick">수동</option>
-                                            </select>
-                                        </label>
-                                    </td>
                                 </tr>
-                            )
+                            )}
+                        {postType === 'CARS' && (
+                            <tr className="car-detail">
+                                <td>
+                                    <label>모델
+                                        <input type="text" name='model' value={model} onChange={(e) => {
+                                            setModel(e.target.value);
+                                        }} />
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>연식
+                                        <input type="number" name='year' value={year} onChange={(e) => {
+                                            setYear(e.target.value);
+                                        }} />
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>주행거리
+                                        <input type="number" name='mileage' min={50000} step={1000} value={mileage} onChange={(e) => {
+                                            setMileage(e.target.value);
+                                        }} />km
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>연료
+                                        <select name='fuelType' value={fuelType} onChange={(e) => {
+                                            setFuelType(e.target.value);
+                                        }}>
+                                            <option value="" selected>연료타입을 선택해 주세요</option>
+                                            <option value="gasoline">휘발유</option>
+                                            <option value="diesel">경유</option>
+                                            <option value="electric">전기</option>
+                                        </select>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label>변속기
+                                        <select name='transmission' value={transmission} onChange={(e) => {
+                                            setTransmission(e.target.value);
+                                        }}>
+                                            <option value="" selected>변속기타입을 선택해 주세요</option>
+                                            <option value="auto">오토</option>
+                                            <option value="stick">수동</option>
+                                        </select>
+                                    </label>
+                                </td>
+                            </tr>
+                        )
                         }
                         {
                             (postType === 'ITEMS' || postType === 'CARS') && (
