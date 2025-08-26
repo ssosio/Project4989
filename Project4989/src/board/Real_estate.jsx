@@ -648,10 +648,21 @@ const Real_estate = () => {
                     >
                       <div className="real-estate-image">
                         {p.mainPhotoUrl ? (
-                          <img loading="lazy" src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} />
-                        ) : (
-                          <div className="real-estate-image-placeholder">이미지 없음</div>
-                        )}
+                          <img 
+                            loading="lazy" 
+                            src={`${PHOTO_BASE}${p.mainPhotoUrl}`} 
+                            alt={p.title}
+                            onError={(e) => {
+                              console.error('이미지 로드 실패:', `${PHOTO_BASE}${p.mainPhotoUrl}`);
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'block';
+                            }}
+                          />
+                        ) : null}
+                                                 <div className="real-estate-image-placeholder" style={{ display: p.mainPhotoUrl ? 'none' : 'block' }}>
+                           <div className="camera-icon">📷</div>
+                           <div className="placeholder-text">등록된 사진이 없습니다</div>
+                         </div>
                       </div>
                       <div className="real-estate-info">
                         <h3 className="real-estate-title-text">{p.title}</h3>
