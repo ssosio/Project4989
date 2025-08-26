@@ -635,4 +635,25 @@
       ORDER BY p.updated_at DESC, p.created_at DESC
    </select>
 
+   <!-- 후기 조회 -->
+   <select id="getReviewsForUser" resultType="map">
+      SELECT 
+          tr.review_id AS review_id,
+          tr.post_id AS post_id,
+          tr.reviewer_id AS reviewer_id,
+          tr.review_opposite_id AS review_opposite_id,
+          tr.rating AS rating,
+          tr.comment AS comment,
+          tr.created_at AS created_at,
+          p.title AS post_title,
+          p.price AS post_price,
+          m.nickname AS reviewer_nickname,
+          m.profile_image_url AS reviewer_profile_image
+      FROM trade_reviews tr
+      INNER JOIN posts p ON tr.post_id = p.post_id
+      INNER JOIN members m ON tr.reviewer_id = m.member_id
+      WHERE tr.review_opposite_id = #{memberId}
+      ORDER BY tr.created_at DESC
+   </select>
+
 </mapper>
