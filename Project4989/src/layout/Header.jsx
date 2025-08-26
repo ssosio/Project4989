@@ -1,14 +1,14 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   AppBar, Toolbar, Typography, Box, IconButton, Avatar, Menu, MenuItem, InputBase,
-  Badge, Paper, List, ListItem, ListItemText, Popper, ClickAwayListener, ListItemButton // ← ListItemButton 추가
+  Badge, Paper, List, ListItem, ListItemText, Popper, ClickAwayListener, ListItemButton
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import ChatMain from '../chat/ChatMain';
 import './Header.css';
@@ -389,7 +389,6 @@ export const Header = () => {
                                       variant="caption" 
                                       sx={{ 
                                         color: '#555', 
-                                        display: 'block',
                                         fontSize: '11px',
                                         backgroundColor: '#f8f9fa',
                                         px: 1,
@@ -406,7 +405,6 @@ export const Header = () => {
                                       variant="caption" 
                                       sx={{ 
                                         color: '#555', 
-                                        display: 'block',
                                         fontSize: '11px',
                                         backgroundColor: '#f8f9fa',
                                         px: 1,
@@ -426,7 +424,6 @@ export const Header = () => {
                                       variant="caption" 
                                       sx={{ 
                                         color: '#555', 
-                                        display: 'block',
                                         fontSize: '11px',
                                         backgroundColor: '#f8f9fa',
                                         px: 1,

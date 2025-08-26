@@ -4,25 +4,47 @@
 <mapper namespace="boot.sagu.mapper.AuctionMapper">
 
     <!-- 경매글 리스트 -->
-    <select id="getAuctionPosts" resultType="boot.sagu.dto.PostsDto">
-        SELECT 
-            post_id,
-            member_id,
-            title,
-            content,
-            price,
-            trade_type,
-            status,
-            auction_end_time,
-            winner_id,
-            view_count,
-            created_at,
-            updated_at,
-            post_type
-        FROM posts
-        WHERE trade_type = 'AUCTION'
-        ORDER BY created_at DESC
-    </select>
+    	<select id="getAuctionPosts" parameterType="string" resultType="boot.sagu.dto.PostsDto">
+		SELECT 
+			p.post_id,
+			p.member_id,
+			p.title,
+			p.content,
+			p.price,
+			p.trade_type,
+			p.status,
+			p.auction_end_time,
+			p.winner_id,
+			p.view_count,
+			p.created_at,
+			p.updated_at,
+			p.post_type,
+			COALESCE(pp.photo_url, '') as image,
+			COALESCE(bid_count.bidder_count, 0) as bidderCount
+		FROM posts p
+		LEFT JOIN (
+			SELECT post_id, photo_url,
+				ROW_NUMBER() OVER (PARTITION BY post_id ORDER BY is_main DESC, photo_id ASC) as rn
+			FROM post_photos
+		) pp ON p.post_id = pp.post_id AND pp.rn = 1
+		LEFT JOIN (
+			SELECT post_id, COUNT(DISTINCT bidder_id) as bidder_count
+			FROM auction_bids
+			GROUP BY post_id
+		) bid_count ON p.post_id = bid_count.post_id
+		WHERE p.trade_type = 'AUCTION' AND p.status = 'ON_SALE' AND p.auction_end_time > NOW()
+		<choose>
+			<when test="sortType == 'time'">
+				ORDER BY p.auction_end_time ASC
+			</when>
+			<when test="sortType == 'bidders'">
+				ORDER BY bidder_count DESC, p.auction_end_time ASC
+			</when>
+			<otherwise>
+				ORDER BY p.auction_end_time ASC
+			</otherwise>
+		</choose>
+	</select>
     
     <!-- 경매글 상세 조회 -->
     <select id="getAuctionDetail" parameterType="long" resultType="boot.sagu.dto.PostsDto">

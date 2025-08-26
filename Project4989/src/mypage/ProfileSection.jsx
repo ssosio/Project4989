@@ -31,6 +31,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import TestModal from '../chat/AddMemberAddress.jsx';
+import CreditTierDisplay from '../components/CreditTierDisplay';
 
 const ProfileSection = ({ userInfo }) => {
   const { handleLogout, updateUserInfo } = useContext(AuthContext);
@@ -616,7 +617,7 @@ const ProfileSection = ({ userInfo }) => {
   };
 
   return (
-    <Box sx={{ width: '100%', maxWidth: 'none' }}>
+    <Box sx={{ width: '100%', maxWidth: 'none', minWidth: '1400px' }}>
       {/* 메시지 표시 */}
       {message.text && (
         <Alert severity={message.type} sx={{ mb: 2 }}>
@@ -687,8 +688,73 @@ const ProfileSection = ({ userInfo }) => {
           </Card>
         </Grid>
 
+        {/* 신용도 등급 */}
+        <Grid item xs={12} md={4}>
+          <Card sx={{ width: '100%', minWidth: '300px' }}>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                신용도 등급
+              </Typography>
+              <CreditTierDisplay memberId={userInfo.memberId} showDetails={true} />
+              
+              {/* 신용도 점수 그래프 */}
+              <Box sx={{ mt: 3, px: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  신용도 점수: {profileData.creditScore || 0} / 1000
+                </Typography>
+                
+                {/* 전체 점수 바 */}
+                <Box sx={{ 
+                  width: '100%', 
+                  height: 20, 
+                  backgroundColor: '#f0f0f0', 
+                  borderRadius: 10,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  mb: 1
+                }}>
+                  {/* 현재 점수 표시 바 */}
+                  <Box sx={{
+                    width: `${Math.min((profileData.creditScore || 0) / 10, 100)}%`,
+                    height: '100%',
+                    backgroundColor: '#4caf50',
+                    borderRadius: 10,
+                    transition: 'width 0.5s ease-in-out',
+                    position: 'relative'
+                  }}>
+                    {/* 점수 표시 텍스트 */}
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        position: 'absolute', 
+                        right: 8, 
+                        top: '50%', 
+                        transform: 'translateY(-50%)',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '10px'
+                      }}
+                    >
+                      {profileData.creditScore || 0}
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                {/* 점수 범위 표시 */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'text.secondary' }}>
+                  <span>0</span>
+                  <span>250</span>
+                  <span>500</span>
+                  <span>750</span>
+                  <span>1000</span>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* 상세 정보 및 수정 폼 */}
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={4}>
           <Card sx={{ width: '100%', minWidth: '1100px' }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
