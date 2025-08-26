@@ -170,8 +170,10 @@ const AddMemberAddress = ({ onClose, onAddressSelect, onAddressAdded, mode = "me
 
     const handleResultClick = (result) => {
         const fullAddress = `${result.province || ''} ${result.city || ''} ${result.district || ''} ${result.town || ''}`.trim();
+        console.log("선택된 지역 결과:", result);
+        console.log("region_id:", result.region_id);
         setSearchTerm(fullAddress);
-        setSelectedRegionId(result.regionId);
+        setSelectedRegionId(result.region_id); // regionId -> region_id로 수정
         setSearchResults([]);
     };
 
@@ -227,6 +229,7 @@ const AddMemberAddress = ({ onClose, onAddressSelect, onAddressAdded, mode = "me
                 locationText: searchTerm,     // 화면에 표시할 텍스트
                 locationId: selectedRegionId  // 서버 전송용 숫자
             };
+            console.log("AddMemberAddress - post 모드에서 선택된 주소:", selectedAddress);
             if (onAddressSelect) onAddressSelect(selectedAddress);
             onClose();
         }

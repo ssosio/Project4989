@@ -83,15 +83,15 @@ public class RegionController {
     }
 
     // 키워드로 지역 검색
-    @GetMapping("/search")
-    public ResponseEntity<List<RegionDto>> searchRegions(@RequestParam("keyword") String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        
-        List<RegionDto> regions = regionService.searchRegionsByKeyword(keyword.trim());
-        return ResponseEntity.ok(regions);
-    }
+//    @GetMapping("/search")
+//    public ResponseEntity<List<RegionDto>> searchRegions(@RequestParam("keyword") String keyword) {
+//        if (keyword == null || keyword.trim().isEmpty()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//        
+//        List<RegionDto> regions = regionService.searchRegionsByKeyword(keyword.trim());
+//        return ResponseEntity.ok(regions);
+//    }
 
     // 새 지역 추가
     @PostMapping("/register")
