@@ -51,22 +51,53 @@ const WishlistSection = ({ userInfo }) => {
     general: 0,
     share: 0
   });
-  
+
   // 필터 상태
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date');
-  
+
   // 삭제 다이얼로그
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  // 이미지 상태
+  const [postImages, setPostImages] = useState({});
+
   const itemsPerPage = 12; // 한 줄에 4개씩, 3줄
+
+  // 게시글의 이미지 가져오기
+  const fetchPostImages = async (favorites) => {
+    const images = {};
+    for (const item of favorites) {
+      try {
+        // 여러 가능한 필드명을 시도
+        const postId = item.post_id || item.postId || item.id;
+        if (!postId) {
+          console.error('❌ postId를 찾을 수 없습니다:', item);
+          continue;
+        }
+
+        const photoResponse = await api.get(`/auction/photos/${postId}`);
+        if (photoResponse.data && photoResponse.data.length > 0) {
+          // isMain이 true인 사진을 우선적으로 선택, 없으면 첫 번째 사진 사용
+          const mainPhoto = photoResponse.data.find(photo => photo.isMain === true) || photoResponse.data[0];
+          const imageUrl = mainPhoto.photoUrl;
+          // 이미지 URL 생성 - postphoto 경로 사용
+          const imageWithToken = `http://localhost:4989/postphoto/${imageUrl}`;
+          images[postId] = { url: imageWithToken, originalUrl: imageUrl };
+        }
+      } catch (error) {
+        console.error(`게시글 ${item.post_id || item.postId || item.id} 이미지 조회 실패:`, error);
+      }
+    }
+    setPostImages(images);
+  };
 
   // 찜한 상품 목록 조회
   const fetchFavorites = async () => {
     if (!userInfo?.memberId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -79,14 +110,21 @@ const WishlistSection = ({ userInfo }) => {
           size: itemsPerPage
         }
       });
-      
-      setFavorites(response.data.favorites || []);
+
+      const favoritesData = response.data.favorites || [];
+      console.log('🔍 찜한 상품 응답:', response.data);
+      console.log('🔍 찜한 상품 favorites:', favoritesData);
+
+      setFavorites(favoritesData);
       setTotalPages(response.data.totalPages || 1);
       setTotalCount(response.data.totalCount || 0);
-      
+
       if (response.data.typeCounts) {
         setTypeCounts(response.data.typeCounts);
       }
+
+      // 게시글 이미지 가져오기
+      await fetchPostImages(favoritesData);
     } catch (error) {
       console.error('찜한 상품 조회 실패:', error);
       setError('찜한 상품을 불러오는데 실패했습니다.');
@@ -103,15 +141,15 @@ const WishlistSection = ({ userInfo }) => {
 
   const confirmDelete = async () => {
     if (!itemToDelete || !userInfo?.memberId) return;
-    
+
     try {
       await api.post(`/auction/favorite/toggle`, null, { 
         params: { postId: itemToDelete } 
       });
-      
+
       setDeleteDialogOpen(false);
       setItemToDelete(null);
-      
+
       // 목록 다시 조회
       fetchFavorites();
     } catch (error) {
@@ -122,10 +160,24 @@ const WishlistSection = ({ userInfo }) => {
 
   // 상품 상세보기
   const handleViewProduct = (item) => {
-    if (item.post_type === 'AUCTION') {
-      navigate(`/auction/detail/${item.post_id}`);
+    console.log('🔍 클릭된 item:', item);
+    console.log('🔍 item.post_id:', item.post_id);
+    console.log('🔍 item.postId:', item.postId);
+    console.log('🔍 item.id:', item.id);
+    console.log('🔍 item.post_type:', item.post_type);
+
+    // 여러 가능한 필드명을 시도
+    const postId = item.post_id || item.postId || item.id;
+    console.log('🔍 최종 사용할 postId:', postId);
+
+    if (postId) {
+      if (item.post_type === 'AUCTION') {
+        navigate(`/auction/detail/${postId}`);
+      } else {
+        navigate(`/board/GoodsDetail?postId=${postId}`);
+      }
     } else {
-      navigate(`/board/GoodsDetail?postId=${item.post_id}`);
+      console.error('❌ postId를 찾을 수 없습니다');
     }
   };
 
@@ -175,13 +227,13 @@ const WishlistSection = ({ userInfo }) => {
     const now = new Date();
     const end = new Date(endTime);
     const diff = end - now;
-    
+
     if (diff <= 0) return '종료됨';
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (days > 0) return `${days}일 ${hours}시간`;
     if (hours > 0) return `${hours}시간 ${minutes}분`;
     return `${minutes}분`;
@@ -266,7 +318,7 @@ const WishlistSection = ({ userInfo }) => {
               }}
             />
           </Grid>
-          
+
           <Grid item xs={6} md={2}>
             <FormControl fullWidth>
               <InputLabel>타입</InputLabel>
@@ -282,7 +334,7 @@ const WishlistSection = ({ userInfo }) => {
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={6} md={2}>
             <FormControl fullWidth>
               <InputLabel>정렬</InputLabel>
@@ -330,186 +382,190 @@ const WishlistSection = ({ userInfo }) => {
         <>
           <Box className="wishlist-posts-container">
             <Grid container spacing={3} className="wishlist-posts-grid">
-            {favorites.map((item) => {
-              const typeInfo = getTypeInfo(item.post_type);
-              const isAuction = item.post_type === 'AUCTION';
-              const isAvailable = item.status === 'ON_SALE';
-              
-              return (
-                                 <Grid item key={item.post_id}>
-                   <Card 
-                     className="wishlist-post-card"
-                     onClick={() => handleViewProduct(item)}
-                   >
-                                         {/* 상품 이미지 */}
-                     <Box className="wishlist-post-image-container">
-                       {item.main_photo_url ? (
-                         <CardMedia
-                           component="img"
-                           height="200"
-                           image={item.main_photo_url}
-                           alt={item.title}
-                           className="wishlist-post-image"
-                         />
-                       ) : (
-                         <Box className="wishlist-post-no-image">
-                           <FavoriteBorderIcon sx={{ fontSize: 48, mb: 1, color: '#ccc' }} />
-                           <Typography variant="body2" color="text.secondary">
-                             사진 없음
-                           </Typography>
-                         </Box>
-                       )}
-                      
-                      {/* 상품 타입 배지 */}
-                      <Chip
-                        label={typeInfo.label}
-                        color={typeInfo.color}
-                        size="small"
-                        icon={typeInfo.icon}
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          left: 8,
-                          fontWeight: 'bold'
-                        }}
-                      />
-                      
-                      {/* 재고 상태 배지 */}
-                      <Chip
-                        label={isAvailable ? '구매 가능' : '품절'}
-                        color={isAvailable ? 'success' : 'error'}
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          fontWeight: 'bold'
-                        }}
-                      />
-                      
-                      {/* 경매 남은 시간 */}
-                      {isAuction && item.auction_end_time && isAvailable && (
+              {favorites.map((item) => {
+                const typeInfo = getTypeInfo(item.post_type);
+                const isAuction = item.post_type === 'AUCTION';
+                const isAvailable = item.status === 'ON_SALE';
+
+                return (
+                  <Grid item key={item.post_id}>
+                    <Card
+                      className="wishlist-post-card"
+                      onClick={() => handleViewProduct(item)}
+                    >
+                      {/* 상품 이미지 */}
+                      <Box className="wishlist-post-image-container">
+                        {(() => {
+                          const postId = item.post_id || item.postId || item.id;
+                          return postImages[postId] ? (
+                            <CardMedia
+                              component="img"
+                              height="200"
+                              image={postImages[postId].url}
+                              alt={item.title}
+                              className="wishlist-post-image"
+                            />
+                          ) : (
+                            <Box className="wishlist-post-no-image">
+                              <FavoriteBorderIcon sx={{ fontSize: 48, mb: 1, color: '#ccc' }} />
+                              <Typography variant="body2" color="text.secondary">
+                                사진 없음
+                              </Typography>
+                            </Box>
+                          );
+                        })()}
+
+                        {/* 상품 타입 배지 */}
+                        <Chip
+                          label={typeInfo.label}
+                          color={typeInfo.color}
+                          size="small"
+                          icon={typeInfo.icon}
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            left: 8,
+                            fontWeight: 'bold'
+                          }}
+                        />
+
+                        {/* 재고 상태 배지 */}
+                        <Chip
+                          label={isAvailable ? '구매 가능' : '품절'}
+                          color={isAvailable ? 'success' : 'error'}
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            fontWeight: 'bold'
+                          }}
+                        />
+
+                        {/* 경매 남은 시간 */}
+                        {isAuction && item.auction_end_time && isAvailable && (
+                          <Box sx={{
+                            position: 'absolute',
+                            bottom: 8,
+                            left: 8,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            color: 'white',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5
+                          }}>
+                            <AccessTimeIcon fontSize="small" />
+                            <Typography variant="caption" fontWeight="bold">
+                              {getTimeRemaining(item.auction_end_time)}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        {/* 액션 버튼들 */}
                         <Box sx={{
                           position: 'absolute',
                           bottom: 8,
-                          left: 8,
-                          backgroundColor: 'rgba(0,0,0,0.7)',
-                          color: 'white',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: 1,
+                          right: 8,
                           display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5
+                          gap: 1
                         }}>
-                          <AccessTimeIcon fontSize="small" />
-                          <Typography variant="caption" fontWeight="bold">
-                            {getTimeRemaining(item.auction_end_time)}
-                          </Typography>
+                          <IconButton
+                            size="small"
+                            sx={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProduct(item);
+                            }}
+                          >
+                            <VisibilityIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            sx={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const postId = item.post_id || item.postId || item.id;
+                              handleRemoveFavorite(postId);
+                            }}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
                         </Box>
-                      )}
-                      
-                      {/* 액션 버튼들 */}
-                      <Box sx={{
-                        position: 'absolute',
-                        bottom: 8,
-                        right: 8,
-                        display: 'flex',
-                        gap: 1
-                      }}>
-                        <IconButton
-                          size="small"
-                          sx={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewProduct(item);
-                          }}
-                        >
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          sx={{ backgroundColor: 'rgba(255,255,255,0.9)' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveFavorite(item.post_id);
-                          }}
-                          color="error"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
                       </Box>
-                    </Box>
 
-                    {/* 상품 정보 */}
-                    <CardContent className="wishlist-post-content">
-                      {/* 제목 - 고정 높이 */}
-                      <Typography variant="h6" component="h3" className="wishlist-post-title">
-                        {item.title}
-                      </Typography>
-                      
-                      {/* 설명 - 고정 높이 */}
-                      <Typography variant="body2" color="text.secondary" className="wishlist-post-description">
-                        {item.description || '설명 없음'}
-                      </Typography>
-                      
-                      {/* 판매자 정보 - 고정 높이 */}
-                      <Typography variant="body2" color="text.secondary" className="wishlist-post-view-count-text">
-                        판매자: {item.nickname || '알 수 없음'}
-                      </Typography>
-                      
-                      {/* 찜한 날짜 - 고정 높이 */}
-                      <Typography variant="body2" color="text.secondary" className="wishlist-post-date-text">
-                        찜한 날짜: {formatDate(item.favorite_created_at)}
-                      </Typography>
+                      {/* 상품 정보 */}
+                      <CardContent className="wishlist-post-content">
+                        {/* 제목 - 고정 높이 */}
+                        <Typography variant="h6" component="h3" className="wishlist-post-title">
+                          {item.title}
+                        </Typography>
 
-                      <Box sx={{ mt: 'auto' }}>
-                        {/* 가격 정보 - 고정 높이 */}
-                        <Box className="wishlist-post-price">
-                          <Typography variant="h6" color="primary" fontWeight="bold" className="wishlist-post-price-text">
-                            {formatPrice(item.price)}
-                          </Typography>
+                        {/* 설명 - 고정 높이 */}
+                        <Typography variant="body2" color="text.secondary" className="wishlist-post-description">
+                          {item.description || '설명 없음'}
+                        </Typography>
+
+                        {/* 판매자 정보 - 고정 높이 */}
+                        <Typography variant="body2" color="text.secondary" className="wishlist-post-view-count-text">
+                          판매자: {item.nickname || '알 수 없음'}
+                        </Typography>
+
+                        {/* 찜한 날짜 - 고정 높이 */}
+                        <Typography variant="body2" color="text.secondary" className="wishlist-post-date-text">
+                          찜한 날짜: {formatDate(item.favorite_created_at)}
+                        </Typography>
+
+                        <Box sx={{ mt: 'auto' }}>
+                          {/* 가격 정보 - 고정 높이 */}
+                          <Box className="wishlist-post-price">
+                            <Typography variant="h6" color="primary" fontWeight="bold" className="wishlist-post-price-text">
+                              {formatPrice(item.price)}
+                            </Typography>
+                          </Box>
+
+                          {/* 액션 버튼 - 고정 높이 */}
+                          <Box className="wishlist-post-actions">
+                            {isAuction ? (
+                              <Button
+                                variant="contained"
+                                color="warning"
+                                startIcon={<GavelIcon />}
+                                fullWidth
+                                disabled={!isAvailable}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProduct(item);
+                                }}
+                                className="wishlist-post-action-btn"
+                              >
+                                {isAvailable ? '경매 참여' : '경매 종료'}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="contained"
+                                startIcon={<StoreIcon />}
+                                fullWidth
+                                disabled={!isAvailable}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProduct(item);
+                                }}
+                                className="wishlist-post-action-btn"
+                              >
+                                {isAvailable ? '상품 보기' : '품절'}
+                              </Button>
+                            )}
+                          </Box>
                         </Box>
-
-                                                 {/* 액션 버튼 - 고정 높이 */}
-                         <Box className="wishlist-post-actions">
-                           {isAuction ? (
-                             <Button
-                               variant="contained"
-                               color="warning"
-                               startIcon={<GavelIcon />}
-                               fullWidth
-                               disabled={!isAvailable}
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 handleViewProduct(item);
-                               }}
-                               className="wishlist-post-action-btn"
-                             >
-                               {isAvailable ? '경매 참여' : '경매 종료'}
-                             </Button>
-                           ) : (
-                             <Button
-                               variant="contained"
-                               startIcon={<StoreIcon />}
-                               fullWidth
-                               disabled={!isAvailable}
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 handleViewProduct(item);
-                               }}
-                               className="wishlist-post-action-btn"
-                             >
-                               {isAvailable ? '상품 보기' : '품절'}
-                             </Button>
-                           )}
-                         </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
 
             {/* 페이지네이션 */}

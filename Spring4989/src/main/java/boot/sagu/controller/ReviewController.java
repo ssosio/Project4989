@@ -116,4 +116,27 @@ public class ReviewController {
             return ResponseEntity.status(500).body(response);
         }
     }
+    
+    // 후기 존재 여부 확인 API 추가
+    @GetMapping("/check")
+    public ResponseEntity<Map<String, Object>> checkReviewExists(
+            @RequestParam Long postId,
+            @RequestParam Long reviewerId,
+            @RequestParam Long reviewOppositeId) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            boolean exists = reviewService.checkReviewExists(postId, reviewerId, reviewOppositeId);
+            response.put("success", true);
+            response.put("exists", exists);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("❌ 후기 존재 여부 확인 중 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "후기 존재 여부 확인 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

@@ -16,7 +16,6 @@ public class AuctionDto {
     private long bidId;        
     private long postId;       // post_id → postId (경매글 ID)
     private long bidderId;     // bidder_id → bidderId (입찰자 ID)
-    
     @JsonProperty("bid_amount")
     private BigDecimal bidAmount; // bid_amount → bidAmount (입찰 금액)
     

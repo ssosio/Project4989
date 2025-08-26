@@ -15,7 +15,7 @@ const AuctionMain = () => {
     ended: false    // 경매종료 (기본값: false)
   });
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     fetchAuctionList();
   }, []);
@@ -27,11 +27,11 @@ const AuctionMain = () => {
       const response = await axios.get(`${apiBase}/auction`);
       console.log('경매 데이터:', response.data);
       setAuctionList(response.data);
-      
+
       // 사진, 최고가 가져오기
       const photos = {};
       const highestBids = {};
-      
+
       for (const auction of response.data) {
         // 경매 사진 가져오기 (첫 번째 사진만)
         try {
@@ -42,7 +42,7 @@ const AuctionMain = () => {
         } catch (err) {
           console.error(`경매 사진 조회 실패 (postId: ${auction.postId}):`, err);
         }
-        
+
         // 최고가 가져오기
         try {
           const bidResponse = await axios.get(`${import.meta.env.VITE_API_BASE}/auction/highest-bid/${auction.postId}`);
@@ -53,10 +53,10 @@ const AuctionMain = () => {
           console.error(`최고가 조회 실패 (postId: ${auction.postId}):`, err);
         }
       }
-      
+
       setAuctionPhotos(photos);
       setHighestBids(highestBids);
-      
+
       setLoading(false);
     } catch (error) {
       console.error('경매 목록 조회 실패:', error);
@@ -80,17 +80,17 @@ const AuctionMain = () => {
   // 시간 남은 계산 함수
   const getTimeRemaining = (endTime) => {
     if (!endTime) return '시간 미정';
-    
+
     const now = new Date();
     const end = new Date(endTime);
     const diff = end - now;
-    
+
     if (diff <= 0) return '경매 종료';
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (days > 0) return `${days}일 ${hours}시간`;
     if (hours > 0) return `${hours}시간 ${minutes}분`;
     return `${minutes}분`;
@@ -100,7 +100,7 @@ const AuctionMain = () => {
   const filteredAuctions = auctionList.filter(post => {
     const isOngoing = new Date(post.auctionEndTime) > new Date();
     const isEnded = new Date(post.auctionEndTime) <= new Date();
-    
+
     return (filters.ongoing && isOngoing) || (filters.ended && isEnded);
   });
 
@@ -145,10 +145,10 @@ const AuctionMain = () => {
           총 {filteredAuctions.length}개의 경매 ({currentPage}/{totalPages} 페이지)
         </div>
       </div>
-      
+
       {/* 필터 버튼들 */}
       <div className="filter-container">
-        <button 
+        <button
           className={`filter-btn ${filters.ongoing ? 'active' : ''}`}
           onClick={() => handleFilterToggle('ongoing')}
         >
@@ -156,7 +156,7 @@ const AuctionMain = () => {
           경매중
           {filters.ongoing && <span className="check-mark">✓</span>}
         </button>
-        <button 
+        <button
           className={`filter-btn ${filters.ended ? 'active' : ''}`}
           onClick={() => handleFilterToggle('ended')}
         >
@@ -165,10 +165,10 @@ const AuctionMain = () => {
           {filters.ended && <span className="check-mark">✓</span>}
         </button>
       </div>
-      
+
       <div className="auction-grid">
         {currentItems.map(post => (
-          <div 
+          <div
             key={post.postId}
             className="auction-card"
             onClick={() => handleRowClick(post.postId)}
@@ -176,7 +176,7 @@ const AuctionMain = () => {
             {/* 상품 이미지 */}
             <div className="card-image">
               {auctionPhotos[post.postId] ? (
-                <img 
+                <img
                   src={`${import.meta.env.VITE_API_BASE}/auction/image/${auctionPhotos[post.postId]}`}
                   alt={post.title}
                   onError={(e) => {
@@ -189,7 +189,7 @@ const AuctionMain = () => {
                 <span>📷</span>
                 <span>이미지 없음</span>
               </div>
-              
+
               {/* 상태 배지 */}
               <div className="status-badge">
                 {post.winnerId ? (
@@ -203,11 +203,11 @@ const AuctionMain = () => {
                 )}
               </div>
             </div>
-            
+
             {/* 상품 정보 */}
             <div className="card-content">
               <h3 className="card-title">{post.title}</h3>
-              
+
               <div className="card-price">
                 <div className="price-row">
                   <span className="price-label">시작가:</span>
@@ -220,7 +220,7 @@ const AuctionMain = () => {
                   </span>
                 </div>
               </div>
-              
+
               <div className="card-bottom">
                 <div className="time-info">
                   ⏰ {getTimeRemaining(post.auctionEndTime)}
@@ -233,31 +233,31 @@ const AuctionMain = () => {
           </div>
         ))}
       </div>
-      
+
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="pagination">
-          <button 
+          <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="pagination-btn"
           >
             이전
           </button>
-          
+
           {[...Array(totalPages)].map((_, index) => {
             const pageNumber = index + 1;
-            const showPage = pageNumber === 1 || 
-                           pageNumber === totalPages || 
-                           Math.abs(pageNumber - currentPage) <= 2;
-            
+            const showPage = pageNumber === 1 ||
+              pageNumber === totalPages ||
+              Math.abs(pageNumber - currentPage) <= 2;
+
             if (!showPage) {
               if (pageNumber === currentPage - 3 || pageNumber === currentPage + 3) {
                 return <span key={pageNumber} className="pagination-dots">...</span>;
               }
               return null;
             }
-            
+
             return (
               <button
                 key={pageNumber}
@@ -268,8 +268,8 @@ const AuctionMain = () => {
               </button>
             );
           })}
-          
-          <button 
+
+          <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="pagination-btn"
