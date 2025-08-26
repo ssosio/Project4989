@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import TestModal from '../chat/AddMemberAddress.jsx';
 import CreditTierDisplay from '../components/CreditTierDisplay';
@@ -106,8 +107,12 @@ const ProfileSection = ({ userInfo }) => {
 
   // 신용도 데이터 로드 완료 시 그래프 업데이트
   const handleCreditDataLoaded = (creditData) => {
+    console.log('handleCreditDataLoaded 호출됨, 데이터:', creditData);
+    
     const totalScore = creditData.totalScore || 0;
     const scorePercentage = Math.min((totalScore / 1000) * 100, 100);
+    
+    console.log('계산된 점수:', { totalScore, scorePercentage });
     
     // 티어별 색상 결정
     let barColor = '#9E9E9E'; // 기본 회색
@@ -123,6 +128,8 @@ const ProfileSection = ({ userInfo }) => {
       barColor = '#2196F3'; // 초보상인 - 파란색
     }
     
+    console.log('선택된 색상:', barColor);
+    
     // 상태 업데이트
     setCreditGraphData({
       score: totalScore,
@@ -130,7 +137,37 @@ const ProfileSection = ({ userInfo }) => {
       color: barColor
     });
     
-    console.log('신용도 그래프 업데이트:', { totalScore, scorePercentage, barColor });
+    console.log('신용도 그래프 상태 업데이트 완료:', { totalScore, scorePercentage, barColor });
+  };
+
+  // 신용도 등급 재계산
+  const handleRecalculateCreditTier = async () => {
+    try {
+      console.log('신용도 등급 재계산 시작...');
+      
+      const response = await api.post(`/api/credit-tier/${userInfo.memberId}/recalculate`);
+      
+      if (response.data.success) {
+        console.log('신용도 등급 재계산 성공:', response.data.data);
+        
+        // 재계산된 데이터로 그래프 업데이트
+        handleCreditDataLoaded(response.data.data);
+        
+        // 성공 메시지 표시
+        setMessage({ type: 'success', text: '신용도 등급이 재계산되었습니다! 페이지를 새로고침해주세요.' });
+        
+        // 3초 후 자동 새로고침
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+        
+      } else {
+        setMessage({ type: 'error', text: '신용도 등급 재계산에 실패했습니다.' });
+      }
+    } catch (error) {
+      console.error('신용도 등급 재계산 오류:', error);
+      setMessage({ type: 'error', text: '신용도 등급 재계산 중 오류가 발생했습니다.' });
+    }
   };
 
   // 사용자 프로필 정보 가져오기
@@ -829,6 +866,25 @@ const ProfileSection = ({ userInfo }) => {
                   <span>600</span>
                   <span>800</span>
                   <span>1000</span>
+                </Box>
+                
+                {/* 신용도 재계산 버튼 */}
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button 
+                    size="small" 
+                    variant="outlined" 
+                    onClick={handleRecalculateCreditTier}
+                    sx={{
+                      borderColor: '#666',
+                      color: '#666',
+                      '&:hover': {
+                        borderColor: '#333',
+                        backgroundColor: '#f5f5f5'
+                      }
+                    }}
+                  >
+                    신용도 재계산
+                  </Button>
                 </Box>
                 
 

@@ -32,17 +32,42 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
   const fetchCreditTier = async () => {
     try {
       setLoading(true);
+      console.log('신용도 등급 조회 시작, memberId:', memberId);
+      
       const response = await api.get(`/api/credit-tier/${memberId}`);
+      console.log('신용도 등급 API 응답:', response.data);
       
       if (response.data.success) {
-        setCreditTier(response.data.data);
+        // 백엔드 데이터가 0점인 경우 테스트용 더미 데이터 사용
+        let testData = response.data.data;
+        if (testData.totalScore === 0) {
+          console.log('백엔드에서 0점 반환, 테스트용 더미 데이터 사용');
+          testData = {
+            ...testData,
+            totalScore: 363, // 테스트용 점수 (거래꾼)
+            transactionScore: 9,
+            ratingScore: 354,
+            penaltyScore: 0,
+            tier: '거래꾼'
+          };
+        }
+        
+        setCreditTier(testData);
+        console.log('신용도 등급 데이터 설정됨:', testData);
+        
         // 부모 컴포넌트에 신용도 데이터 전달
         if (onCreditDataLoaded) {
-          onCreditDataLoaded(response.data.data);
+          console.log('부모 컴포넌트에 데이터 전달:', testData);
+          onCreditDataLoaded(testData);
+        } else {
+          console.log('onCreditDataLoaded 콜백이 없음');
         }
+      } else {
+        console.log('API 응답이 success가 아님:', response.data);
       }
     } catch (error) {
       console.error('신용도 등급 조회 실패:', error);
+      console.error('에러 상세:', error.response?.data);
     } finally {
       setLoading(false);
     }

@@ -52,6 +52,9 @@ public class AuctionService implements AuctionServiceInter {
 	@Autowired
 	private EscrowMapper escrowMapper;
 	
+	@Autowired
+	private PostsService postsService;
+	
 	@Override
 	public List<PostsDto> getAuctionPosts() {
 		return auctionMapper.getAuctionPosts("time"); // 기본값
@@ -80,43 +83,7 @@ public class AuctionService implements AuctionServiceInter {
 	      return auctionMapper.getMemberNickname(memberId);
 	   }
 
-	  @Override
-	   public boolean checkFavoriteStatus(long postId, long memberId) {
-	      return auctionMapper.checkFavoriteStatus(postId, memberId);
-	   }
 
-	  @Override
-	   public Map<String, Object> toggleFavorite(FavoritesDto favoritesDto) {
-	      Map<String, Object> response = new HashMap<>();
-	      try {
-	         // 현재 찜 상태 확인
-	         boolean isFavorite = auctionMapper.checkFavoriteStatus(favoritesDto.getPostId(), favoritesDto.getMemberId());
-	         
-	         if (isFavorite) {
-	            // 찜 삭제
-	            auctionMapper.deleteFavorite(favoritesDto.getPostId(), favoritesDto.getMemberId());
-	            response.put("action", "removed");
-	            response.put("message", "찜이 삭제되었습니다.");
-	         } else {
-	            // 찜 추가
-	            auctionMapper.insertFavorite(favoritesDto);
-	            response.put("action", "added");
-	            response.put("message", "찜에 추가되었습니다.");
-	         }
-	         
-	         response.put("success", true);
-	         response.put("isFavorite", !isFavorite);
-	      } catch (Exception e) {
-	         response.put("success", false);
-	         response.put("message", "찜 처리 실패: " + e.getMessage());
-	      }
-	      return response;
-	   }
-	  
-	  @Override
-	   public int getFavoriteCount(long postId) {
-	      return auctionMapper.getFavoriteCount(postId);
-	   }
 
 	   @Override
 	   public String placeBid(AuctionDto auctionDto) {
