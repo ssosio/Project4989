@@ -136,7 +136,7 @@ const MainPage = () => {
                 <div className="main-auction-image">
                   <img 
                     src={
-                      item.image ? 
+                      item.image && item.image.trim() !== '' ? 
                         (item.image.startsWith('http') ? 
                           `${item.image}?t=${Date.now()}` : 
                           (item.image.startsWith('/') ? 
@@ -144,7 +144,7 @@ const MainPage = () => {
                             `http://localhost:4989/save/${item.image}?t=${Date.now()}`
                           )
                         ) :
-                      item.mainPhotoUrl ? 
+                      item.mainPhotoUrl && item.mainPhotoUrl.trim() !== '' ? 
                         (item.mainPhotoUrl.startsWith('http') ? 
                           `${item.mainPhotoUrl}?t=${Date.now()}` : 
                           (item.mainPhotoUrl.startsWith('/') ? 
@@ -152,7 +152,7 @@ const MainPage = () => {
                             `http://localhost:4989/save/${item.mainPhotoUrl}?t=${Date.now()}`
                           )
                         ) :
-                      "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image"
+                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzQ5OGRiIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD4KPC9zdmc+"
                     } 
                     alt={item.title}
                     onError={(e) => {

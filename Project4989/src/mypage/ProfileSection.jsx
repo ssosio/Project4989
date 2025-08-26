@@ -698,11 +698,11 @@ const ProfileSection = ({ userInfo }) => {
         </Alert>
       )}
 
-      <Grid container spacing={4} sx={{ width: '100%', minHeight: '500px' }}>
+      <Grid container spacing={4} sx={{ width: '100%', minHeight: '500px', height: 'auto' }}>
         {/* 프로필 이미지 및 기본 정보 */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ width: '100%', minWidth: '180px' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
+          <Card sx={{ width: '100%', minWidth: '180px', height: '100%' }}>
+            <CardContent sx={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
                   src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}?t=${Date.now()}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}?t=${Date.now()}` : 'https://placehold.co/150x150')}
@@ -764,7 +764,7 @@ const ProfileSection = ({ userInfo }) => {
         {/* 신용도 등급 */}
         <Grid item xs={12} md={4}>
           <Card sx={{ width: '100%', minWidth: '300px', height: '100%' }}>
-            <CardContent sx={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 신용도 등급
               </Typography>
