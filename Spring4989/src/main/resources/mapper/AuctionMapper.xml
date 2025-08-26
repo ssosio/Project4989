@@ -19,7 +19,7 @@
 			p.created_at,
 			p.updated_at,
 			p.post_type,
-			COALESCE(pp.photo_url, '') as image,
+			COALESCE(CONCAT('/save/', pp.photo_url), '') as image,
 			COALESCE(bid_count.bidder_count, 0) as bidderCount
 		FROM posts p
 		LEFT JOIN (

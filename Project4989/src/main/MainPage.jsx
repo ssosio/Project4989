@@ -137,9 +137,21 @@ const MainPage = () => {
                   <img 
                     src={
                       item.image ? 
-                        (item.image.startsWith('http') ? `${item.image}?t=${Date.now()}` : `http://localhost:4989${item.image}?t=${Date.now()}`) :
+                        (item.image.startsWith('http') ? 
+                          `${item.image}?t=${Date.now()}` : 
+                          (item.image.startsWith('/') ? 
+                            `http://localhost:4989${item.image}?t=${Date.now()}` : 
+                            `http://localhost:4989/save/${item.image}?t=${Date.now()}`
+                          )
+                        ) :
                       item.mainPhotoUrl ? 
-                        (item.mainPhotoUrl.startsWith('http') ? `${item.mainPhotoUrl}?t=${Date.now()}` : `http://localhost:4989${item.mainPhotoUrl}?t=${Date.now()}`) :
+                        (item.mainPhotoUrl.startsWith('http') ? 
+                          `${item.mainPhotoUrl}?t=${Date.now()}` : 
+                          (item.mainPhotoUrl.startsWith('/') ? 
+                            `http://localhost:4989${item.mainPhotoUrl}?t=${Date.now()}` : 
+                            `http://localhost:4989/save/${item.mainPhotoUrl}?t=${Date.now()}`
+                          )
+                        ) :
                       "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image"
                     } 
                     alt={item.title}
