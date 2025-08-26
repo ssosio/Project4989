@@ -16,7 +16,8 @@ import {
   Dashboard as DashboardIcon,
   Settings as SettingsIcon,
   Feedback as FeedbackIcon,
-  LocationOn as LocationOnIcon
+  LocationOn as LocationOnIcon,
+  ContactSupport as ContactSupportIcon
 } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 
@@ -32,6 +33,7 @@ import PostDetailModal from '../components/admin/PostDetailModal';
 import UserDetailModal from '../components/admin/UserDetailModal';
 import ChatReportManagementTab from '../components/admin/ChatReportManagementTab';
 import AddressManagementTab from '../components/admin/AddressManagementTab';
+import ContactManagementTab from '../components/admin/ContactManagementTab';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {
@@ -147,6 +149,7 @@ const AdminPage = () => {
             <Tab icon={<PostAddIcon />} label="게시글 관리" />
             <Tab icon={<ReportIcon />} label="게시글 신고 관리" />
             <Tab icon={<FeedbackIcon />} label="채팅 신고 관리" />
+            <Tab icon={<ContactSupportIcon />} label="고객 문의 관리" />
             <Tab icon={<CategoryIcon />} label="카테고리 관리" />
             <Tab icon={<SettingsIcon />} label="시스템 설정" />
             <Tab icon={<LocationOnIcon />} label="주소 관리" />
@@ -197,23 +200,26 @@ const AdminPage = () => {
           <ChatReportManagementTab />
         </TabPanel>
 
+        {/* 고객 문의 관리 탭 */}
+        <TabPanel value={tabValue} index={5}>
+          <ContactManagementTab />
+        </TabPanel>
 
         {/* 카테고리 관리 탭 */}
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel value={tabValue} index={6}>
           <CategoryManagementTab />
         </TabPanel>
 
-
         {/* 시스템 설정 탭 */}
-        <TabPanel value={tabValue} index={6}>
+        <TabPanel value={tabValue} index={7}>
           <SystemSettingsTab />
         </TabPanel>
-      </Paper>
 
-      {/* 주소 관리 탭 */}
-      <TabPanel value={tabValue} index={7}>
-        <AddressManagementTab />
-      </TabPanel>
+        {/* 주소 관리 탭 */}
+        <TabPanel value={tabValue} index={8}>
+          <AddressManagementTab />
+        </TabPanel>
+      </Paper>
 
       {/* 모달들 */}
       <PostDetailModal

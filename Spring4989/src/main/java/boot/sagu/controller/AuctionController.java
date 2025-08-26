@@ -64,8 +64,10 @@ public class AuctionController {
 	private final Map<String, Set<String>> auctionRoomUsers = new ConcurrentHashMap<>();
 
 	@GetMapping("/auction")
-	public List<PostsDto> getAuctionList() {
-	   return auctionService.getAuctionPosts();
+	public List<PostsDto> getAuctionList(
+		@RequestParam(value = "sort", defaultValue = "time") String sortType
+	) {
+	   return auctionService.getAuctionPosts(sortType);
 	}
 
 	@GetMapping("/auction/detail/{postId}")

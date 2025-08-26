@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../lib/api';
 import './LegalPages.css';
 
 const Contact = () => {
@@ -19,16 +20,34 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // 여기에 실제 문의 처리 로직을 추가할 수 있습니다
-    alert('문의가 접수되었습니다. 빠른 시일 내에 답변드리겠습니다.');
-    setContactForm({
-      name: '',
-      email: '',
-      subject: '',
-      message: ''
-    });
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      const response = await api.post('/api/contact/submit', contactForm);
+      
+      if (response.data.status === 'SUCCESS') {
+        setSubmitMessage('문의가 성공적으로 접수되었습니다. 빠른 시일 내에 답변드리겠습니다.');
+        setContactForm({
+          name: '',
+          email: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        setSubmitMessage('문의 접수 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error('문의 접수 실패:', error);
+      setSubmitMessage('문의 접수 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -145,8 +164,14 @@ const Contact = () => {
                 ></textarea>
               </div>
               
-              <button type="submit" className="submit-button">
-                문의 접수하기
+              {submitMessage && (
+                <div className={`submit-message ${submitMessage.includes('성공') ? 'success' : 'error'}`}>
+                  {submitMessage}
+                </div>
+              )}
+              
+              <button type="submit" className="submit-button" disabled={isSubmitting}>
+                {isSubmitting ? '접수 중...' : '문의 접수하기'}
               </button>
             </form>
           </section>
