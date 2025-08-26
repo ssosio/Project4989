@@ -56,26 +56,21 @@
    <!-- 전체리스트 -->
    <select id="getPostListWithNick" resultType="map">
       SELECT
-      p.post_id AS
-      postId,
+      p.post_id AS postId,
       p.member_id AS memberId,
       p.title AS title,
       p.price AS price,
       p.post_type AS postType,
       p.trade_type AS tradeType,
-      p.created_at AS
-      createdAt,
+      p.created_at AS createdAt,
       p.view_count AS viewCount,
       p.status AS status,
-      (SELECT
-      photo_url
-      FROM post_photos
-      WHERE post_id = p.post_id AND is_main = 1
-      LIMIT 1) AS mainPhotoUrl,
+      pp.photo_url AS photo_url,
+      pp.is_main AS is_main,
       m.nickname AS nickname
       FROM posts p
-      LEFT JOIN
-      members m ON m.member_id = p.member_id
+      LEFT JOIN members m ON m.member_id = p.member_id
+      LEFT JOIN post_photos pp ON p.post_id = pp.post_id AND pp.is_main = 1
       ORDER BY p.post_id DESC
    </select>
 
