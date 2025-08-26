@@ -50,6 +50,7 @@ function LoginForm({ onLoginSuccess }) {
       loginId: decoded.sub,
       memberId: decoded.memberId,
       nickname: decoded.nickname,
+      role: decoded.role,
       profileImageUrl: decoded.profileImageUrl,
     };
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
