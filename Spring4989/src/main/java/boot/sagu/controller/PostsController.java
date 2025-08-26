@@ -560,6 +560,9 @@ public class PostsController {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(Map.of("success", false, "message", "신고 상태 업데이트 중 오류가 발생했습니다."));
+		}
+	}
+	
 	// 후기 조회 API (테스트용 - JWT 인증 없이)
 	@GetMapping("/reviews/test")
 	public ResponseEntity<Map<String, Object>> getUserReviewsTest(
