@@ -18,7 +18,7 @@ const StatsCards = ({ stats }) => {
   const [activeChatroom, setActiveChatroom] = useState(0);
   const [chatReports, setChatReports] = useState(0);
   const [totalPosts, setTotalPosts] = useState(0);
-
+  const [countMember, setCountMember] = useState(0);
   useEffect(() => {
     const list = () => {
       const url = "http://localhost:4989/api/chat-declarations/count";
@@ -26,6 +26,20 @@ const StatsCards = ({ stats }) => {
         .then(async (res) => {
           setActiveChatroom(res.data.chatCnt);
           setChatReports(res.data.reportCnt);
+        })
+        .catch(err => {
+          console.error("에러 발생:", err);
+        });
+    };
+    list()
+  }, [])
+
+  useEffect(() => {
+    const list = () => {
+      const url = "http://localhost:4989/countMember";
+      axios.get(url)
+        .then(async (res) => {
+          setCountMember(res.data);
         })
         .catch(err => {
           console.error("에러 발생:", err);
@@ -65,7 +79,7 @@ const StatsCards = ({ stats }) => {
           <CardContent>
             <PeopleIcon sx={{ fontSize: 40, mb: 1 }} />
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.totalUsers.toLocaleString()}
+              {countMember}
             </Typography>
             <Typography variant="body2">총 회원 수</Typography>
           </CardContent>
