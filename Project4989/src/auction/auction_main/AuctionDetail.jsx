@@ -60,7 +60,7 @@ const AuctionDetail = () => {
   const [escrowAmount, setEscrowAmount] = useState(0);
   const [escrowMerchantUid, setEscrowMerchantUid] = useState('');
 
-  const SERVER_IP = '192.168.10.138';
+  const SERVER_IP = '192.168.10.137';
   const SERVER_PORT = '4989';
 
   const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');

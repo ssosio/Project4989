@@ -60,10 +60,33 @@ const UserManagementTab = () => {
   // 회원 목록 조회
   const fetchUsers = async () => {
     try {
+      console.log('=== 회원 목록 조회 시작 ===');
+      console.log('현재 페이지:', page);
+      console.log('검색어:', searchTerm);
+      
       setLoading(true);
       const response = await api.get(`/api/admin/members?page=${page}&search=${searchTerm}`);
-      setUsers(response.data.content || response.data);
-      setTotalPages(response.data.totalPages || 1);
+      
+      console.log('API 응답:', response);
+      console.log('응답 데이터:', response.data);
+      
+      // 응답 데이터 검증 및 설정
+      if (response.data && response.data.content) {
+        console.log('페이징된 데이터 형식으로 처리');
+        setUsers(response.data.content);
+        setTotalPages(response.data.totalPages || 1);
+      } else if (Array.isArray(response.data)) {
+        console.log('배열 형식 데이터로 처리');
+        setUsers(response.data);
+        setTotalPages(1);
+      } else {
+        console.warn('예상치 못한 응답 형식:', response.data);
+        setUsers([]);
+        setTotalPages(1);
+      }
+      
+      console.log('설정된 사용자 목록:', response.data.content || response.data);
+      console.log('회원 목록 새로고침 완료');
     } catch (error) {
       console.error('회원 목록 조회 실패:', error);
       setSnackbar({
@@ -111,7 +134,14 @@ const UserManagementTab = () => {
 
   const handleEditSubmit = async () => {
     try {
-      await api.put(`/api/admin/members/${editForm.member_id}`, editForm);
+      console.log('=== 회원 수정 시작 ===');
+      console.log('수정할 데이터:', editForm);
+      console.log('API 엔드포인트:', `/api/admin/members/${editForm.member_id}`);
+      
+      const response = await api.put(`/api/admin/members/${editForm.member_id}`, editForm);
+      
+      console.log('API 응답:', response);
+      console.log('응답 데이터:', response.data);
       
       // 로그 기록
       console.log('전송할 액션 로그 데이터:', {
@@ -132,13 +162,64 @@ const UserManagementTab = () => {
         details: '회원 정보 수정'
       });
 
+      // 성공 메시지 표시
       setSnackbar({
         open: true,
         message: '회원 정보가 수정되었습니다.',
         severity: 'success'
       });
+      
+      // 모달 닫기
       setIsEditOpen(false);
-      fetchUsers();
+      
+      // 즉시 목록 새로고침
+      await fetchUsers();
+      
+      // 선택된 사용자 정보도 업데이트 (상세 모달이 열려있다면)
+      if (selectedUser && selectedUser.memberId === editForm.member_id) {
+        try {
+          const updatedUserResponse = await api.get(`/api/admin/members/${editForm.member_id}`);
+          setSelectedUser(updatedUserResponse.data);
+        } catch (error) {
+          console.error('사용자 정보 업데이트 실패:', error);
+        }
+      }
+      
+      // 로컬 상태에서도 해당 사용자 정보 즉시 업데이트
+      console.log('=== 로컬 상태 업데이트 시작 ===');
+      console.log('현재 사용자 목록:', users);
+      console.log('수정할 사용자 ID:', editForm.member_id);
+      
+      setUsers(prevUsers => {
+        console.log('이전 사용자 목록:', prevUsers);
+        
+        const updatedUsers = prevUsers.map(user => {
+          if (user.memberId === editForm.member_id) {
+            console.log('수정할 사용자 발견:', user);
+            const updatedUser = {
+              ...user, 
+              nickname: editForm.nickname,
+              email: editForm.email,
+              phoneNumber: editForm.phone_number,
+              tier: editForm.tier
+            };
+            console.log('수정된 사용자:', updatedUser);
+            return updatedUser;
+          }
+          return user;
+        });
+        
+        console.log('업데이트된 사용자 목록:', updatedUsers);
+        
+        console.log('로컬 사용자 목록 업데이트:', {
+          before: prevUsers.find(u => u.memberId === editForm.member_id),
+          after: updatedUsers.find(u => u.memberId === editForm.member_id),
+          editForm: editForm
+        });
+        
+        return updatedUsers;
+      });
+      
     } catch (error) {
       console.error('회원 수정 실패:', error);
       setSnackbar({

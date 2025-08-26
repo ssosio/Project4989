@@ -5,11 +5,11 @@ import boot.sagu.dto.CreditTierDto;
 public interface CreditTierServiceInter {
     
     // 회원의 신용도 등급 정보 조회
-    CreditTierDto getCreditTierByMemberId(int memberId);
+    public CreditTierDto getCreditTierByMemberId(int memberId);
     
     // 회원의 신용도 등급 계산 및 업데이트
-    CreditTierDto calculateAndUpdateCreditTier(int memberId);
+    public CreditTierDto calculateAndUpdateCreditTier(int memberId);
     
     // 모든 회원의 신용도 등급 일괄 업데이트
-    void updateAllMembersCreditTier();
+    public void updateAllMembersCreditTier();
 }
