@@ -126,7 +126,7 @@ const WishlistSection = ({ userInfo }) => {
     if (item.post_type === 'AUCTION') {
       navigate(`/auction/detail/${item.post_id}`);
     } else {
-      navigate(`/board/detail/${item.post_id}`);
+      navigate(`/board/GoodsDetail?postId=${item.post_id}`);
     }
   };
 

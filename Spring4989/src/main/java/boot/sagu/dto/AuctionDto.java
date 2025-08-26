@@ -18,6 +18,7 @@ public class AuctionDto {
     private long bidderId;     // bidder_id → bidderId (입찰자 ID)
     @JsonProperty("bid_amount")
     private BigDecimal bidAmount; // bid_amount → bidAmount (입찰 금액)
+    
     private Timestamp bidTime; // bid_time → bidTime (입찰 시간)
     
 }

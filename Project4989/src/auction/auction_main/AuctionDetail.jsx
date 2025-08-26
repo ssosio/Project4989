@@ -60,10 +60,11 @@ const AuctionDetail = () => {
   const [escrowAmount, setEscrowAmount] = useState(0);
   const [escrowMerchantUid, setEscrowMerchantUid] = useState('');
 
-  const SERVER_IP = '192.168.10.137';
-  const SERVER_PORT = '4989';
-
+  // API 베이스 URL에서 서버 정보 추출
   const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+  const apiUrl = new URL(BASE || 'http://localhost:4989');
+  const SERVER_IP = apiUrl.hostname;
+  const SERVER_PORT = apiUrl.port || '4989';
 
   const normalizeDetail = (d = {}) => ({
     ...d,
@@ -250,7 +251,9 @@ const AuctionDetail = () => {
           }
         }, 1000);
       },
-      onDisconnect: () => {},
+      onDisconnect: () => {
+        console.log('WebSocket 연결이 끊어졌습니다.');
+      },
       onStompError: (error) => {
         console.error('경매 소켓 에러:', error);
       }
@@ -510,7 +513,9 @@ const handleEscrowComplete = async () => {
     ]);
     setAuctionDetail(detail.data);
     setHighestBid(hb.data);
-  } catch {}
+  } catch (error) {
+    console.error('에스크로 완료 후 데이터 갱신 실패:', error);
+  }
 };
 
 const handleEscrowCancel = () => {
