@@ -77,4 +77,12 @@ public class RegionService {
     public List<String> getTownsByDistrict(String province, String city, String district) {
         return regionMapper.getTownsByDistrict(province, city, district);
     }
+    
+ // 키워드로 지역 검색 (자동완성용)
+    public List<RegionDto> searchRegionsByKeyword(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        return regionMapper.searchRegionsByKeyword(keyword.trim());
+    }
 }

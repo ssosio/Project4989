@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
 import './cars.css';
-import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const CAR_DETAIL_URL = `${import.meta.env.VITE_API_BASE}/post/cardetail`;
 const LIST_URL = `${import.meta.env.VITE_API_BASE}/post/list`;
@@ -13,7 +12,7 @@ const Cars = () => {
   const [postList, setPostList] = useState([]);
   const [carDetailMap, setCarDetailMap] = useState({}); // postId -> detail
   const [currentPage, setCurrentPage] = useState(1);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+
   const itemsPerPage = 12;
 
   // 지역 필터 상태
@@ -77,16 +76,7 @@ const Cars = () => {
     { key: '>150000', label: '15만km 이상', test: (m) => m !== null && m > 150000 },
   ];
 
-  // ---------- 스크롤 ----------
-  useEffect(() => {
-    const onScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      setShowScrollTop(scrollTop > 300);
-    };
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
 
   // ---------- 페이지 쿼리 ----------
   useEffect(() => {
@@ -793,12 +783,7 @@ const Cars = () => {
           </div>
         </div>
 
-        {/* 최상단 버튼 */}
-        {showScrollTop && (
-          <button className="scroll-to-top-btn" onClick={scrollToTop} title="최상단으로 이동">
-            <KeyboardArrowUpRoundedIcon />
-          </button>
-        )}
+
       </div>
     </div>
   );

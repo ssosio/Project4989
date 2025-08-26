@@ -120,5 +120,33 @@
         AND town IS NOT NULL AND town != ''
         ORDER BY town
     </select>
+    
+    <!-- 키워드로 지역 검색 (자동완성용) -->
+    <select id="searchRegionsByKeyword" resultType="boot.sagu.dto.RegionDto">
+        SELECT 
+            region_id as regionId,
+            province,
+            city,
+            district,
+            town,
+            latitude,
+            longitude
+        FROM regions
+        WHERE 
+            (province IS NOT NULL AND province LIKE CONCAT('%', #{keyword}, '%')) OR
+            (city IS NOT NULL AND city LIKE CONCAT('%', #{keyword}, '%')) OR
+            (district IS NOT NULL AND district LIKE CONCAT('%', #{keyword}, '%')) OR
+            (town IS NOT NULL AND town LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY 
+            CASE 
+                WHEN province LIKE CONCAT(#{keyword}, '%') THEN 1
+                WHEN city LIKE CONCAT(#{keyword}, '%') THEN 2
+                WHEN district LIKE CONCAT(#{keyword}, '%') THEN 3
+                WHEN town LIKE CONCAT(#{keyword}, '%') THEN 4
+                ELSE 5
+            END,
+            province, city, district, town
+        LIMIT 10
+    </select>
    
 </mapper>

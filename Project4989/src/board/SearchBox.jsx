@@ -256,7 +256,7 @@ export default function SearchBox() {
                     </div>
                     <div className="goods-info">
                       <h3 className="goods-title-text">
-                        [{post.postType === 'CARS' ? '🚗' : post.postType === 'REAL_ESTATES' ? '🏠' : '📦'}] {post.title}
+                        [{post.postType === 'CARS' ? '🚗 자동차' : post.postType === 'REAL_ESTATES' ? '🏠 부동산' : '📦 중고물품'}] {post.title}
                       </h3>
                       <div className="goods-price">
                         {formatPrice(post.price)}

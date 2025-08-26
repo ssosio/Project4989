@@ -36,4 +36,7 @@ public interface RegionMapper {
 	
 	// 특정 district의 town 목록 조회
 	public List<String> getTownsByDistrict(@Param("province") String province, @Param("city") String city, @Param("district") String district);
+	
+	// 키워드로 지역 검색 (자동완성용)
+		public List<RegionDto> searchRegionsByKeyword(@Param("keyword") String keyword);
 }

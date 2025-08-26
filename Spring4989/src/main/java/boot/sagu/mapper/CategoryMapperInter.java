@@ -10,5 +10,6 @@ public interface CategoryMapperInter {
 	
 	public List<CategoryDto> getParentCategory();
 	public List<CategoryDto> getChildCategory(@RequestParam("parentId") int parentId);
+	public CategoryDto getParentByCategoryId(@RequestParam("categoryId") int categoryId);
 	
 }

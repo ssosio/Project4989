@@ -49,7 +49,30 @@ public class RegionController {
         return ResponseEntity.ok(regions);
     }
 
-    // 지역 상세 조회
+    // 지역 검색 (자동완성용) - {regionId} 패턴과 완전히 다른 경로 사용
+    @GetMapping("/find")
+    public ResponseEntity<List<RegionDto>> searchRegions(@RequestParam("keyword") String keyword) {
+        try {
+            System.out.println("=== Region Search Debug ===");
+            System.out.println("Received keyword: " + keyword);
+            System.out.println("Keyword type: " + (keyword != null ? keyword.getClass().getSimpleName() : "null"));
+            System.out.println("Keyword length: " + (keyword != null ? keyword.length() : "N/A"));
+            System.out.println("==========================");
+            
+            List<RegionDto> searchResults = regionService.searchRegionsByKeyword(keyword);
+            System.out.println("Search results count: " + searchResults.size());
+            return ResponseEntity.ok(searchResults);
+        } catch (Exception e) {
+            System.err.println("=== Region Search Error ===");
+            System.err.println("Error type: " + e.getClass().getSimpleName());
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            System.err.println("==========================");
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // 지역 상세 조회 - {regionId} 패턴
     @GetMapping("/{regionId}")
     public ResponseEntity<RegionDto> getRegion(@PathVariable(name = "regionId") Integer regionId) {
         RegionDto region = regionService.getRegionById(regionId);
@@ -58,6 +81,17 @@ public class RegionController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    // 키워드로 지역 검색
+//    @GetMapping("/search")
+//    public ResponseEntity<List<RegionDto>> searchRegions(@RequestParam("keyword") String keyword) {
+//        if (keyword == null || keyword.trim().isEmpty()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//        
+//        List<RegionDto> regions = regionService.searchRegionsByKeyword(keyword.trim());
+//        return ResponseEntity.ok(regions);
+//    }
 
     // 새 지역 추가
     @PostMapping("/register")

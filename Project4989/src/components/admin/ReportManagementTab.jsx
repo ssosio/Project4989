@@ -33,6 +33,7 @@ const ReportManagementTab = () => {
     try {
       setLoading(true);
       console.log('신고 목록 조회 시작...');
+      // 백엔드의 실제 API 엔드포인트 사용
       const response = await api.get('/post/reports');
       console.log('API 응답:', response);
       if (response.data.success) {
@@ -56,6 +57,7 @@ const ReportManagementTab = () => {
 
   const handleStatusChange = async (reportId, newStatus) => {
     try {
+      // 백엔드의 실제 API 엔드포인트 사용
       const response = await api.put(`/post/reports/${reportId}/status?status=${newStatus}`);
       if (response.data.success) {
         setSnackbar({
@@ -112,6 +114,17 @@ const ReportManagementTab = () => {
     return date.toLocaleString('ko-KR');
   };
 
+  const getTargetTypeText = (targetType) => {
+    switch (targetType) {
+      case 'POST':
+        return '게시글';
+      case 'MEMBER':
+        return '회원';
+      default:
+        return targetType;
+    }
+  };
+
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
   };
@@ -126,31 +139,6 @@ const ReportManagementTab = () => {
     );
   }
 
-  // 테스트용 더미 데이터 (API 호출 실패 시 사용) - 주석 처리
-  /*
-  const dummyReports = [
-    {
-      id: 1,
-      report_type_info: '게시글: 테스트 게시글 제목',
-      reporter_nickname: '테스트신고자',
-      reason: '허위 정보',
-      status: 'PENDING',
-      date: new Date().toISOString()
-    },
-    {
-      id: 2,
-      report_type_info: '작성자: 테스트작성자',
-      reporter_nickname: '다른신고자',
-      reason: '부적절한 내용',
-      status: 'INVESTIGATING',
-      date: new Date().toISOString()
-    }
-  ];
-  */
-
-  // 실제 API 데이터 사용
-  const displayReports = reports;
-
   return (
     <>
       <Card>
@@ -160,22 +148,55 @@ const ReportManagementTab = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>신고타입(작성자:작성자ID/게시글:게시글title)</TableCell>
+                  <TableCell>신고 ID</TableCell>
+                  <TableCell>신고 타입</TableCell>
                   <TableCell>신고자</TableCell>
+                  <TableCell>대상</TableCell>
+                  <TableCell>작성자</TableCell>
                   <TableCell>신고 사유</TableCell>
-                  <TableCell>상태</TableCell>
                   <TableCell>신고일</TableCell>
+                  <TableCell>상태</TableCell>
                   <TableCell>작업(상태변경)</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {displayReports.map((report) => (
-                  <TableRow key={report.id}>
-                    <TableCell>{report.id}</TableCell>
-                    <TableCell>{report.report_type_info}</TableCell>
-                    <TableCell>{report.reporter_nickname}</TableCell>
-                    <TableCell>{report.reason}</TableCell>
+                {reports.map((report) => (
+                  <TableRow key={report.reportId}>
+                    <TableCell>{report.reportId}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={getTargetTypeText(report.targetType)} 
+                        color="primary" 
+                        size="small" 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {report.reporterNickname || `사용자${report.reporterId}`}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {report.targetType === 'POST' 
+                          ? (report.targetInfo ? report.targetInfo.split(' (작성자:')[0] : '알 수 없음')
+                          : report.targetInfo || '알 수 없음'
+                        }
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="textSecondary">
+                        {report.targetType === 'POST' 
+                          ? (report.postAuthorNickname || '알 수 없음')
+                          : '-'
+                        }
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ maxWidth: 200, wordBreak: 'break-word' }}>
+                        {report.reason}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{formatDate(report.createdAt)}</TableCell>
                     <TableCell>
                       <Chip 
                         label={getStatusText(report.status)} 
@@ -183,12 +204,11 @@ const ReportManagementTab = () => {
                         size="small" 
                       />
                     </TableCell>
-                    <TableCell>{formatDate(report.date)}</TableCell>
                     <TableCell>
                       <FormControl size="small" sx={{ minWidth: 120 }}>
                         <Select
-                          value={report.status}
-                          onChange={(e) => handleStatusChange(report.id, e.target.value)}
+                          value={report.status || 'PENDING'}
+                          onChange={(e) => handleStatusChange(report.reportId, e.target.value)}
                           displayEmpty
                         >
                           <MenuItem value="PENDING">대기중</MenuItem>

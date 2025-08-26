@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
 import './goods.css';
-import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const Goods = () => {
 
@@ -13,7 +12,7 @@ const Goods = () => {
   const [postList, setPostList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
-  const [showScrollTop, setShowScrollTop] = useState(false);
+
 
   // ✅ 중고물품 상세 캐시: postId -> detail
   const [itemDetailMap, setItemDetailMap] = useState({});
@@ -44,25 +43,7 @@ const Goods = () => {
     return u; // 혹시 다른 값이 오면 대문자 그대로
   };
 
-  // 스크롤 이벤트 핸들러
-  const handleScroll = () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    setShowScrollTop(scrollTop > 300);
-  };
 
-  // 최상단으로 스크롤하는 함수
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
-
-  // 스크롤 이벤트 리스너 등록
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // 지역 데이터 로드
   useEffect(() => {
@@ -638,16 +619,7 @@ const Goods = () => {
           </div>
         </div>
 
-        {/* 최상단으로 스크롤하는 화살표 버튼 */}
-        {showScrollTop && (
-          <button
-            className="scroll-to-top-btn"
-            onClick={scrollToTop}
-            title="최상단으로 이동"
-          >
-            <KeyboardArrowUpRoundedIcon />
-          </button>
-        )}
+
       </div>
     </div>
   )
