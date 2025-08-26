@@ -140,9 +140,9 @@
         WHERE chat_room_id = #{chatRoomId}
     </select>
     
- <insert id="insertChatroom" parameterType="boot.sagu.dto.ChatDto" useGeneratedKeys="true" keyProperty="chat_room_id">
+ <insert id="insertChatroom" parameterType="boot.sagu.dto.ChatDto" useGeneratedKeys="true" keyProperty="chatRoomId">
     INSERT INTO chatroom (product_id, seller_id, buyer_id)
-    VALUES (#{product_id}, #{seller_id}, #{buyer_id})
+    VALUES (#{productId}, #{sellerId}, #{buyerId})
 </insert>
 
 <select id="findChatroomByProductIdAndBuyerId" resultType="java.lang.Long">

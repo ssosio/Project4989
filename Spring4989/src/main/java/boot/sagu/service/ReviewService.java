@@ -48,4 +48,21 @@ public class ReviewService implements ReviewServiceInter {
             return false;
         }
     }
+    
+    @Override
+    public boolean checkReviewExists(Long postId, Long reviewerId, Long reviewOppositeId) {
+        System.out.println("=== ReviewService.checkReviewExists 시작 ===");
+        System.out.println("postId: " + postId + ", reviewerId: " + reviewerId + ", reviewOppositeId: " + reviewOppositeId);
+        
+        try {
+            int count = reviewMapper.checkReviewExists(postId, reviewerId, reviewOppositeId);
+            boolean exists = count > 0;
+            System.out.println("후기 존재 여부: " + exists + " (count: " + count + ")");
+            return exists;
+        } catch (Exception e) {
+            System.err.println("❌ ReviewService.checkReviewExists에서 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

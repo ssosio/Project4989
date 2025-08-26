@@ -56,7 +56,6 @@ const GoodsDetail = () => {
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [hasReview, setHasReview] = useState(false);
-  const [reviewCompleted, setReviewCompleted] = useState(false);
 
   // 상세 데이터 로딩
   useEffect(() => {
@@ -68,9 +67,9 @@ const GoodsDetail = () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     // ✅ 쿼리파라미터는 params로 전달(문자열 조합 실수 방지)
-    const fetchPostData   = axios.get('http://localhost:4989/post/detail',       { params: { postId }, headers });
-    const fetchGoodsData  = axios.get('http://localhost:4989/post/itemdetail',   { params: { postId }, headers });
-    const fetchCarsData   = axios.get('http://localhost:4989/post/cardetail',    { params: { postId }, headers });
+    const fetchPostData = axios.get('http://localhost:4989/post/detail', { params: { postId }, headers });
+    const fetchGoodsData = axios.get('http://localhost:4989/post/itemdetail', { params: { postId }, headers });
+    const fetchCarsData = axios.get('http://localhost:4989/post/cardetail', { params: { postId }, headers });
     const fetchEstateData = axios.get('http://localhost:4989/post/estatedetail', { params: { postId }, headers });
 
     Promise.allSettled([fetchPostData, fetchGoodsData, fetchCarsData, fetchEstateData])
@@ -85,7 +84,7 @@ const GoodsDetail = () => {
             ? postData.photos
             : JSON.parse(postData.photos || '[]');
           setPhotos(photoList);
-          
+
           // Post 데이터에서 location 필드 확인
           console.log("🔍 Post 데이터 location 필드 확인:", {
             location: postData.location,
@@ -93,7 +92,7 @@ const GoodsDetail = () => {
             hasLocation: 'location' in postData,
             allKeys: Object.keys(postData)
           });
-          
+
           // Post 데이터에서 location 가져와서 region API 호출
           if (postData.location) {
             console.log("🌍 Region API 호출 시작 - regionId:", postData.location);
@@ -198,12 +197,62 @@ const GoodsDetail = () => {
       .catch(() => setFavorited(false));
   }, [postId, userInfo]);
 
+  // 후기 존재 여부 확인 (로그인시에만)
+  useEffect(() => {
+    if (!postId || !userInfo?.memberId || !post || post.status !== 'SOLD') return;
+
+    const checkReviewExists = async () => {
+      try {
+        console.log('🔍 후기 존재 여부 확인 시작:', {
+          postId,
+          reviewerId: userInfo.memberId,
+          postStatus: post.status,
+          postMemberId: post.memberId,
+          postBuyerId: post.buyerId
+        });
+
+        // 판매자인 경우
+        if (userInfo.memberId === post.memberId && post.buyerId) {
+          const response = await axios.get('http://localhost:4989/review/check', {
+            params: {
+              postId: postId,
+              reviewerId: userInfo.memberId,
+              reviewOppositeId: post.buyerId
+            }
+          });
+          if (response.data.success) {
+            console.log('✅ 판매자 후기 존재 여부:', response.data.exists);
+            setHasReview(response.data.exists);
+          }
+        }
+        // 구매자인 경우
+        else if (post.buyerId === userInfo.memberId) {
+          const response = await axios.get('http://localhost:4989/review/check', {
+            params: {
+              postId: postId,
+              reviewerId: userInfo.memberId,
+              reviewOppositeId: post.memberId
+            }
+          });
+          if (response.data.success) {
+            console.log('✅ 구매자 후기 존재 여부:', response.data.exists);
+            setHasReview(response.data.exists);
+          }
+        }
+      } catch (error) {
+        console.error('후기 존재 여부 확인 실패:', error);
+        setHasReview(false);
+      }
+    };
+
+    checkReviewExists();
+  }, [postId, userInfo, post]);
+
   const handleReviewClick = () => {
     setShowReviewModal(true);
   };
 
   const handleReviewSubmitted = () => {
-    setReviewCompleted(true);
     setHasReview(true);
     setShowReviewModal(false);
   };
@@ -215,6 +264,18 @@ const GoodsDetail = () => {
     const isBuyer = post?.buyerId === userInfo?.memberId;
     const statusCheck = post?.status === 'SOLD';
     const noReviewCheck = !hasReview;
+
+    console.log('🔍 canWriteReview 체크:', {
+      isSeller,
+      isBuyer,
+      statusCheck,
+      noReviewCheck,
+      hasReview,
+      userInfoMemberId: userInfo?.memberId,
+      postMemberId: post?.memberId,
+      postBuyerId: post?.buyerId,
+      postStatus: post?.status
+    });
 
     if (isSeller && statusCheck && noReviewCheck) return true;
     if (isBuyer && statusCheck && noReviewCheck) return true;
@@ -267,7 +328,7 @@ const GoodsDetail = () => {
         alert('네트워크/프록시/CORS 문제로 요청이 차단됐습니다. 콘솔 확인!');
         return;
       }
-      const { status, data } = e.response;
+      const { status } = e.response;
       if (status === 401) {
         navi('/login', { replace: true, state: { from: location.pathname } });
       } else if (status === 403) {
@@ -597,7 +658,7 @@ const GoodsDetail = () => {
             </div>
 
             <div className="gooddetail-status-section">
-                {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
+              {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
                 <div className="gooddetail-status-selector">
                   <label htmlFor="status-select" className="gooddetail-status-label">판매 상태 변경</label>
                   <select
@@ -622,7 +683,7 @@ const GoodsDetail = () => {
                   </button>
                 </div>
               )}
-              </div>
+            </div>
 
             <div className="gooddetail-meta">
               <div className="gooddetail-meta-item">
@@ -685,7 +746,7 @@ const GoodsDetail = () => {
                 <>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">브랜드</div>
-                    <div className="gooddetail-info-value">{cars.brand === 'kia' ? '기아' : cars.brand === 'hyundai' ? '현대' : cars.brand === 'benz' ? '벤츠' : cars.brand === 'audi' ? '아우디':'BMW'}</div>
+                    <div className="gooddetail-info-value">{cars.brand === 'kia' ? '기아' : cars.brand === 'hyundai' ? '현대' : cars.brand === 'benz' ? '벤츠' : cars.brand === 'audi' ? '아우디' : 'BMW'}</div>
                     {/* <div className="gooddetail-info-value">{cars.brand}</div> */}
                   </div>
                   <div className="gooddetail-info-item">
@@ -721,10 +782,10 @@ const GoodsDetail = () => {
                       {estate.propertyType === 'apt'
                         ? '아파트'
                         : estate.propertyType === 'studio'
-                        ? '오피스텔'
-                        : estate.propertyType === 'oneroom'
-                        ? '원룸'
-                        : '투룸'}
+                          ? '오피스텔'
+                          : estate.propertyType === 'oneroom'
+                            ? '원룸'
+                            : '투룸'}
                     </div>
                   </div>
                   <div className="gooddetail-info-item">
@@ -745,10 +806,10 @@ const GoodsDetail = () => {
                       {estate.dealType === 'lease'
                         ? '전세'
                         : estate.dealType === 'rent'
-                        ? '월세'
-                        : estate.dealType === 'leaseAndrent'
-                        ? '전월세'
-                        : '매매'}
+                          ? '월세'
+                          : estate.dealType === 'leaseAndrent'
+                            ? '전월세'
+                            : '매매'}
                     </div>
                   </div>
                 </>
@@ -798,16 +859,16 @@ const GoodsDetail = () => {
           postId={postId ? parseInt(postId) : null}
           reviewerId={userInfo?.memberId ? parseInt(userInfo.memberId) : null}
           reviewOppositeId={
-            userInfo?.memberId === post?.memberId 
+            userInfo?.memberId === post?.memberId
               ? (post?.buyerId ? parseInt(post.buyerId) : null)
               : (post?.memberId ? parseInt(post.memberId) : null)
           }
           onReviewSubmitted={handleReviewSubmitted}
         />
-        
+
         {/* 디버깅용 로그 */}
         {showReviewModal && (
-          <div style={{display: 'none'}}>
+          <div style={{ display: 'none' }}>
             {console.log('=== GoodsDetail ReviewModal 데이터 ===')}
             {console.log('postId:', postId, '타입:', typeof postId)}
             {console.log('userInfo?.memberId:', userInfo?.memberId, '타입:', typeof userInfo?.memberId)}
@@ -815,8 +876,8 @@ const GoodsDetail = () => {
             {console.log('post?.buyerId:', post?.buyerId, '타입:', typeof post?.buyerId)}
             {console.log('전달되는 postId:', postId ? parseInt(postId) : null)}
             {console.log('전달되는 reviewerId:', userInfo?.memberId ? parseInt(userInfo.memberId) : null)}
-            {console.log('전달되는 reviewOppositeId:', 
-              userInfo?.memberId === post?.memberId 
+            {console.log('전달되는 reviewOppositeId:',
+              userInfo?.memberId === post?.memberId
                 ? (post?.buyerId ? parseInt(post.buyerId) : null)
                 : (post?.memberId ? parseInt(post.memberId) : null)
             )}
