@@ -150,7 +150,7 @@ const AdminPage = () => {
             <Tab icon={<ReportIcon />} label="게시글 신고 관리" />
             <Tab icon={<FeedbackIcon />} label="채팅 신고 관리" />
             <Tab icon={<ContactSupportIcon />} label="고객 문의 관리" />
-            <Tab icon={<CategoryIcon />} label="카테고리 관리" />
+            {/* <Tab icon={<CategoryIcon />} label="카테고리 관리" /> */}
             <Tab icon={<SettingsIcon />} label="시스템 설정" />
             <Tab icon={<LocationOnIcon />} label="주소 관리" />
           </Tabs>

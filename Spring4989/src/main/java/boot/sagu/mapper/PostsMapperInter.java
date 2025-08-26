@@ -115,4 +115,7 @@ public interface PostsMapperInter {
 	// 후기 조회
 	List<Map<String, Object>> getReviewsForUser(@Param("memberId") Long memberId);
 	
+	// 총 게시물 수 조회
+	int getTotalPostsCount();
+	
 }

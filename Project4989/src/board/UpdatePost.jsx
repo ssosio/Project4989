@@ -457,7 +457,7 @@ const UpdatePost = () => {
                 {
                     postType==='ITEMS' &&(
                     <tr className="item-detail">
-                        <td>
+                        {/* <td>
                             <label>대분류
                                 <select onChange={handleParentChange} value={selectedParent}>
                                     <option value="">대분류 선택</option>
@@ -480,7 +480,7 @@ const UpdatePost = () => {
                                     }
                                 </select>
                             </label>
-                        </td>
+                        </td> */}
                          <td>
                             <label>상태
                                 <select value={conditions} onChange={(e)=>{

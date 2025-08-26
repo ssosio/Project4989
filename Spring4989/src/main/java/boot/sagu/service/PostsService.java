@@ -530,4 +530,18 @@ public class PostsService implements PostsServiceInter {
 		}
 	}
 	
+	// 총 게시물 수 조회
+	public int getTotalPostsCount() {
+		try {
+			System.out.println("🔍 PostsService.getTotalPostsCount 호출됨");
+			int result = postMapper.getTotalPostsCount();
+			System.out.println("📝 총 게시물 수: " + result);
+			return result;
+		} catch (Exception e) {
+			System.err.println("❌ 총 게시물 수 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return 0;
+		}
+	}
+	
 }

@@ -324,7 +324,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  height: 420px; /* 높이 조금 증가 */
+  min-height: 420px; /* 최소 높이로 변경하여 자동 늘어나도록 */
   position: relative;
 }
 
@@ -433,7 +433,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .goods-title-text {
@@ -441,12 +442,12 @@
   font-weight: 600;
   color: #2E5BBA;
   margin: 0 0 12px 0;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  line-height: 1.4;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
   font-family: inherit;
+  /* 자동 줄바꿈을 위해 -webkit-line-clamp 제거 */
 }
 
 .goods-price {
@@ -661,7 +662,7 @@
   }
 
   .goods-card {
-    height: 370px; /* 높이 조금 증가 */
+    min-height: 370px; /* 최소 높이로 변경하여 자동 늘어나도록 */
   }
 
   .goods-image {
@@ -711,7 +712,7 @@
   }
 
   .goods-card {
-    height: 340px; /* 높이 조금 증가 */
+    min-height: 340px; /* 최소 높이로 변경하여 자동 늘어나도록 */
   }
 
   .goods-image {

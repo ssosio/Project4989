@@ -25,6 +25,8 @@ const ReportManagementTab = () => {
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  
+
   useEffect(() => {
     fetchReports();
   }, []);
@@ -33,6 +35,18 @@ const ReportManagementTab = () => {
     try {
       setLoading(true);
       console.log('신고 목록 조회 시작...');
+      
+      // 토큰 확인
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('jwtToken');
+      if (!token) {
+        setSnackbar({
+          open: true,
+          message: '로그인이 필요합니다.',
+          severity: 'error'
+        });
+        return;
+      }
+      
       // 백엔드의 실제 API 엔드포인트 사용
       const response = await api.get('/post/reports');
       console.log('API 응답:', response);
@@ -45,9 +59,19 @@ const ReportManagementTab = () => {
     } catch (error) {
       console.error('신고 목록 조회 실패:', error);
       console.error('에러 상세:', error.response?.data);
+      
+      let errorMessage = '신고 목록을 불러오는데 실패했습니다.';
+      if (error.response?.status === 401) {
+        errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+      } else if (error.response?.status === 403) {
+        errorMessage = '관리자 권한이 필요합니다.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       setSnackbar({
         open: true,
-        message: '신고 목록을 불러오는데 실패했습니다.',
+        message: errorMessage,
         severity: 'error'
       });
     } finally {
@@ -57,6 +81,17 @@ const ReportManagementTab = () => {
 
   const handleStatusChange = async (reportId, newStatus) => {
     try {
+      // 토큰 확인
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('jwtToken');
+      if (!token) {
+        setSnackbar({
+          open: true,
+          message: '로그인이 필요합니다.',
+          severity: 'error'
+        });
+        return;
+      }
+      
       // 백엔드의 실제 API 엔드포인트 사용
       const response = await api.put(`/post/reports/${reportId}/status?status=${newStatus}`);
       if (response.data.success) {
@@ -70,9 +105,19 @@ const ReportManagementTab = () => {
       }
     } catch (error) {
       console.error('상태 업데이트 실패:', error);
+      
+      let errorMessage = '상태 업데이트에 실패했습니다.';
+      if (error.response?.status === 401) {
+        errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+      } else if (error.response?.status === 403) {
+        errorMessage = '관리자 권한이 필요합니다.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       setSnackbar({
         open: true,
-        message: '상태 업데이트에 실패했습니다.',
+        message: errorMessage,
         severity: 'error'
       });
     }
@@ -86,7 +131,7 @@ const ReportManagementTab = () => {
         return '조사중';
       case 'RESOLVED':
         return '해결됨';
-      case 'DISMISSED':
+      case 'REJECTED':
         return '기각됨';
       default:
         return status;
@@ -101,7 +146,7 @@ const ReportManagementTab = () => {
         return 'info';
       case 'RESOLVED':
         return 'success';
-      case 'DISMISSED':
+      case 'REJECTED':
         return 'error';
       default:
         return 'default';
@@ -212,9 +257,8 @@ const ReportManagementTab = () => {
                           displayEmpty
                         >
                           <MenuItem value="PENDING">대기중</MenuItem>
-                          <MenuItem value="INVESTIGATING">조사중</MenuItem>
                           <MenuItem value="RESOLVED">해결됨</MenuItem>
-                          <MenuItem value="DISMISSED">기각됨</MenuItem>
+                          <MenuItem value="REJECTED">기각됨</MenuItem>
                         </Select>
                       </FormControl>
                     </TableCell>

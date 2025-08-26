@@ -304,6 +304,7 @@ export const Header = () => {
 
                 {!searchLoading && !searchError && searchResults.length > 0 && (
                   <List sx={{ p: 0 }}>
+                    {console.log('검색 결과 렌더링 중, 개수:', searchResults.length)}
                     {searchResults.map((post, idx) => {
                       const key = post.postId ?? post.post_id ?? post.id ?? idx;
                       // postType 정규화 (snake_case -> camelCase 변환)
@@ -446,42 +447,49 @@ export const Header = () => {
                       );
                     })}
 
-                    {searchResults.length >= 5 && (
-                      <ListItem disablePadding>
-                        <ListItemButton
-                          onClick={() => {
-                            navi(`/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
-                            handleSearchClose();
-                          }}
-                          sx={{ 
-                            backgroundColor: '#4A90E2', 
-                            '&:hover': { 
-                              backgroundColor: '#357ABD',
-                              transform: 'translateY(-1px)',
-                              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.3)'
-                            },
-                            py: 1.5,
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          <ListItemText
-                            primary={
-                              <Typography 
-                                variant="body2" 
-                                sx={{ 
-                                  textAlign: 'center', 
-                                  color: '#FFFFFF', 
-                                  fontWeight: 700,
-                                  fontSize: '13px'
-                                }}
-                              >
-                                🔍 더 많은 결과 보기 ({searchResults.length}개 이상)
-                              </Typography>
-                            }
-                          />
-                        </ListItemButton>
-                      </ListItem>
-                    )}
+                    {/* 디버깅용: 항상 버튼 표시 */}
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('더 많은 결과보기 클릭됨');
+                          console.log('검색어:', searchQuery.trim());
+                          console.log('이동할 경로:', `/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
+                          console.log('검색 결과 개수:', searchResults.length);
+                          navi(`/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
+                          handleSearchClose();
+                        }}
+                        sx={{ 
+                          backgroundColor: '#4A90E2', 
+                          '&:hover': { 
+                            backgroundColor: '#357ABD',
+                            transform: 'translateY(-1px)',
+                            boxShadow: '0 2px 8px rgba(74, 144, 226, 0.3)'
+                          },
+                          py: 1.5,
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                          zIndex: 9999
+                        }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                textAlign: 'center', 
+                                color: '#FFFFFF', 
+                                fontWeight: 700,
+                                fontSize: '13px'
+                              }}
+                            >
+                              🔍 더 많은 결과 보기 ({searchResults.length}개 이상)
+                            </Typography>
+                          }
+                        />
+                      </ListItemButton>
+                    </ListItem>
                   </List>
                 )}
 

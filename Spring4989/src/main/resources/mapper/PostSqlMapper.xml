@@ -781,4 +781,8 @@
       ORDER BY tr.created_at DESC
    </select>
 
+<!-- 총 게시물 수 조회 -->
+   <select id="getTotalPostsCount" resultType="int">
+      SELECT COUNT(*) FROM posts
+   </select>
 </mapper>

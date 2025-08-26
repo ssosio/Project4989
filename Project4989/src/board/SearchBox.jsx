@@ -12,6 +12,11 @@ export default function SearchBox() {
   // URL 파라미터에서 검색어 가져오기
   const urlParams = new URLSearchParams(location.search);
   const initialKeyword = urlParams.get('keyword') || "";
+  
+  console.log('=== SearchBox 컴포넌트 로드 ===');
+  console.log('현재 location.search:', location.search);
+  console.log('URL 파라미터:', urlParams.toString());
+  console.log('추출된 keyword:', initialKeyword);
 
   const [q, setQ] = useState(initialKeyword);       // 입력값
   const [qd, setQd] = useState(initialKeyword);     // 디바운스된 값
@@ -247,12 +252,17 @@ export default function SearchBox() {
                         <img
                           src={imageUrl}
                           alt={post.title}
+                          onError={(e) => {
+                            console.error('이미지 로드 실패:', imageUrl);
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
                         />
-                      ) : (
-                        <div className="goods-image-placeholder">
-                          이미지 없음
-                        </div>
-                      )}
+                      ) : null}
+                      <div className="goods-image-placeholder" style={{ display: imageUrl ? 'none' : 'block' }}>
+                        <div className="camera-icon">📷</div>
+                        <div className="placeholder-text">등록된 사진이 없습니다</div>
+                      </div>
                     </div>
                     <div className="goods-info">
                       <h3 className="goods-title-text">

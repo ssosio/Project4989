@@ -17,6 +17,7 @@ import axios from 'axios';
 const StatsCards = ({ stats }) => {
   const [activeChatroom, setActiveChatroom] = useState(0);
   const [chatReports, setChatReports] = useState(0);
+  const [totalPosts, setTotalPosts] = useState(0);
 
   useEffect(() => {
     const list = () => {
@@ -31,6 +32,26 @@ const StatsCards = ({ stats }) => {
         });
     };
     list()
+  }, [])
+
+  useEffect(() => {
+    // 총 게시글 수 가져오기
+    const fetchTotalPosts = () => {
+      const url = "http://localhost:4989/post/total-count";
+      console.log("총 게시글 수 API 호출:", url);
+      axios.get(url)
+        .then(res => {
+          console.log("총 게시글 수 API 응답:", res.data);
+          if (res.data.success) {
+            setTotalPosts(res.data.totalPosts);
+            console.log("설정된 총 게시글 수:", res.data.totalPosts);
+          }
+        })
+        .catch(err => {
+          console.error("총 게시글 수 조회 에러:", err);
+        });
+    };
+    fetchTotalPosts();
   }, [])
 
   return (
@@ -59,7 +80,7 @@ const StatsCards = ({ stats }) => {
           <CardContent>
             <PostAddIcon sx={{ fontSize: 40, mb: 1 }} />
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.totalPosts.toLocaleString()}
+              {totalPosts}
             </Typography>
             <Typography variant="body2">총 게시글</Typography>
           </CardContent>

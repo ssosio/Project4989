@@ -59,5 +59,8 @@ public interface PostsServiceInter {
 	
 	// 후기 조회 메서드 추가
 	public List<Map<String, Object>> getReviewsForUser(Long memberId);
+	
+	// 총 게시물 수 조회
+	public int getTotalPostsCount();
 
 }

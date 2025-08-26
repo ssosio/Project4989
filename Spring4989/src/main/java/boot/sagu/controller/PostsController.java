@@ -526,8 +526,24 @@ public class PostsController {
    
    // 신고 목록 조회 API
    @GetMapping("/reports")
-   public ResponseEntity<Map<String, Object>> getAllReports() {
+   public ResponseEntity<Map<String, Object>> getAllReports(
+         @RequestHeader("Authorization") String authorization) {
       try {
+         // JWT 토큰 검증
+         if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+               .body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+         }
+         
+         String token = authorization.substring(7);
+         long memberId = jwtUtil.extractMemberId(token);
+         
+         // 관리자 권한 확인 (memberId가 1인 경우 관리자로 가정)
+         if (memberId != 1) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+               .body(Map.of("success", false, "message", "관리자 권한이 필요합니다."));
+         }
+         
          List<Map<String, Object>> reports = postService.getAllReports();
          return ResponseEntity.ok(Map.of(
             "success", true,
@@ -540,12 +556,28 @@ public class PostsController {
       }
    }
    
-   // 신고 상태 업데이트 API
-   @PutMapping("/reports/{reportId}/status")
-   public ResponseEntity<Map<String, Object>> updateReportStatus(
-         @PathVariable Long reportId,
-         @RequestParam String status) {
+       // 신고 상태 업데이트 API
+    @PutMapping("/reports/{reportId}/status")
+    public ResponseEntity<Map<String, Object>> updateReportStatus(
+          @PathVariable("reportId") Long reportId,
+          @RequestParam("status") String status,
+          @RequestHeader("Authorization") String authorization) {
       try {
+         // JWT 토큰 검증
+         if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+               .body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+         }
+         
+         String token = authorization.substring(7);
+         long memberId = jwtUtil.extractMemberId(token);
+         
+         // 관리자 권한 확인 (memberId가 1인 경우 관리자로 가정)
+         if (memberId != 1) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+               .body(Map.of("success", false, "message", "관리자 권한이 필요합니다."));
+         }
+         
          int result = postService.updateReportStatus(reportId, status);
          if (result > 0) {
             return ResponseEntity.ok(Map.of(
@@ -589,6 +621,22 @@ public class PostsController {
          e.printStackTrace();
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(Map.of("success", false, "message", "후기 조회 중 오류가 발생했습니다."));
+      }
+   }
+   
+   // 총 게시글 수 조회 API
+   @GetMapping("/total-count")
+   public ResponseEntity<Map<String, Object>> getTotalPostsCount() {
+      try {
+         int totalPosts = postService.getTotalPostsCount();
+         return ResponseEntity.ok(Map.of(
+            "success", true,
+            "totalPosts", totalPosts
+         ));
+      } catch (Exception e) {
+         e.printStackTrace();
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(Map.of("success", false, "message", "총 게시글 수 조회 중 오류가 발생했습니다."));
       }
    }
    
