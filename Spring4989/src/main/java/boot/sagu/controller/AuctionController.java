@@ -64,8 +64,10 @@ public class AuctionController {
 	private final Map<String, Set<String>> auctionRoomUsers = new ConcurrentHashMap<>();
 
 	@GetMapping("/auction")
-	public List<PostsDto> getAuctionList() {
-	   return auctionService.getAuctionPosts();
+	public List<PostsDto> getAuctionList(
+		@RequestParam(value = "sort", defaultValue = "time") String sortType
+	) {
+	   return auctionService.getAuctionPosts(sortType);
 	}
 
 	@GetMapping("/auction/detail/{postId}")
@@ -131,7 +133,7 @@ public class AuctionController {
 
 	//수동 경매 종료 API
 	 @PostMapping("/auction/end/{postId}")
-	    public ResponseEntity<?> endAuction(@PathVariable long postId,
+	    public ResponseEntity<?> endAuction(@PathVariable("postId") long postId,
 	                                        @RequestHeader(value = "Authorization", required = false) String bearer) {
 	        try {
 	            // (선택) bearer로 작성자 검증 넣고 싶으면 여기에서

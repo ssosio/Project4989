@@ -14,7 +14,7 @@ import boot.sagu.dto.PostsDto;
 
 @Mapper
 public interface AuctionMapper {
-	public List<PostsDto> getAuctionPosts(); // 경매글 리스트용
+	public List<PostsDto> getAuctionPosts(@Param("sortType") String sortType); // 경매글 리스트용 (정렬 포함)
 	public PostsDto getAuctionDetail(@Param("postId") long postId); // 경매글 상세 조회용
 	public void insertBid(AuctionDto auctionDto); // 입찰 정보 저장용
 	public AuctionDto getHighestBid(@Param("postId") long postId); // 최고가 조회용

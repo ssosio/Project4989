@@ -21,8 +21,8 @@ spring:
     include: 
       - oauth
       - coolsms
-#  jackson:
-#    property-naming-strategy: SNAKE_CASE
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 #mybatis
 mybatis:
