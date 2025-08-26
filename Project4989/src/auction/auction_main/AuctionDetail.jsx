@@ -1,5 +1,5 @@
 // src/auction/auction_main/AuctionDetail.jsx
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import { AuthContext } from '../../context/AuthContext';
@@ -48,6 +48,7 @@ const AuctionDetail = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [bidHistory, setBidHistory] = useState([]);
+  const wsClientRef = useRef(null);
 
   //보증금 결제용
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -60,19 +61,20 @@ const AuctionDetail = () => {
   const [escrowAmount, setEscrowAmount] = useState(0);
   const [escrowMerchantUid, setEscrowMerchantUid] = useState('');
 
-  const SERVER_IP = '192.168.10.137';
-  const SERVER_PORT = '4989';
-
-  const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+  // API 베이스 URL에서 서버 정보 추출
+  const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4989';
+  const apiUrl = new URL(BASE);
+  const SERVER_IP = apiUrl.hostname;
+  const SERVER_PORT = apiUrl.port || '4989';
 
   const normalizeDetail = (d = {}) => ({
     ...d,
-    memberId: d.memberId ?? d.member_id ?? d.writerId ?? d.writer_id,
-    createdAt: d.createdAt ?? d.created_at ?? d.createDate ?? d.created_date,
-    auctionEndTime: d.auctionEndTime ?? d.auction_end_time ?? d.endTime ?? d.end_time,
-    price: d.price ?? d.startPrice ?? d.start_price ?? 0,
-    winnerId: d.winnerId ?? d.winner_id,
-    viewCount: d.viewCount ?? d.view_count ?? 0,
+    memberId: d.memberId ?? d.memberId ?? d.writerId ?? d.writerId,
+    createdAt: d.createdAt ?? d.createdAt ?? d.createDate ?? d.createDate,
+    auctionEndTime: d.auctionEndTime ?? d.auctionEndTime ?? d.endTime ?? d.endTime,
+    price: d.price ?? d.startPrice ?? d.startPrice ?? 0,
+    winnerId: d.winnerId ?? d.winnerId,
+    viewCount: d.viewCount ?? d.viewCount ?? 0,
   });
 
   const normalizeHighestBid = (b) =>
@@ -80,10 +82,10 @@ const AuctionDetail = () => {
     ? {
         ...b,
         bidderId: Number(
-          b.bidderId ?? b.bidder_id ?? b.memberId ?? b.member_id ?? 0
+          b.bidderId ?? b.bidderId ?? b.memberId ?? b.memberId ?? 0
         ),
-        bidAmount: Number(b.bidAmount ?? b.bid_amount ?? 0),
-        bidTime: b.bidTime ?? b.bid_time ?? null,
+        bidAmount: Number(b.bidAmount ?? b.bidAmount ?? 0),
+        bidTime: b.bidTime ?? b.bidTime ?? null,
       }
     : null;
 
@@ -119,14 +121,28 @@ const AuctionDetail = () => {
       }
 
       try {
-        const joinRes = await api.post(`/auction/room/join/${postId}`, { sessionId });
-        if (joinRes.data?.success) setUserCount(joinRes.data.userCount);
+        console.log('🚪 방 입장 시도 - postId:', postId, 'sessionId:', sessionId);
+        const requestBody = { sessionId };
+        console.log('🚪 방 입장 요청 바디:', requestBody);
+        const joinRes = await api.post(`/auction/room/join/${postId}`, requestBody);
+        console.log('🚪 방 입장 응답:', joinRes.data);
+        if (joinRes.data?.success) {
+          console.log('✅ 방 입장 성공, 인원수 설정:', joinRes.data.userCount);
+          setUserCount(joinRes.data.userCount);
+        } else {
+          console.log('❌ 방 입장 실패 - success가 false');
+          console.log('❌ 방 입장 실패 메시지:', joinRes.data?.message);
+          console.log('❌ 방 입장 실패 상세:', joinRes.data);
+        }
       } catch (err) {
-        console.error('방 입장 실패:', err);
+        console.error('❌ 방 입장 실패:', err);
+        console.error('❌ 에러 상세:', err.response?.data);
       }
 
       getAuctionPhotos();
       getBidHistory();
+      checkFavoriteStatus();
+      getFavoriteCount();
     })();
 
     const handleBeforeUnload = () => {
@@ -180,12 +196,22 @@ const AuctionDetail = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
+      console.log('🔄 방 인원수 조회 시작 - postId:', postId);
       api
         .get(`/auction/room/count/${postId}`)
         .then((res) => {
-          if (res.data?.success) setUserCount(res.data.userCount);
+          console.log('📊 방 인원수 조회 응답:', res.data);
+          if (res.data?.success) {
+            console.log('✅ 방 인원수 설정:', res.data.userCount);
+            setUserCount(res.data.userCount);
+          } else {
+            console.log('❌ 방 인원수 조회 실패 - success가 false');
+          }
         })
-        .catch((err) => console.error('방 인원수 조회 실패:', err));
+        .catch((err) => {
+          console.error('❌ 방 인원수 조회 실패:', err);
+          console.error('❌ 에러 상세:', err.response?.data);
+        });
     }, 10000);
     return () => clearInterval(interval);
   }, [postId]);
@@ -229,11 +255,22 @@ const AuctionDetail = () => {
   }, [bidMessage]);
 
   useEffect(() => {
+    console.log('🔌 WebSocket useEffect 실행 - postId:', postId);
+    
+    // 이미 연결된 클라이언트가 있다면 정리
+    if (wsClientRef.current) {
+      console.log('🔌 기존 WebSocket 클라이언트 정리');
+      wsClientRef.current.deactivate();
+    }
+    
     const client = new Client({
       brokerURL: `ws://${SERVER_IP}:${SERVER_PORT}/ws`,
       onConnect: () => {
+        console.log('🔌 WebSocket 연결됨 - postId:', postId, 'sessionId:', sessionId);
         client.subscribe(`/topic/auction/${postId}`, (message) => {
+          console.log('📡 WebSocket 메시지 수신:', message.body);
           const data = JSON.parse(message.body);
+          console.log('📡 파싱된 데이터:', data);
           handleSocketMessage(data);
         });
 
@@ -250,13 +287,17 @@ const AuctionDetail = () => {
           }
         }, 1000);
       },
-      onDisconnect: () => {},
+      onDisconnect: () => {
+        console.log('❌ WebSocket 연결이 끊어졌습니다.');
+      },
       onStompError: (error) => {
-        console.error('경매 소켓 에러:', error);
+        console.error('❌ 경매 소켓 에러:', error);
       }
     });
 
+    wsClientRef.current = client;
     client.activate();
+    
     return () => {
       if (client.connected) {
         client.publish({
@@ -265,26 +306,54 @@ const AuctionDetail = () => {
         });
         setTimeout(() => client.deactivate(), 500);
       }
+      wsClientRef.current = null;
     };
   }, [postId, sessionId, userInfo]);
 
   const handleSocketMessage = (data) => {
     switch (data.type) {
       case 'BID_UPDATE': {
+        console.log('📡 WebSocket BID_UPDATE 수신:', data);
+        console.log('📡 입찰 데이터:', data.bid);
+        console.log('📡 입찰자 데이터:', data.bidder);
+        
         setHighestBid(data.bid);
         if (data.bidder) {
-          setHighestBidderNickname(data.bidder.nickname || `ID: ${data.bidder.id}`);
+          setHighestBidderNickname(data.bidder.nickname || `ID: ${data.bidder.memberId || data.bidder.id}`);
         }
         setBidMessage(`${data.bidder?.nickname || '누군가'}님이 입찰했습니다!`);
         setBidMessageType('info');
 
         const newBidRecord = {
-          id: Date.now(),
-          bidderName: data.bidder?.nickname || `ID: ${data.bidder?.id}`,
-          bidAmount: data.bid?.bidAmount || 0,
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          bidderName: data.bidder?.nickname || `ID: ${data.bidder?.memberId || data.bidder?.id}`,
+          bidAmount: Number(data.bid?.bidAmount || data.bid?.bid_amount || 0),
           bidTime: new Date().toISOString()
         };
-        setBidHistory((prev) => [newBidRecord, ...prev].slice(0, 5));
+        console.log('📡 새 입찰 기록 생성:', newBidRecord);
+        console.log('📡 data.bid 전체:', data.bid);
+        console.log('📡 data.bid.bidAmount:', data.bid?.bidAmount);
+        console.log('📡 data.bid.bid_amount:', data.bid?.bid_amount);
+        
+        setBidHistory((prev) => {
+          console.log('📡 이전 입찰 기록:', prev);
+          console.log('📡 새 입찰 기록:', newBidRecord);
+          
+          // 중복 방지: 같은 시간대에 같은 입찰자면 추가하지 않음
+          const isDuplicate = prev.some(existing => 
+            existing.bidderName === newBidRecord.bidderName && 
+            Math.abs(new Date(existing.bidTime).getTime() - new Date(newBidRecord.bidTime).getTime()) < 1000
+          );
+          
+          if (isDuplicate) {
+            console.log('📡 중복 입찰 기록 감지, 추가하지 않음');
+            return prev;
+          }
+          
+          const updated = [newBidRecord, ...prev].slice(0, 5);
+          console.log('📡 업데이트된 입찰 기록:', updated);
+          return updated;
+        });
 
         if (data.auctionDetail) setAuctionDetail(data.auctionDetail);
         break;
@@ -292,7 +361,7 @@ const AuctionDetail = () => {
      case 'AUCTION_END': {
         setTimeRemaining('경매 종료');
         setAuctionDetail((prev) => ({ ...prev, status: 'SOLD', winnerId: data.winnerId }));
-        if (data.winner) setWinnerNickname(data.winner.nickname || `ID: ${data.winner.id}`);
+        if (data.winner) setWinnerNickname(data.winner.nickname || `ID: ${data.winner.memberId || data.winner.id}`);
         setBidMessage('경매가 종료되었습니다!');
         setBidMessageType('success');
 
@@ -305,6 +374,8 @@ const AuctionDetail = () => {
       }
 
       case 'USER_COUNT_UPDATE': {
+        console.log('📡 WebSocket USER_COUNT_UPDATE 수신:', data);
+        console.log('📡 userCount 값:', data.userCount);
         setUserCount(data.userCount);
         break;
       }
@@ -326,8 +397,11 @@ const AuctionDetail = () => {
   };
 
   const formatPrice = (price) => {
+    console.log('💰 formatPrice 호출 - price:', price, 'type:', typeof price);
     if (!price || price === 0) return '-';
-    return `${price.toLocaleString()} 원`;
+    const formatted = `${price.toLocaleString()} 원`;
+    console.log('💰 formatPrice 결과:', formatted);
+    return formatted;
   };
 
   const handleAmountClick = (amount) => {
@@ -510,7 +584,9 @@ const handleEscrowComplete = async () => {
     ]);
     setAuctionDetail(detail.data);
     setHighestBid(hb.data);
-  } catch {}
+  } catch (error) {
+    console.error('에스크로 완료 후 데이터 갱신 실패:', error);
+  }
 };
 
 const handleEscrowCancel = () => {
@@ -537,8 +613,12 @@ const handleEscrowCancel = () => {
   const checkFavoriteStatus = async () => {
     if (!userInfo?.memberId) return;
     try {
-      const res = await api.get(`/auction/favorite/check/${postId}/${userInfo.memberId}`);
-      if (res.data?.success) setIsFavorite(res.data.isFavorite);
+      const res = await api.get(`/auction/favorite/check`, { 
+        params: { postId } 
+      });
+      if (res.data?.success) {
+        setIsFavorite(res.data.isFavorite);
+      }
     } catch (err) {
       console.error('찜 상태 확인 실패:', err);
     }
@@ -550,13 +630,12 @@ const handleEscrowCancel = () => {
 
     setFavoriteLoading(true);
     try {
-      const res = await api.post(`/auction/favorite/toggle`, {
-        memberId: userInfo.memberId,
-        postId: parseInt(postId, 10)
+      const res = await api.post(`/auction/favorite/toggle`, null, { 
+        params: { postId } 
       });
       if (res.data?.success) {
         setIsFavorite(res.data.isFavorite);
-        getFavoriteCount();
+        setFavoriteCount(res.data.favoriteCount);
       }
     } catch (err) {
       console.error('찜 토글 실패:', err);
@@ -568,9 +647,14 @@ const handleEscrowCancel = () => {
   const getFavoriteCount = async () => {
     if (!postId) return;
     try {
-      const res = await api.get(`/auction/favorite/count/${postId}`);
-      if (res.data?.success) setFavoriteCount(res.data.favoriteCount || 0);
-      else setFavoriteCount(0);
+      const res = await api.get(`/auction/favorite/count`, { 
+        params: { postId } 
+      });
+      if (res.data?.success) {
+        setFavoriteCount(res.data.favoriteCount || 0);
+      } else {
+        setFavoriteCount(0);
+      }
     } catch (err) {
       console.error('찜 개수 조회 실패:', err);
       setFavoriteCount(0);
@@ -594,11 +678,26 @@ const handleEscrowCancel = () => {
 
   const getBidHistory = async () => {
     if (!postId) return;
+    console.log('🔍 입찰 기록 조회 시작 - postId:', postId);
     try {
       const res = await api.get(`/auction/bid-history/${postId}`);
-      setBidHistory(res.data || []);
+      console.log('🔍 입찰 기록 원본 데이터:', res.data);
+      
+      // 데이터 정규화
+      const normalizedHistory = (res.data || []).map((bid, index) => {
+        const normalized = {
+          ...bid,
+          bidAmount: Number(bid.bidAmount || 0),
+          id: bid.id || `${bid.bidTime}-${bid.bidderName}-${index}`
+        };
+        console.log(`🔍 입찰 기록 ${index + 1}번 정규화:`, normalized);
+        return normalized;
+      });
+      
+      console.log('🔍 최종 정규화된 입찰 기록:', normalizedHistory);
+      setBidHistory(normalizedHistory);
     } catch (err) {
-      console.error('입찰 기록 조회 실패:', err);
+      console.error('❌ 입찰 기록 조회 실패:', err);
       setBidHistory([]);
     }
   };
@@ -710,7 +809,7 @@ const handleEscrowCancel = () => {
       checkFavoriteStatus();
       getFavoriteCount();
     }
-  }, [userInfo?.memberId, postId]);
+  }, [userInfo?.memberId, postId]); // 의존성 배열에서 userInfo 전체를 제거하고 memberId만 사용
 
   if (loading) {
     return (
@@ -877,13 +976,17 @@ const handleEscrowCancel = () => {
               ) : photos.length > 0 ? (
                 <div className="photo-slider">
                   <div className="main-photo-container">
-                    <img
-                      src={`${BASE}/auction/image/${photos[currentPhotoIndex]?.photo_url}`}
-                      alt={`상품 이미지 ${currentPhotoIndex + 1}`}
-                      className="main-photo clickable"
-                      onClick={() => openImageModal(currentPhotoIndex)}
-                      title="클릭하여 크게 보기"
-                    />
+                    {photos[currentPhotoIndex]?.photoUrl ? (
+                      <img
+                        src={`${BASE}/auction/image/${encodeURIComponent(photos[currentPhotoIndex].photoUrl)}`}
+                        alt={`상품 이미지 ${currentPhotoIndex + 1}`}
+                        className="main-photo clickable"
+                        onClick={() => openImageModal(currentPhotoIndex)}
+                        title="클릭하여 크게 보기"
+                      />
+                    ) : (
+                      <div className="image-placeholder"><span>📷 이미지를 불러올 수 없습니다</span></div>
+                    )}
                     {photos.length > 1 && (
                       <>
                         <button className="photo-nav-btn prev-btn" onClick={prevPhoto} title="이전 사진" />
@@ -896,21 +999,25 @@ const handleEscrowCancel = () => {
                     <div className="photo-thumbnails">
                       {photos.map((photo, index) => (
                         <button
-                          key={photo.photo_id}
+                          key={`photo-${photo.photo_id}-${index}`}
                           className={`thumbnail-btn ${index === currentPhotoIndex ? 'active' : ''}`}
                           onClick={() => goToPhoto(index)}
                           title={`사진 ${index + 1}`}
                         >
-                          <img
-                            src={`${BASE}/auction/image/${photo.photo_url}`}
-                            alt=""
-                            className="thumbnail-img clickable"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openImageModal(index);
-                            }}
-                            title="클릭하여 크게 보기"
-                          />
+                          {photo.photoUrl ? (
+                            <img
+                              src={`${BASE}/auction/image/${encodeURIComponent(photo.photoUrl)}`}
+                              alt=""
+                              className="thumbnail-img clickable"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openImageModal(index);
+                              }}
+                              title="클릭하여 크게 보기"
+                            />
+                          ) : (
+                            <div className="thumbnail-placeholder">📷</div>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -990,13 +1097,16 @@ const handleEscrowCancel = () => {
 
                 <div className="bid-history-list">
                   {bidHistory.length > 0 ? (
-                    bidHistory.map((bid) => (
-                      <div key={bid.id} className="bid-history-item">
-                        <span className="bidder-name">{bid.bidderName}</span>
-                        <span className="bid-amount">{formatPrice(bid.bidAmount)}</span>
-                        <span className="bid-time">{getTimeAgo(bid.bidTime)}</span>
-                      </div>
-                    ))
+                    bidHistory.map((bid, index) => {
+                      console.log(`🎯 입찰 기록 렌더링 ${index + 1}번:`, bid);
+                      return (
+                        <div key={bid.id || `bid-${index}-${bid.bidTime}-${bid.bidderName}`} className="bid-history-item">
+                          <span className="bidder-name">{bid.bidderName}</span>
+                          <span className="bid-amount">{formatPrice(bid.bidAmount)}</span>
+                          <span className="bid-time">{getTimeAgo(bid.bidTime)}</span>
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="no-bid-history">
                       <span style={{ color: '#6c757d', fontStyle: 'italic' }}>아직 입찰 기록이 없습니다</span>
@@ -1128,11 +1238,15 @@ const handleEscrowCancel = () => {
           <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close-btn" onClick={closeImageModal}>✕</button>
             <div className="modal-image-container">
-              <img
-                src={`${BASE}/auction/image/${photos[modalPhotoIndex]?.photo_url}`}
-                alt={`상품 이미지 ${modalPhotoIndex + 1}`}
-                className="modal-image"
-              />
+              {photos[modalPhotoIndex]?.photoUrl ? (
+                <img
+                  src={`${BASE}/auction/image/${encodeURIComponent(photos[modalPhotoIndex].photoUrl)}`}
+                  alt={`상품 이미지 ${modalPhotoIndex + 1}`}
+                  className="modal-image"
+                />
+              ) : (
+                <div className="modal-image-placeholder"><span>📷 이미지를 불러올 수 없습니다</span></div>
+              )}
               {photos.length > 1 && (
                 <>
                   <button className="modal-nav-btn modal-prev-btn" onClick={prevModalPhoto} title="이전 사진" />
@@ -1144,13 +1258,13 @@ const handleEscrowCancel = () => {
               <div className="modal-thumbnails">
                 {photos.map((photo, index) => (
                   <button
-                    key={photo.photo_id}
+                    key={`modal-photo-${photo.photo_id}-${index}`}
                     className={`modal-thumbnail-btn ${index === modalPhotoIndex ? 'active' : ''}`}
                     onClick={() => setModalPhotoIndex(index)}
                     title={`사진 ${index + 1}`}
                   >
                     <img
-                      src={`${BASE}/auction/image/${photo.photo_url}`}
+                      src={`${BASE}/auction/image/${encodeURIComponent(photo.photoUrl)}`}
                       alt=""
                       className="modal-thumbnail-img"
                     />

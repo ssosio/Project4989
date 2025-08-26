@@ -3,6 +3,7 @@ package boot.sagu.controller;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import boot.sagu.dto.PostsDto;
 import boot.sagu.service.AuctionService;
 import boot.sagu.service.EscrowService;
 import boot.sagu.service.PortOneService;
+import boot.sagu.service.PostsService;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5176", "http://localhost:5177"})
@@ -59,6 +61,9 @@ public class AuctionController {
 	// 클래스 필드에 추가
 	@Autowired
 	private EscrowService escrowService;
+	
+	@Autowired
+	private PostsService postsService;
 	
 	// 경매 방별 현재 접속 사용자 관리 (postId -> Set<sessionId>)
 	private final Map<String, Set<String>> auctionRoomUsers = new ConcurrentHashMap<>();
@@ -94,11 +99,14 @@ public class AuctionController {
 	}
 	
 	// 찜 상태 확인
-	@GetMapping("/auction/favorite/check/{postId}/{memberId}")
-	public Map<String, Object> checkFavoriteStatus(@PathVariable("postId") long postId, @PathVariable("memberId") long memberId) {
+	@GetMapping("/auction/favorite/check")
+	public Map<String, Object> checkFavoriteStatus(@RequestParam("post_id") Long postId,
+	         @RequestHeader("Authorization") String authorization) {
 	   Map<String, Object> response = new HashMap<>();
 	   try {
-	       boolean isFavorite = auctionService.checkFavoriteStatus(postId, memberId);
+	       String token = authorization.substring(7);
+	       long memberId = jwtUtil.extractMemberId(token);
+	       boolean isFavorite = postsService.isFavorited(postId, memberId);
 	       response.put("isFavorite", isFavorite);
 	       response.put("success", true);
 	   } catch (Exception e) {
@@ -110,16 +118,33 @@ public class AuctionController {
 	
 	// 찜 추가/삭제 토글
 	@PostMapping("/auction/favorite/toggle")
-	public Map<String, Object> toggleFavorite(@RequestBody FavoritesDto favoritesDto) {
-	   return auctionService.toggleFavorite(favoritesDto);
+	public Map<String, Object> toggleFavorite(@RequestParam("post_id") Long postId,
+	         @RequestHeader("Authorization") String authorization) {
+	   Map<String, Object> response = new HashMap<>();
+	   try {
+	       String token = authorization.substring(7);
+	       long memberId = jwtUtil.extractMemberId(token);
+	       boolean isFavorite = postsService.toggleFavorite(postId, memberId);
+	       int favoriteCount = postsService.countFavorite(postId);
+	       
+	       response.put("success", true);
+	       response.put("isFavorite", isFavorite);
+	       response.put("favoriteCount", favoriteCount);
+	       response.put("action", isFavorite ? "added" : "removed");
+	       response.put("message", isFavorite ? "찜에 추가되었습니다." : "찜이 삭제되었습니다.");
+	   } catch (Exception e) {
+	       response.put("success", false);
+	       response.put("message", "찜 처리 실패: " + e.getMessage());
+	   }
+	   return response;
 	}
 
-		// 찜 개수 조회
-	@GetMapping("/auction/favorite/count/{postId}")
-	public Map<String, Object> getFavoriteCount(@PathVariable("postId") long postId) {
+	// 찜 개수 조회
+	@GetMapping("/auction/favorite/count")
+	public Map<String, Object> getFavoriteCount(@RequestParam("post_id") Long postId) {
 		Map<String, Object> response = new HashMap<>();
 	   try {
-	       int favoriteCount = auctionService.getFavoriteCount(postId);
+	       int favoriteCount = postsService.countFavorite(postId);
 	       response.put("success", true);
 	       response.put("favoriteCount", favoriteCount);
 	   } catch (Exception e) {
@@ -155,11 +180,13 @@ public class AuctionController {
     @GetMapping("/auction/image/{filename}")
 	public ResponseEntity<Resource> getImage(@PathVariable("filename") String filename) {
 		try {
-			// 파일 경로에서 이미지 파일 읽기
-			Path filePath = Paths.get("src/main/webapp/save/" + filename);
+			// 파일 경로에서 이미지 파일 읽기 (절대 경로 사용)
+			String currentDir = System.getProperty("user.dir");
+			Path filePath = Paths.get(currentDir, "src", "main", "webapp", "save", filename);
 			
 			// 파일이 존재하는지 확인
 			if (!Files.exists(filePath)) {
+				System.err.println("파일을 찾을 수 없습니다: " + filePath);
 				return ResponseEntity.notFound().build();
 			}
 			
@@ -173,6 +200,7 @@ public class AuctionController {
 				.body(resource);
 				
 		} catch (Exception e) {
+			System.err.println("이미지 로드 중 오류: " + e.getMessage());
 			return ResponseEntity.internalServerError().build();
 		}
 	}
@@ -214,26 +242,38 @@ public class AuctionController {
 	// 현재 방 인원수 조회
 	@GetMapping("/auction/room/count/{postId}")
 	public Map<String, Object> getRoomUserCount(@PathVariable("postId") String postId) {
+		System.out.println("🔍 방 인원수 조회 요청 - postId: " + postId);
 		Map<String, Object> response = new HashMap<>();
 		try {
 			Set<String> users = auctionRoomUsers.getOrDefault(postId, new HashSet<>());
+			int userCount = users.size();
+			System.out.println("🔍 방 인원수: " + userCount + "명");
+			System.out.println("🔍 방 사용자 목록: " + users);
 			response.put("success", true);
-			response.put("userCount", users.size());
+			response.put("user_count", userCount);
 		} catch (Exception e) {
+			System.err.println("❌ 방 인원수 조회 실패: " + e.getMessage());
 			response.put("success", false);
-			response.put("userCount", 0);
+			response.put("user_count", 0);
 			response.put("message", "방 인원수 조회 실패: " + e.getMessage());
 		}
+		System.out.println("🔍 응답: " + response);
 		return response;
 	}
 	
 	// 방 입장 (세션 ID로 사용자 추가)
 	@PostMapping("/auction/room/join/{postId}")
 	public Map<String, Object> joinRoom(@PathVariable("postId") String postId, @RequestBody Map<String, String> request) {
+		System.out.println("🚪 방 입장 요청 - postId: " + postId + ", request: " + request);
 		Map<String, Object> response = new HashMap<>();
 		try {
 			String sessionId = request.get("sessionId");
 			if (sessionId == null || sessionId.trim().isEmpty()) {
+				sessionId = request.get("session_id"); // api.jsx 인터셉터 변환 대응
+			}
+			if (sessionId == null || sessionId.trim().isEmpty()) {
+				System.out.println("❌ 세션 ID가 없음");
+				System.out.println("❌ 요청 데이터: " + request);
 				response.put("success", false);
 				response.put("message", "세션 ID가 필요합니다.");
 				return response;
@@ -244,23 +284,30 @@ public class AuctionController {
 			boolean wasAdded = users.add(sessionId);
 			
 			int userCount = users.size();
+			System.out.println("🚪 방 입장 성공 - sessionId: " + sessionId + ", userCount: " + userCount + ", wasAdded: " + wasAdded);
+			System.out.println("🚪 방 사용자 목록: " + users);
 			response.put("success", true);
-			response.put("userCount", userCount);
+			response.put("user_count", userCount);
 			response.put("isNewUser", wasAdded); // 새로운 사용자인지 여부
 			response.put("message", wasAdded ? "방에 입장했습니다." : "이미 방에 접속 중입니다.");
 		} catch (Exception e) {
+			System.err.println("❌ 방 입장 실패: " + e.getMessage());
 			response.put("success", false);
 			response.put("message", "방 입장 실패: " + e.getMessage());
 		}
+		System.out.println("🚪 응답: " + response);
 		return response;
 	}
 	
-	// 방 퇴장 (세션 ID로 사용자 제거) - POST 방식
+			// 방 퇴장 (세션 ID로 사용자 제거) - POST 방식
 	@PostMapping("/auction/room/leave/{postId}")
 	public Map<String, Object> leaveRoom(@PathVariable("postId") String postId, @RequestBody Map<String, String> request) {
 		Map<String, Object> response = new HashMap<>();
 		try {
 			String sessionId = request.get("sessionId");
+			if (sessionId == null || sessionId.trim().isEmpty()) {
+				sessionId = request.get("session_id"); // api.jsx 인터셉터 변환 대응
+			}
 			if (sessionId == null || sessionId.trim().isEmpty()) {
 				response.put("success", false);
 				response.put("message", "세션 ID가 필요합니다.");
@@ -278,7 +325,7 @@ public class AuctionController {
 			
 			int userCount = users != null ? users.size() : 0;
 			response.put("success", true);
-			response.put("userCount", userCount);
+			response.put("user_count", userCount);
 			response.put("message", "방에서 퇴장했습니다.");
 		} catch (Exception e) {
 			response.put("success", false);
@@ -303,7 +350,7 @@ public class AuctionController {
 			
 			int userCount = users != null ? users.size() : 0;
 			response.put("success", true);
-			response.put("userCount", userCount);
+			response.put("user_count", userCount);
 			response.put("message", "방에서 퇴장했습니다.");
 		} catch (Exception e) {
 			response.put("success", false);
@@ -322,11 +369,11 @@ public class AuctionController {
 			
 			response.put("success", true);
 			response.put("isInRoom", isInRoom);
-			response.put("userCount", users.size());
+			response.put("user_count", users.size());
 		} catch (Exception e) {
 			response.put("success", false);
 			response.put("isInRoom", false);
-			response.put("userCount", 0);
+			response.put("user_count", 0);
 			response.put("message", "확인 실패: " + e.getMessage());
 		}
 		return response;
@@ -337,16 +384,43 @@ public class AuctionController {
 	@PostMapping("/auction/{postId}/bids")
 	public ResponseEntity<?> placeBid(
 	    @PathVariable("postId") long postId,
-	    @RequestBody AuctionDto body,
+	    @RequestBody Map<String, Object> body,
 	    @RequestHeader(value = "Authorization", required = false) String token
 	) {
 	    // 1) 바디 검증
-	    if (body == null || body.getBidAmount() == null || body.getBidAmount().signum() <= 0) {
+	    if (body == null) {
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status","ERROR","message","입찰 데이터가 없습니다."
+	        ));
+	    }
+	    
+	    // Map에서 데이터 추출 (api.jsx 인터셉터 변환 대응)
+	    Object bidAmountObj = body.get("bidAmount") != null ? body.get("bidAmount") : body.get("bid_amount");
+	    if (bidAmountObj == null) {
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status","ERROR","message","입찰 금액이 필요합니다."
+	        ));
+	    }
+	    
+	    BigDecimal bidAmount;
+	    try {
+	        bidAmount = new BigDecimal(bidAmountObj.toString());
+	    } catch (NumberFormatException e) {
 	        return ResponseEntity.badRequest().body(Map.of(
 	            "status","ERROR","message","입찰 금액이 유효하지 않습니다."
 	        ));
 	    }
-	    body.setPostId(postId);
+	    
+	    if (bidAmount.signum() <= 0) {
+	        return ResponseEntity.badRequest().body(Map.of(
+	            "status","ERROR","message","입찰 금액이 유효하지 않습니다."
+	        ));
+	    }
+	    
+	    // AuctionDto 객체 생성
+	    AuctionDto auctionDto = new AuctionDto();
+	    auctionDto.setPostId(postId);
+	    auctionDto.setBidAmount(bidAmount);
 
 	    // 2) 토큰 필수 + memberId는 토큰에서만
 	    if (token == null || !token.startsWith("Bearer ")) {
@@ -367,14 +441,14 @@ public class AuctionController {
 	            "status","ERROR","message","유효하지 않은 토큰입니다."
 	        ));
 	    }
-	    body.setBidderId(memberId); // 클라에서 온 bidderId는 무시
+	    auctionDto.setBidderId(memberId); // 클라에서 온 bidderId는 무시
 
 	    // 3) 서버에서 입찰 시각 세팅
-	    body.setBidTime(new java.sql.Timestamp(System.currentTimeMillis()));
+	    auctionDto.setBidTime(new java.sql.Timestamp(System.currentTimeMillis()));
 
 	    // 4) 비즈니스 로직
 	    try {
-	        String res = auctionService.placeBidWithGuarantee(body);
+	        String res = auctionService.placeBidWithGuarantee(auctionDto);
 
 	        if (res != null && res.startsWith("[NEED_GUARANTEE]")) {
 	            int startPrice = auctionService.getStartPrice(postId);

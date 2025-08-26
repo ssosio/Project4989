@@ -50,7 +50,7 @@ api.interceptors.request.use((config) => {
   const ctype = (config.headers?.['Content-Type'] || config.headers?.['content-type'] || '').toLowerCase();
   const isJson = !isFormData && (!ctype || ctype.includes('application/json'));
 
-  // if (config.params) config.params = keysToSnake(config.params);
+  if (config.params) config.params = keysToSnake(config.params);
   if (isJson && config.data && !isFormData) {
     config.data = keysToSnake(config.data);
   }

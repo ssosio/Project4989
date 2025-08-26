@@ -21,4 +21,13 @@
         )
     </insert>
     
+    <!-- 후기 존재 여부 확인 -->
+    <select id="checkReviewExists" resultType="int">
+        SELECT COUNT(*)
+        FROM trade_reviews
+        WHERE post_id = #{postId}
+        AND reviewer_id = #{reviewerId}
+        AND review_opposite_id = #{reviewOppositeId}
+    </select>
+    
 </mapper>

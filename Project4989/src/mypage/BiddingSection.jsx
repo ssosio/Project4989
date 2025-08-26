@@ -87,17 +87,24 @@ const BiddingSection = ({ userInfo }) => {
     const images = {};
     for (const bidding of biddings) {
       try {
-        const photoResponse = await api.get(`/auction/photos/${bidding.post_id}`);
+        // 여러 가능한 필드명을 시도
+        const postId = bidding.post_id || bidding.postId || bidding.id;
+        if (!postId) {
+          console.error('❌ postId를 찾을 수 없습니다:', bidding);
+          continue;
+        }
+
+        const photoResponse = await api.get(`/auction/photos/${postId}`);
         if (photoResponse.data && photoResponse.data.length > 0) {
-          // 첫 번째 이미지를 메인 이미지로 사용
-          const imageUrl = photoResponse.data[0].photo_url;
-          // 이미지 URL 생성
-          const encodedUrl = encodeURIComponent(imageUrl);
-          const imageWithToken = `http://localhost:4989/auction/image/${encodedUrl}`;
-          images[bidding.post_id] = { url: imageWithToken, originalUrl: imageUrl };
+          // isMain이 true인 사진을 우선적으로 선택, 없으면 첫 번째 사진 사용
+          const mainPhoto = photoResponse.data.find(photo => photo.isMain === true) || photoResponse.data[0];
+          const imageUrl = mainPhoto.photoUrl;
+          // 이미지 URL 생성 - postphoto 경로 사용
+          const imageWithToken = `http://localhost:4989/postphoto/${imageUrl}`;
+          images[postId] = { url: imageWithToken, originalUrl: imageUrl };
         }
       } catch (error) {
-        console.error(`게시글 ${bidding.post_id} 이미지 조회 실패:`, error);
+        console.error(`게시글 ${bidding.post_id || bidding.postId || bidding.id} 이미지 조회 실패:`, error);
       }
     }
     setPostImages(images);
@@ -109,7 +116,7 @@ const BiddingSection = ({ userInfo }) => {
     setError(null);
     try {
       const offset = (currentPage - 1) * itemsPerPage;
-      
+
       // 탭에 따른 상태 필터
       let status = 'all';
       switch (activeTab) {
@@ -125,13 +132,17 @@ const BiddingSection = ({ userInfo }) => {
         default:
           status = 'all';
       }
-      
+
       const response = await api.get(`/auction/my-bids/${userInfo.memberId}`, {
         params: { status, offset, limit: itemsPerPage }
       });
+
+      console.log('🔍 입찰 기록 응답:', response.data);
+      console.log('🔍 입찰 기록 bids:', response.data.bids);
+
       setBiddings(response.data.bids);
       setTotalPages(response.data.totalPages);
-      
+
       // 게시글 이미지 가져오기
       await fetchPostImages(response.data.bids);
     } catch (error) {
@@ -190,7 +201,12 @@ const BiddingSection = ({ userInfo }) => {
 
   // 카드 클릭 핸들러
   const handleCardClick = (postId) => {
-    navigate(`/auction/detail/${postId}`);
+    console.log('🔍 클릭된 postId:', postId);
+    if (postId) {
+      navigate(`/auction/detail/${postId}`);
+    } else {
+      console.error('❌ postId가 undefined입니다');
+    }
   };
 
   // 금액 포맷팅
@@ -275,28 +291,45 @@ const BiddingSection = ({ userInfo }) => {
         {biddings.length === 0 ? (
           <Box className="bidding-empty-container">
             <Typography variant="h6" color="text.secondary" className="bidding-empty-title">
-              {activeTab === 0 ? '입찰한 경매가 없습니다.' : 
-               activeTab === 1 ? '진행중인 입찰이 없습니다.' :
-               activeTab === 2 ? '낙찰완료된 경매가 없습니다.' : '낙찰실패한 경매가 없습니다.'}
+              {activeTab === 0 ? '입찰한 경매가 없습니다.' :
+                activeTab === 1 ? '진행중인 입찰이 없습니다.' :
+                  activeTab === 2 ? '낙찰완료된 경매가 없습니다.' : '낙찰실패한 경매가 없습니다.'}
             </Typography>
           </Box>
         ) : (
           <>
             <Grid container spacing={3} className="bidding-posts-grid">
-               {biddings.map((bidding) => {
-                 const statusInfo = getStatusInfo(bidding.auction_status);
-                 return (
-                   <Grid item key={bidding.bid_id}>
-                     <Card 
-                       className="bidding-post-card"
-                       onClick={() => handleCardClick(bidding.post_id)}
-                     >
-                        {/* 이미지 영역 */}
-                        <Box className="bidding-post-image-container">
-                          {postImages[bidding.post_id] ? (
+              {biddings.map((bidding) => {
+                const statusInfo = getStatusInfo(bidding.auction_status);
+                return (
+                  <Grid item key={bidding.bid_id}>
+                    <Card
+                      className="bidding-post-card"
+                      onClick={() => {
+                        console.log('🔍 bidding 객체:', bidding);
+                        console.log('🔍 bidding.post_id:', bidding.post_id);
+                        console.log('🔍 bidding.postId:', bidding.postId);
+                        console.log('🔍 bidding.id:', bidding.id);
+
+                        // 여러 가능한 필드명을 시도
+                        const postId = bidding.post_id || bidding.postId || bidding.id;
+                        console.log('🔍 최종 사용할 postId:', postId);
+
+                        if (postId) {
+                          handleCardClick(postId);
+                        } else {
+                          console.error('❌ postId를 찾을 수 없습니다');
+                        }
+                      }}
+                    >
+                      {/* 이미지 영역 */}
+                      <Box className="bidding-post-image-container">
+                        {(() => {
+                          const postId = bidding.post_id || bidding.postId || bidding.id;
+                          return postImages[postId] ? (
                             <CardMedia
                               component="img"
-                              image={postImages[bidding.post_id].url}
+                              image={postImages[postId].url}
                               alt={bidding.title}
                               className="bidding-post-image"
                             />
@@ -307,50 +340,51 @@ const BiddingSection = ({ userInfo }) => {
                                 사진 없음
                               </Typography>
                             </Box>
-                          )}
-                        </Box>
+                          );
+                        })()}
+                      </Box>
 
-                        <CardContent className="bidding-post-content">
-                          {/* 제목 */}
-                          <Typography
-                            variant="h6"
-                            className="bidding-post-title"
-                          >
-                            {bidding.title}
-                          </Typography>
+                      <CardContent className="bidding-post-content">
+                        {/* 제목 */}
+                        <Typography
+                          variant="h6"
+                          className="bidding-post-title"
+                        >
+                          {bidding.title}
+                        </Typography>
 
-                          {/* 하단 정보 영역 */}
-                          <Box sx={{ mt: 'auto' }}>
-                            {/* 내 입찰 금액 */}
-                            <Box className="bidding-post-bid-info">
-                              <Typography variant="body2" color="text.secondary" className="bidding-post-bid-text">
-                                내 입찰 금액: {formatPrice(bidding.bid_amount)}원
-                              </Typography>
-                            </Box>
-
-                            {/* 상태 및 입찰자 순위 */}
-                            <Box className="bidding-post-chips">
-                              <Chip
-                                icon={statusInfo.icon}
-                                label={statusInfo.label}
-                                color={statusInfo.color}
-                                size="small"
-                                className="bidding-post-chip"
-                              />
-                              <Chip
-                                label={`순위: ${bidding.bidder_rank}`}
-                                color={getBidderRankColor(bidding.bidder_rank)}
-                                size="small"
-                                className="bidding-post-chip"
-                              />
-                            </Box>
-
-                            {/* 입찰일 */}
-                            <Typography variant="caption" color="text.secondary" className="bidding-post-date-text">
-                              입찰일: {new Date(bidding.bid_time).toLocaleDateString('ko-KR')}
+                        {/* 하단 정보 영역 */}
+                        <Box sx={{ mt: 'auto' }}>
+                          {/* 내 입찰 금액 */}
+                          <Box className="bidding-post-bid-info">
+                            <Typography variant="body2" color="text.secondary" className="bidding-post-bid-text">
+                              내 입찰 금액: {formatPrice(bidding.bid_amount)}원
                             </Typography>
                           </Box>
-                        </CardContent>
+
+                          {/* 상태 및 입찰자 순위 */}
+                          <Box className="bidding-post-chips">
+                            <Chip
+                              icon={statusInfo.icon}
+                              label={statusInfo.label}
+                              color={statusInfo.color}
+                              size="small"
+                              className="bidding-post-chip"
+                            />
+                            <Chip
+                              label={`순위: ${bidding.bidder_rank}`}
+                              color={getBidderRankColor(bidding.bidder_rank)}
+                              size="small"
+                              className="bidding-post-chip"
+                            />
+                          </Box>
+
+                          {/* 입찰일 */}
+                          <Typography variant="caption" color="text.secondary" className="bidding-post-date-text">
+                            입찰일: {new Date(bidding.bid_time).toLocaleDateString('ko-KR')}
+                          </Typography>
+                        </Box>
+                      </CardContent>
                     </Card>
                   </Grid>
                 );

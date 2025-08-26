@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Button, 
-  Card, 
-  CardContent, 
-  Typography, 
-  Grid, 
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
   Chip,
   Avatar,
   Divider,
@@ -15,10 +15,10 @@ import {
   CardActionArea
 } from '@mui/material';
 import './TransactionSection.css';
-import { 
-  ShoppingCart, 
-  Gavel, 
-  CardGiftcard, 
+import {
+  ShoppingCart,
+  Gavel,
+  CardGiftcard,
   AllInclusive,
   Visibility,
   AccessTime,
@@ -71,18 +71,18 @@ const TransactionSection = ({ userInfo }) => {
     }
   };
 
-    // 게시글의 이미지 가져오기
+  // 게시글의 이미지 가져오기
   const fetchPostImages = async (posts) => {
     const images = {};
     for (const post of posts) {
       try {
         const photoResponse = await api.get(`/auction/photos/${post.postId}`);
         if (photoResponse.data && photoResponse.data.length > 0) {
-          // 첫 번째 이미지를 메인 이미지로 사용
-          const imageUrl = photoResponse.data[0].photo_url;
-          // 이미지 URL 생성
-          const encodedUrl = encodeURIComponent(imageUrl);
-          const imageWithToken = `http://localhost:4989/auction/image/${encodedUrl}`;
+          // isMain이 true인 사진을 우선적으로 선택, 없으면 첫 번째 사진 사용
+          const mainPhoto = photoResponse.data.find(photo => photo.isMain === true) || photoResponse.data[0];
+          const imageUrl = mainPhoto.photoUrl;
+          // 이미지 URL 생성 - postphoto 경로 사용
+          const imageWithToken = `http://localhost:4989/postphoto/${imageUrl}`;
           images[post.postId] = { url: imageWithToken, originalUrl: imageUrl };
         }
       } catch (error) {
@@ -107,12 +107,12 @@ const TransactionSection = ({ userInfo }) => {
           }
         }
       );
-      
+
 
       setPosts(response.data.posts);
       setTotalPages(response.data.totalPages);
       setTotalCount(response.data.totalCount);
-      
+
       // 서버에서 받은 상태별 카운트 사용
       if (response.data.statusCounts) {
         setStatusCounts(response.data.statusCounts);
@@ -141,7 +141,7 @@ const TransactionSection = ({ userInfo }) => {
         sold: 0,
         cancelled: 0
       };
-      
+
       filteredPosts.forEach(post => {
         if (post.status === 'ON_SALE') counts.on_sale++;
         else if (post.status === 'RESERVED') counts.reserved++;
@@ -153,7 +153,7 @@ const TransactionSection = ({ userInfo }) => {
           }
         }
       });
-      
+
       return counts;
     }
   };
@@ -210,7 +210,7 @@ const TransactionSection = ({ userInfo }) => {
     if (status === 'SOLD' && tradeType === 'AUCTION' && !winnerId) {
       return { icon: <Cancel />, color: 'error', label: '유찰' };
     }
-    
+
     switch (status) {
       case 'ON_SALE':
         return { icon: <Visibility />, color: 'primary', label: '판매중' };
@@ -386,7 +386,7 @@ const TransactionSection = ({ userInfo }) => {
         <Typography variant="h6" className="transaction-posts-title">
           게시글 목록 ({totalCount}개)
         </Typography>
-        
+
         {loading ? (
           <Box className="transaction-loading-container">
             <Box className="transaction-loading-content">
@@ -411,137 +411,137 @@ const TransactionSection = ({ userInfo }) => {
               {posts.map((post) => {
                 const statusInfo = getStatusInfo(post.status, post.tradeType, post.winnerId);
                 const typeInfo = getTypeInfo(post.tradeType);
-                
+
                 return (
                   <Grid item xs={12} sm={6} md={4} key={post.postId}>
-                    <Card 
+                    <Card
                       className="transaction-post-card"
                       onClick={() => handlePostClick(post)}
                     >
-                       {/* 이미지 - 고정 높이 */}
-                       <Box className="transaction-post-image-container">
-                         {postImages[post.postId] && !imageErrors.has(post.postId) ? (
-                           <CardMedia
-                             component="img"
-                             height="200"
-                             image={postImages[post.postId].url}
-                             alt={post.title}
-                             className="transaction-post-image"
-                             onError={(e) => {
-                               console.log('이미지 로드 실패:', postImages[post.postId].originalUrl);
-                               console.log('실패한 이미지 URL:', e.target.src);
-                               setImageErrors(prev => new Set(prev).add(post.postId));
-                             }}
-                             onLoad={() => {
-                               console.log('이미지 로드 성공:', postImages[post.postId].originalUrl);
-                             }}
-                           />
-                         ) : (
-                           <Box className="transaction-post-no-image">
-                             <Typography variant="body1">이미지 없음</Typography>
-                           </Box>
-                         )}
-                       </Box>
-                       
-                       <CardContent className="transaction-post-content">
-                         {/* 칩들 - 고정 높이 */}
-                         <Box className="transaction-post-chips">
-                           <Chip
-                             icon={typeInfo.icon}
-                             label={typeInfo.label}
-                             color={typeInfo.color}
-                             size="small"
-                             className="transaction-post-chip"
-                           />
-                           <Chip
-                             icon={statusInfo.icon}
-                             label={statusInfo.label}
-                             color={statusInfo.color}
-                             size="small"
-                             className="transaction-post-chip"
-                           />
-                         </Box>
-                         
-                         {/* 제목 - 고정 높이 */}
-                         <Typography 
-                           variant="h6" 
-                           className="transaction-post-title"
-                         >
-                           {post.title}
-                         </Typography>
-                         
-                         {/* 설명 - 고정 높이 */}
-                         <Typography 
-                           variant="body2" 
-                           color="text.secondary" 
-                           className="transaction-post-description"
-                         >
-                           {post.content || '설명 없음'}
-                         </Typography>
-                         
-                         {/* 가격 정보 - 고정 높이 */}
-                         <Box className="transaction-post-price">
-                           <Typography 
-                             variant="body1" 
-                             className="transaction-post-price-text"
-                           >
-                             <AttachMoney fontSize="small" />
-                             {formatPrice(post.price)}
-                           </Typography>
-                         </Box>
-                         
-                         {/* 추가 정보 - 고정 높이 */}
-                         <Box className="transaction-post-view-count">
-                           <Typography 
-                             variant="body2" 
-                             color="text.secondary" 
-                             className="transaction-post-view-count-text"
-                           >
-                             <RemoveRedEye fontSize="small" />
-                             조회수: {post.viewCount || 0}
-                           </Typography>
-                         </Box>
-                         
-                         {/* 날짜 정보 - 고정 높이 */}
-                         <Box className="transaction-post-dates">
-                           <Typography 
-                             variant="body2" 
-                             color="text.secondary"
-                             className="transaction-post-date-text"
-                           >
-                             작성일: {formatDate(post.createdAt)}
-                           </Typography>
-                           <Typography 
-                             variant="body2" 
-                             color="text.secondary"
-                             className="transaction-post-date-text"
-                           >
-                             마감일: {post.auctionEndTime ? formatDate(post.auctionEndTime) : '없음'}
-                           </Typography>
-                         </Box>
-                         
-                         {/* 구매자 정보 - 고정 높이 */}
-                         <Typography 
-                           variant="body2" 
-                           color="text.secondary" 
-                           className="transaction-post-buyer"
-                         >
-                           <Person fontSize="small" />
-                           구매자: {post.buyerName || '없음'}
-                         </Typography>
-                       </CardContent>
-                     </Card>
-                   </Grid>
-                 );
+                      {/* 이미지 - 고정 높이 */}
+                      <Box className="transaction-post-image-container">
+                        {postImages[post.postId] && !imageErrors.has(post.postId) ? (
+                          <CardMedia
+                            component="img"
+                            height="200"
+                            image={postImages[post.postId].url}
+                            alt={post.title}
+                            className="transaction-post-image"
+                            onError={(e) => {
+                              console.log('이미지 로드 실패:', postImages[post.postId].originalUrl);
+                              console.log('실패한 이미지 URL:', e.target.src);
+                              setImageErrors(prev => new Set(prev).add(post.postId));
+                            }}
+                            onLoad={() => {
+                              console.log('이미지 로드 성공:', postImages[post.postId].originalUrl);
+                            }}
+                          />
+                        ) : (
+                          <Box className="transaction-post-no-image">
+                            <Typography variant="body1">이미지 없음</Typography>
+                          </Box>
+                        )}
+                      </Box>
+
+                      <CardContent className="transaction-post-content">
+                        {/* 칩들 - 고정 높이 */}
+                        <Box className="transaction-post-chips">
+                          <Chip
+                            icon={typeInfo.icon}
+                            label={typeInfo.label}
+                            color={typeInfo.color}
+                            size="small"
+                            className="transaction-post-chip"
+                          />
+                          <Chip
+                            icon={statusInfo.icon}
+                            label={statusInfo.label}
+                            color={statusInfo.color}
+                            size="small"
+                            className="transaction-post-chip"
+                          />
+                        </Box>
+
+                        {/* 제목 - 고정 높이 */}
+                        <Typography
+                          variant="h6"
+                          className="transaction-post-title"
+                        >
+                          {post.title}
+                        </Typography>
+
+                        {/* 설명 - 고정 높이 */}
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          className="transaction-post-description"
+                        >
+                          {post.content || '설명 없음'}
+                        </Typography>
+
+                        {/* 가격 정보 - 고정 높이 */}
+                        <Box className="transaction-post-price">
+                          <Typography
+                            variant="body1"
+                            className="transaction-post-price-text"
+                          >
+                            <AttachMoney fontSize="small" />
+                            {formatPrice(post.price)}
+                          </Typography>
+                        </Box>
+
+                        {/* 추가 정보 - 고정 높이 */}
+                        <Box className="transaction-post-view-count">
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            className="transaction-post-view-count-text"
+                          >
+                            <RemoveRedEye fontSize="small" />
+                            조회수: {post.viewCount || 0}
+                          </Typography>
+                        </Box>
+
+                        {/* 날짜 정보 - 고정 높이 */}
+                        <Box className="transaction-post-dates">
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            className="transaction-post-date-text"
+                          >
+                            작성일: {formatDate(post.createdAt)}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            className="transaction-post-date-text"
+                          >
+                            마감일: {post.auctionEndTime ? formatDate(post.auctionEndTime) : '없음'}
+                          </Typography>
+                        </Box>
+
+                        {/* 구매자 정보 - 고정 높이 */}
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          className="transaction-post-buyer"
+                        >
+                          <Person fontSize="small" />
+                          구매자: {post.buyerName || '없음'}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
               })}
             </Grid>
-            
+
             {/* 페이징 */}
             {totalPages > 1 && (
               <Box className="transaction-pagination-container">
-                <Pagination 
-                  count={totalPages} 
-                  page={currentPage} 
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
                   onChange={handlePageChange}
                   color="primary"
                   size="large"

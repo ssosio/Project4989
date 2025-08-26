@@ -40,6 +40,8 @@ public class SecurityConfig {
         return cfg.getAuthenticationManager();
     }
 
+
+
     // JWT 발급 → /auth/callback?token=...
     @Bean
     public AuthenticationSuccessHandler oAuth2LoginSuccessHandler() {

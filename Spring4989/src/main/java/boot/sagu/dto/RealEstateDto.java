@@ -14,7 +14,7 @@ public class RealEstateDto {
 	private Long postId;
 	@JsonProperty("propertyType")
 	private String propertyType;
-	private int area;
+	private float area;
 	private int rooms;
 	private int floor;
 	@JsonProperty("dealType")

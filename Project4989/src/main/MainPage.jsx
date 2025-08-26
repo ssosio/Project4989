@@ -18,7 +18,42 @@ const MainPage = () => {
     try {
       setLoading(true)
       const response = await api.get(`/auction?sort=${sort}`)
-      setAuctionItems(response.data)
+      console.log('🔍 경매 데이터 응답:', response.data)
+
+      // 각 경매 상품의 사진 정보 가져오기
+      const itemsWithPhotos = await Promise.all(
+        response.data.map(async (item) => {
+          try {
+            console.log(`🔍 ${item.postId}번 상품 사진 정보 가져오기 시작`)
+            console.log(`🔍 API 호출 URL: /auction/photos/${item.postId}`)
+
+            const photoResponse = await api.get(`/auction/photos/${item.postId}`)
+            console.log(`🔍 ${item.postId}번 상품 사진 응답 상태:`, photoResponse.status)
+            console.log(`🔍 ${item.postId}번 상품 사진 응답 데이터:`, photoResponse.data)
+            console.log(`🔍 ${item.postId}번 상품 사진 응답 데이터 타입:`, typeof photoResponse.data)
+            console.log(`🔍 ${item.postId}번 상품 사진 응답 데이터 길이:`, photoResponse.data?.length)
+
+            if (photoResponse.data && photoResponse.data.length > 0) {
+              // isMain이 true인 사진을 우선적으로 선택, 없으면 첫 번째 사진 사용
+              const mainPhoto = photoResponse.data.find(photo => photo.isMain === true) || photoResponse.data[0]
+              console.log(`🔍 ${item.postId}번 상품 선택된 사진:`, mainPhoto)
+              item.image = mainPhoto.photoUrl
+              console.log(`✅ ${item.postId}번 상품 이미지 설정:`, item.image, `(isMain: ${mainPhoto.isMain})`)
+            } else {
+              console.log(`⚠️ ${item.postId}번 상품 사진 없음`)
+            }
+            return item
+          } catch (photoErr) {
+            console.error(`❌ 사진 로딩 실패 (postId: ${item.postId}):`, photoErr)
+            console.error(`❌ 에러 상세:`, photoErr.response?.data)
+            console.error(`❌ 에러 상태:`, photoErr.response?.status)
+            return item
+          }
+        })
+      )
+
+      console.log('🔍 최종 경매 아이템들:', itemsWithPhotos)
+      setAuctionItems(itemsWithPhotos)
       setError(null)
     } catch (err) {
       console.error('경매 데이터 로딩 실패:', err)
@@ -91,7 +126,7 @@ const MainPage = () => {
         <div className="container">
           <div className="main-header">
             <h1 className="main-title">인기 경매 상품</h1>
-            <p className="main-subtitle" style={{color: 'red'}}>{error}</p>
+            <p className="main-subtitle" style={{ color: 'red' }}>{error}</p>
           </div>
         </div>
       </div>
@@ -127,24 +162,37 @@ const MainPage = () => {
         <div className="auction-container">
           <div className="auction-grid">
             {currentItems.map((item) => (
-              <div 
-                key={item.postId} 
+              <div
+                key={item.postId}
                 className="auction-card"
                 onClick={() => handleBidClick(item.postId)}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="main-auction-image">
-                  <img 
+                  {console.log(`🔍 ${item.postId}번 상품 렌더링 - image:`, item.image)}
+                  <img
                     src={
-                      item.image ? 
-                        (item.image.startsWith('http') ? item.image : `http://localhost:4989${item.image}`) :
-                      item.mainPhotoUrl ? 
-                        (item.mainPhotoUrl.startsWith('http') ? item.mainPhotoUrl : `http://localhost:4989${item.mainPhotoUrl}`) :
-                      "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image"
-                    } 
+                      item.image ?
+                        `http://localhost:4989/postphoto/${item.image}` :
+                        "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image"
+                    }
                     alt={item.title}
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image";
+                      console.log(`❌ 이미지 로드 실패:`, e.target.src)
+                      // 무한 루프 방지: 이미 placeholder 이미지인 경우 더 이상 교체하지 않음
+                      if (!e.target.src.includes('placeholder.com')) {
+                        e.target.src = "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image";
+                        e.target.onerror = null; // onError 이벤트 제거
+                      }
+                    }}
+                    onLoad={(e) => {
+                      console.log(`✅ 이미지 로드 성공:`, e.target.src)
+                      // 이미지 로드 성공 시 로딩 상태 표시 제거
+                      e.target.style.opacity = '1';
+                    }}
+                    style={{
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease-in-out'
                     }}
                   />
                   <div className="main-auction-badge">
@@ -158,7 +206,7 @@ const MainPage = () => {
                   </div>
                   <div className="auction-time">
                     <span className="end-time">
-                      종료: {item.auctionEndTime ? 
+                      종료: {item.auctionEndTime ?
                         new Date(item.auctionEndTime).toLocaleDateString('ko-KR', {
                           month: 'short',
                           day: 'numeric',
@@ -167,7 +215,7 @@ const MainPage = () => {
                         }) : '미정'}
                     </span>
                   </div>
-                  <button 
+                  <button
                     className="main-bid-button"
                     onClick={(e) => {
                       e.stopPropagation() // 이벤트 전파 방지
@@ -184,7 +232,7 @@ const MainPage = () => {
           {/* 페이지네이션 버튼 */}
           {totalPages > 1 && (
             <div className="pagination">
-              <button 
+              <button
                 className="page-btn prev-btn"
                 onClick={handlePrevPage}
                 disabled={currentPage === 1}
@@ -194,7 +242,7 @@ const MainPage = () => {
               <span className="page-info">
                 {currentPage} / {totalPages} (총 {auctionItems.length}개)
               </span>
-              <button 
+              <button
                 className="page-btn next-btn"
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}

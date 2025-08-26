@@ -29,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 import TestModal from '../chat/AddMemberAddress.jsx';
 import CreditTierDisplay from '../components/CreditTierDisplay';
@@ -56,6 +57,13 @@ const ProfileSection = ({ userInfo }) => {
     email: '',
     phoneNumber: '',
     profileImageUrl: userInfo.profileImageUrl || ''
+  });
+
+  // 신용도 그래프 상태 추가
+  const [creditGraphData, setCreditGraphData] = useState({
+    score: 0,
+    percentage: 0,
+    color: '#9E9E9E'
   });
 
   // 비밀번호 변경 상태
@@ -95,6 +103,71 @@ const ProfileSection = ({ userInfo }) => {
       return true; // 인증 오류 처리됨
     }
     return false; // 인증 오류가 아님
+  };
+
+  // 신용도 데이터 로드 완료 시 그래프 업데이트
+  const handleCreditDataLoaded = (creditData) => {
+    console.log('handleCreditDataLoaded 호출됨, 데이터:', creditData);
+    
+    const totalScore = creditData.totalScore || 0;
+    const scorePercentage = Math.min((totalScore / 1000) * 100, 100);
+    
+    console.log('계산된 점수:', { totalScore, scorePercentage });
+    
+    // 티어별 색상 결정
+    let barColor = '#9E9E9E'; // 기본 회색
+    if (totalScore >= 800) {
+      barColor = '#FFD700'; // 거래왕 - 금색
+    } else if (totalScore >= 600) {
+      barColor = '#C0C0C0'; // 마스터 - 은색
+    } else if (totalScore >= 400) {
+      barColor = '#CD7F32'; // 장인 - 동색
+    } else if (totalScore >= 200) {
+      barColor = '#4CAF50'; // 거래꾼 - 초록색
+    } else {
+      barColor = '#2196F3'; // 초보상인 - 파란색
+    }
+    
+    console.log('선택된 색상:', barColor);
+    
+    // 상태 업데이트
+    setCreditGraphData({
+      score: totalScore,
+      percentage: scorePercentage,
+      color: barColor
+    });
+    
+    console.log('신용도 그래프 상태 업데이트 완료:', { totalScore, scorePercentage, barColor });
+  };
+
+  // 신용도 등급 재계산
+  const handleRecalculateCreditTier = async () => {
+    try {
+      console.log('신용도 등급 재계산 시작...');
+      
+      const response = await api.post(`/api/credit-tier/${userInfo.memberId}/recalculate`);
+      
+      if (response.data.success) {
+        console.log('신용도 등급 재계산 성공:', response.data.data);
+        
+        // 재계산된 데이터로 그래프 업데이트
+        handleCreditDataLoaded(response.data.data);
+        
+        // 성공 메시지 표시
+        setMessage({ type: 'success', text: '신용도 등급이 재계산되었습니다! 페이지를 새로고침해주세요.' });
+        
+        // 3초 후 자동 새로고침
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+        
+      } else {
+        setMessage({ type: 'error', text: '신용도 등급 재계산에 실패했습니다.' });
+      }
+    } catch (error) {
+      console.error('신용도 등급 재계산 오류:', error);
+      setMessage({ type: 'error', text: '신용도 등급 재계산 중 오류가 발생했습니다.' });
+    }
   };
 
   // 사용자 프로필 정보 가져오기
@@ -625,11 +698,11 @@ const ProfileSection = ({ userInfo }) => {
         </Alert>
       )}
 
-      <Grid container spacing={4} sx={{ width: '100%' }}>
+      <Grid container spacing={4} sx={{ width: '100%', minHeight: '500px', height: 'auto' }}>
         {/* 프로필 이미지 및 기본 정보 */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ width: '100%', minWidth: '180px' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
+          <Card sx={{ width: '100%', minWidth: '180px', height: '100%' }}>
+            <CardContent sx={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
                   src={profileData.profileImageUrl ? `http://localhost:4989${profileData.profileImageUrl}?t=${Date.now()}` : (userInfo.profileImageUrl ? `http://localhost:4989${userInfo.profileImageUrl}?t=${Date.now()}` : 'https://placehold.co/150x150')}
@@ -690,17 +763,21 @@ const ProfileSection = ({ userInfo }) => {
 
         {/* 신용도 등급 */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ width: '100%', minWidth: '300px' }}>
-            <CardContent sx={{ textAlign: 'center' }}>
+          <Card sx={{ width: '100%', minWidth: '300px', height: '100%' }}>
+            <CardContent sx={{ textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
                 신용도 등급
               </Typography>
-              <CreditTierDisplay memberId={userInfo.memberId} showDetails={true} />
+              <CreditTierDisplay 
+                memberId={userInfo.memberId} 
+                showDetails={true} 
+                onCreditDataLoaded={handleCreditDataLoaded}
+              />
               
               {/* 신용도 점수 그래프 */}
               <Box sx={{ mt: 3, px: 2 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  신용도 점수: {profileData.creditScore || 0} / 1000
+                  신용도 점수: {creditGraphData.score} / 1000
                 </Typography>
                 
                 {/* 전체 점수 바 */}
@@ -713,15 +790,56 @@ const ProfileSection = ({ userInfo }) => {
                   overflow: 'hidden',
                   mb: 1
                 }}>
+                  {/* 티어별 구간 표시 */}
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: '20%', 
+                    width: '1px', 
+                    height: '100%', 
+                    backgroundColor: '#ddd',
+                    zIndex: 1
+                  }} />
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: '40%', 
+                    width: '1px', 
+                    height: '100%', 
+                    backgroundColor: '#ddd',
+                    zIndex: 1
+                  }} />
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: '60%', 
+                    width: '1px', 
+                    height: '100%', 
+                    backgroundColor: '#ddd',
+                    zIndex: 1
+                  }} />
+                  <Box sx={{ 
+                    position: 'absolute', 
+                    top: 0, 
+                    left: '80%', 
+                    width: '1px', 
+                    height: '100%', 
+                    backgroundColor: '#ddd',
+                    zIndex: 1
+                  }} />
+                  
                   {/* 현재 점수 표시 바 */}
-                  <Box sx={{
-                    width: `${Math.min((profileData.creditScore || 0) / 10, 100)}%`,
-                    height: '100%',
-                    backgroundColor: '#4caf50',
-                    borderRadius: 10,
-                    transition: 'width 0.5s ease-in-out',
-                    position: 'relative'
-                  }}>
+                  <Box 
+                    sx={{
+                      width: `${creditGraphData.percentage}%`,
+                      height: '100%',
+                      backgroundColor: creditGraphData.color,
+                      borderRadius: 10,
+                      transition: 'width 0.8s ease-in-out, background-color 0.8s ease-in-out',
+                      position: 'relative',
+                      zIndex: 2
+                    }}
+                  >
                     {/* 점수 표시 텍스트 */}
                     <Typography 
                       variant="caption" 
@@ -735,19 +853,43 @@ const ProfileSection = ({ userInfo }) => {
                         fontSize: '10px'
                       }}
                     >
-                      {profileData.creditScore || 0}
+                      {creditGraphData.score}
                     </Typography>
                   </Box>
                 </Box>
                 
-                {/* 점수 범위 표시 */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'text.secondary' }}>
+                {/* 점수 범위 및 티어 표시 */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'text.secondary', mb: 1 }}>
                   <span>0</span>
-                  <span>250</span>
-                  <span>500</span>
-                  <span>750</span>
+                  <span>200</span>
+                  <span>400</span>
+                  <span>600</span>
+                  <span>800</span>
                   <span>1000</span>
                 </Box>
+                
+                {/* 신용도 재계산 버튼 */}
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button 
+                    size="small" 
+                    variant="outlined" 
+                    onClick={handleRecalculateCreditTier}
+                    sx={{
+                      borderColor: '#666',
+                      color: '#666',
+                      '&:hover': {
+                        borderColor: '#333',
+                        backgroundColor: '#f5f5f5'
+                      }
+                    }}
+                  >
+                    신용도 재계산
+                  </Button>
+                </Box>
+                
+
+                
+
               </Box>
             </CardContent>
           </Card>
@@ -755,8 +897,8 @@ const ProfileSection = ({ userInfo }) => {
 
         {/* 상세 정보 및 수정 폼 */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ width: '100%', minWidth: '1100px' }}>
-            <CardContent>
+          <Card sx={{ width: '100%', minWidth: '1100px', height: '100%' }}>
+            <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">회원 정보</Typography>
                 <Box>
