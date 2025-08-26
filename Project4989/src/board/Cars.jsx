@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
 import './cars.css';
+import KeyboardArrowUpRoundedIcon from '@mui/icons-material/KeyboardArrowUpRounded';
 
 const CAR_DETAIL_URL = `${import.meta.env.VITE_API_BASE}/post/cardetail`;
 const LIST_URL = `${import.meta.env.VITE_API_BASE}/post/list`;
@@ -12,6 +13,7 @@ const Cars = () => {
   const [postList, setPostList] = useState([]);
   const [carDetailMap, setCarDetailMap] = useState({}); // postId -> detail
   const [currentPage, setCurrentPage] = useState(1);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const itemsPerPage = 12;
 
@@ -68,6 +70,20 @@ const Cars = () => {
     return u; // 혹시 다른 값이 오면 대문자 그대로
   };
 
+  // 스크롤 위치 감지
+  const handleScroll = () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    setShowScrollTop(scrollTop > 300);
+  };
+
+  // 최상단으로 스크롤하는 함수
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   const MILEAGE_RANGES = [
     { key: 'ALL', label: '전체', test: () => true },
     { key: '<=50000', label: '5만km 이하', test: (m) => m !== null && m <= 50000 },
@@ -97,6 +113,12 @@ const Cars = () => {
   // ---------- 지역 데이터 로드 ----------
   useEffect(() => {
     loadProvinces();
+  }, []);
+
+  // 스크롤 이벤트 리스너 등록
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // province 변경 시 city 로드
@@ -797,6 +819,16 @@ const Cars = () => {
           </div>
         </div>
 
+        {/* 최상단으로 스크롤하는 화살표 버튼 */}
+        {showScrollTop && (
+          <button
+            className="scroll-to-top-btn"
+            onClick={scrollToTop}
+            title="최상단으로 이동"
+          >
+            <KeyboardArrowUpRoundedIcon />
+          </button>
+        )}
 
       </div>
     </div>

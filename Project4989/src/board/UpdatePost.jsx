@@ -43,91 +43,83 @@ const UpdatePost = () => {
     const [transmission,setTransmission]=useState('');
 
     //아이템(카테고리)
-    const [parents, setParents] = useState([]);
-    const [children, setChildren] = useState([]);
-    const [selectedParent, setSelectedParent] = useState('');
-    const [selectedChild, setSelectedChild] = useState('');
     const [conditions,setConditions]=useState('');
     const [categoryId,setCategoryId]=useState('');
 
 
-    useEffect(()=>{
-        axios.get("http://localhost:4989/category/category")
-        .then(res=> setParents(res.data))
-        .catch(err=> console.log(err));
-    },[]);
 
-  const handleParentChange = (e) => {
-  const val = e.target.value;
-
-  if (!val || isNaN(Number(val))) {
-    console.warn("❌ 유효하지 않은 parentId:", val);
-    setSelectedParent('');
-    setChildren([]);
-    return;
-  }
-
-  const parentId = Number(val);
-  setSelectedParent(parentId);
-  setCategoryId(parentId);
-  console.log("✅ 선택된 parentId:", parentId);
-
-  axios.get(`http://localhost:4989/category/child?parentId=${parentId}`)
-    .then(res => setChildren(res.data))
-    .catch(err => console.error("❌ axios 에러:", err));
-};
-
-
-    const handleChildChange=(e)=>{
-        const parentId=Number(e.target.value);
-        setSelectedChild(parentId);
-    };
 
     // 상세 데이터 로드 (초기값 세팅)
   useEffect(() => {
     if (!postId) return;
+    
+    // 기본 게시글 정보 가져오기
     axios.get(`http://localhost:4989/post/detail?postId=${postId}`)
       .then(res => {
-        // 응답 구조는 백에서 보낸 형태에 맞춰 조정
-        // 예시: { post, car, realEstate, item, photos }
         const data = res.data || {};
-        const p = data.post || data; // 혹시 바로 post 필드 없이 map이면 보정
+        console.log('받아온 전체 데이터:', data);
+        const p = data.post || data;
+        
         setPostType(p.postType || '');
         setTradeType(p.tradeType || '');
         setTitle(p.title || '');
         setPrice(p.price ?? '');
         setContent(p.content || '');
         setStatus(p.status || '');
-
         setLocationVal(p.location || '');
 
-        // subtype
-        if (data.car) {
-          setBrand(data.car.brand || '');
-          setModel(data.car.model || '');
-          setYear(data.car.year ?? '');
-          setMileage(data.car.mileage ?? '');
-          setFuelType(data.car.fuelType || '');
-          setTransmission(data.car.transmission || '');
+        // 자동차 정보는 별도 API로 가져오기
+        if (p.postType === 'CARS') {
+          axios.get(`http://localhost:4989/post/cardetail?postId=${postId}`)
+            .then(carRes => {
+              const carData = carRes.data;
+              console.log('자동차 데이터:', carData);
+              if (carData) {
+                setBrand(carData.brand || '');
+                setModel(carData.model || '');
+                setYear(carData.year ?? '');
+                setMileage(carData.mileage ?? '');
+                setFuelType(carData.fuelType || '');
+                setTransmission(carData.transmission || '');
+              }
+            })
+            .catch(err => console.error('자동차 데이터 로드 실패:', err));
         }
-        if (data.realEstate) {
-          setPropertyType(data.realEstate.propertyType || '');
-          setArea(data.realEstate.area ?? '');
-          setRooms(data.realEstate.rooms ?? '');
-          setFloor(data.realEstate.floor ?? '');
-          setDealType(data.realEstate.dealType || '');
-          setLocationVal(data.realEstate.location || p.location || '');
+
+        // 부동산 정보는 별도 API로 가져오기
+        if (p.postType === 'REAL_ESTATES') {
+          axios.get(`http://localhost:4989/post/estatedetail?postId=${postId}`)
+            .then(estateRes => {
+              const estateData = estateRes.data;
+              console.log('부동산 데이터:', estateData);
+              if (estateData) {
+                setPropertyType(estateData.propertyType || '');
+                setArea(estateData.area ?? '');
+                setRooms(estateData.rooms ?? '');
+                setFloor(estateData.floor ?? '');
+                setDealType(estateData.dealType || '');
+              }
+            })
+            .catch(err => console.error('부동산 데이터 로드 실패:', err));
         }
-        if (data.item) {
-          setCategoryId(data.item.categoryId ?? '');
-          setConditions(data.item.conditions || '');
-          // parent/child는 필요시 별도 API로 역추적
+
+        // 아이템 정보는 별도 API로 가져오기
+        if (p.postType === 'ITEMS') {
+          axios.get(`http://localhost:4989/post/itemdetail?postId=${postId}`)
+            .then(itemRes => {
+              const itemData = itemRes.data;
+              console.log('아이템 데이터:', itemData);
+              if (itemData) {
+                setCategoryId(itemData.categoryId ?? '');
+                setConditions(itemData.conditions || '');
+              }
+            })
+            .catch(err => console.error('아이템 데이터 로드 실패:', err));
         }
 
         // 사진 처리
         let photos = data.photos || p.photos || [];
         
-        // photos가 문자열인 경우 JSON 파싱 시도
         if (typeof photos === 'string') {
           try {
             photos = JSON.parse(photos);
@@ -137,7 +129,6 @@ const UpdatePost = () => {
           }
         }
         
-        // photos가 배열이 아니면 빈 배열로 설정
         if (!Array.isArray(photos)) {
           photos = [];
         }
@@ -145,7 +136,6 @@ const UpdatePost = () => {
         console.log('로드된 사진 데이터:', photos);
         setExistingPhotos(photos);
         
-        // 대표 사진 찾기
         const main = photos.find(ph => ph.isMain === 1 || ph.isMain === true || ph.isMain === '1');
         setMainPhotoId(main ? main.photoId : null);
         console.log('대표 사진 ID:', main ? main.photoId : null);
