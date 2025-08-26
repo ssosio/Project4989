@@ -33,10 +33,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Calculate as CalculateIcon
 } from '@mui/icons-material';
 import api from '../../lib/api';
 import { AuthContext } from '../../context/AuthContext';
+import CreditTierDisplay from '../CreditTierDisplay';
 
 const UserManagementTab = () => {
   const { userInfo } = useContext(AuthContext);
@@ -53,14 +55,38 @@ const UserManagementTab = () => {
   const [banReason, setBanReason] = useState('');
   const [editForm, setEditForm] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [recalculatingTier, setRecalculatingTier] = useState(false);
 
   // 회원 목록 조회
   const fetchUsers = async () => {
     try {
+      console.log('=== 회원 목록 조회 시작 ===');
+      console.log('현재 페이지:', page);
+      console.log('검색어:', searchTerm);
+      
       setLoading(true);
       const response = await api.get(`/api/admin/members?page=${page}&search=${searchTerm}`);
-      setUsers(response.data.content || response.data);
-      setTotalPages(response.data.totalPages || 1);
+      
+      console.log('API 응답:', response);
+      console.log('응답 데이터:', response.data);
+      
+      // 응답 데이터 검증 및 설정
+      if (response.data && response.data.content) {
+        console.log('페이징된 데이터 형식으로 처리');
+        setUsers(response.data.content);
+        setTotalPages(response.data.totalPages || 1);
+      } else if (Array.isArray(response.data)) {
+        console.log('배열 형식 데이터로 처리');
+        setUsers(response.data);
+        setTotalPages(1);
+      } else {
+        console.warn('예상치 못한 응답 형식:', response.data);
+        setUsers([]);
+        setTotalPages(1);
+      }
+      
+      console.log('설정된 사용자 목록:', response.data.content || response.data);
+      console.log('회원 목록 새로고침 완료');
     } catch (error) {
       console.error('회원 목록 조회 실패:', error);
       setSnackbar({
@@ -108,7 +134,14 @@ const UserManagementTab = () => {
 
   const handleEditSubmit = async () => {
     try {
-      await api.put(`/api/admin/members/${editForm.member_id}`, editForm);
+      console.log('=== 회원 수정 시작 ===');
+      console.log('수정할 데이터:', editForm);
+      console.log('API 엔드포인트:', `/api/admin/members/${editForm.member_id}`);
+      
+      const response = await api.put(`/api/admin/members/${editForm.member_id}`, editForm);
+      
+      console.log('API 응답:', response);
+      console.log('응답 데이터:', response.data);
       
       // 로그 기록
       console.log('전송할 액션 로그 데이터:', {
@@ -129,13 +162,64 @@ const UserManagementTab = () => {
         details: '회원 정보 수정'
       });
 
+      // 성공 메시지 표시
       setSnackbar({
         open: true,
         message: '회원 정보가 수정되었습니다.',
         severity: 'success'
       });
+      
+      // 모달 닫기
       setIsEditOpen(false);
-      fetchUsers();
+      
+      // 즉시 목록 새로고침
+      await fetchUsers();
+      
+      // 선택된 사용자 정보도 업데이트 (상세 모달이 열려있다면)
+      if (selectedUser && selectedUser.memberId === editForm.member_id) {
+        try {
+          const updatedUserResponse = await api.get(`/api/admin/members/${editForm.member_id}`);
+          setSelectedUser(updatedUserResponse.data);
+        } catch (error) {
+          console.error('사용자 정보 업데이트 실패:', error);
+        }
+      }
+      
+      // 로컬 상태에서도 해당 사용자 정보 즉시 업데이트
+      console.log('=== 로컬 상태 업데이트 시작 ===');
+      console.log('현재 사용자 목록:', users);
+      console.log('수정할 사용자 ID:', editForm.member_id);
+      
+      setUsers(prevUsers => {
+        console.log('이전 사용자 목록:', prevUsers);
+        
+        const updatedUsers = prevUsers.map(user => {
+          if (user.memberId === editForm.member_id) {
+            console.log('수정할 사용자 발견:', user);
+            const updatedUser = {
+              ...user, 
+              nickname: editForm.nickname,
+              email: editForm.email,
+              phoneNumber: editForm.phone_number,
+              tier: editForm.tier
+            };
+            console.log('수정된 사용자:', updatedUser);
+            return updatedUser;
+          }
+          return user;
+        });
+        
+        console.log('업데이트된 사용자 목록:', updatedUsers);
+        
+        console.log('로컬 사용자 목록 업데이트:', {
+          before: prevUsers.find(u => u.memberId === editForm.member_id),
+          after: updatedUsers.find(u => u.memberId === editForm.member_id),
+          editForm: editForm
+        });
+        
+        return updatedUsers;
+      });
+      
     } catch (error) {
       console.error('회원 수정 실패:', error);
       setSnackbar({
@@ -181,6 +265,82 @@ const UserManagementTab = () => {
         message: '상태 변경에 실패했습니다.',
         severity: 'error'
       });
+    }
+  };
+
+  // 신용도 등급 재계산
+  const handleRecalculateTier = async (userId) => {
+    try {
+      setRecalculatingTier(true);
+      const response = await api.post(`/api/credit-tier/${userId}/recalculate`);
+      
+      if (response.data.success) {
+        setSnackbar({
+          open: true,
+          message: '신용도 등급이 재계산되었습니다.',
+          severity: 'success'
+        });
+        
+        // 로그 기록
+        await api.post('/api/admin/action-logs', {
+          adminId: userInfo.memberId,
+          actionType: 'CREDIT_TIER_RECALCULATE',
+          targetEntityType: 'MEMBER',
+          targetEntityId: userId,
+          details: '신용도 등급 재계산'
+        });
+        
+        fetchUsers(); // 목록 새로고침
+      }
+    } catch (error) {
+      console.error('신용도 등급 재계산 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '신용도 등급 재계산에 실패했습니다.',
+        severity: 'error'
+      });
+    } finally {
+      setRecalculatingTier(false);
+    }
+  };
+
+  // 전체 신용도 등급 일괄 업데이트
+  const handleUpdateAllCreditTiers = async () => {
+    if (!window.confirm('모든 회원의 신용도 등급을 일괄 업데이트하시겠습니까? 이 작업은 시간이 오래 걸릴 수 있습니다.')) {
+      return;
+    }
+
+    try {
+      setRecalculatingTier(true);
+      const response = await api.post('/api/credit-tier/update-all');
+      
+      if (response.data.success) {
+        setSnackbar({
+          open: true,
+          message: '모든 회원의 신용도 등급이 업데이트되었습니다.',
+          severity: 'success'
+        });
+        
+        // 로그 기록
+        await api.post('/api/admin/action-logs', {
+          adminId: userInfo.memberId,
+          actionType: 'CREDIT_TIER_BULK_UPDATE',
+          targetEntityType: 'SYSTEM',
+          targetEntityId: 0,
+          details: '전체 회원 신용도 등급 일괄 업데이트'
+        });
+        
+        fetchUsers(); // 목록 새로고침
+      }
+    } catch (error) {
+      console.error('전체 신용도 등급 업데이트 실패:', error);
+      setSnackbar({
+        open: true,
+        message: '전체 신용도 등급 업데이트에 실패했습니다.',
+        severity: 'error'
+      });
+    } finally {
+      setRecalculatingTier(false);
     }
   };
 
@@ -234,8 +394,10 @@ const UserManagementTab = () => {
   const getTierText = (tier) => {
     switch (tier) {
       case '초보상인': return '초보상인';
-      case '중급상인': return '중급상인';
-      case '고급상인': return '고급상인';
+      case '거래꾼': return '거래꾼';
+      case '장인': return '장인';
+      case '마스터': return '마스터';
+      case '거래왕': return '거래왕';
       default: return tier;
     }
   };
@@ -246,14 +408,25 @@ const UserManagementTab = () => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">회원 관리</Typography>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchUsers}
-              disabled={loading}
-            >
-              새로고침
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<CalculateIcon />}
+                onClick={handleUpdateAllCreditTiers}
+                disabled={recalculatingTier}
+                color="secondary"
+              >
+                전체 등급 업데이트
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={fetchUsers}
+                disabled={loading}
+              >
+                새로고침
+              </Button>
+            </Box>
           </Box>
 
           {/* 검색 및 필터 */}
@@ -299,7 +472,20 @@ const UserManagementTab = () => {
                       <TableCell>{user.nickname || 'N/A'}</TableCell>
                       <TableCell>{user.email || 'N/A'}</TableCell>
                       <TableCell>{user.phoneNumber || '-'}</TableCell>
-                      <TableCell>{getTierText(user.tier)}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CreditTierDisplay memberId={user.memberId} showDetails={false} />
+                          <IconButton 
+                            size="small" 
+                            color="secondary"
+                            onClick={() => handleRecalculateTier(user.memberId)}
+                            disabled={recalculatingTier}
+                            title="신용도 등급 재계산"
+                          >
+                            <CalculateIcon />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         <Chip 
                           label={getStatusText(user.status)} 
@@ -420,8 +606,10 @@ const UserManagementTab = () => {
                 label="등급"
               >
                 <MenuItem value="초보상인">초보상인</MenuItem>
-                <MenuItem value="중급상인">중급상인</MenuItem>
-                <MenuItem value="고급상인">고급상인</MenuItem>
+                <MenuItem value="거래꾼">거래꾼</MenuItem>
+                <MenuItem value="장인">장인</MenuItem>
+                <MenuItem value="마스터">마스터</MenuItem>
+                <MenuItem value="거래왕">거래왕</MenuItem>
               </Select>
             </FormControl>
           </Box>

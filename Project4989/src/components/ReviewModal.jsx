@@ -26,6 +26,20 @@ const ReviewModal = ({ isOpen, onClose, postId, reviewerId, reviewOppositeId, on
       return;
     }
 
+    // 필수 데이터 검증
+    if (!postId) {
+      alert('게시글 정보가 없습니다.');
+      return;
+    }
+    if (!reviewerId) {
+      alert('후기 작성자 정보가 없습니다.');
+      return;
+    }
+    if (!reviewOppositeId) {
+      alert('후기 대상자 정보가 없습니다.');
+      return;
+    }
+
     // 전송할 데이터 로깅
     const requestData = {
       postId: postId,
@@ -35,11 +49,22 @@ const ReviewModal = ({ isOpen, onClose, postId, reviewerId, reviewOppositeId, on
       comment: comment.trim()
     };
     
-    console.log('후기 전송 데이터:', requestData);
+    console.log('=== 후기 전송 데이터 상세 로그 ===');
+    console.log('postId:', postId, '타입:', typeof postId);
+    console.log('reviewerId:', reviewerId, '타입:', typeof reviewerId);
+    console.log('reviewOppositeId:', reviewOppositeId, '타입:', typeof reviewOppositeId);
+    console.log('rating:', rating, '타입:', typeof rating);
+    console.log('comment:', comment.trim(), '타입:', typeof comment);
+    console.log('전체 requestData:', requestData);
+    console.log('JSON.stringify(requestData):', JSON.stringify(requestData));
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post('http://localhost:4989/review/create', requestData);
+      const response = await axios.post('http://localhost:4989/review/create', requestData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
       if (response.data.success) {
         alert('후기가 성공적으로 작성되었습니다.');

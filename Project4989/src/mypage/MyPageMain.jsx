@@ -7,6 +7,7 @@ import BiddingSection from './BiddingSection';
 import WishlistSection from './WishlistSection';
 import PurchaseHistorySection from './PurchaseHistorySection';
 import ReviewSection from './ReviewSection';
+import CreditTierDisplay from '../components/CreditTierDisplay';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {

@@ -54,7 +54,11 @@ public class AuctionService implements AuctionServiceInter {
 	
 	@Override
 	public List<PostsDto> getAuctionPosts() {
-		return auctionMapper.getAuctionPosts();
+		return auctionMapper.getAuctionPosts("time"); // 기본값
+	}
+	
+	public List<PostsDto> getAuctionPosts(String sortType) {
+		return auctionMapper.getAuctionPosts(sortType);
 	}
 	
 	@Override

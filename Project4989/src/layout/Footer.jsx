@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Typography, Link, Container } from '@mui/material';
+import { Box, Typography, Container } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import './Footer.css';
 
 export const Footer = () => {
@@ -40,12 +41,16 @@ export const Footer = () => {
           mb: 2,
           flexWrap: 'wrap'
         }}>
-          <Link href="#" underline="hover" color="#5B9BD5" fontSize={13} sx={{
+          <RouterLink to="/terms" style={{
             fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
             fontWeight: 500,
             transition: 'all 0.3s ease',
             padding: '6px 12px',
             borderRadius: '6px',
+            textDecoration: 'none',
+            color: '#5B9BD5',
+            fontSize: '13px',
+            display: 'inline-block',
             '&:hover': { 
               color: '#4A90E2',
               backgroundColor: 'rgba(74, 144, 226, 0.05)',
@@ -53,13 +58,17 @@ export const Footer = () => {
             }
           }}>
             이용약관
-          </Link>
-          <Link href="#" underline="hover" color="#5B9BD5" fontSize={13} sx={{
+          </RouterLink>
+          <RouterLink to="/privacy" style={{
             fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
             fontWeight: 500,
             transition: 'all 0.3s ease',
             padding: '6px 12px',
             borderRadius: '6px',
+            textDecoration: 'none',
+            color: '#5B9BD5',
+            fontSize: '13px',
+            display: 'inline-block',
             '&:hover': { 
               color: '#4A90E2',
               backgroundColor: 'rgba(74, 144, 226, 0.05)',
@@ -67,13 +76,17 @@ export const Footer = () => {
             }
           }}>
             개인정보처리방침
-          </Link>
-          <Link href="#" underline="hover" color="#5B9BD5" fontSize={13} sx={{
+          </RouterLink>
+          <RouterLink to="/contact" style={{
             fontFamily: 'Spoqa Han Sans Neo, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif',
             fontWeight: 500,
             transition: 'all 0.3s ease',
             padding: '6px 12px',
             borderRadius: '6px',
+            textDecoration: 'none',
+            color: '#5B9BD5',
+            fontSize: '13px',
+            display: 'inline-block',
             '&:hover': { 
               color: '#4A90E2',
               backgroundColor: 'rgba(74, 144, 226, 0.05)',
@@ -81,7 +94,7 @@ export const Footer = () => {
             }
           }}>
             고객센터
-          </Link>
+          </RouterLink>
         </Box>
         <Typography variant="caption" color="#94A3B8" sx={{
           fontSize: 12,

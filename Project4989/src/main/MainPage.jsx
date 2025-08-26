@@ -1,95 +1,40 @@
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './MainPage.css'
+import api from '../lib/api'
 
 const MainPage = () => {
+  const navigate = useNavigate()
   const [sortType, setSortType] = useState('time') // 'time' 또는 'bidders'
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const [auctionItems, setAuctionItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const itemsPerPage = 8 // 한 페이지당 8개 아이템으로 변경
 
-  // 경매 물품 데이터 (10개)
-  const auctionItems = [
-    {
-      id: 1,
-      title: "애플 맥북 프로 13인치",
-      currentPrice: 1200000,
-      endTime: "2024-01-15 18:00",
-      bidders: 8,
-      image: "https://via.placeholder.com/200x150/3498db/ffffff?text=MacBook"
-    },
-    {
-      id: 2,
-      title: "삼성 갤럭시 S23 울트라",
-      currentPrice: 850000,
-      endTime: "2024-01-14 20:30",
-      bidders: 12,
-      image: "https://via.placeholder.com/200x150/e74c3c/ffffff?text=Galaxy"
-    },
-    {
-      id: 3,
-      title: "니케 에어포스 1",
-      currentPrice: 180000,
-      endTime: "2024-01-16 15:00",
-      bidders: 15,
-      image: "https://via.placeholder.com/200x150/2ecc71/ffffff?text=Nike"
-    },
-    {
-      id: 4,
-      title: "소니 WH-1000XM4",
-      currentPrice: 280000,
-      endTime: "2024-01-13 22:00",
-      bidders: 6,
-      image: "https://via.placeholder.com/200x150/9b59b6/ffffff?text=Sony"
-    },
-    {
-      id: 5,
-      title: "아이패드 프로 11인치",
-      currentPrice: 950000,
-      endTime: "2024-01-17 19:30",
-      bidders: 9,
-      image: "https://via.placeholder.com/200x150/f39c12/ffffff?text=iPad"
-    },
-    {
-      id: 6,
-      title: "캐논 EOS R6",
-      currentPrice: 2100000,
-      endTime: "2024-01-15 16:45",
-      bidders: 11,
-      image: "https://via.placeholder.com/200x150/34495e/ffffff?text=Canon"
-    },
-    {
-      id: 7,
-      title: "플레이스테이션 5",
-      currentPrice: 650000,
-      endTime: "2024-01-18 21:00",
-      bidders: 18,
-      image: "https://via.placeholder.com/200x150/e67e22/ffffff?text=PS5"
-    },
-    {
-      id: 8,
-      title: "다이슨 V15",
-      currentPrice: 420000,
-      endTime: "2024-01-14 17:15",
-      bidders: 7,
-      image: "https://via.placeholder.com/200x150/1abc9c/ffffff?text=Dyson"
-    },
-    {
-      id: 9,
-      title: "로지텍 MX 마스터 3",
-      currentPrice: 120000,
-      endTime: "2024-01-16 14:20",
-      bidders: 5,
-      image: "https://via.placeholder.com/200x150/95a5a6/ffffff?text=Logitech"
-    },
-    {
-      id: 10,
-      title: "애플 워치 시리즈 8",
-      currentPrice: 380000,
-      endTime: "2024-01-17 20:45",
-      bidders: 13,
-      image: "https://via.placeholder.com/200x150/16a085/ffffff?text=Apple+Watch"
+  // API에서 경매 데이터 가져오기
+  const fetchAuctionItems = async (sort = 'time') => {
+    try {
+      setLoading(true)
+      const response = await api.get(`/auction?sort=${sort}`)
+      setAuctionItems(response.data)
+      setError(null)
+    } catch (err) {
+      console.error('경매 데이터 로딩 실패:', err)
+      setError('경매 데이터를 불러오는데 실패했습니다.')
+      setAuctionItems([])
+    } finally {
+      setLoading(false)
     }
-  ]
+  }
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    fetchAuctionItems(sortType)
+  }, [sortType])
+
+
 
   const handleSortByTime = () => {
     setSortType('time')
@@ -101,8 +46,14 @@ const MainPage = () => {
     setCurrentPage(1) // 정렬 변경 시 첫 페이지로 이동
   }
 
+  // 입찰하기 버튼 클릭 시 상세페이지로 이동
+  const handleBidClick = (postId) => {
+    navigate(`/auction/detail/${postId}`)
+  }
+
   const handleNextPage = () => {
-    if (currentPage < Math.ceil(auctionItems.length / itemsPerPage)) {
+    const totalPages = Math.ceil(auctionItems.length / itemsPerPage)
+    if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1)
     }
   }
@@ -119,6 +70,33 @@ const MainPage = () => {
   const currentItems = auctionItems.slice(startIndex, endIndex)
 
   const totalPages = Math.ceil(auctionItems.length / itemsPerPage)
+
+  // 로딩 중이거나 에러가 있을 때 표시
+  if (loading) {
+    return (
+      <div className="main-page">
+        <div className="container">
+          <div className="main-header">
+            <h1 className="main-title">인기 경매 상품</h1>
+            <p className="main-subtitle">데이터를 불러오는 중...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="main-page">
+        <div className="container">
+          <div className="main-header">
+            <h1 className="main-title">인기 경매 상품</h1>
+            <p className="main-subtitle" style={{color: 'red'}}>{error}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="main-page">
@@ -149,47 +127,94 @@ const MainPage = () => {
         <div className="auction-container">
           <div className="auction-grid">
             {currentItems.map((item) => (
-              <div key={item.id} className="auction-card">
+              <div 
+                key={item.postId} 
+                className="auction-card"
+                onClick={() => handleBidClick(item.postId)}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="main-auction-image">
-                  <img src={item.image} alt={item.title} />
+                  <img 
+                    src={
+                      item.image ? 
+                        (item.image.startsWith('http') ? `${item.image}?t=${Date.now()}` : `http://localhost:4989${item.image}?t=${Date.now()}`) :
+                      item.mainPhotoUrl ? 
+                        (item.mainPhotoUrl.startsWith('http') ? `${item.mainPhotoUrl}?t=${Date.now()}` : `http://localhost:4989${item.mainPhotoUrl}?t=${Date.now()}`) :
+                      "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image"
+                    } 
+                    alt={item.title}
+                    onError={(e) => {
+                      // 무한 루프 방지: 이미 placeholder 이미지인 경우 더 이상 교체하지 않음
+                      if (!e.target.src.includes('placeholder.com')) {
+                        e.target.src = "https://via.placeholder.com/200x150/3498db/ffffff?text=No+Image";
+                        e.target.onerror = null; // onError 이벤트 제거
+                      }
+                    }}
+                    onLoad={(e) => {
+                      // 이미지 로드 성공 시 로딩 상태 표시 제거
+                      e.target.style.opacity = '1';
+                    }}
+                    style={{
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease-in-out'
+                    }}
+                  />
                   <div className="main-auction-badge">
-                    <span className="bidders-count">{item.bidders}명</span>
+                    <span className="bidders-count">{item.bidderCount || 0}명</span>
                   </div>
                 </div>
                 <div className="auction-info">
                   <h3 className="auction-title">{item.title}</h3>
                   <div className="auction-price">
-                    <span className="main-current-price">₩{item.currentPrice.toLocaleString()}</span>
+                    <span className="main-current-price">₩{item.price?.toLocaleString() || '0'}</span>
                   </div>
                   <div className="auction-time">
-                    <span className="end-time">종료: {item.endTime}</span>
+                    <span className="end-time">
+                      종료: {item.auctionEndTime ? 
+                        new Date(item.auctionEndTime).toLocaleDateString('ko-KR', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : '미정'}
+                    </span>
                   </div>
-                  <button className="main-bid-button">입찰하기</button>
+                  <button 
+                    className="main-bid-button"
+                    onClick={(e) => {
+                      e.stopPropagation() // 이벤트 전파 방지
+                      handleBidClick(item.postId)
+                    }}
+                  >
+                    입찰하기
+                  </button>
                 </div>
               </div>
             ))}
           </div>
 
           {/* 페이지네이션 버튼 */}
-          <div className="pagination">
-            <button
-              className="page-btn prev-btn"
-              onClick={handlePrevPage}
-              disabled={currentPage === 1}
-            >
-              이전
-            </button>
-            <span className="page-info">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              className="page-btn next-btn"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              다음
-            </button>
-          </div>
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button 
+                className="page-btn prev-btn"
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+              >
+                이전
+              </button>
+              <span className="page-info">
+                {currentPage} / {totalPages} (총 {auctionItems.length}개)
+              </span>
+              <button 
+                className="page-btn next-btn"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                다음
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

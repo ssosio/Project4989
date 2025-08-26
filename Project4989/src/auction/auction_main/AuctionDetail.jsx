@@ -3,6 +3,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import { AuthContext } from '../../context/AuthContext';
+import CreditTierDisplay from '../../components/CreditTierDisplay';
 import './auction.css';
 import api from '../../lib/api';
 import PortOnePayment from './PortOnePayment';
@@ -820,7 +821,10 @@ const handleEscrowCancel = () => {
                 <div className="meta-item author-date">
                   <div>
                     <span className="meta-label">작성자</span>
-                    <span className="meta-value">{authorNickname || `ID: ${auctionDetail.memberId}`}</span>
+                    <span className="meta-value">
+                      {authorNickname || `ID: ${auctionDetail.memberId}`}
+                      <CreditTierDisplay memberId={auctionDetail.memberId} showDetails={false} />
+                    </span>
                   </div>
                   <div>
                     <span className="meta-label">작성일</span>
@@ -1189,28 +1193,54 @@ const handleEscrowCancel = () => {
       )}
 
       {showPaymentModal && (
-        <div className="payment-modal">
-          <div className="payment-modal-content">
-            <h2>보증금 결제</h2>
-            <p>경매 참여를 위해 시작가의 10% 보증금을 결제해주세요.</p>
-            <div className="payment-details">
-              <p><strong>경매 제목:</strong> {auctionDetail?.title}</p>
-              <p><strong>시작가:</strong> {auctionDetail?.price?.toLocaleString()}원</p>
-              <p><strong>보증금:</strong> {paymentAmount.toLocaleString()}원</p>
-              <p><strong>결제 수단:</strong> KG이니시스 (카드)</p>
-              <p><strong>입찰 금액:</strong> {bidAmount.toLocaleString()}원</p>
+        <div className="payment-modal-overlay">
+          <div className="payment-modal-card">
+            <div className="payment-modal-header">
+              <div className="payment-modal-icon">🏆</div>
+              <h2 className="payment-modal-title">보증금 결제</h2>
+              <p className="payment-modal-subtitle">
+                경매 참여를 위해 시작가의 10% 보증금을 결제해주세요.
+              </p>
             </div>
-            <div className="payment-modal-buttons">
+            
+            <div className="payment-modal-details">
+              <div className="payment-modal-amount">
+                <span className="payment-modal-amount-label">보증금</span>
+                <span className="payment-modal-amount-value">{paymentAmount.toLocaleString()}원</span>
+              </div>
+              
+              <div className="payment-modal-info">
+                <div className="payment-modal-info-item">
+                  <span className="payment-modal-info-label">경매 제목</span>
+                  <span className="payment-modal-info-value">{auctionDetail?.title}</span>
+                </div>
+                <div className="payment-modal-info-item">
+                  <span className="payment-modal-info-label">시작가</span>
+                  <span className="payment-modal-info-value">{auctionDetail?.price?.toLocaleString()}원</span>
+                </div>
+                <div className="payment-modal-info-item">
+                  <span className="payment-modal-info-label">입찰 금액</span>
+                  <span className="payment-modal-info-value highlight">{bidAmount.toLocaleString()}원</span>
+                </div>
+                <div className="payment-modal-info-item">
+                  <span className="payment-modal-info-label">결제 수단</span>
+                  <span className="payment-modal-info-value">KG이니시스 (카드)</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="payment-modal-footer">
               <button
-                className="confirm-btn"
+                className="payment-modal-confirm-btn"
                 onClick={() => {
                   setIsProcessingPayment(true);
                   setShowPaymentModal(false);
                 }}
               >
+                <span className="btn-icon">💳</span>
                 결제 진행
               </button>
-              <button className="cancel-btn" onClick={handlePaymentCancel}>
+              <button className="payment-modal-cancel-btn" onClick={handlePaymentCancel}>
                 취소
               </button>
             </div>
