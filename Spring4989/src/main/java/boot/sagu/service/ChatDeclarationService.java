@@ -60,7 +60,7 @@ public class ChatDeclarationService implements ChatDeclarationServiceInter{
 			System.out.println(">>> [DEBUG] 조회된 신고 정보: " + declaration);
 			
 			// 신고 대상 사용자 ID 가져오기
-			Integer resultMemberId = declaration.getDeclaration_opposite_memberid();
+			Integer resultMemberId = declaration.getDeclarationOppositeMemberId();
 			System.out.println(">>> [DEBUG] resultMemberId: " + resultMemberId);
 			
 			if (resultMemberId == null) {

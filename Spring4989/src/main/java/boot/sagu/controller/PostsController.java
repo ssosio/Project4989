@@ -451,4 +451,33 @@ public class PostsController {
 		}
 	}
 	
+	// 후기 조회 API (테스트용 - JWT 인증 없이)
+	@GetMapping("/reviews/test")
+	public ResponseEntity<Map<String, Object>> getUserReviewsTest(
+			@RequestParam("memberId") Long memberId) {
+		
+		try {
+			System.out.println("🔍 후기 조회 테스트 API 호출됨 - memberId: " + memberId);
+			
+			// review_opposite_id가 현재 로그인한 사용자인 후기들을 가져오기
+			List<Map<String, Object>> reviews = postService.getReviewsForUser(memberId);
+			System.out.println("📝 조회된 후기 개수: " + (reviews != null ? reviews.size() : "null"));
+			
+			if (reviews != null && !reviews.isEmpty()) {
+				System.out.println("📋 첫 번째 후기: " + reviews.get(0));
+			}
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"reviews", reviews
+			));
+			
+		} catch (Exception e) {
+			System.err.println("❌ 후기 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "후기 조회 중 오류가 발생했습니다."));
+		}
+	}
+	
 }

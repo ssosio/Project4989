@@ -104,17 +104,17 @@ public class ChatFileUploadService {
 
         // 3. chatmessage 테이블에 메시지 삽입 (messageId 생성)
         ChatMessageDto chatMessageDto = new ChatMessageDto();
-        chatMessageDto.setChat_room_id(chatRoomId);
-        chatMessageDto.setSender_id(senderId);
-        chatMessageDto.setMessage_type("image");
-        chatMessageDto.setMessage_content(fileUrl);
+        chatMessageDto.setChatRoomId(chatRoomId);
+        chatMessageDto.setSenderId(senderId);
+        chatMessageDto.setMessageType("image");
+        chatMessageDto.setMessageContent(fileUrl);
         java.sql.Timestamp timestamp = java.sql.Timestamp.valueOf(LocalDateTime.now());
-        chatMessageDto.setCreated_at(timestamp);
+        chatMessageDto.setCreatedAt(timestamp);
         
         logger.info("chatMessageService.insertMessage 호출 준비...");
         chatMessageService.insertMessage(chatMessageDto);
         
-        Long generatedMessageId = chatMessageDto.getMessage_id();
+        Long generatedMessageId = chatMessageDto.getMessageId();
         logger.info("새로운 메시지 생성 완료. messageId: {}", generatedMessageId);
 
         // 4. chatfile 테이블에 파일 정보 저장

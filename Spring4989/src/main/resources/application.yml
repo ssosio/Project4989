@@ -21,9 +21,6 @@ spring:
     include: 
       - oauth
       - coolsms
-  jackson:
-    property-naming-strategy: SNAKE_CASE
-
 #mybatis
 mybatis:
   type-aliases-package: boot.sagu.dto

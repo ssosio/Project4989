@@ -98,4 +98,7 @@ public interface PostsMapperInter {
 	// 구매내역 조회
 	List<Map<String, Object>> getPurchaseHistory(@Param("memberId") Long memberId);
 	
+	// 후기 조회
+	List<Map<String, Object>> getReviewsForUser(@Param("memberId") Long memberId);
+	
 }

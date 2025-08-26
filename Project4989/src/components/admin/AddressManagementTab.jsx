@@ -74,8 +74,14 @@ const AddressManagementTab = () => {
             });
             
             console.log('API 응답:', response.data);
+            console.log('API 응답 타입:', typeof response.data);
+            console.log('API 응답 키들:', Object.keys(response.data));
             
             if (response.data && response.data.content) {
+                console.log('content 배열:', response.data.content);
+                console.log('첫 번째 항목:', response.data.content[0]);
+                console.log('첫 번째 항목의 키들:', response.data.content[0] ? Object.keys(response.data.content[0]) : '없음');
+                
                 setRegions(response.data.content);
                 setTotalPages(response.data.totalPages);
                 setTotalCount(response.data.totalElements);
@@ -387,8 +393,8 @@ const AddressManagementTab = () => {
                                 </TableRow>
                             ) : (
                                 regions.map((region) => (
-                                    <TableRow key={region.regionId} hover>
-                                        <TableCell>{region.regionId}</TableCell>
+                                    <TableRow key={region.region_id} hover>
+                                        <TableCell>{region.region_id}</TableCell>
                                         <TableCell>{region.province || '-'}</TableCell>
                                         <TableCell>{region.city || '-'}</TableCell>
                                         <TableCell>{region.district || '-'}</TableCell>
@@ -405,7 +411,7 @@ const AddressManagementTab = () => {
                                             </IconButton>
                                             <IconButton
                                                 size="small"
-                                                onClick={() => handleDelete(region.regionId)}
+                                                onClick={() => handleDelete(region.region_id)}
                                                 sx={{ color: '#d32f2f' }}
                                             >
                                                 <DeleteIcon />

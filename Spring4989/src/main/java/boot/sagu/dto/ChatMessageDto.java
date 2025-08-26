@@ -12,17 +12,17 @@ import lombok.Data;
 //@Alias("message")
 public class ChatMessageDto {
 	
-	private Long message_id;
-	private Long chat_room_id;
-	private Long sender_id;
-	private String message_type;
-	private String message_content;
+	private Long messageId;
+	private Long chatRoomId;
+	private Long senderId;
+	private String messageType;
+	private String messageContent;
 	private String fileUrl; // 추가
-	private int is_read;
-	private Timestamp deleted_at;
+	private int isRead;
+	private Timestamp deletedAt;
 	
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	private Timestamp created_at;
+	private Timestamp createdAt;
 	
 	
 }
