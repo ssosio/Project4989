@@ -661,7 +661,7 @@ const ProfileSection = ({ userInfo }) => {
         </Alert>
       )}
 
-      <Grid container spacing={4} sx={{ width: '100%' }}>
+      <Grid container spacing={4} sx={{ width: '100%', minHeight: '500px' }}>
         {/* 프로필 이미지 및 기본 정보 */}
         <Grid item xs={12} md={4}>
           <Card sx={{ width: '100%', minWidth: '180px' }}>
