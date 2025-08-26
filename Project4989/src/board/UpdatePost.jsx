@@ -5,61 +5,61 @@ import './update.css';
 
 const UpdatePost = () => {
 
-    const navi = useNavigate();
-    const { search } = useLocation();
-    const postId = new URLSearchParams(search).get('postId');
+  const navi = useNavigate();
+  const { search } = useLocation();
+  const postId = new URLSearchParams(search).get('postId');
 
-    //공통
-    const [uploadFiles,setUploadFiles]=useState([]);
-    const [postType,setPostType]=useState('');
-    const [tradeType,setTradeType]=useState('');
-    const [title,setTitle]=useState('');
-    const [price,setPrice]=useState('');
-    const [content,setContent]=useState('');
-    const [photoPreview,setPhotoPreview]=useState([]);
+  //공통
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [postType, setPostType] = useState('');
+  const [tradeType, setTradeType] = useState('');
+  const [title, setTitle] = useState('');
+  const [price, setPrice] = useState('');
+  const [content, setContent] = useState('');
+  const [photoPreview, setPhotoPreview] = useState([]);
 
-    const [status,setStatus]=useState('');
+  const [status, setStatus] = useState('');
 
-    const [locationVal, setLocationVal] = useState('');
+  const [locationVal, setLocationVal] = useState('');
 
-    // 기존 사진(서버 저장본) + 삭제/대표 관리
-    const [existingPhotos, setExistingPhotos] = useState([]); // [{photoId, photoUrl, isMain}]
-    const [deletePhotoIds, setDeletePhotoIds] = useState([]);
-    const [mainPhotoId, setMainPhotoId] = useState(null);
+  // 기존 사진(서버 저장본) + 삭제/대표 관리
+  const [existingPhotos, setExistingPhotos] = useState([]); // [{photoId, photoUrl, isMain}]
+  const [deletePhotoIds, setDeletePhotoIds] = useState([]);
+  const [mainPhotoId, setMainPhotoId] = useState(null);
 
-    //부동산
-    const [propertyType,setPropertyType]=useState('');
-    const [area,setArea]=useState('');
-    const [rooms,setRooms]=useState('');
-    const [floor,setFloor]=useState('');
-    const [dealType,setDealType]=useState('');
+  //부동산
+  const [propertyType, setPropertyType] = useState('');
+  const [area, setArea] = useState('');
+  const [rooms, setRooms] = useState('');
+  const [floor, setFloor] = useState('');
+  const [dealType, setDealType] = useState('');
 
-    //자동차
-    const [brand,setBrand]=useState('');
-    const [model,setModel]=useState('');
-    const [year,setYear]=useState('');
-    const [mileage,setMileage]=useState('');
-    const [fuelType,setFuelType]=useState('');
-    const [transmission,setTransmission]=useState('');
+  //자동차
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [fuelType, setFuelType] = useState('');
+  const [transmission, setTransmission] = useState('');
 
-    //아이템(카테고리)
-    const [conditions,setConditions]=useState('');
-    const [categoryId,setCategoryId]=useState('');
-
-
+  //아이템(카테고리)
+  const [conditions, setConditions] = useState('');
+  const [categoryId, setCategoryId] = useState('');
 
 
-    // 상세 데이터 로드 (초기값 세팅)
+
+
+  // 상세 데이터 로드 (초기값 세팅)
   useEffect(() => {
     if (!postId) return;
-    
+
     // 기본 게시글 정보 가져오기
     axios.get(`http://localhost:4989/post/detail?postId=${postId}`)
       .then(res => {
         const data = res.data || {};
         console.log('받아온 전체 데이터:', data);
         const p = data.post || data;
-        
+
         setPostType(p.postType || '');
         setTradeType(p.tradeType || '');
         setTitle(p.title || '');
@@ -119,7 +119,8 @@ const UpdatePost = () => {
 
         // 사진 처리
         let photos = data.photos || p.photos || [];
-        
+
+        // photos가 문자열인 경우 JSON 파싱 시도
         if (typeof photos === 'string') {
           try {
             photos = JSON.parse(photos);
@@ -128,40 +129,41 @@ const UpdatePost = () => {
             photos = [];
           }
         }
-        
+
+        // photos가 배열이 아니면 빈 배열로 설정
         if (!Array.isArray(photos)) {
           photos = [];
         }
-        
+
         console.log('로드된 사진 데이터:', photos);
         setExistingPhotos(photos);
-        
+        // 대표 사진 찾기
         const main = photos.find(ph => ph.isMain === 1 || ph.isMain === true || ph.isMain === '1');
         setMainPhotoId(main ? main.photoId : null);
         console.log('대표 사진 ID:', main ? main.photoId : null);
       })
       .catch(err => console.error(err));
   }, [postId]);
-    
-   //사진파일업로드
-    const handleFileChag=(e)=>{
-        const files=Array.from(e.target.files);
 
-        setUploadFiles(files);
-        setPhotoPreview(files.map(file=>URL.createObjectURL(file)));
-    }
+  //사진파일업로드
+  const handleFileChag = (e) => {
+    const files = Array.from(e.target.files);
 
-    // 기존 사진 삭제 토글
+    setUploadFiles(files);
+    setPhotoPreview(files.map(file => URL.createObjectURL(file)));
+  }
+
+  // 기존 사진 삭제 토글
   const toggleDeletePhoto = (photoId) => {
     console.log('사진 삭제 토글:', photoId);
     setDeletePhotoIds(prev => {
-      const newIds = prev.includes(photoId) 
-        ? prev.filter(id => id !== photoId) 
+      const newIds = prev.includes(photoId)
+        ? prev.filter(id => id !== photoId)
         : [...prev, photoId];
       console.log('삭제 예정 사진 IDs:', newIds);
       return newIds;
     });
-    
+
     // 삭제로 체크한 사진이 대표로 선택되어 있으면 대표 선택 해제
     if (mainPhotoId === photoId) {
       console.log('대표 사진이 삭제 예정이므로 대표 선택 해제');
@@ -253,13 +255,13 @@ const UpdatePost = () => {
       });
   };
 
-    const clickList=()=>{
-        navi("/goods");
-    }
+  const clickList = () => {
+    navi("/goods");
+  }
 
 
-    return (
-         <div className="update-page">
+  return (
+    <div className="update-page">
       <div className="update-container">
         {/* 헤더 섹션 */}
         <div className="update-header">
@@ -271,162 +273,162 @@ const UpdatePost = () => {
         <div className="update-form-container">
           <table className="update-form-table">
             <tr>
-                <td>
-                    <label>물건타입
-                    <select name="postType" id="" value={postType} disabled>
-                        <option value=""  hidden>물건타입을 선택해 주세요</option>
-                        <option value="ITEMS"  hidden>중고물품</option>
-                        <option value="CARS" hidden>자동차</option>
-                        <option value="REAL_ESTATES" hidden>부동산</option>
-                    </select>
+              <td>
+                <label>물건타입
+                  <select name="postType" id="" value={postType} disabled>
+                    <option value="" hidden>물건타입을 선택해 주세요</option>
+                    <option value="ITEMS" hidden>중고물품</option>
+                    <option value="CARS" hidden>자동차</option>
+                    <option value="REAL_ESTATES" hidden>부동산</option>
+                  </select>
+                </label>
+              </td>
+            </tr>
+            {
+              postType === 'REAL_ESTATES' && (
+                <tr className="">
+                  <td>
+                    <label>매물종류
+                      <select name='propertyType' value={propertyType} onChange={(e) => {
+                        setPropertyType(e.target.value);
+                      }}>
+                        <option value="" selected>매물종류를 선택해 주세요</option>
+                        <option value="apt">아파트</option>
+                        <option value="studio">오피스텔</option>
+                        <option value="oneroom">원룸</option>
+                        <option value="tworoom">투룸</option>
+                      </select>
                     </label>
-                </td>
+                  </td>
                 </tr>
-                {
-                    postType==='REAL_ESTATES'&&(
-                        <tr className="">
-                            <td>
-                                <label>매물종류
-                                    <select name='propertyType' value={propertyType} onChange={(e)=>{
-                                        setPropertyType(e.target.value);
-                                    }}>
-                                        <option value=""  selected>매물종류를 선택해 주세요</option>
-                                        <option value="apt">아파트</option>
-                                        <option value="studio">오피스텔</option>
-                                        <option value="oneroom">원룸</option>
-                                        <option value="tworoom">투룸</option>
-                                    </select>
-                                </label>
-                            </td>
-                            </tr>
-                            )}
-                            {postType==='REAL_ESTATES'&&(
-                        <tr className="estates_detail">
-                            <td>
-                                <label>면적
-                                <input type="text" name='area' value={area} onChange={(e)=>{
-                                        setArea(e.target.value);
-                                    }}/><span>㎡</span>
-                                </label>
-                            </td>
-                            <td>
-                                <label>방 개수
-                                <input type="text" name='rooms' value={rooms} onChange={(e)=>{
-                                        setRooms(e.target.value);
-                                    }}/>
-                                </label>
-                            </td>
-                            <td>
-                                <label>층
-                                <input type="text" name='floor' value={floor} onChange={(e)=>{
-                                        setFloor(e.target.value);
-                                    }}/>
-                                </label>
-                            </td>
-                            <td>
-                                <label>거래유형
-                                    <select name='dealType' value={dealType} onChange={(e)=>{
-                                        setDealType(e.target.value);
-                                    }}>
-                                        <option value=""  selected>거래유형을 선택해 주세요</option>
-                                        <option value="lease">전세</option>
-                                        <option value="rent">월세</option>
-                                        <option value="leaseAndrent">전월세</option>
-                                        <option value="buy">매매</option>
-                                    </select>
-                                </label>
-                            </td>
-                        </tr>
-                    )
-                }
-                {
-                    postType==='CARS'&&(
-                        <tr className="">
-                            <td>
-                                <label >브랜드
-                                    <select name='brand' value={brand} onChange={(e)=>{
-                                        setBrand(e.target.value);
-                                    }} >
-                                        <option value=""  selected>브랜드를 선택해 주세요</option>
-                                        <option value="kia">기아</option>
-                                        <option value="hyundai">현대</option>
-                                        <option value="benz">벤츠</option>
-                                        <option value="audi">아우디</option>
-                                        <option value="bmw">BMW</option>
-                                    </select>
-                                </label>
-                            </td>
-                           </tr>
-                            )}
-                            {postType==='CARS'&&(
-                             <tr className="car-detail">
-                            <td>
-                                <label>모델
-                                <input type="text" name='model' value={model} onChange={(e)=>{
-                                        setModel(e.target.value);
-                                    }}/>
-                                </label>
-                            </td>
-                            <td>
-                                <label>연식
-                                <input type="number" name='year' value={year} onChange={(e)=>{
-                                        setYear(e.target.value);
-                                    }}/>
-                                </label>
-                            </td>
-                            <td>
-                                <label>주행거리
-                                <input type="text" name='mileage' value={mileage} onChange={(e)=>{
-                                        setMileage(e.target.value);
-                                    }}/><span>km</span>
-                                </label>
-                            </td>
-                            <td>
-                                <label>연료
-                                    <select name='fuelType' value={fuelType} onChange={(e)=>{
-                                        setFuelType(e.target.value);
-                                    }}>
-                                        <option value=""  selected>연료타입을 선택해 주세요</option>
-                                        <option value="gasoline">휘발유</option>
-                                        <option value="diesel">경유</option>
-                                        <option value="electric">전기</option>
-                                    </select>
-                                </label>
-                            </td>
-                            <td>
-                                <label>변속기
-                                    <select name='transmission' value={transmission} onChange={(e)=>{
-                                        setTransmission(e.target.value);
-                                    }}>
-                                        <option value=""  selected>변속기타입을 선택해 주세요</option>
-                                        <option value="auto">오토</option>
-                                        <option value="stick">수동</option>
-                                    </select>
-                                </label>
-                            </td>
-                        </tr>
-                    )
-                }
-                {
-                    (postType==='ITEMS'||postType==='CARS') &&(
-                    <tr className="">
-                        <td>
-                            <label>판매타입
-                            <select name="tradeType" id="" value={tradeType} onChange={(e)=>{
-                            setTradeType(e.target.value);
-                            }}>
-                                <option value="" selected>판매타입을 선택해 주세요</option>
-                                <option value="SALE">판매</option>
-                                <option value="AUCTION" hidden>경매</option>
-                                <option value="SHARE">나눔</option>
-                            </select>
-                            </label>
-                        </td>
-                    </tr>
-                    )
-                }
-                
-                {/* {
+              )}
+            {postType === 'REAL_ESTATES' && (
+              <tr className="estates_detail">
+                <td>
+                  <label>면적
+                    <input type="text" name='area' value={area} onChange={(e) => {
+                      setArea(e.target.value);
+                    }} /><span>㎡</span>
+                  </label>
+                </td>
+                <td>
+                  <label>방 개수
+                    <input type="text" name='rooms' value={rooms} onChange={(e) => {
+                      setRooms(e.target.value);
+                    }} />개
+                  </label>
+                </td>
+                <td>
+                  <label>층
+                    <input type="text" name='floor' value={floor} onChange={(e) => {
+                      setFloor(e.target.value);
+                    }} />
+                  </label>
+                </td>
+                <td>
+                  <label>거래유형
+                    <select name='dealType' value={dealType} onChange={(e) => {
+                      setDealType(e.target.value);
+                    }}>
+                      <option value="" selected>거래유형을 선택해 주세요</option>
+                      <option value="lease">전세</option>
+                      <option value="rent">월세</option>
+                      <option value="leaseAndrent">전월세</option>
+                      <option value="buy">매매</option>
+                    </select>
+                  </label>
+                </td>
+              </tr>
+            )
+            }
+            {
+              postType === 'CARS' && (
+                <tr className="">
+                  <td>
+                    <label >브랜드
+                      <select name='brand' value={brand} onChange={(e) => {
+                        setBrand(e.target.value);
+                      }} >
+                        <option value="" selected>브랜드를 선택해 주세요</option>
+                        <option value="kia">기아</option>
+                        <option value="hyundai">현대</option>
+                        <option value="benz">벤츠</option>
+                        <option value="audi">아우디</option>
+                        <option value="bmw">BMW</option>
+                      </select>
+                    </label>
+                  </td>
+                </tr>
+              )}
+            {postType === 'CARS' && (
+              <tr className="car-detail">
+                <td>
+                  <label>모델
+                    <input type="text" name='model' value={model} onChange={(e) => {
+                      setModel(e.target.value);
+                    }} />
+                  </label>
+                </td>
+                <td>
+                  <label>연식
+                    <input type="number" name='year' value={year} onChange={(e) => {
+                      setYear(e.target.value);
+                    }} />
+                  </label>
+                </td>
+                <td>
+                  <label>주행거리
+                    <input type="text" name='mileage' value={mileage} onChange={(e) => {
+                      setMileage(e.target.value);
+                    }} /><span>km</span>
+                  </label>
+                </td>
+                <td>
+                  <label>연료
+                    <select name='fuelType' value={fuelType} onChange={(e) => {
+                      setFuelType(e.target.value);
+                    }}>
+                      <option value="" selected>연료타입을 선택해 주세요</option>
+                      <option value="gasoline">휘발유</option>
+                      <option value="diesel">경유</option>
+                      <option value="electric">전기</option>
+                    </select>
+                  </label>
+                </td>
+                <td>
+                  <label>변속기
+                    <select name='transmission' value={transmission} onChange={(e) => {
+                      setTransmission(e.target.value);
+                    }}>
+                      <option value="" selected>변속기타입을 선택해 주세요</option>
+                      <option value="auto">오토</option>
+                      <option value="stick">수동</option>
+                    </select>
+                  </label>
+                </td>
+              </tr>
+            )
+            }
+            {
+              (postType === 'ITEMS' || postType === 'CARS') && (
+                <tr className="">
+                  <td>
+                    <label>판매타입
+                      <select name="tradeType" id="" value={tradeType} onChange={(e) => {
+                        setTradeType(e.target.value);
+                      }}>
+                        <option value="" selected>판매타입을 선택해 주세요</option>
+                        <option value="SALE">판매</option>
+                        <option value="AUCTION" hidden>경매</option>
+                        <option value="SHARE">나눔</option>
+                      </select>
+                    </label>
+                  </td>
+                </tr>
+              )
+            }
+
+            {/* {
                     (postType==='ITEMS'||postType==='CARS'||postType==='REAL_ESTATES') &&(
                     <tr className="">
                         <td>
@@ -444,10 +446,10 @@ const UpdatePost = () => {
                     </tr>
                     )
                 } */}
-                {
-                    postType==='ITEMS' &&(
-                    <tr className="item-detail">
-                        {/* <td>
+            {
+              postType === 'ITEMS' && (
+                <tr className="item-detail">
+                  {/* <td>
                             <label>대분류
                                 <select onChange={handleParentChange} value={selectedParent}>
                                     <option value="">대분류 선택</option>
@@ -471,109 +473,109 @@ const UpdatePost = () => {
                                 </select>
                             </label>
                         </td> */}
-                         <td>
-                            <label>상태
-                                <select value={conditions} onChange={(e)=>{
-                                    setConditions(e.target.value);
-                                }}>
-                                    <option value="">상태를 선택해주세요</option>
-                                    <option value="best">상</option>
-                                    <option value="good">중</option>
-                                    <option value="bad">하</option>
-                                </select>
-                            </label>
-                        </td>
-                    </tr>
-                   
-                    )
-                } 
-            <tr>
-                <td>
-                    <label>제목
-                    <input type="text" name='title'  value={title} onChange={(e)=>{
-                        setTitle(e.target.value);
-                    }}/>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <label>가격
-                    <input type="text" name='price'  value={price} onChange={(e)=>{
-                        setPrice(e.target.value);
-                    }}/>
-                    </label>
-                </td>
-            </tr>
-            <tr>
-                <td colSpan='4'>
-                    <textarea name="content" id="" value={content} onChange={(e)=>{
-                        setContent(e.target.value);
-                    }}></textarea>
-                </td>
-            </tr>
-            
-              {/* 기존 사진 목록 (삭제/대표 선택) */}
-              {existingPhotos.length > 0 && (
-                <tr>
                   <td>
-                    <label>기존 사진 관리</label>
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-                      {existingPhotos.map((ph) => (
-                        <div key={ph.photoId} style={{ textAlign: 'center' }}>
-                          <img
-                            src={`http://localhost:4989/postphoto/${ph.photoUrl}`}
-                            alt=""
-                            className="photo-preview"
-                            style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
-                            onError={(e) => {
-                              console.warn('이미지 로드 실패:', ph.photoUrl);
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                          <div style={{ marginTop: 6 }}>
-                            <label style={{ display: 'block', fontSize: '12px' }}>
-                              <input
-                                type="checkbox"
-                                checked={deletePhotoIds.includes(ph.photoId)}
-                                onChange={() => toggleDeletePhoto(ph.photoId)}
-                              /> 삭제
-                            </label>
-                            <label style={{ display: 'block', fontSize: '12px' }}>
-                              <input
-                                type="radio"
-                                name="mainPhoto"
-                                checked={mainPhotoId === ph.photoId}
-                                onChange={() => handleMainPhotoSelect(ph.photoId)}
-                                disabled={deletePhotoIds.includes(ph.photoId)}
-                              /> 대표
-                            </label>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <label>상태
+                      <select value={conditions} onChange={(e) => {
+                        setConditions(e.target.value);
+                      }}>
+                        <option value="">상태를 선택해주세요</option>
+                        <option value="best">상</option>
+                        <option value="good">중</option>
+                        <option value="bad">하</option>
+                      </select>
+                    </label>
                   </td>
                 </tr>
-              )}
-              
 
-              {/* 새 사진 추가 */}
+              )
+            }
+            <tr>
+              <td>
+                <label>제목
+                  <input type="text" name='title' value={title} onChange={(e) => {
+                    setTitle(e.target.value);
+                  }} />
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label>가격
+                  <input type="text" name='price' value={price} onChange={(e) => {
+                    setPrice(e.target.value);
+                  }} />
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td colSpan='4'>
+                <textarea name="content" id="" value={content} onChange={(e) => {
+                  setContent(e.target.value);
+                }}></textarea>
+              </td>
+            </tr>
+
+            {/* 기존 사진 목록 (삭제/대표 선택) */}
+            {existingPhotos.length > 0 && (
               <tr>
                 <td>
-                  <label>사진 추가
-                    <input type="file" multiple onChange={handleFileChag} />
-                  </label>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div className="photo-preview-container">
-                    {photoPreview.map((url, idx) => (
-                      <img src={url} alt="" key={idx} className="photo-preview" />
+                  <label>기존 사진 관리</label>
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+                    {existingPhotos.map((ph) => (
+                      <div key={ph.photoId} style={{ textAlign: 'center' }}>
+                        <img
+                          src={`http://localhost:4989/postphoto/${ph.photoUrl}`}
+                          alt=""
+                          className="photo-preview"
+                          style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
+                          onError={(e) => {
+                            console.warn('이미지 로드 실패:', ph.photoUrl);
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                        <div style={{ marginTop: 6 }}>
+                          <label style={{ display: 'block', fontSize: '12px' }}>
+                            <input
+                              type="checkbox"
+                              checked={deletePhotoIds.includes(ph.photoId)}
+                              onChange={() => toggleDeletePhoto(ph.photoId)}
+                            /> 삭제
+                          </label>
+                          <label style={{ display: 'block', fontSize: '12px' }}>
+                            <input
+                              type="radio"
+                              name="mainPhoto"
+                              checked={mainPhotoId === ph.photoId}
+                              onChange={() => handleMainPhotoSelect(ph.photoId)}
+                              disabled={deletePhotoIds.includes(ph.photoId)}
+                            /> 대표
+                          </label>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </td>
               </tr>
+            )}
+
+
+            {/* 새 사진 추가 */}
+            <tr>
+              <td>
+                <label>사진 추가
+                  <input type="file" multiple onChange={handleFileChag} />
+                </label>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div className="photo-preview-container">
+                  {photoPreview.map((url, idx) => (
+                    <img src={url} alt="" key={idx} className="photo-preview" />
+                  ))}
+                </div>
+              </td>
+            </tr>
           </table>
 
           <div className="update-button-container">
@@ -583,7 +585,7 @@ const UpdatePost = () => {
         </div>
       </div>
     </div>
-    );
+  );
 };
 
 export default UpdatePost;

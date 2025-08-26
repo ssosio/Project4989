@@ -143,8 +143,8 @@ const WishlistSection = ({ userInfo }) => {
     if (!itemToDelete || !userInfo?.memberId) return;
 
     try {
-      await api.post(`/auction/favorite/toggle`, null, { 
-        params: { postId: itemToDelete } 
+      await api.post(`/auction/favorite/toggle`, null, {
+        params: { postId: itemToDelete }
       });
 
       setDeleteDialogOpen(false);
@@ -503,11 +503,9 @@ const WishlistSection = ({ userInfo }) => {
                         <Typography variant="h6" component="h3" className="wishlist-post-title">
                           {item.title}
                         </Typography>
-
-                        {/* 설명 - 고정 높이 */}
-                        <Typography variant="body2" color="text.secondary" className="wishlist-post-description">
-                          {item.description || '설명 없음'}
-                        </Typography>
+                        <br />
+                        <br />
+                        <br />
 
                         {/* 판매자 정보 - 고정 높이 */}
                         <Typography variant="body2" color="text.secondary" className="wishlist-post-view-count-text">
@@ -516,7 +514,7 @@ const WishlistSection = ({ userInfo }) => {
 
                         {/* 찜한 날짜 - 고정 높이 */}
                         <Typography variant="body2" color="text.secondary" className="wishlist-post-date-text">
-                          찜한 날짜: {formatDate(item.favorite_created_at)}
+                          찜한 날짜: {formatDate(item.favoriteCreatedAt)}
                         </Typography>
 
                         <Box sx={{ mt: 'auto' }}>

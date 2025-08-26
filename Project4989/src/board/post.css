@@ -313,7 +313,7 @@
   }
 }
 
-.estates_detail{
+.estates_detail {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -325,12 +325,16 @@
   width: 100px;
 }
 
-.estates_detail td:first-child input{
+.estates_detail td:first-child input {
   width: 80px;
 }
 
 .estates_detail td:nth-child(2) {
   width: 100px;
+}
+
+.estates_detail td:nth-child(2) input {
+  width: 80px;
 }
 
 .estates_detail td:nth-child(3) {
@@ -389,4 +393,3 @@
 .item-detail td:nth-child(2) {
   width: 175px;
 }
-

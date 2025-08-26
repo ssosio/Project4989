@@ -18,7 +18,7 @@ const StatsCards = ({ stats }) => {
   const [activeChatroom, setActiveChatroom] = useState(0);
   const [chatReports, setChatReports] = useState(0);
   const [totalPosts, setTotalPosts] = useState(0);
-
+  const [countMember, setCountMember] = useState(0);
   useEffect(() => {
     const list = () => {
       const url = "http://localhost:4989/api/chat-declarations/count";
@@ -26,6 +26,20 @@ const StatsCards = ({ stats }) => {
         .then(async (res) => {
           setActiveChatroom(res.data.chatCnt);
           setChatReports(res.data.reportCnt);
+        })
+        .catch(err => {
+          console.error("에러 발생:", err);
+        });
+    };
+    list()
+  }, [])
+
+  useEffect(() => {
+    const list = () => {
+      const url = "http://localhost:4989/countMember";
+      axios.get(url)
+        .then(async (res) => {
+          setCountMember(res.data);
         })
         .catch(err => {
           console.error("에러 발생:", err);
@@ -55,8 +69,8 @@ const StatsCards = ({ stats }) => {
   }, [])
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
-      <Grid item xs={12} sm={6} md={3}>
+    <Grid container spacing={3} sx={{ mb: 4 }} justifyContent="center">
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
@@ -65,13 +79,13 @@ const StatsCards = ({ stats }) => {
           <CardContent>
             <PeopleIcon sx={{ fontSize: 40, mb: 1 }} />
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {stats.totalUsers.toLocaleString()}
+              {countMember}
             </Typography>
             <Typography variant="body2">총 회원 수</Typography>
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
           color: 'white',
@@ -86,7 +100,7 @@ const StatsCards = ({ stats }) => {
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
           color: 'white',
@@ -101,7 +115,7 @@ const StatsCards = ({ stats }) => {
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
           color: 'white',
@@ -117,7 +131,7 @@ const StatsCards = ({ stats }) => {
 
         </Card>
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6} md={2.4}>
         <Card sx={{
           background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
           color: 'white',

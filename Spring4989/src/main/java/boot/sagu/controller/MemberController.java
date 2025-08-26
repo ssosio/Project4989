@@ -385,4 +385,12 @@ public class MemberController {
             return ResponseEntity.status(500).body("테스트 실패: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/countMember")
+    public int countAllMembers()
+    {
+    	int cnt=memberService.countAllMembers();
+    	
+    	return cnt;
+    }
 }

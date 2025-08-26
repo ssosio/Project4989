@@ -13,8 +13,6 @@ import {
   Chat as ChatIcon,
   Report as ReportIcon,
   Category as CategoryIcon,
-  Dashboard as DashboardIcon,
-  Settings as SettingsIcon,
   Feedback as FeedbackIcon,
   LocationOn as LocationOnIcon,
   ContactSupport as ContactSupportIcon
@@ -23,12 +21,10 @@ import { AuthContext } from '../context/AuthContext';
 
 // 분리된 컴포넌트들 import
 import StatsCards from '../components/admin/StatsCards';
-import DashboardTab from '../components/admin/DashboardTab';
 import UserManagementTab from '../components/admin/UserManagementTab';
 import PostManagementTab from '../components/admin/PostManagementTab';
 import ReportManagementTab from '../components/admin/ReportManagementTab';
 import CategoryManagementTab from '../components/admin/CategoryManagementTab';
-import SystemSettingsTab from '../components/admin/SystemSettingsTab';
 import PostDetailModal from '../components/admin/PostDetailModal';
 import UserDetailModal from '../components/admin/UserDetailModal';
 import ChatReportManagementTab from '../components/admin/ChatReportManagementTab';
@@ -143,31 +139,31 @@ const AdminPage = () => {
       {/* 메인 컨텐츠 */}
       <Paper elevation={3} sx={{ borderRadius: 2 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label="admin tabs">
-            <Tab icon={<DashboardIcon />} label="대시보드" />
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
+            aria-label="admin tabs"
+            variant="fullWidth"
+            sx={{
+              '& .MuiTab-root': {
+                minHeight: 64,
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                textTransform: 'none'
+              }
+            }}
+          >
             <Tab icon={<PeopleIcon />} label="회원 관리" />
             <Tab icon={<PostAddIcon />} label="게시글 관리" />
             <Tab icon={<ReportIcon />} label="게시글 신고 관리" />
             <Tab icon={<FeedbackIcon />} label="채팅 신고 관리" />
             <Tab icon={<ContactSupportIcon />} label="고객 문의 관리" />
-            {/* <Tab icon={<CategoryIcon />} label="카테고리 관리" /> */}
-            <Tab icon={<SettingsIcon />} label="시스템 설정" />
             <Tab icon={<LocationOnIcon />} label="주소 관리" />
           </Tabs>
         </Box>
 
-        {/* 대시보드 탭 */}
-        <TabPanel value={tabValue} index={0}>
-          <DashboardTab
-            recentPosts={recentPosts}
-            reports={reports}
-            getStatusText={getStatusText}
-            getStatusColor={getStatusColor}
-          />
-        </TabPanel>
-
         {/* 회원 관리 탭 */}
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={0}>
           <UserManagementTab
             recentUsers={recentUsers}
             getStatusText={getStatusText}
@@ -177,7 +173,7 @@ const AdminPage = () => {
         </TabPanel>
 
         {/* 게시글 관리 탭 */}
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={1}>
           <PostManagementTab
             recentPosts={recentPosts}
             getStatusText={getStatusText}
@@ -187,32 +183,22 @@ const AdminPage = () => {
         </TabPanel>
 
         {/* 게시글 신고 관리 탭 */}
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={2}>
           <ReportManagementTab />
         </TabPanel>
 
         {/* 채팅 신고 관리 탭 */}
-        <TabPanel value={tabValue} index={4}>
+        <TabPanel value={tabValue} index={3}>
           <ChatReportManagementTab />
         </TabPanel>
 
         {/* 고객 문의 관리 탭 */}
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel value={tabValue} index={4}>
           <ContactManagementTab />
         </TabPanel>
 
-        {/* 카테고리 관리 탭 */}
-        <TabPanel value={tabValue} index={6}>
-          <CategoryManagementTab />
-        </TabPanel>
-
-        {/* 시스템 설정 탭 */}
-        <TabPanel value={tabValue} index={7}>
-          <SystemSettingsTab />
-        </TabPanel>
-
         {/* 주소 관리 탭 */}
-        <TabPanel value={tabValue} index={8}>
+        <TabPanel value={tabValue} index={5}>
           <AddressManagementTab />
         </TabPanel>
       </Paper>

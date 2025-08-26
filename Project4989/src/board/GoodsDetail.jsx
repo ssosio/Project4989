@@ -199,7 +199,10 @@ const GoodsDetail = () => {
 
   // 후기 존재 여부 확인 (로그인시에만)
   useEffect(() => {
-    if (!postId || !userInfo?.memberId || !post || post.status !== 'SOLD') return;
+    if (!postId || !userInfo?.memberId || !post || post.status !== 'SOLD') {
+      setHasReview(false);
+      return;
+    }
 
     const checkReviewExists = async () => {
       try {
@@ -253,17 +256,53 @@ const GoodsDetail = () => {
   };
 
   const handleReviewSubmitted = () => {
+    console.log('✅ 후기 작성 완료 - hasReview 상태를 true로 설정');
     setHasReview(true);
     setShowReviewModal(false);
+
+    // 추가로 후기 존재 여부를 다시 한 번 확인
+    setTimeout(() => {
+      if (postId && userInfo?.memberId && post) {
+        const checkReviewAgain = async () => {
+          try {
+            const reviewerId = userInfo.memberId;
+            const reviewOppositeId = userInfo.memberId === post.memberId ? post.buyerId : post.memberId;
+
+            if (reviewOppositeId) {
+              const response = await axios.get('http://localhost:4989/review/check', {
+                params: {
+                  postId: postId,
+                  reviewerId: reviewerId,
+                  reviewOppositeId: reviewOppositeId
+                }
+              });
+              if (response.data.success) {
+                console.log('✅ 후기 작성 후 재확인:', response.data.exists);
+                setHasReview(response.data.exists);
+              }
+            }
+          } catch (error) {
+            console.error('후기 재확인 실패:', error);
+          }
+        };
+        checkReviewAgain();
+      }
+    }, 1000);
   };
 
   const handleReviewModalClose = () => setShowReviewModal(false);
 
   const canWriteReview = () => {
-    const isSeller = userInfo?.memberId === post?.memberId;
-    const isBuyer = post?.buyerId === userInfo?.memberId;
-    const statusCheck = post?.status === 'SOLD';
+    // 기본 조건 체크
+    if (!userInfo?.memberId || !post) return false;
+
+    const isSeller = userInfo.memberId === post.memberId;
+    const isBuyer = post.buyerId === userInfo.memberId;
+    const statusCheck = post.status === 'SOLD';
     const noReviewCheck = !hasReview;
+
+    // 후기 작성 가능한 사용자인지 확인
+    const canWrite = (isSeller && post.buyerId) || isBuyer;
 
     console.log('🔍 canWriteReview 체크:', {
       isSeller,
@@ -271,15 +310,15 @@ const GoodsDetail = () => {
       statusCheck,
       noReviewCheck,
       hasReview,
+      canWrite,
       userInfoMemberId: userInfo?.memberId,
       postMemberId: post?.memberId,
       postBuyerId: post?.buyerId,
       postStatus: post?.status
     });
 
-    if (isSeller && statusCheck && noReviewCheck) return true;
-    if (isBuyer && statusCheck && noReviewCheck) return true;
-    return false;
+    // 모든 조건을 만족해야 후기 작성 가능
+    return canWrite && statusCheck && noReviewCheck;
   };
 
   // 좋아요 토글
@@ -676,11 +715,25 @@ const GoodsDetail = () => {
                 </div>
               )}
 
-              {userInfo && post.status === 'SOLD' && canWriteReview() && (
+              {userInfo && post.status === 'SOLD' && (
                 <div className="gooddetail-status-completed">
-                  <button className="gooddetail-review-btn" onClick={handleReviewClick}>
-                    {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
-                  </button>
+                  {canWriteReview() ? (
+                    <button className="gooddetail-review-btn" onClick={handleReviewClick}>
+                      {userInfo.memberId === post.memberId ? '후기를 남겨주세요' : '판매자에게 후기를 남겨주세요'}
+                    </button>
+                  ) : hasReview ? (
+                    <div style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '8px',
+                      color: '#28a745',
+                      fontWeight: '500',
+                      textAlign: 'center'
+                    }}>
+                      ✅ 후기를 작성했습니다
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -688,7 +741,6 @@ const GoodsDetail = () => {
             <div className="gooddetail-meta">
               <div className="gooddetail-meta-item">
                 <strong>작성자:</strong> {post.nickname}
-                <CreditTierDisplay memberId={post.memberId} showDetails={false} />
               </div>
               <div className="gooddetail-meta-item">
                 <strong>작성일:</strong> {post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : ''}
@@ -698,6 +750,9 @@ const GoodsDetail = () => {
                   <strong>수정일:</strong> {new Date(post.updatedAt).toLocaleString('ko-KR')}
                 </div>
               )}
+            </div>
+            <div style={{ marginLeft: '-400px' }}>
+              <CreditTierDisplay memberId={post.memberId} showDetails={false} />
             </div>
           </div>
         </div>
@@ -815,16 +870,20 @@ const GoodsDetail = () => {
                 </>
               )}
 
-              <div>
-                <div className="gooddetail-info-title">희망거래장소</div>
-                <div className="wish-address">{post.detailLocation}</div>
-                {post && post.latitude && post.longitude && (
-                  <DetailMap latitude={post.latitude} longitude={post.longitude} />
-                )}
-              </div>
             </div>
           </div>
         </div>
+
+        {/* 카카오맵 섹션 - 상품정보 밑에 별도로 배치 */}
+        {post && post.latitude && post.longitude && (
+          <div className="map-section">
+            <div className="map-container">
+              <h3 className="map-title">희망거래장소</h3>
+              <div className="wish-address">{post.detailLocation}</div>
+              <DetailMap latitude={post.latitude} longitude={post.longitude} />
+            </div>
+          </div>
+        )}
 
         {/* 신고 모달 */}
         <ReportModal

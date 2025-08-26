@@ -22,4 +22,6 @@ public interface MemberServiceInter {
     public void updateProfile(MemberDto member);
     public String updateProfileImage(String loginId, MultipartFile profileImageFile);
     
+    public int countAllMembers();
+    
 }

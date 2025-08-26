@@ -90,5 +90,11 @@ public class MemberService implements MemberServiceInter {
 		
 		return profileImageUrl;
 	}
+
+	@Override
+	public int countAllMembers() {
+		// TODO Auto-generated method stub
+		return memberMapper.countAllMembers();
+	}
 	
 }

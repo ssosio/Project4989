@@ -48,7 +48,11 @@ const DetailMap = ({ latitude, longitude }) => {
             id="map"
             style={{
                 width: '100%',
-                height: '400px', // 지도 크기 설정
+                height: '180px', // 높이를 더 줄여서 가로로 길게 보이도록
+                minHeight: '180px',
+                maxHeight: '180px',
+                position: 'relative',
+                overflow: 'hidden',
             }}
         ></div>
     );
