@@ -23,6 +23,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 					"http://192.168.10.136:5173",
                 					"http://192.168.10.138:5173",
                 					"http://192.168.10.139:5173",
+                					"http://175.212.203.114:5173",
                 					"https://*.ngrok-free.app", // ★ 추가
                 		            "http://*.ngrok-free.app");
     }

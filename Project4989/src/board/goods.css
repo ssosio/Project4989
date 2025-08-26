@@ -83,6 +83,7 @@
 .goods-content {
   flex: 1;
   min-width: 0;
+  margin-top: 40px;
 }
 
 /* 필터 UI */
@@ -113,84 +114,122 @@
   background: transparent;
 }
 
+/* 필터 그룹 */
 .filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(74, 144, 226, 0.08);
+}
+
+.filter-group:last-child {
+  border-bottom: none;
   margin-bottom: 0;
-  width: 100%;
 }
 
 .filter-label {
-  font-size: 14px;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #2E5BBA;
-  text-align: left;
-  margin-bottom: 8px;
-  padding-bottom: 4px;
-  border-bottom: 2px solid rgba(74, 144, 226, 0.2);
+  color: #2E3C2E;
+  margin-bottom: 12px;
+  display: block;
+  letter-spacing: -0.3px;
 }
 
 .filter-group label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #6B7766;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #4F684E;
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  margin-bottom: 2px;
+  transition: color 0.2s ease;
+  font-weight: 500;
 }
 
 .filter-group label:hover {
-  background: rgba(74, 144, 226, 0.1);
   color: #4A90E2;
 }
 
 .filter-group input[type="radio"] {
-  margin: 0;
-  cursor: pointer;
+  margin-right: 8px;
   accent-color: #4A90E2;
+  transform: scale(1.1);
 }
 
-.filter-group input[type="radio"]:checked + span {
-  color: #4A90E2;
+/* 지역 필터 스타일 */
+.region-select-container {
+  margin-bottom: 12px;
+}
+
+.region-label {
+  font-size: 0.85rem;
   font-weight: 600;
+  color: #2E3C2E;
+  margin-bottom: 6px;
+  display: block;
+  letter-spacing: -0.3px;
+}
+
+.region-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(74, 144, 226, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #4F684E;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.region-select:focus {
+  outline: none;
+  border-color: #4A90E2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  background: white;
+}
+
+.region-select:hover {
+  border-color: #4A90E2;
+  background: white;
+}
+
+.region-select option {
+  background: white;
+  color: #4F684E;
+  padding: 8px;
 }
 
 /* 필터 초기화 버튼 */
 .filter-reset-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(74, 144, 226, 0.15);
 }
 
 .filter-reset-btn {
-  padding: 8px 16px;
-  background: #4A90E2;
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
 }
 
 .filter-reset-btn:hover {
-  background: #2E5BBA;
+  background: linear-gradient(135deg, #357ABD 0%, #2E6DA4 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 .filter-reset-btn:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
 }
 
 /* 스크롤바 스타일링 - 호버 시에만 표시 */
@@ -198,19 +237,25 @@
   width: 8px;
 }
 
-.goods-filters:hover::-webkit-scrollbar-track {
-  background: rgba(74, 144, 226, 0.1);
-  border-radius: 4px;
+.goods-filters::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.6) 0%, rgba(74, 144, 226, 0.8) 100%);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
 }
 
-.goods-filters:hover::-webkit-scrollbar-thumb {
-  background: rgba(74, 144, 226, 0.3);
-  border-radius: 4px;
-  transition: background 0.3s ease;
+.goods-filters::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.7) 0%, rgba(74, 144, 226, 0.9) 100%);
 }
 
-.goods-filters:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(74, 144, 226, 0.5);
+/* 스크롤바 화살표 버튼 숨기기 */
+.goods-filters::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Firefox 스크롤바 스타일링 */
+.goods-filters {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 144, 226, 0.6) rgba(74, 144, 226, 0.05);
+  scroll-behavior: smooth;
 }
 
 /* 등록 버튼 */
@@ -752,4 +797,18 @@
     height: 45px;
     font-size: 18px;
   }
+}
+
+.region-filter {
+  margin-top: -80px;
+  border-radius: 16px;
+  width: 500px;
+  margin-left: 500px;
+}
+
+.region-filter-group{
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  margin-bottom: 43px;
 }

@@ -47,6 +47,8 @@ const GoodsDetail = () => {
   const [targetId, setTargetId] = useState(null);
   const authorId = post?.memberId;
 
+  const [region, setRegion] = useState(null);
+  const [regionLoading, setRegionLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showBuyerModal, setShowBuyerModal] = useState(false);
@@ -82,6 +84,43 @@ const GoodsDetail = () => {
             ? postData.photos
             : JSON.parse(postData.photos || '[]');
           setPhotos(photoList);
+          
+          // Post 데이터에서 location 필드 확인
+          console.log("🔍 Post 데이터 location 필드 확인:", {
+            location: postData.location,
+            locationType: typeof postData.location,
+            hasLocation: 'location' in postData,
+            allKeys: Object.keys(postData)
+          });
+          
+          // Post 데이터에서 location 가져와서 region API 호출
+          if (postData.location) {
+            console.log("🌍 Region API 호출 시작 - regionId:", postData.location);
+            console.log("🌍 Region API 호출 URL:", `http://localhost:4989/post/regiondetail?regionId=${postData.location}`);
+            setRegionLoading(true);
+            axios.get(`http://localhost:4989/post/regiondetail?regionId=${postData.location}`, { headers })
+              .then(response => {
+                console.log("✅ Region API 응답 성공:", response);
+                console.log("✅ Region 데이터 로드 성공:", response.data);
+                console.log("✅ Region 데이터 상세:", {
+                  province: response.data.province,
+                  city: response.data.city,
+                  district: response.data.district,
+                  town: response.data.town
+                });
+                setRegion(response.data);
+                setRegionLoading(false);
+              })
+              .catch(error => {
+                console.error("❌ Region API 호출 실패:", error);
+                console.error("❌ Region API 응답 데이터:", error.response?.data);
+                console.error("❌ Region API 응답 상태:", error.response?.status);
+                console.error("❌ Region API 호출 URL:", `http://localhost:4989/post/regiondetail?regionId=${postData.location}`);
+                setRegionLoading(false);
+              });
+          } else {
+            console.log("⚠️ Post 데이터에 location이 없습니다. postData:", postData);
+          }
         } else {
           console.error('❌ Post 데이터 로드 실패:', postResult.reason);
         }
@@ -92,18 +131,43 @@ const GoodsDetail = () => {
         if (carsResult.status === 'fulfilled') setCars(carsResult.value.data);
         else console.error('❌ Cars 데이터 로드 실패:', carsResult.reason);
 
-        if (estateResult.status === 'fulfilled') setEstate(estateResult.value.data);
-        else console.error('❌ Estate 데이터 로드 실패:', estateResult.reason);
+        // Estate 데이터 처리
+        if (estateResult.status === 'fulfilled') {
+          setEstate(estateResult.value.data);
+        } else {
+          console.error("❌ Estate 데이터 로드 실패:", estateResult.reason);
+        }
+
+        // Region 데이터 처리
+        // if (regionResult.status === 'fulfilled') { // 이 부분은 위에서 처리되므로 제거
+        //   console.log("✅ Region 데이터 로드 성공:", regionResult.value);
+        //   console.log("✅ Region 데이터 내용:", regionResult.value.data);
+        //   setRegion(regionResult.value.data);
+        // } else {
+        //   console.error("❌ Region 데이터 로드 실패:", regionResult.reason);
+        //   console.error("❌ Region API 호출 URL:", `http://localhost:4989/post/regiondetail?regionId=${regionId}`);
+        // }
       })
-      .catch((err) => {
-        console.error('데이터 로딩 중 에러:', err);
-        console.error('에러 상세 정보:', {
+      .catch(err => {
+        console.error("데이터 로딩 중 에러:", err);
+        console.error("에러 상세 정보:", {
           message: err.message,
           response: err.response?.data,
-          status: err.response?.status,
+          status: err.response?.status
         });
+
+        // 에러 발생 시에도 기본 데이터라도 설정
+        if (err.response?.data) {
+          console.log("에러 응답에서 받은 데이터:", err.response.data);
+        }
       });
-  }, [postId, token]);
+
+    // 💡 localStorage 감지 이벤트 리스너는 이제 필요 없습니다.
+    // AuthContext가 상태를 관리하므로, context의 변경에 따라 컴포넌트가 재렌더링됩니다.
+  }, [postId, userInfo, token]); // 의존성 배열에 userInfo와 token을 추가
+
+  // selectedBuyerId 상태 제거 - post.buyerId를 직접 사용
+  // const [selectedBuyerId, setSelectedBuyerId] = useState(null);
 
   // view count(조회수) — StrictMode 중복 방지
   const incCalledRef = useRef(false);
@@ -485,6 +549,18 @@ const GoodsDetail = () => {
                 <span className="gooddetail-info-label">배송비</span>
                 <span className="gooddetail-info-value">무료배송</span>
               </div>
+              <div className="gooddetail-info-row">
+                <span className="gooddetail-info-label">상세주소</span>
+                <span className="gooddetail-info-value">
+                  {regionLoading ? "주소 정보 로딩 중..." : (
+                    region ? (
+                      `${region.province || ''} ${region.city || ''} ${region.district || ''} ${region.town || ''}`.trim()
+                    ) : (
+                      '주소 정보 없음'
+                    )
+                  )}
+                </span>
+              </div>
             </div>
 
             <div className="gooddetail-action-buttons">
@@ -517,10 +593,12 @@ const GoodsDetail = () => {
               <button className="gooddetail-btn secondary" onClick={handleGoBackToList}>
                 목록
               </button>
+            </div>
 
-              {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
+            <div className="gooddetail-status-section">
+                {userInfo && userInfo.memberId === post.memberId && post.status !== 'SOLD' && (
                 <div className="gooddetail-status-selector">
-                  <label htmlFor="status-select" className="gooddetail-status-label">판매 상태 변경:</label>
+                  <label htmlFor="status-select" className="gooddetail-status-label">판매 상태 변경</label>
                   <select
                     id="status-select"
                     className="gooddetail-status-select"
@@ -543,7 +621,7 @@ const GoodsDetail = () => {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
 
             <div className="gooddetail-meta">
               <div className="gooddetail-meta-item">
@@ -605,7 +683,8 @@ const GoodsDetail = () => {
                 <>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">브랜드</div>
-                    <div className="gooddetail-info-value">{cars.brand}</div>
+                    <div className="gooddetail-info-value">{cars.brand === 'kia' ? '기아' : cars.brand === 'hyundai' ? '현대' : cars.brand === 'benz' ? '벤츠' : cars.brand === 'audi' ? '아우디':'BMW'}</div>
+                    {/* <div className="gooddetail-info-value">{cars.brand}</div> */}
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">모델</div>
@@ -613,19 +692,21 @@ const GoodsDetail = () => {
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">연식</div>
-                    <div className="gooddetail-info-value">{cars.year}</div>
+                    <div className="gooddetail-info-value">{cars.year}년식</div>
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">주행거리</div>
-                    <div className="gooddetail-info-value">{cars.mileage}</div>
+                    <div className="gooddetail-info-value">{cars.mileage}km</div>
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">연료</div>
-                    <div className="gooddetail-info-value">{cars.fuelType}</div>
+                    <div className="gooddetail-info-value">{cars.fuelType === 'gasoline' ? '휘발유' : cars.fuelType === 'diesel' ? '경유' : '전기'}</div>
+                    {/* <div className="gooddetail-info-value">{cars.fuelType}</div> */}
                   </div>
                   <div className="gooddetail-info-item">
                     <div className="gooddetail-info-label">변속기</div>
-                    <div className="gooddetail-info-value">{cars.transmission}</div>
+                    <div className="gooddetail-info-value">{cars.transmission === 'auto' ? '오토' : '수동'}</div>
+                    {/* <div className="gooddetail-info-value">{cars.transmission}</div> */}
                   </div>
                 </>
               )}

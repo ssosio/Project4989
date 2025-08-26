@@ -4,6 +4,9 @@ import java.sql.Timestamp;
 
 import org.apache.ibatis.type.Alias;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
 @Data
@@ -11,9 +14,13 @@ import lombok.Data;
 public class ReportsDto {
 	
 	private Long reportId;
+	@JsonAlias({"reporterId"})
 	private Long reporterId;
-	private String targetType;   // "POST" or "MEMBER"
-    private Long targetPostId;   // targetType=POST일 때만 사용
+	@JsonAlias({"targetType"})
+	private String targetType;
+	@JsonAlias({"targetPostId"})// "POST" or "MEMBER"
+    private Long targetPostId;
+	@JsonAlias({"targetMemberId"})// targetType=POST일 때만 사용
     private Long targetMemberId; // targetType=MEMBER일 때만 사용
 	private String reason;
 	private String status;

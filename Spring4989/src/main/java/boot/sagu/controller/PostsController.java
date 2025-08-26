@@ -28,12 +28,14 @@ import boot.sagu.dto.MemberDto;
 import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 import boot.sagu.service.CarService;
 import boot.sagu.service.EstateService;
 import boot.sagu.service.ItemService;
 import boot.sagu.service.MemberServiceInter;
 import boot.sagu.service.PostsService;
+import boot.sagu.service.RegionService;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -58,6 +60,9 @@ public class PostsController {
 	
 	@Autowired
 	ItemService itemService;
+	
+	@Autowired
+	RegionService regionService;
 	
 //	@GetMapping("/list")
 //	public List<PostsDto> list()
@@ -158,16 +163,23 @@ public class PostsController {
 			@RequestParam(value = "size", defaultValue = "12") int size) {
 		
 		try {
-			// 간단한 검색 파라미터를 Map으로 구성
-			Map<String, Object> searchParams = new HashMap<>();
-			searchParams.put("keyword", keyword);
-			searchParams.put("postType", "ALL");
-			searchParams.put("status", "ALL");
-			searchParams.put("tradeType", "ALL");
-			searchParams.put("categoryId", "ALL");
-			searchParams.put("sortBy", "");
-			searchParams.put("sortOrder", "");
-			searchParams.put("size", size);
+					// 간단한 검색 파라미터를 Map으로 구성
+		Map<String, Object> searchParams = new HashMap<>();
+		searchParams.put("keyword", keyword);
+		searchParams.put("postType", "ALL");
+		searchParams.put("status", "ALL");
+		searchParams.put("tradeType", "ALL");
+		searchParams.put("categoryId", "ALL");
+		searchParams.put("sortBy", "");
+		searchParams.put("sortOrder", "");
+		searchParams.put("page", page);
+		searchParams.put("size", size);
+		
+		// 디버깅용 로그
+		System.out.println("=== search-simple 디버깅 ===");
+		System.out.println("요청된 페이지: " + page);
+		System.out.println("요청된 크기: " + size);
+		System.out.println("searchParams: " + searchParams);
 			
 			List<PostsDto> searchResults = postService.searchAll(searchParams);
 			int totalCount = postService.countSearchAll(searchParams);
@@ -448,6 +460,132 @@ public class PostsController {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(Map.of("success", false, "message", "구매내역 조회 중 오류가 발생했습니다."));
+		}
+	}
+	
+	@GetMapping("/regiondetail")
+	public ResponseEntity<RegionDto> getOneRegion(@RequestParam("regionId") Long regionId)
+	{
+		RegionDto region = postService.getOneRegion(regionId);
+		if (region != null) {
+			return ResponseEntity.ok(region);
+		}
+		return ResponseEntity.notFound().build();
+	}
+	
+	// 지역별 필터링 API
+	@GetMapping("/listByRegion")
+	public List<Map<String, Object>> listByRegion(
+			@RequestParam(value = "province", required = false) String province,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "district", required = false) String district,
+			@RequestParam(value = "town", required = false) String town) {
+		
+		Map<String, Object> regionParams = new HashMap<>();
+		regionParams.put("province", province);
+		regionParams.put("city", city);
+		regionParams.put("district", district);
+		regionParams.put("town", town);
+		
+		return postService.getPostListByRegion(regionParams);
+	}
+	
+	// 지역 목록 조회 API (province, city, district, town별)
+	@GetMapping("/regions")
+	public Map<String, Object> getRegions(
+			@RequestParam(value = "type", required = false) String type,
+			@RequestParam(value = "province", required = false) String province,
+			@RequestParam(value = "city", required = false) String city,
+			@RequestParam(value = "district", required = false) String district) {
+		
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			switch (type) {
+				case "provinces":
+					result.put("data", regionService.getDistinctProvinces());
+					break;
+				case "cities":
+					result.put("data", regionService.getCitiesByProvince(province));
+					break;
+				case "districts":
+					result.put("data", regionService.getDistrictsByCity(province, city));
+					break;
+				case "towns":
+					result.put("data", regionService.getTownsByDistrict(province, city, district));
+					break;
+				default:
+					result.put("error", "Invalid type parameter");
+			}
+		} catch (Exception e) {
+			result.put("error", e.getMessage());
+		}
+		
+		return result;
+	}
+	
+	// 신고 목록 조회 API
+	@GetMapping("/reports")
+	public ResponseEntity<Map<String, Object>> getAllReports() {
+		try {
+			List<Map<String, Object>> reports = postService.getAllReports();
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"reports", reports
+			));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "신고 목록 조회 중 오류가 발생했습니다."));
+		}
+	}
+	
+	// 신고 상태 업데이트 API
+	@PutMapping("/reports/{reportId}/status")
+	public ResponseEntity<Map<String, Object>> updateReportStatus(
+			@PathVariable Long reportId,
+			@RequestParam String status) {
+		try {
+			int result = postService.updateReportStatus(reportId, status);
+			if (result > 0) {
+				return ResponseEntity.ok(Map.of(
+					"success", true,
+					"message", "신고 상태가 업데이트되었습니다."
+				));
+			} else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(Map.of("success", false, "message", "신고를 찾을 수 없습니다."));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "신고 상태 업데이트 중 오류가 발생했습니다."));
+	// 후기 조회 API (테스트용 - JWT 인증 없이)
+	@GetMapping("/reviews/test")
+	public ResponseEntity<Map<String, Object>> getUserReviewsTest(
+			@RequestParam("memberId") Long memberId) {
+		
+		try {
+			System.out.println("🔍 후기 조회 테스트 API 호출됨 - memberId: " + memberId);
+			
+			// review_opposite_id가 현재 로그인한 사용자인 후기들을 가져오기
+			List<Map<String, Object>> reviews = postService.getReviewsForUser(memberId);
+			System.out.println("📝 조회된 후기 개수: " + (reviews != null ? reviews.size() : "null"));
+			
+			if (reviews != null && !reviews.isEmpty()) {
+				System.out.println("📋 첫 번째 후기: " + reviews.get(0));
+			}
+			
+			return ResponseEntity.ok(Map.of(
+				"success", true,
+				"reviews", reviews
+			));
+			
+		} catch (Exception e) {
+			System.err.println("❌ 후기 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(Map.of("success", false, "message", "후기 조회 중 오류가 발생했습니다."));
 		}
 	}
 	

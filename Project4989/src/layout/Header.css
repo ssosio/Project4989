@@ -63,4 +63,31 @@
 /* 로고 텍스트 폰트 강제 적용 */
 .header-logo-container .MuiTypography-root {
   font-family: 'Gugi', sans-serif !important;
+}
+
+/* 검색 로딩 스피너 애니메이션 */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 검색 결과 드롭다운 스타일 */
+.MuiPaper-root .MuiList-root {
+  padding: 0 !important;
+}
+
+.MuiPaper-root .MuiListItem-root {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.MuiPaper-root .MuiListItem-root:last-child {
+  border-bottom: none;
+}
+
+/* 검색 결과 호버 효과 */
+.MuiPaper-root .MuiListItemButton-root:hover {
+  background-color: #f8f9fa !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
 } 

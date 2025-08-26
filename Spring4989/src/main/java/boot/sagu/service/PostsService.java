@@ -25,6 +25,7 @@ import boot.sagu.dto.MemberRegionDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 import boot.sagu.mapper.CarMapperInter;
 import boot.sagu.mapper.CategoryMapperInter;
@@ -275,7 +276,7 @@ public class PostsService implements PostsServiceInter {
 			List<MultipartFile> uploads, List<Long> deletePhotoIds, Long mainPhotoId, HttpSession session,
 			Long actorId) {
 		// 0) 권한 체크
-		Long ownerId = postMapper.findOwnerId(post.getPostId());
+		Long ownerId = postMapper.findPostOwnerId(post.getPostId());
 		if (ownerId == null || !ownerId.equals(actorId)) {
 			throw new AccessDeniedException("작성자만 수정 가능");
 		}
@@ -322,7 +323,7 @@ public class PostsService implements PostsServiceInter {
 	@Transactional
 	public void deletePost(Long postId,PostsDto post,Long actorId) {
 		// TODO Auto-generated method stub
-		Long ownerId = postMapper.findOwnerId(post.getPostId());
+		Long ownerId = postMapper.findPostOwnerId(post.getPostId());
 		if (ownerId == null || !ownerId.equals(actorId)) {
 			throw new AccessDeniedException("작성자만 삭제 가능");
 		}
@@ -373,6 +374,14 @@ public class PostsService implements PostsServiceInter {
         int s = Math.max(1, size != null ? size : 12);
         int offset =  Math.max(0,(p - 1) * s);
         
+        // 디버깅용 로그
+        System.out.println("=== PostsService.searchAll 디버깅 ===");
+        System.out.println("page 파라미터: " + page);
+        System.out.println("size 파라미터: " + size);
+        System.out.println("계산된 페이지: " + p);
+        System.out.println("계산된 크기: " + s);
+        System.out.println("계산된 offset: " + offset);
+        
         return postMapper.searchAll(kw, pt, st, tt, minPrice, maxPrice, minYear, maxYear, 
         		minArea, maxArea, cat, sb, so, s, offset,memberId);
     }
@@ -404,8 +413,19 @@ public class PostsService implements PostsServiceInter {
     }
 	
 	// 게시물 소유자 조회
-	public Long findPostOwnerId(Long postId) {
-		return postMapper.findOwnerId(postId);
+	public Long findPostOwnerId(Long postId)
+	{
+		return postMapper.findPostOwnerId(postId);
+	}
+	
+	// 지역별 게시물 목록 조회
+	public List<Map<String, Object>> getPostListByRegion(Map<String, Object> regionParams) {
+		return postMapper.getPostListByRegion(regionParams);
+	}
+	
+	// 지역 조회
+	public RegionDto getOneRegion(Long regionId) {
+		return postMapper.getOneRegion(regionId);
 	}
 	
 	// 채팅방 참여자 조회 (판매완료 시 거래자 선택용)
@@ -418,7 +438,7 @@ public class PostsService implements PostsServiceInter {
 	public boolean updatePostStatus(Long postId, String status, Long buyerId, Long memberId) {
 		try {
 			// 1. 권한 확인 - 작성자 본인인지 확인
-			Long ownerId = postMapper.findOwnerId(postId);
+			Long ownerId = postMapper.findPostOwnerId(postId);
 			if (ownerId == null || !ownerId.equals(memberId)) {
 				System.err.println("권한 없음: postId=" + postId + ", 요청자=" + memberId + ", 소유자=" + ownerId);
 				return false;
@@ -470,6 +490,41 @@ public class PostsService implements PostsServiceInter {
 			return result;
 		} catch (Exception e) {
 			// System.err.println("❌ 구매내역 조회 중 오류 발생: " + e.getMessage());
+			e.printStackTrace();
+			return new ArrayList<>();
+		}
+	}
+
+	// 신고 목록 조회
+	@Override
+	public List<Map<String, Object>> getAllReports() {
+		return postMapper.getAllReports();
+	}
+	
+	// 신고 상태 업데이트
+	@Override
+	public int updateReportStatus(Long reportId, String status) {
+		return postMapper.updateReportStatus(reportId, status);
+	}
+	
+	
+	
+	
+	// 후기 조회 메서드
+	public List<Map<String, Object>> getReviewsForUser(Long memberId) {
+		try {
+			System.out.println("🔍 PostsService.getReviewsForUser 호출됨 - memberId: " + memberId);
+			
+			List<Map<String, Object>> result = postMapper.getReviewsForUser(memberId);
+			System.out.println("📝 Mapper에서 반환된 결과: " + (result != null ? result.size() + "개" : "null"));
+			
+			if (result != null && !result.isEmpty()) {
+				System.out.println("📋 첫 번째 결과 샘플: " + result.get(0));
+			}
+			
+			return result;
+		} catch (Exception e) {
+			System.err.println("❌ 후기 조회 중 오류 발생: " + e.getMessage());
 			e.printStackTrace();
 			return new ArrayList<>();
 		}

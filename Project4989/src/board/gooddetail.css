@@ -32,6 +32,7 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  margin-top: 30px;
 }
 
 /* 왼쪽 이미지 영역 */
@@ -183,6 +184,7 @@
   max-width: 500px;
   display: flex;
   flex-direction: column;
+  margin-top: -20px;
 }
 
 /* 상품 헤더 정보 */
@@ -418,9 +420,9 @@
 /* 상품 정보와 설명 영역 - 2단 레이아웃 */
 .gooddetail-detail-section {
   display: flex;
-  gap: 50px;
+  gap: 80px;
   padding: 20px;
-  max-width: 1100px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
@@ -430,6 +432,7 @@
   flex: 2;
   max-width: 500px;
   padding: 0;
+  margin-left: 40px;
   border-bottom: none;
 }
 
@@ -678,9 +681,9 @@
 /* 판매 상태 선택기 스타일 */
 .gooddetail-status-selector {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
+  flex-direction: row;
+  gap: 10px;
+  padding: 25px 35px 25px 25px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
@@ -688,17 +691,17 @@
 }
 
 .gooddetail-status-label {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #495057;
-  margin-bottom: 4px;
+  padding: 6px;
 }
 
 .gooddetail-status-select {
-  padding: 10px 12px;
+  padding: 6px 10px;
   border: 2px solid #dee2e6;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #495057;
   background: #ffffff;
@@ -796,3 +799,8 @@
             font-size: 14px;
           }
         }
+
+.gooddetail-status-section {
+  display: flex;
+  margin-bottom: 15px;
+}

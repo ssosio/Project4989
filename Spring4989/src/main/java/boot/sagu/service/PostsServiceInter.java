@@ -12,6 +12,7 @@ import boot.sagu.dto.ItemDto;
 import boot.sagu.dto.PhotoDto;
 import boot.sagu.dto.PostsDto;
 import boot.sagu.dto.RealEstateDto;
+import boot.sagu.dto.RegionDto;
 import boot.sagu.dto.ReportsDto;
 import jakarta.servlet.http.HttpSession;
 
@@ -45,9 +46,18 @@ public interface PostsServiceInter {
 	//신고
 	public int insertReport(ReportsDto dto);
 	
+	// 신고 목록 조회
+	List<Map<String, Object>> getAllReports();
+	
+	// 신고 상태 업데이트
+	int updateReportStatus(Long reportId, String status);
+	
 	// 검색 메서드 추가
 	public List<PostsDto> searchAll(Map<String, Object> searchParams);
 	
 	public int countSearchAll(Map<String, Object> searchParams);
+	
+	// 후기 조회 메서드 추가
+	public List<Map<String, Object>> getReviewsForUser(Long memberId);
 
 }

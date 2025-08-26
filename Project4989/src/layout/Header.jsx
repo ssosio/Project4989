@@ -98,7 +98,22 @@ export const Header = () => {
       const { data } = await axios.get('http://localhost:4989/post/search-simple', {
         params: { keyword: query.trim(), page: 1, size: 5 }
       });
-      setSearchResults(data.content || []);
+      
+      // 데이터 정규화 및 디버깅
+      const normalizedResults = (data.content || []).map(post => {
+        console.log('원본 post 데이터:', post); // 디버깅용
+        return {
+          ...post,
+          postId: post.postId ?? post.post_id,
+          postType: post.postType ?? post.post_type,
+          tradeType: post.tradeType ?? post.trade_type,
+          viewCount: post.viewCount ?? post.view_count,
+          createdAt: post.createdAt ?? post.created_at
+        };
+      });
+      
+      console.log('정규화된 검색 결과:', normalizedResults); // 디버깅용
+      setSearchResults(normalizedResults);
     } catch (error) {
       console.error('검색 오류:', error);
       setSearchError(error?.response?.data?.error || '검색 중 오류가 발생했습니다.');
@@ -164,7 +179,7 @@ export const Header = () => {
       const fetchUnreadCount = async () => {
         try {
           const response = await axios.get('/api/chat/unread-count', {
-            params: { login_id: userInfo.loginId }
+            params: { loginId: userInfo.loginId }
           });
           setUnreadMessageCount(response.data);
         } catch {
@@ -241,62 +256,185 @@ export const Header = () => {
             <ClickAwayListener onClickAway={handleSearchClose}>
               <Paper
                 elevation={8}
-                sx={{ mt: 1, maxHeight: 400, overflow: 'auto', borderRadius: 2, border: '1px solid #E0E0E0' }}
+                sx={{ 
+                  mt: 1, 
+                  maxHeight: 400, 
+                  overflow: 'auto', 
+                  borderRadius: 2, 
+                  border: '1px solid #E0E0E0',
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+                }}
               >
                 {searchLoading && (
-                  <Box sx={{ p: 2, textAlign: 'center', color: '#666' }}>검색 중...</Box>
+                  <Box sx={{ 
+                    p: 3, 
+                    textAlign: 'center', 
+                    color: '#666',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1
+                  }}>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #E0E0E0',
+                      borderTop: '2px solid #4A90E2',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></div>
+                    검색 중...
+                  </Box>
                 )}
 
                 {searchError && (
-                  <Box sx={{ p: 2, textAlign: 'center', color: 'error.main' }}>{searchError}</Box>
+                  <Box sx={{ 
+                    p: 3, 
+                    textAlign: 'center', 
+                    color: '#d32f2f',
+                    backgroundColor: '#ffebee',
+                    borderRadius: 1,
+                    mx: 1,
+                    my: 1
+                  }}>
+                    ⚠️ {searchError}
+                  </Box>
                 )}
 
                 {!searchLoading && !searchError && searchResults.length > 0 && (
                   <List sx={{ p: 0 }}>
                     {searchResults.map((post, idx) => {
-                      const key = post.postId ?? post.post_id ?? post.id ?? idx; // ✅ key 안전
+                      const key = post.postId ?? post.post_id ?? post.id ?? idx;
+                      // postType 정규화 (snake_case -> camelCase 변환)
+                      const normalizedPostType = post.postType ?? post.post_type;
+                      
+                      // postType에 따른 아이콘과 라벨 매핑
+                      const getTypeInfo = (type) => {
+                        switch(type?.toUpperCase()) {
+                          case 'CARS':
+                            return { icon: '🚗', label: '자동차' };
+                          case 'REAL_ESTATES':
+                            return { icon: '🏠', label: '부동산' };
+                          case 'ITEMS':
+                            return { icon: '📦', label: '중고물품' };
+                          default:
+                            return { icon: '📋', label: '기타' };
+                        }
+                      };
+                      
+                      const typeInfo = getTypeInfo(normalizedPostType);
+                      
                       return (
                         <ListItem key={key} disablePadding>
-                          {/* ✅ button prop 제거, ListItemButton 사용 */}
                           <ListItemButton
                             onClick={() => handleSearchResultClick(post)}
                             sx={{
                               borderBottom: '1px solid #f0f0f0',
-                              '&:hover': { backgroundColor: '#f8f9fa' }
+                              '&:hover': { 
+                                backgroundColor: '#f8f9fa',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                              },
+                              py: 2,
+                              px: 2,
+                              transition: 'all 0.2s ease'
                             }}
                           >
                             <ListItemText
                               primary={
                                 <Box>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#007bff' }}>
-                                    [{post.postType}] {post.title}
+                                  <Typography 
+                                    variant="subtitle2" 
+                                    sx={{ 
+                                      fontWeight: 700, 
+                                      color: '#2E3C2E', 
+                                      mb: 0.5,
+                                      fontSize: '14px',
+                                      lineHeight: 1.3
+                                    }}
+                                  >
+                                    {typeInfo.icon} [{typeInfo.label}] {post.title}
                                   </Typography>
-                                  <Typography variant="body2" sx={{ color: '#666', mt: 0.5 }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      color: '#4A90E2', 
+                                      mb: 0.5,
+                                      fontWeight: 600,
+                                      fontSize: '13px'
+                                    }}
+                                  >
                                     {post.price?.toLocaleString?.() ?? post.price}원
                                   </Typography>
 
                                   {post.content && (
-                                    <Typography variant="caption" sx={{ color: '#888', display: 'block', mt: 0.5 }}>
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        color: '#666', 
+                                        display: 'block', 
+                                        mb: 0.5,
+                                        fontSize: '12px',
+                                        lineHeight: 1.4
+                                      }}
+                                    >
                                       {post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}
                                     </Typography>
                                   )}
 
                                   {/* 타입별 상세 정보 */}
-                                  {post.postType === "CARS" && post.car && (
-                                    <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                                  {normalizedPostType?.toUpperCase() === "CARS" && post.car && (
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        color: '#555', 
+                                        display: 'block',
+                                        fontSize: '11px',
+                                        backgroundColor: '#f8f9fa',
+                                        px: 1,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        display: 'inline-block'
+                                      }}
+                                    >
                                       🚗 {post.car.brand} {post.car.model} / {post.car.year}년식 · {post.car.mileage?.toLocaleString()}km
                                     </Typography>
                                   )}
-                                  {post.postType === "REAL_ESTATES" && post.estate && (
-                                    <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                                  {normalizedPostType?.toUpperCase() === "REAL_ESTATES" && post.estate && (
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        color: '#555', 
+                                        display: 'block',
+                                        fontSize: '11px',
+                                        backgroundColor: '#f8f9fa',
+                                        px: 1,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        display: 'inline-block'
+                                      }}
+                                    >
                                       🏠 {post.estate.propertyType === 'apt' ? '아파트' :
                                           post.estate.propertyType === 'studio' ? '오피스텔' :
                                           post.estate.propertyType === 'oneroom' ? '원룸' :
                                           post.estate.propertyType === 'tworoom' ? '투룸' : post.estate.propertyType} · {post.estate.area}㎡
                                     </Typography>
                                   )}
-                                  {post.postType === "ITEMS" && post.item && (
-                                    <Typography variant="caption" sx={{ color: '#555', display: 'block', mt: 0.5 }}>
+                                  {normalizedPostType?.toUpperCase() === "ITEMS" && post.item && (
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        color: '#555', 
+                                        display: 'block',
+                                        fontSize: '11px',
+                                        backgroundColor: '#f8f9fa',
+                                        px: 1,
+                                        py: 0.5,
+                                        borderRadius: 1,
+                                        display: 'inline-block'
+                                      }}
+                                    >
                                       📦 {post.item.categoryId === 1 ? '전자제품' :
                                           post.item.categoryId === 2 ? '의류' :
                                           post.item.categoryId === 3 ? '가구' :
@@ -318,12 +456,29 @@ export const Header = () => {
                             navi(`/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
                             handleSearchClose();
                           }}
-                          sx={{ backgroundColor: '#f8f9fa', '&:hover': { backgroundColor: '#e9ecef' } }}
+                          sx={{ 
+                            backgroundColor: '#4A90E2', 
+                            '&:hover': { 
+                              backgroundColor: '#357ABD',
+                              transform: 'translateY(-1px)',
+                              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.3)'
+                            },
+                            py: 1.5,
+                            transition: 'all 0.2s ease'
+                          }}
                         >
                           <ListItemText
                             primary={
-                              <Typography variant="body2" sx={{ textAlign: 'center', color: '#007bff', fontWeight: 600 }}>
-                                더 많은 결과 보기
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  textAlign: 'center', 
+                                  color: '#FFFFFF', 
+                                  fontWeight: 700,
+                                  fontSize: '13px'
+                                }}
+                              >
+                                🔍 더 많은 결과 보기 ({searchResults.length}개 이상)
                               </Typography>
                             }
                           />
@@ -334,7 +489,23 @@ export const Header = () => {
                 )}
 
                 {!searchLoading && !searchError && searchResults.length === 0 && searchQuery.trim() && (
-                  <Box sx={{ p: 2, textAlign: 'center', color: '#666' }}>검색 결과가 없습니다.</Box>
+                  <Box sx={{ 
+                    p: 3, 
+                    textAlign: 'center', 
+                    color: '#666',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 1
+                  }}>
+                    <div style={{ fontSize: '24px' }}>🔍</div>
+                    <Typography variant="body2" sx={{ color: '#666', fontWeight: 500 }}>
+                      검색 결과가 없습니다
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#999', fontSize: '12px' }}>
+                      다른 키워드로 검색해보세요
+                    </Typography>
+                  </Box>
                 )}
               </Paper>
             </ClickAwayListener>

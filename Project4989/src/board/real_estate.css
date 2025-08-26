@@ -83,6 +83,7 @@
 .real-estate-content {
   flex: 1;
   min-width: 0;
+  margin-top: 40px;
 }
 
 /* 필터 UI */
@@ -162,35 +163,34 @@
 
 /* 필터 초기화 버튼 */
 .filter-reset-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(74, 144, 226, 0.15);
 }
 
 .filter-reset-btn {
-  padding: 8px 16px;
-  background: #4A90E2;
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
 }
 
 .filter-reset-btn:hover {
-  background: #2E5BBA;
+  background: linear-gradient(135deg, #357ABD 0%, #2E6DA4 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
 .filter-reset-btn:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
 }
 
 /* 스크롤바 스타일링 - 호버 시에만 표시 */
@@ -198,19 +198,25 @@
   width: 8px;
 }
 
-.estates-filters:hover::-webkit-scrollbar-track {
-  background: rgba(74, 144, 226, 0.1);
-  border-radius: 4px;
+.estates-filters::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.6) 0%, rgba(74, 144, 226, 0.8) 100%);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
 }
 
-.estates-filters:hover::-webkit-scrollbar-thumb {
-  background: rgba(74, 144, 226, 0.3);
-  border-radius: 4px;
-  transition: background 0.3s ease;
+.estates-filters::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.7) 0%, rgba(74, 144, 226, 0.9) 100%);
 }
 
-.estates-filters:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(74, 144, 226, 0.5);
+/* 스크롤바 화살표 버튼 숨기기 */
+.estates-filters::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Firefox 스크롤바 스타일링 */
+.estates-filters {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 144, 226, 0.6) rgba(74, 144, 226, 0.05);
+  scroll-behavior: smooth;
 }
 
 /* 등록 버튼 */

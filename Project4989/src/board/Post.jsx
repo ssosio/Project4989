@@ -146,12 +146,31 @@ const Post = () => {
 
     // ✨ 모달에서 주소 선택 후 호출될 핸들러
     const handleAddressSelect = (selectedAddress) => {
-        setAddressInfo(selectedAddress);
+        console.log("선택된 주소 정보:", selectedAddress);
+        console.log("locationId:", selectedAddress.locationId);
+        console.log("locationText:", selectedAddress.locationText);
+
+        // addressInfo 상태 업데이트
+        setAddressInfo({
+            locationText: selectedAddress.locationText,
+            locationId: selectedAddress.locationId,
+            detail_location: addressInfo.detail_location,
+            latitude: addressInfo.latitude,
+            longitude: addressInfo.longitude
+        });
+
         setIsAddressModalOpen(false); // 모달 닫기
     };
 
 
     const postInsert = () => {
+        // 주소 정보 검증
+        console.log("postInsert 호출 시 addressInfo:", addressInfo);
+        if (!addressInfo.locationId) {
+            alert("주소를 선택해주세요.");
+            return;
+        }
+
         const formData = new FormData();
 
         //공통
@@ -271,7 +290,7 @@ const Post = () => {
                                     <select name="postType" id="" value={postType} onChange={(e) => {
                                         setPostType(e.target.value);
                                     }}>
-                                        <option value=""  selected>물건타입을 선택해 주세요</option>
+                                        <option value="" selected>물건타입을 선택해 주세요</option>
                                         <option value="ITEMS" selected>중고물품</option>
                                         <option value="CARS">자동차</option>
                                         <option value="REAL_ESTATES">부동산</option>
@@ -281,13 +300,13 @@ const Post = () => {
                         </tr>
                         {
                             postType === 'REAL_ESTATES' && (
-                                <tr className="conditional-section">
+                                <tr className="">
                                     <td>
                                         <label>매물종류
                                             <select name='propertyType' value={propertyType} onChange={(e) => {
                                                 setPropertyType(e.target.value);
                                             }}>
-                                                <option value=""  selected>매물종류를 선택해 주세요</option>
+                                                <option value="" selected>매물종류를 선택해 주세요</option>
                                                 <option value="apt">아파트</option>
                                                 <option value="studio">오피스텔</option>
                                                 <option value="oneroom">원룸</option>
@@ -295,6 +314,10 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
+                                    </tr>
+                            )}
+                            {postType==='REAL_ESTATES'&&(
+                        <tr className="estates_detail">
                                     <td>
                                         <label>면적
                                             <input type="text" name='area' value={area} onChange={(e) => {
@@ -321,7 +344,7 @@ const Post = () => {
                                             <select name='dealType' value={dealType} onChange={(e) => {
                                                 setDealType(e.target.value);
                                             }}>
-                                                <option value=""  selected>거래유형을 선택해 주세요</option>
+                                                <option value="" selected>거래유형을 선택해 주세요</option>
                                                 <option value="lease">전세</option>
                                                 <option value="rent">월세</option>
                                                 <option value="leaseAndrent">전월세</option>
@@ -334,13 +357,13 @@ const Post = () => {
                         }
                         {
                             postType === 'CARS' && (
-                                <tr className="conditional-section">
+                                <tr className="">
                                     <td>
                                         <label>브랜드
                                             <select name='brand' value={brand} onChange={(e) => {
                                                 setBrand(e.target.value);
                                             }}>
-                                                <option value=""  selected>브랜드를 선택해 주세요</option>
+                                                <option value="" selected>브랜드를 선택해 주세요</option>
                                                 <option value="kia">기아</option>
                                                 <option value="hyundai">현대</option>
                                                 <option value="benz">벤츠</option>
@@ -349,6 +372,10 @@ const Post = () => {
                                             </select>
                                         </label>
                                     </td>
+                                    </tr>
+                            )}
+                            {postType==='CARS'&&(
+                             <tr className="car-detail">
                                     <td>
                                         <label>모델
                                             <input type="text" name='model' value={model} onChange={(e) => {
@@ -375,7 +402,7 @@ const Post = () => {
                                             <select name='fuelType' value={fuelType} onChange={(e) => {
                                                 setFuelType(e.target.value);
                                             }}>
-                                                <option value=""  selected>연료타입을 선택해 주세요</option>
+                                                <option value="" selected>연료타입을 선택해 주세요</option>
                                                 <option value="gasoline">휘발유</option>
                                                 <option value="diesel">경유</option>
                                                 <option value="electric">전기</option>
@@ -387,7 +414,7 @@ const Post = () => {
                                             <select name='transmission' value={transmission} onChange={(e) => {
                                                 setTransmission(e.target.value);
                                             }}>
-                                                <option value=""  selected>변속기타입을 선택해 주세요</option>
+                                                <option value="" selected>변속기타입을 선택해 주세요</option>
                                                 <option value="auto">오토</option>
                                                 <option value="stick">수동</option>
                                             </select>
@@ -398,13 +425,13 @@ const Post = () => {
                         }
                         {
                             (postType === 'ITEMS' || postType === 'CARS') && (
-                                <tr className="conditional-section">
+                                <tr className="">
                                     <td>
                                         <label>판매타입
                                             <select name="tradeType" id="" value={tradeType} onChange={(e) => {
                                                 setTradeType(e.target.value);
                                             }}>
-                                                <option value=""  selected>판매타입을 선택해 주세요</option>
+                                                <option value="" selected>판매타입을 선택해 주세요</option>
                                                 <option value="SALE">판매</option>
                                                 <option value="AUCTION">경매</option>
                                                 <option value="SHARE">나눔</option>
@@ -416,7 +443,7 @@ const Post = () => {
                         }
                         {
                             postType === 'ITEMS' && (
-                                <tr className="conditional-section">
+                                <tr className="item-detail">
                                     <td>
                                         <label>대분류
                                             <select onChange={handleParentChange} value={selectedParent}>
