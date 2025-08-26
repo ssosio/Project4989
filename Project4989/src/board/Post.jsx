@@ -493,6 +493,8 @@ const Post = () => {
                                 </label>
                             </td>
                         </tr>
+                        {
+                            (tradeType === 'SALE' || tradeType === 'AUCTION') && (
                         <tr>
                             <td>
                                 <label>가격
@@ -502,6 +504,7 @@ const Post = () => {
                                 </label>
                             </td>
                         </tr>
+                            )}
                         <tr>
                             <td colSpan='4'>
                                 <textarea name="content" id="" onChange={(e) => {
