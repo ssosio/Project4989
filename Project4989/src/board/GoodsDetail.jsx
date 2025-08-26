@@ -630,7 +630,13 @@ const GoodsDetail = () => {
               </div>
               <div className="gooddetail-metrics-right">
                 {!userInfo || (Number(userInfo.memberId) !== Number(post.memberId)) ? (
-                  <button className="gooddetail-report-btn" onClick={() => setOpen(true)}>
+                  <button className="gooddetail-report-btn" onClick={() => {
+                    if (!userInfo) {
+                      alert('로그인 후 이용 가능합니다.');
+                    } else {
+                      setOpen(true);
+                    }
+                  }}>
                     신고/문의
                   </button>
                 ) : null}
@@ -732,8 +738,19 @@ const GoodsDetail = () => {
                       textAlign: 'center'
                     }}>
                       ✅ 후기를 작성했습니다
-                    </div>
-                  ) : null}
+                    </div >
+                    
+                  ) : <div style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '8px',
+                      color: '#28a745',
+                      fontWeight: '500',
+                      textAlign: 'center'
+                    }}>
+                      ✅ 판매 완료된 제품입니다
+                    </div >}
                 </div>
               )}
             </div>

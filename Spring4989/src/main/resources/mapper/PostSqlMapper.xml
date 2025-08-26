@@ -45,21 +45,6 @@
       -- 부모 카테고리 정보
       pc.category_id AS parentCategoryId,
       pc.name AS parentCategoryName,
-      -- 자동차 정보
-      car.car_id AS carId,
-      car.brand AS carBrand,
-      car.model AS carModel,
-      car.year AS carYear,
-      car.mileage AS carMileage,
-      car.fuel_type AS carFuelType,
-      car.transmission AS carTransmission,
-      -- 부동산 정보
-      re.real_estate_id AS realEstateId,
-      re.property_type AS realEstatePropertyType,
-      re.area AS realEstateArea,
-      re.rooms AS realEstateRooms,
-      re.floor AS realEstateFloor,
-      re.deal_type AS realEstateDealType,
       COALESCE(
       JSON_ARRAYAGG(
       JSON_OBJECT(
@@ -77,10 +62,8 @@
       LEFT JOIN used_items ui ON ui.post_id = p.post_id
       LEFT JOIN categories c ON c.category_id = ui.category_id
       LEFT JOIN categories pc ON pc.category_id = c.parent_id
-      LEFT JOIN cars car ON car.post_id = p.post_id
-      LEFT JOIN real_estates re ON re.post_id = p.post_id
       WHERE p.post_id = #{postId}
-      GROUP BY p.post_id, p.member_id, p.title, p.content, p.price, p.trade_type, p.status, p.view_count, p.created_at, p.buyer_id, p.updated_at, p.post_type, p.location, p.detail_location, p.latitude, p.longitude, m.nickname, m.member_id, ui.post_id, ui.category_id, ui.conditions, c.category_id, c.name, c.parent_id, pc.category_id, pc.name, car.car_id, car.brand, car.model, car.year, car.mileage, car.fuel_type, car.transmission, re.real_estate_id, re.property_type, re.area, re.rooms, re.floor, re.deal_type
+      GROUP BY p.post_id, p.member_id, p.title, p.content, p.price, p.trade_type, p.status, p.view_count, p.created_at, p.buyer_id, p.updated_at, p.post_type, p.location, p.detail_location, p.latitude, p.longitude, m.nickname, m.member_id, ui.post_id, ui.category_id, ui.conditions, c.category_id, c.name, c.parent_id, pc.category_id, pc.name
    </select>
 
    <!-- 전체리스트 -->
@@ -797,9 +780,10 @@
       WHERE tr.review_opposite_id = #{memberId}
       ORDER BY tr.created_at DESC
    </select>
-
-<!-- 총 게시물 수 조회 -->
+   
+   <!-- 총 게시물 수 조회 -->
    <select id="getTotalPostsCount" resultType="int">
       SELECT COUNT(*) FROM posts
    </select>
+
 </mapper>

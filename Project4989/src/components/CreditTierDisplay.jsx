@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Box,
   Typography,
@@ -15,19 +15,22 @@ import {
   Info as InfoIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
+import { AuthContext } from '../context/AuthContext';
 import api from '../lib/api';
 import './CreditTierDisplay.css';
 
 const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }) => {
+  const { userInfo } = useContext(AuthContext);
   const [creditTier, setCreditTier] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showTierInfo, setShowTierInfo] = useState(false);
 
   useEffect(() => {
-    if (memberId) {
+    // 로그인 상태일 때만 신용도 정보를 가져옴
+    if (memberId && userInfo) {
       fetchCreditTier();
     }
-  }, [memberId]);
+  }, [memberId, userInfo]);
 
   const fetchCreditTier = async () => {
     try {
@@ -104,6 +107,11 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
       { tier: '거래왕', range: '800~1000점', color: '#FFD700', description: '최고 수준의 신용도와 거래 실적을 보유한 회원' }
     ];
   };
+
+  // 로그아웃 상태에서는 신용도 정보를 표시하지 않음
+  if (!userInfo) {
+    return null;
+  }
 
   if (loading) {
     return <div className="credit-tier-loading">등급 정보 로딩 중...</div>;
