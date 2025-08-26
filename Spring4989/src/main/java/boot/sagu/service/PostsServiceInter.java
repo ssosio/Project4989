@@ -56,5 +56,8 @@ public interface PostsServiceInter {
 	public List<PostsDto> searchAll(Map<String, Object> searchParams);
 	
 	public int countSearchAll(Map<String, Object> searchParams);
+	
+	// 후기 조회 메서드 추가
+	public List<Map<String, Object>> getReviewsForUser(Long memberId);
 
 }

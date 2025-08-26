@@ -3,14 +3,14 @@
 <mapper namespace="boot.sagu.mapper.ChatMapper">
 	
 	<resultMap id="ChatResultMap" type="chat">
-    <id column="chat_room_id" property="chat_room_id"/>
-    <result column="product_id" property="product_id"/>
-    <result column="seller_id" property="seller_id"/>
-    <result column="buyer_id" property="buyer_id"/>
-    <result column="created_at" property="created_at"/>
-    <result column="last_message_at" property="last_message_at"/>
-    <result column="deleted_at" property="deleted_at"/>
-    <result column="opponent_nickname" property="opponent_nickname"/>
+    <id column="chat_room_id" property="chatRoomId"/>
+    <result column="product_id" property="productId"/>
+    <result column="seller_id" property="sellerId"/>
+    <result column="buyer_id" property="buyerId"/>
+    <result column="created_at" property="createdAt"/>
+    <result column="last_message_at" property="lastMessageAt"/>
+    <result column="deleted_at" property="deletedAt"/>
+    <result column="opponent_nickname" property="opponentNickname"/>
     <result column="buyer_exit_status" property="buyerExitStatus"/>
     <result column="seller_exit_status" property="sellerExitStatus"/>
 </resultMap>
@@ -23,14 +23,14 @@
         c.created_at,
         c.last_message_at,
         CASE 
-            WHEN c.seller_id = #{login_id} THEN m2.nickname
-            WHEN c.buyer_id = #{login_id} THEN m1.nickname
+            WHEN c.seller_id = #{loginId} THEN m2.nickname
+            WHEN c.buyer_id = #{loginId} THEN m1.nickname
         END as opponent_nickname
     FROM chatroom c
     LEFT JOIN members m1 ON c.seller_id = m1.member_id
     LEFT JOIN members m2 ON c.buyer_id = m2.member_id
-    WHERE (c.buyer_id = #{login_id} AND c.buyer_exit_status = 0)
-       OR (c.seller_id = #{login_id} AND c.seller_exit_status = 0)
+    WHERE (c.buyer_id = #{loginId} AND c.buyer_exit_status = 0)
+       OR (c.seller_id = #{loginId} AND c.seller_exit_status = 0)
     ORDER BY c.last_message_at DESC
 </select>
 	

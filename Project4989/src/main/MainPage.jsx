@@ -131,13 +131,13 @@ const MainPage = () => {
 
         {/* 정렬 버튼 */}
         <div className="sort-buttons">
-          <button 
+          <button
             className={`sort-btn ${sortType === 'time' ? 'active' : ''}`}
             onClick={handleSortByTime}
           >
             종료시간 빠른순
           </button>
-          <button 
+          <button
             className={`sort-btn ${sortType === 'bidders' ? 'active' : ''}`}
             onClick={handleSortByBidders}
           >
@@ -172,7 +172,7 @@ const MainPage = () => {
 
           {/* 페이지네이션 버튼 */}
           <div className="pagination">
-            <button 
+            <button
               className="page-btn prev-btn"
               onClick={handlePrevPage}
               disabled={currentPage === 1}
@@ -182,7 +182,7 @@ const MainPage = () => {
             <span className="page-info">
               {currentPage} / {totalPages}
             </span>
-            <button 
+            <button
               className="page-btn next-btn"
               onClick={handleNextPage}
               disabled={currentPage === totalPages}

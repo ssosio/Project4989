@@ -67,13 +67,13 @@ public class ChatMessageController {
 	}
 	
 	@GetMapping("/listMessage")
-	public List<ChatMessageDto> getList(@RequestParam("chat_room_id") Long chat_room_id) {
+	public List<ChatMessageDto> getList(@RequestParam("chatRoomId") Long chatRoomId) {
 	    System.out.println("=== 메시지 조회 API 호출 ===");
-	    System.out.println("요청 받은 chat_room_id: " + chat_room_id);
-	    System.out.println("chat_room_id 타입: " + ((Object)chat_room_id).getClass().getName());
+	    System.out.println("요청 받은 chatRoomId: " + chatRoomId);
+	    System.out.println("chatRoomId 타입: " + ((Object)chatRoomId).getClass().getName());
 
 	    try {
-	        List<ChatMessageDto> result = chatMessageService.getAllMessages(chat_room_id);
+	        List<ChatMessageDto> result = chatMessageService.getAllMessages(chatRoomId);
 
 	        if (result == null) {
 	            return new ArrayList<>(); 
@@ -83,15 +83,15 @@ public class ChatMessageController {
 	        System.out.println("조회 결과: " + result);
 	        System.out.println("조회 결과 크기: " + (result != null ? result.size() : "null"));
 	        for (ChatMessageDto message : result) {
-	            if (message.getDeleted_at() != null) {
-	                message.setMessage_content("삭제된 메시지입니다.");
-	                message.setMessage_type("deleted");
-	            } else if ("image".equals(message.getMessage_type())) {
-	                ChatFileDto fileInfo = chatFileUploadService.getChatFileByMessageId(message.getMessage_id());
+	            if (message.getDeletedAt() != null) {
+	                message.setMessageContent("삭제된 메시지입니다.");
+	                message.setMessageType("deleted");
+	            } else if ("image".equals(message.getMessageType())) {
+	                ChatFileDto fileInfo = chatFileUploadService.getChatFileByMessageId(message.getMessageId());
 	                if (fileInfo != null) {
-	                    message.setMessage_content(fileInfo.getFileUrl());
+	                    message.setMessageContent(fileInfo.getFileUrl());
 	                } else {
-	                    message.setMessage_content("이미지를 찾을 수 없습니다.");
+	                    message.setMessageContent("이미지를 찾을 수 없습니다.");
 	                }
 	            }
 	        }
@@ -107,13 +107,13 @@ public class ChatMessageController {
 	
 	// 기존 메시지들을 안읽음 상태로 초기화하는 API
 	@PostMapping("/resetMessageReadStatus")
-	public String resetMessageReadStatus(@RequestParam("chat_room_id") Long chat_room_id)
+	public String resetMessageReadStatus(@RequestParam("chatRoomId") Long chatRoomId)
 	{
 		System.out.println("=== 메시지 읽음 상태 초기화 API 호출 ===");
-		System.out.println("요청 받은 chat_room_id: " + chat_room_id);
+		System.out.println("요청 받은 chatRoomId: " + chatRoomId);
 		
 		try {
-			chatMessageService.resetMessageReadStatus(chat_room_id);
+			chatMessageService.resetMessageReadStatus(chatRoomId);
 			return "메시지 읽음 상태가 초기화되었습니다.";
 		} catch (Exception e) {
 			System.out.println("=== 에러 발생 ===");
@@ -149,8 +149,8 @@ public class ChatMessageController {
 	
 	@GetMapping("/read")
     public ResponseEntity<Void> markAsRead(
-    		@RequestParam(name = "chat_room_id") Long chatRoomId, 
-            @RequestParam(name = "member_id") Long memberId) {
+    		@RequestParam(name = "chatRoomId") Long chatRoomId, 
+            @RequestParam(name = "memberId") Long memberId) {
 
 		  if (memberId == null) {
 		        System.err.println("[ERROR] memberId가 누락되었습니다.");
@@ -170,10 +170,10 @@ public class ChatMessageController {
     }
 	
 	@GetMapping("/chat/unread-count")
-    public ResponseEntity<Integer> getUnreadCount(@RequestParam("login_id") String login_id) {
+    public ResponseEntity<Integer> getUnreadCount(@RequestParam("loginId") String loginId) {
         // 💡 Spring Security의 Authentication 객체에서 사용자 ID를 가져옵니다.
         // 이 부분은 프로젝트의 로그인 구현 방식에 따라 달라질 수 있습니다.
-		  int intMemberId = memberService.getMemberByLoginId(login_id).getMemberId();
+		  int intMemberId = memberService.getMemberByLoginId(loginId).getMemberId();
 	        Long memberId = Long.valueOf(intMemberId); // 👈 Long으로 변환
 
         int unreadCount = chatMessageService.getUnreadMessageCount(memberId);

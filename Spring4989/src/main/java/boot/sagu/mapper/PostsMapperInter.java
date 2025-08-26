@@ -112,4 +112,7 @@ public interface PostsMapperInter {
 	
 	// 지역 조회
 	RegionDto getOneRegion(@Param("regionId") Long regionId);
+	// 후기 조회
+	List<Map<String, Object>> getReviewsForUser(@Param("memberId") Long memberId);
+	
 }

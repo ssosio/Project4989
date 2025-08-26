@@ -6,6 +6,7 @@ import TransactionSection from './TransactionSection';
 import BiddingSection from './BiddingSection';
 import WishlistSection from './WishlistSection';
 import PurchaseHistorySection from './PurchaseHistorySection';
+import ReviewSection from './ReviewSection';
 
 // 탭 패널 컴포넌트
 function TabPanel({ children, value, index, ...other }) {
@@ -65,9 +66,9 @@ const MyPageMain = () => {
 
         {/* 탭 네비게이션 */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange} 
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
             aria-label="마이페이지 탭"
             sx={{
               '& .MuiTab-root': {
@@ -82,6 +83,7 @@ const MyPageMain = () => {
             <Tab label="구매 내역" />
             <Tab label="입찰중" />
             <Tab label="찜한 상품" />
+            <Tab label="후기" />
           </Tabs>
         </Box>
 
@@ -89,21 +91,25 @@ const MyPageMain = () => {
         <TabPanel value={tabValue} index={0}>
           <ProfileSection userInfo={userInfo} />
         </TabPanel>
-        
+
         <TabPanel value={tabValue} index={1}>
           <TransactionSection userInfo={userInfo} />
         </TabPanel>
-        
+
         <TabPanel value={tabValue} index={2}>
           <PurchaseHistorySection userInfo={userInfo} />
         </TabPanel>
-        
+
         <TabPanel value={tabValue} index={3}>
           <BiddingSection userInfo={userInfo} />
         </TabPanel>
-        
+
         <TabPanel value={tabValue} index={4}>
           <WishlistSection userInfo={userInfo} />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={5}>
+          <ReviewSection userInfo={userInfo} />
         </TabPanel>
       </Paper>
     </Container>

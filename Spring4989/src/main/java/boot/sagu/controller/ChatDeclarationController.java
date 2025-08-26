@@ -62,9 +62,9 @@ public class ChatDeclarationController {
                     ChatDeclarationDto dto = declarations.get(i);
                     System.out.println(">>> [DEBUG] 데이터[" + i + "]: " + dto);
                     if (dto != null) {
-                        System.out.println("  - declaration_id: " + dto.getDeclaration_id());
-                        System.out.println("  - declaration_type: " + dto.getDeclaration_type());
-                        System.out.println("  - declaration_content: " + dto.getDeclaration_content());
+                        System.out.println("  - declarationId: " + dto.getDeclarationId());
+                        System.out.println("  - declarationType: " + dto.getDeclarationType());
+                        System.out.println("  - declarationContent: " + dto.getDeclarationContent());
                     } else {
                         System.out.println("  - DTO 객체가 null입니다.");
                     }

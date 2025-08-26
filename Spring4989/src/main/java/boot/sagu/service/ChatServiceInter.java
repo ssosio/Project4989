@@ -11,7 +11,7 @@ import boot.sagu.dto.ChatMessageDto;
 
 public interface ChatServiceInter {
 
-public List<ChatDto> getAllChat(String login_id);
+public List<ChatDto> getAllChat(String loginId);
 
 public List<Map<String, Object>> getChatRoomsWithLastMessage(@Param("memberId") Long memberId);
 

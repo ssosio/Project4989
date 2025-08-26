@@ -26,50 +26,36 @@ public class WebSocketController {
     @MessageMapping("/chat.sendMessage")
     public WebSocketMessageDto sendMessage(@Payload WebSocketMessageDto webSocketMessage) {
         // 메시지를 데이터베이스에 저장
-    	 if ("text".equals(webSocketMessage.getMessageType()) || "text".equals(webSocketMessage.getMessage_type())) {
+    	 if ("text".equals(webSocketMessage.getMessageType())) {
              // 메시지를 데이터베이스에 저장
              ChatMessageDto chatMessage = new ChatMessageDto();
              
-             // 프론트엔드에서 보내는 snake_case 구조 처리
-             if (webSocketMessage.getChat_room_id() != null) {
-                 chatMessage.setChat_room_id(webSocketMessage.getChat_room_id());
-                 chatMessage.setSender_id(webSocketMessage.getSender_id());
-                 chatMessage.setMessage_content(webSocketMessage.getMessage_content());
-                 chatMessage.setMessage_type(webSocketMessage.getMessage_type());
-             } else {
-                 // 기존 camelCase 구조 처리
-                 chatMessage.setChat_room_id(webSocketMessage.getChatRoomId());
-                 chatMessage.setSender_id(webSocketMessage.getSenderId());
-                 chatMessage.setMessage_content(webSocketMessage.getMessageContent());
-                 chatMessage.setMessage_type(webSocketMessage.getMessageType());
-             }
+             chatMessage.setChatRoomId(webSocketMessage.getChatRoomId());
+             chatMessage.setSenderId(webSocketMessage.getSenderId());
+             chatMessage.setMessageContent(webSocketMessage.getMessageContent());
+             chatMessage.setMessageType(webSocketMessage.getMessageType());
              
-             chatMessage.setCreated_at(new Timestamp(System.currentTimeMillis()));
+             chatMessage.setCreatedAt(new Timestamp(System.currentTimeMillis()));
              Long messageId = chatMessageService.insertMessage(chatMessage);
-             chatMessage.setMessage_id(messageId);
+             chatMessage.setMessageId(messageId);
          
              // 텍스트 메시지를 특정 채팅방에 전송
-             // 프론트엔드에서 보내는 메시지 구조에 맞게 수정
              WebSocketMessageDto responseMessage = new WebSocketMessageDto();
              responseMessage.setType("CHAT");
-             responseMessage.setMessageId(chatMessage.getMessage_id());
-             responseMessage.setChatRoomId(chatMessage.getChat_room_id());
-             responseMessage.setSenderId(chatMessage.getSender_id());
-             responseMessage.setMessageType(chatMessage.getMessage_type());
-             responseMessage.setMessageContent(chatMessage.getMessage_content());
-             responseMessage.setTimestamp(chatMessage.getCreated_at());
+             responseMessage.setMessageId(chatMessage.getMessageId());
+             responseMessage.setChatRoomId(chatMessage.getChatRoomId());
+             responseMessage.setSenderId(chatMessage.getSenderId());
+             responseMessage.setMessageContent(chatMessage.getMessageContent());
+             responseMessage.setMessageType(chatMessage.getMessageType());
+             responseMessage.setTimestamp(chatMessage.getCreatedAt());
+             responseMessage.setIsRead(0);
              
-             System.out.println("=== WebSocket 메시지 전송 ===");
-             System.out.println("전송할 메시지: " + responseMessage);
-             System.out.println("채팅방 ID: " + chatMessage.getChat_room_id());
-             System.out.println("메시지 내용: " + chatMessage.getMessage_content());
-             System.out.println("메시지 타입: " + chatMessage.getMessage_type());
+             messagingTemplate.convertAndSend("/topic/chat/" + chatMessage.getChatRoomId(), responseMessage);
              
-             messagingTemplate.convertAndSend("/topic/chat/" + chatMessage.getChat_room_id(), responseMessage);
+             return responseMessage;
          }
-        
-        
-        return webSocketMessage;
+         
+         return webSocketMessage;
     }
 
     @MessageMapping("/chat.addUser")
