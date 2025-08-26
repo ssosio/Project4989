@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { FaChevronUp } from 'react-icons/fa';
 import './goods.css';
 
+const PHOTO_BASE = `${import.meta.env.VITE_API_BASE || 'http://localhost:4989'}/postphoto/`;
+
 const Goods = () => {
 
   const navi = useNavigate('');
@@ -319,9 +321,11 @@ const Goods = () => {
   console.log('총 페이지 수:', totalPages);
   console.log('현재 페이지:', currentPage);
   console.log('현재 아이템 수:', currentItems.length);
+  console.log('PHOTO_BASE:', PHOTO_BASE);
+  console.log('첫 번째 아이템 mainPhotoUrl:', currentItems[0]?.mainPhotoUrl);
+  console.log('첫 번째 아이템 전체 이미지 URL:', currentItems[0]?.mainPhotoUrl ? PHOTO_BASE + currentItems[0].mainPhotoUrl : 'N/A');
 
   const fromUrl = `${location.pathname}${location.search || ''}`;
-  const photoUrl = "http://localhost:4989/postphoto/";
 
   // ✅ 라디오 변경 핸들러
   const onChangeCategory = (e) => {
@@ -542,14 +546,19 @@ const Goods = () => {
                       <div className="goods-image">
                         {p.mainPhotoUrl ? (
                           <img
-                            src={photoUrl + p.mainPhotoUrl}
+                            src={PHOTO_BASE + p.mainPhotoUrl}
                             alt={p.title}
+                            onError={(e) => {
+                              console.error('이미지 로드 실패:', PHOTO_BASE + p.mainPhotoUrl);
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'block';
+                            }}
                           />
-                        ) : (
-                          <div className="goods-image-placeholder">
-                            이미지 없음
-                          </div>
-                        )}
+                        ) : null}
+                        <div className="goods-image-placeholder" style={{ display: p.mainPhotoUrl ? 'none' : 'block' }}>
+                          <div className="camera-icon">📷</div>
+                          <div className="placeholder-text">등록된 사진이 없습니다</div>
+                        </div>
                       </div>
                       <div className="goods-info">
                         <h3 className="goods-title-text">{p.title}</h3>

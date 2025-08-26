@@ -710,7 +710,21 @@ const Cars = () => {
                       }
                     >
                       <div className="cars-image">
-                        {p.mainPhotoUrl ? <img src={`${PHOTO_BASE}${p.mainPhotoUrl}`} alt={p.title} /> : <div className="cars-image-placeholder">이미지 없음</div>}
+                        {p.mainPhotoUrl ? (
+                          <img 
+                            src={`${PHOTO_BASE}${p.mainPhotoUrl}`} 
+                            alt={p.title}
+                            onError={(e) => {
+                              console.error('이미지 로드 실패:', `${PHOTO_BASE}${p.mainPhotoUrl}`);
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'block';
+                            }}
+                          />
+                        ) : null}
+                                                 <div className="cars-image-placeholder" style={{ display: p.mainPhotoUrl ? 'none' : 'block' }}>
+                           <div className="camera-icon">📷</div>
+                           <div className="placeholder-text">등록된 사진이 없습니다</div>
+                         </div>
                       </div>
                       <div className="cars-info">
                         <h3 className="cars-title-text">{p.title}</h3>
