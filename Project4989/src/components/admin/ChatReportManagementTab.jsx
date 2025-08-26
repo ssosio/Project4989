@@ -656,7 +656,7 @@ const ChatReportManagementTab = () => {
                   🏷️ 신고 유형
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                  {chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_type || '-'}
+                  {chatDeclarations.find(d => d.declarationId === selectedDeclarationId)?.declarationType || '-'}
                 </Typography>
               </Box>
               <Box>
@@ -664,7 +664,7 @@ const ChatReportManagementTab = () => {
                   📅 신고 시간
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                  {formatDate(chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_time) || '-'}
+                  {formatDate(chatDeclarations.find(d => d.declarationId === selectedDeclarationId)?.declarationTime) || '-'}
                 </Typography>
               </Box>
               <Box>
@@ -672,7 +672,7 @@ const ChatReportManagementTab = () => {
                   💬 채팅방 ID
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                  #{chatDeclarations.find(d => d.declaration_id === selectedDeclarationId)?.declaration_chat_room_id || '-'}
+                  #{chatDeclarations.find(d => d.declarationId === selectedDeclarationId)?.declarationChatRoomId || '-'}
                 </Typography>
               </Box>
             </Box>
