@@ -650,7 +650,7 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
             >
                 <NotificationHeader>
                     <Typography variant="h6" sx={{ fontWeight: 600, color: '#222' }}>
-                        신고 결과 알림
+                        알림
                     </Typography>
                     <IconButton onClick={onClose} size="small">
                         <CloseRoundedIcon />
@@ -663,39 +663,39 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                             notifications.map((noti, index) => {
                                 if (!noti) return null;
 
-                                const displayMessage = noti.resultContent || '신고 조치가 완료되었습니다.';
-                                const reportedContent = noti.reportedChatContent || noti.declarationContent || '신고된 내용';
-
-                                return (
-                                    <React.Fragment key={noti.chatdeclarationresultId}>
-                                        <NotificationItem onClick={() => handleNotificationClick(noti)}>
-                                            <ListItemAvatar>
-                                                <Box sx={{ position: 'relative' }}>
-                                                    <Avatar sx={{
-                                                        width: 48,
-                                                        height: 48,
-                                                        bgcolor: '#e3f0fd',
-                                                        fontSize: '20px'
-                                                    }}>
-                                                        🚨
-                                                    </Avatar>
-                                                </Box>
-                                            </ListItemAvatar>
-                                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
-                                                        {noti.reportedMemberNickname || 'Unknown'}님 신고
-                                                    </Typography>
-                                                    <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
-                                                        {formatTime(noti.createdAt)}
-                                                    </Typography>
-                                                </Box>
-                                                {/* 신고 유형 표시 */}
-                                                {noti.declarationType && (
+                                // 후기 알림인지 신고 알림인지 구분
+                                const isReviewNotification = noti.notificationType === 'REVIEW_REQUEST';
+                                
+                                if (isReviewNotification) {
+                                    // 후기 알림 표시
+                                    return (
+                                        <React.Fragment key={noti.chatdeclarationresultId}>
+                                            <NotificationItem onClick={() => handleNotificationClick(noti)}>
+                                                <ListItemAvatar>
+                                                    <Box sx={{ position: 'relative' }}>
+                                                        <Avatar sx={{
+                                                            width: 48,
+                                                            height: 48,
+                                                            bgcolor: '#fff3cd',
+                                                            fontSize: '20px'
+                                                        }}>
+                                                            ⭐
+                                                        </Avatar>
+                                                    </Box>
+                                                </ListItemAvatar>
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
+                                                            후기 작성 요청
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
+                                                            {formatTime(noti.createdAt)}
+                                                        </Typography>
+                                                    </Box>
                                                     <Typography
                                                         variant="body2"
                                                         sx={{
-                                                            color: '#4A90E2',
+                                                            color: '#856404',
                                                             fontSize: '13px',
                                                             fontWeight: 500,
                                                             mb: 0.5,
@@ -705,46 +705,132 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                                             maxWidth: 200
                                                         }}
                                                     >
-                                                        🚨 {noti.declarationType}
+                                                        ⭐ 후기 작성 요청
                                                     </Typography>
-                                                )}
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                            color: '#666',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            whiteSpace: 'nowrap',
-                                                            maxWidth: 180,
-                                                            fontSize: '14px',
-                                                            fontWeight: noti.isRead === 0 ? 'bold' : 'normal',
-                                                        }}
-                                                    >
-                                                        {displayMessage}
-                                                    </Typography>
-                                                    {noti.isRead === 0 && (
-                                                        <Chip
-                                                            label="N"
-                                                            size="small"
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        <Typography
+                                                            variant="body2"
                                                             sx={{
-                                                                height: 20,
-                                                                minWidth: 20,
-                                                                fontSize: '11px',
-                                                                fontWeight: 600,
-                                                                backgroundColor: '#3182f6',
-                                                                color: '#fff'
+                                                                color: '#666',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                                maxWidth: 180,
+                                                                fontSize: '14px',
+                                                                fontWeight: noti.isRead === 0 ? 'bold' : 'normal',
                                                             }}
-                                                        />
-                                                    )}
+                                                        >
+                                                            {noti.reviewerNickname || 'Unknown'}님이 후기를 작성했습니다. 
+                                                            {noti.postTitle ? ` (${noti.postTitle})` : ''} 
+                                                            후기를 작성해주세요.
+                                                        </Typography>
+                                                        {noti.isRead === 0 && (
+                                                            <Chip
+                                                                label="N"
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 20,
+                                                                    minWidth: 20,
+                                                                    fontSize: '11px',
+                                                                    fontWeight: 600,
+                                                                    backgroundColor: '#ffc107',
+                                                                    color: '#fff'
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Box>
                                                 </Box>
-                                            </Box>
-                                        </NotificationItem>
-                                        {index < notifications.length - 1 && (
-                                            <Divider sx={{ mx: 3 }} />
-                                        )}
-                                    </React.Fragment>
-                                );
+                                            </NotificationItem>
+                                            {index < notifications.length - 1 && (
+                                                <Divider sx={{ mx: 3 }} />
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                } else {
+                                    // 신고 알림 표시 (기존 로직)
+                                    const displayMessage = noti.resultContent || '신고 조치가 완료되었습니다.';
+                                    const reportedContent = noti.reportedChatContent || noti.declarationContent || '신고된 내용';
+
+                                    return (
+                                        <React.Fragment key={noti.chatdeclarationresultId}>
+                                            <NotificationItem onClick={() => handleNotificationClick(noti)}>
+                                                <ListItemAvatar>
+                                                    <Box sx={{ position: 'relative' }}>
+                                                        <Avatar sx={{
+                                                            width: 48,
+                                                            height: 48,
+                                                            bgcolor: '#e3f0fd',
+                                                            fontSize: '20px'
+                                                        }}>
+                                                            🚨
+                                                        </Avatar>
+                                                    </Box>
+                                                </ListItemAvatar>
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
+                                                            {noti.reportedMemberNickname || 'Unknown'}님 신고
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
+                                                            {formatTime(noti.createdAt)}
+                                                        </Typography>
+                                                    </Box>
+                                                    {/* 신고 유형 표시 */}
+                                                    {noti.declarationType && (
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                color: '#4A90E2',
+                                                                fontSize: '13px',
+                                                                fontWeight: 500,
+                                                                mb: 0.5,
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                                maxWidth: 200
+                                                            }}
+                                                        >
+                                                            🚨 {noti.declarationType}
+                                                        </Typography>
+                                                    )}
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                color: '#666',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                                maxWidth: 180,
+                                                                fontSize: '14px',
+                                                                fontWeight: noti.isRead === 0 ? 'bold' : 'normal',
+                                                            }}
+                                                        >
+                                                            {displayMessage}
+                                                        </Typography>
+                                                        {noti.isRead === 0 && (
+                                                            <Chip
+                                                                label="N"
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 20,
+                                                                    minWidth: 20,
+                                                                    fontSize: '11px',
+                                                                    fontWeight: 600,
+                                                                    backgroundColor: '#3182f6',
+                                                                    color: '#fff'
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </NotificationItem>
+                                            {index < notifications.length - 1 && (
+                                                <Divider sx={{ mx: 3 }} />
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                }
                             })
                         ) : (
                             <Box sx={{
@@ -755,7 +841,7 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                 color: '#666'
                             }}>
                                 <Typography variant="body2">
-                                    신고 결과 알림이 없습니다.
+                                    알림이 없습니다.
                                 </Typography>
                             </Box>
                         )}

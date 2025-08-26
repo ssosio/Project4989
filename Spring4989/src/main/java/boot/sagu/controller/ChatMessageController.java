@@ -67,7 +67,7 @@ public class ChatMessageController {
 	}
 	
 	@GetMapping("/listMessage")
-	public List<ChatMessageDto> getList(@RequestParam("chatRoomId") Long chatRoomId) {
+	public List<ChatMessageDto> getList(@RequestParam(name = "chatRoomId") Long chatRoomId) {
 	    System.out.println("=== 메시지 조회 API 호출 ===");
 	    System.out.println("요청 받은 chatRoomId: " + chatRoomId);
 	    System.out.println("chatRoomId 타입: " + ((Object)chatRoomId).getClass().getName());
@@ -107,7 +107,7 @@ public class ChatMessageController {
 	
 	// 기존 메시지들을 안읽음 상태로 초기화하는 API
 	@PostMapping("/resetMessageReadStatus")
-	public String resetMessageReadStatus(@RequestParam("chatRoomId") Long chatRoomId)
+	public String resetMessageReadStatus(@RequestParam(name = "chatRoomId") Long chatRoomId)
 	{
 		System.out.println("=== 메시지 읽음 상태 초기화 API 호출 ===");
 		System.out.println("요청 받은 chatRoomId: " + chatRoomId);
@@ -117,7 +117,7 @@ public class ChatMessageController {
 			return "메시지 읽음 상태가 초기화되었습니다.";
 		} catch (Exception e) {
 			System.out.println("=== 에러 발생 ===");
-			System.out.println("에러 메시지: " + e.getMessage());
+		 System.out.println("에러 메시지: " + e.getMessage());
 			e.printStackTrace();
 			return "초기화 중 오류가 발생했습니다: " + e.getMessage();
 		}
@@ -170,7 +170,7 @@ public class ChatMessageController {
     }
 	
 	@GetMapping("/chat/unread-count")
-    public ResponseEntity<Integer> getUnreadCount(@RequestParam("loginId") String loginId) {
+    public ResponseEntity<Integer> getUnreadCount(@RequestParam(name = "loginId") String loginId) {
         // 💡 Spring Security의 Authentication 객체에서 사용자 ID를 가져옵니다.
         // 이 부분은 프로젝트의 로그인 구현 방식에 따라 달라질 수 있습니다.
 		  int intMemberId = memberService.getMemberByLoginId(loginId).getMemberId();
