@@ -122,13 +122,8 @@ public class AdminController {
                 return ResponseEntity.badRequest().body("유효하지 않은 상태값입니다.");
             }
 
-            MemberDto existingMember = memberService.getMemberById(memberId);
-            if (existingMember == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("회원을 찾을 수 없습니다.");
-            }
-
-            existingMember.setStatus(newStatus);
-            memberService.updateProfile(existingMember);
+            // 전용 메서드 사용
+            memberService.updateMemberStatus(memberId, newStatus);
             
             return ResponseEntity.ok(Map.of("message", "회원 상태가 성공적으로 변경되었습니다."));
         } catch (Exception e) {

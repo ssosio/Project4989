@@ -97,4 +97,13 @@ public class MemberService implements MemberServiceInter {
 		return memberMapper.countAllMembers();
 	}
 	
+	// 회원 상태 변경 전용 메서드 (밴/해제)
+	public void updateMemberStatus(Long memberId, String newStatus) {
+		MemberDto member = memberMapper.findById(memberId);
+		if (member != null) {
+			member.setStatus(newStatus);
+			memberMapper.updateProfile(member);
+		}
+	}
+	
 }

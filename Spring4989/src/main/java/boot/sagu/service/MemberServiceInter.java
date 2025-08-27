@@ -24,4 +24,7 @@ public interface MemberServiceInter {
     
     public int countAllMembers();
     
+    // 회원 상태 변경 전용 메서드 (밴/해제)
+    public void updateMemberStatus(Long memberId, String newStatus);
+    
 }

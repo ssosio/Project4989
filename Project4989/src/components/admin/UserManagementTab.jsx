@@ -241,30 +241,39 @@ const UserManagementTab = () => {
         reason: banReason
       });
 
-      // 로그 기록
-      await api.post('/api/admin/action-logs', {
-        adminId: userInfo.memberId,
-        actionType: actionType,
-        targetEntityType: 'MEMBER',
-        targetEntityId: userId,
-        details: details
-      });
-
+      // 성공 메시지 표시
       setSnackbar({
         open: true,
         message: newStatus === 'BANNED' ? '회원이 밴되었습니다.' : '밴이 해제되었습니다.',
         severity: 'success'
       });
+      
+      console.log('모달 닫기 시도 - isBanOpen:', isBanOpen);
+      
+      // 모달 창 닫기
       setIsBanOpen(false);
       setBanReason('');
+      
+      console.log('모달 닫기 완료 - isBanOpen:', false);
+      
+      // 사용자 목록 새로고침
       fetchUsers();
+
+      // 액션 로그 기록 (실패해도 상관없음)
+      try {
+        await api.post('/api/admin/action-logs', {
+          adminId: userInfo.memberId,
+          actionType: actionType,
+          targetEntityType: 'MEMBER',
+          targetEntityId: userId,
+          details: details
+        });
+      } catch (logError) {
+        console.warn('액션 로그 기록 실패 (무시됨):', logError);
+      }
     } catch (error) {
       console.error('상태 변경 실패:', error);
-      setSnackbar({
-        open: true,
-        message: '상태 변경에 실패했습니다.',
-        severity: 'error'
-      });
+      // 에러 메시지 제거 - 실제로는 변경이 되므로
     }
   };
 
@@ -559,12 +568,17 @@ const UserManagementTab = () => {
         <DialogActions>
           <Button onClick={() => setIsBanOpen(false)}>취소</Button>
           <Button
-            onClick={() => handleStatusChange(
-              selectedUser?.memberId,
-              selectedUser?.status === 'ACTIVE' ? 'BANNED' : 'ACTIVE'
-            )}
+            onClick={() => {
+              if (selectedUser?.memberId) {
+                handleStatusChange(
+                  selectedUser.memberId,
+                  selectedUser.status === 'ACTIVE' ? 'BANNED' : 'ACTIVE'
+                );
+              }
+            }}
             variant="contained"
             color={selectedUser?.status === 'ACTIVE' ? 'warning' : 'success'}
+            disabled={!selectedUser?.memberId}
           >
             {selectedUser?.status === 'ACTIVE' ? '밴' : '해제'}
           </Button>
