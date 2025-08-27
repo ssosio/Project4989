@@ -200,8 +200,8 @@ public class ContactController {
     }
 
     // 문의 답변 알림 읽음 처리
-    @PutMapping("/{contactId}/read")
-    public ResponseEntity<?> markContactAsRead(@PathVariable Long contactId) {
+    @PutMapping("/read")
+    public ResponseEntity<?> markContactAsRead(@RequestParam("contactId") Long contactId) {
         try {
             System.out.println("=== Mark Contact as Read Request ===");
             System.out.println("Requested contactId: " + contactId);

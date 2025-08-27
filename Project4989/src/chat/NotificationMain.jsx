@@ -529,7 +529,9 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
     if (!notification) return null;
 
     const handleMarkAsRead = () => {
-        onMarkAsRead(notification.contactId);
+        if (onMarkAsRead) {
+            onMarkAsRead(notification.contactId);
+        }
         onClose();
     };
 
@@ -719,7 +721,7 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
                                         lineHeight: 1.6,
                                         fontSize: '15px'
                                     }}>
-                                        {notification.contactContent || '문의 내용이 없습니다.'}
+                                        {notification.message || '문의 내용이 없습니다.'}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -938,8 +940,27 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
 
     // 안 읽은 알림 개수 계산 함수
     const calculateAndNotifyUnreadCount = (list) => {
-        const totalUnreadCount = list.reduce((sum, noti) => sum + (noti.isRead === 0 ? 1 : 0), 0);
+        console.log("=== calculateAndNotifyUnreadCount 호출 ===");
+        console.log("전체 알림 목록:", list);
+
+        // 타입별로 분류하여 로그 출력
+        const chatDeclarations = list.filter(n => n.type === 'CHAT_DECLARATION');
+        const contactReplies = list.filter(n => n.type === 'CONTACT_REPLY');
+
+        console.log("채팅 신고 알림:", chatDeclarations);
+        console.log("문의 답변 알림:", contactReplies);
+
+        const totalUnreadCount = list.reduce((sum, noti) => {
+            const isUnread = noti.isRead === 0;
+            console.log(`알림 ${noti.type || 'UNKNOWN'} (ID: ${noti.contactId || noti.chatdeclarationresultId}): isRead=${noti.isRead}, 읽지않음=${isUnread}`);
+            return sum + (isUnread ? 1 : 0);
+        }, 0);
+
+        console.log("총 읽지 않은 알림 개수:", totalUnreadCount);
+        console.log("onUnreadCountChange 함수 존재 여부:", !!onUnreadCountChange);
+
         if (onUnreadCountChange) {
+            console.log("onUnreadCountChange 호출:", totalUnreadCount);
             onUnreadCountChange(totalUnreadCount);
         }
     };
@@ -993,15 +1014,30 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
 
                 // 문의 답변 알림 처리
                 if (Array.isArray(contactRes.data)) {
+                    console.log("원본 문의 답변 데이터:", contactRes.data);
                     const contactNotifications = contactRes.data
-                        .filter(n => n && n.createdAt)
-                        .map(n => ({ ...n, type: 'CONTACT_REPLY' }));
+                        .filter(n => n && (n.createdAt || n.updatedAt))
+                        .map(n => {
+                            const mapped = {
+                                ...n,
+                                type: 'CONTACT_REPLY',
+                                createdAt: n.createdAt || n.updatedAt, // createdAt이 없으면 updatedAt 사용
+                                isRead: n.isRead !== undefined ? n.isRead : 0 // isRead가 없으면 0으로 설정
+                            };
+                            console.log(`문의 ${n.contactId} 매핑 결과:`, mapped);
+                            return mapped;
+                        });
                     allNotifications.push(...contactNotifications);
                     console.log("문의 답변 알림 개수:", contactNotifications.length);
+                    console.log("문의 답변 알림 상세:", contactNotifications);
                 }
 
                 // 모든 알림을 시간순으로 정렬
-                const sortedNotifications = allNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                const sortedNotifications = allNotifications.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || a.updatedAt || 0);
+                    const dateB = new Date(b.createdAt || b.updatedAt || 0);
+                    return dateB - dateA;
+                });
                 console.log("전체 알림 개수:", sortedNotifications.length);
 
                 setNotifications(sortedNotifications);
@@ -1090,11 +1126,16 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
         })
             .then(() => {
                 // 성공적으로 읽음 처리되면 상태 업데이트
-                setNotifications(prevNoti =>
-                    prevNoti.map(noti =>
+                setNotifications(prevNoti => {
+                    const updated = prevNoti.map(noti =>
                         noti.chatdeclarationresultId === chatdeclarationresultId ? { ...noti, isRead: 1 } : noti
-                    )
-                );
+                    );
+
+                    // 즉시 읽지 않은 알림 개수 계산 및 헤더 업데이트
+                    calculateAndNotifyUnreadCount(updated);
+
+                    return updated;
+                });
                 // 읽음 처리 후 전체 목록 다시 불러오기
                 fetchNotifications();
             })
@@ -1105,26 +1146,43 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
 
     // 문의 답변 알림 읽음 처리
     const handleContactReplyMarkAsRead = (contactId) => {
+        console.log("=== handleContactReplyMarkAsRead 호출 ===");
+        console.log("contactId:", contactId);
+        console.log("token:", token);
+
         // 문의 답변 알림 읽음 처리 API 호출
         const url = `http://${SERVER_IP}:${SERVER_PORT}/api/contact/${contactId}/read`;
+        console.log("API URL:", url);
 
         axios.put(url, {}, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
-            .then(() => {
+            .then((response) => {
+                console.log("문의 답변 읽음 처리 API 성공:", response.data);
+
                 // 성공적으로 읽음 처리되면 상태 업데이트
-                setNotifications(prevNoti =>
-                    prevNoti.map(noti =>
+                setNotifications(prevNoti => {
+                    const updated = prevNoti.map(noti =>
                         noti.contactId === contactId ? { ...noti, isRead: 1 } : noti
-                    )
-                );
+                    );
+                    console.log("알림 상태 업데이트 후:", updated);
+
+                    // 즉시 읽지 않은 알림 개수 계산 및 헤더 업데이트
+                    calculateAndNotifyUnreadCount(updated);
+
+                    return updated;
+                });
+
                 // 읽음 처리 후 전체 목록 다시 불러오기
+                console.log("fetchNotifications 호출 예정");
                 fetchNotifications();
             })
             .catch(error => {
                 console.error("문의 답변 알림 읽음 처리 실패:", error);
+                console.error("에러 응답:", error.response?.data);
+                console.error("에러 상태:", error.response?.status);
             });
     };
 
@@ -1212,20 +1270,23 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                                         >
                                                             문의 "{noti.subject}"에 대한 답변이 등록되었습니다.
                                                         </Typography>
-                                                        {noti.isRead === 0 && (
-                                                            <Chip
-                                                                label="N"
-                                                                size="small"
-                                                                sx={{
-                                                                    height: 20,
-                                                                    minWidth: 20,
-                                                                    fontSize: '11px',
-                                                                    fontWeight: 600,
-                                                                    backgroundColor: '#28a745',
-                                                                    color: '#fff'
-                                                                }}
-                                                            />
-                                                        )}
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            {noti.isRead === 0 && (
+                                                                <Chip
+                                                                    label="N"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        height: 20,
+                                                                        minWidth: 20,
+                                                                        fontSize: '11px',
+                                                                        fontWeight: 600,
+                                                                        backgroundColor: '#28a745',
+                                                                        color: '#fff'
+                                                                    }}
+                                                                />
+                                                            )}
+
+                                                        </Box>
                                                     </Box>
                                                 </Box>
                                             </NotificationItem>
