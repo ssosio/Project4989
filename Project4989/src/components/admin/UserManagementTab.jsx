@@ -63,13 +63,13 @@ const UserManagementTab = () => {
       console.log('=== 회원 목록 조회 시작 ===');
       console.log('현재 페이지:', page);
       console.log('검색어:', searchTerm);
-      
+
       setLoading(true);
       const response = await api.get(`/api/admin/members?page=${page}&search=${searchTerm}`);
-      
+
       console.log('API 응답:', response);
       console.log('응답 데이터:', response.data);
-      
+
       // 응답 데이터 검증 및 설정
       if (response.data && response.data.content) {
         console.log('페이징된 데이터 형식으로 처리');
@@ -84,7 +84,7 @@ const UserManagementTab = () => {
         setUsers([]);
         setTotalPages(1);
       }
-      
+
       console.log('설정된 사용자 목록:', response.data.content || response.data);
       console.log('회원 목록 새로고침 완료');
     } catch (error) {
@@ -137,12 +137,12 @@ const UserManagementTab = () => {
       console.log('=== 회원 수정 시작 ===');
       console.log('수정할 데이터:', editForm);
       console.log('API 엔드포인트:', `/api/admin/members/${editForm.member_id}`);
-      
+
       const response = await api.put(`/api/admin/members/${editForm.member_id}`, editForm);
-      
+
       console.log('API 응답:', response);
       console.log('응답 데이터:', response.data);
-      
+
       // 로그 기록
       console.log('전송할 액션 로그 데이터:', {
         adminId: userInfo.memberId,
@@ -153,7 +153,7 @@ const UserManagementTab = () => {
       });
       console.log('userInfo:', userInfo);
       console.log('userInfo.memberId:', userInfo.memberId);
-      
+
       await api.post('/api/admin/action-logs', {
         adminId: userInfo.memberId,
         actionType: 'USER_UPDATE',
@@ -168,13 +168,13 @@ const UserManagementTab = () => {
         message: '회원 정보가 수정되었습니다.',
         severity: 'success'
       });
-      
+
       // 모달 닫기
       setIsEditOpen(false);
-      
+
       // 즉시 목록 새로고침
       await fetchUsers();
-      
+
       // 선택된 사용자 정보도 업데이트 (상세 모달이 열려있다면)
       if (selectedUser && selectedUser.memberId === editForm.member_id) {
         try {
@@ -184,20 +184,20 @@ const UserManagementTab = () => {
           console.error('사용자 정보 업데이트 실패:', error);
         }
       }
-      
+
       // 로컬 상태에서도 해당 사용자 정보 즉시 업데이트
       console.log('=== 로컬 상태 업데이트 시작 ===');
       console.log('현재 사용자 목록:', users);
       console.log('수정할 사용자 ID:', editForm.member_id);
-      
+
       setUsers(prevUsers => {
         console.log('이전 사용자 목록:', prevUsers);
-        
+
         const updatedUsers = prevUsers.map(user => {
           if (user.memberId === editForm.member_id) {
             console.log('수정할 사용자 발견:', user);
             const updatedUser = {
-              ...user, 
+              ...user,
               nickname: editForm.nickname,
               email: editForm.email,
               phoneNumber: editForm.phone_number,
@@ -208,18 +208,18 @@ const UserManagementTab = () => {
           }
           return user;
         });
-        
+
         console.log('업데이트된 사용자 목록:', updatedUsers);
-        
+
         console.log('로컬 사용자 목록 업데이트:', {
           before: prevUsers.find(u => u.memberId === editForm.member_id),
           after: updatedUsers.find(u => u.memberId === editForm.member_id),
           editForm: editForm
         });
-        
+
         return updatedUsers;
       });
-      
+
     } catch (error) {
       console.error('회원 수정 실패:', error);
       setSnackbar({
@@ -235,7 +235,7 @@ const UserManagementTab = () => {
     try {
       const actionType = newStatus === 'BANNED' ? 'USER_BAN' : 'USER_UNBAN';
       const details = newStatus === 'BANNED' ? `밴 사유: ${banReason}` : '밴 해제';
-      
+
       await api.put(`/api/admin/members/${userId}/status`, {
         status: newStatus,
         reason: banReason
@@ -268,81 +268,6 @@ const UserManagementTab = () => {
     }
   };
 
-  // 신용도 등급 재계산
-  const handleRecalculateTier = async (userId) => {
-    try {
-      setRecalculatingTier(true);
-      const response = await api.post(`/api/credit-tier/${userId}/recalculate`);
-      
-      if (response.data.success) {
-        setSnackbar({
-          open: true,
-          message: '신용도 등급이 재계산되었습니다.',
-          severity: 'success'
-        });
-        
-        // 로그 기록
-        await api.post('/api/admin/action-logs', {
-          adminId: userInfo.memberId,
-          actionType: 'CREDIT_TIER_RECALCULATE',
-          targetEntityType: 'MEMBER',
-          targetEntityId: userId,
-          details: '신용도 등급 재계산'
-        });
-        
-        fetchUsers(); // 목록 새로고침
-      }
-    } catch (error) {
-      console.error('신용도 등급 재계산 실패:', error);
-      setSnackbar({
-        open: true,
-        message: '신용도 등급 재계산에 실패했습니다.',
-        severity: 'error'
-      });
-    } finally {
-      setRecalculatingTier(false);
-    }
-  };
-
-  // 전체 신용도 등급 일괄 업데이트
-  const handleUpdateAllCreditTiers = async () => {
-    if (!window.confirm('모든 회원의 신용도 등급을 일괄 업데이트하시겠습니까? 이 작업은 시간이 오래 걸릴 수 있습니다.')) {
-      return;
-    }
-
-    try {
-      setRecalculatingTier(true);
-      const response = await api.post('/api/credit-tier/update-all');
-      
-      if (response.data.success) {
-        setSnackbar({
-          open: true,
-          message: '모든 회원의 신용도 등급이 업데이트되었습니다.',
-          severity: 'success'
-        });
-        
-        // 로그 기록
-        await api.post('/api/admin/action-logs', {
-          adminId: userInfo.memberId,
-          actionType: 'CREDIT_TIER_BULK_UPDATE',
-          targetEntityType: 'SYSTEM',
-          targetEntityId: 0,
-          details: '전체 회원 신용도 등급 일괄 업데이트'
-        });
-        
-        fetchUsers(); // 목록 새로고침
-      }
-    } catch (error) {
-      console.error('전체 신용도 등급 업데이트 실패:', error);
-      setSnackbar({
-        open: true,
-        message: '전체 신용도 등급 업데이트에 실패했습니다.',
-        severity: 'error'
-      });
-    } finally {
-      setRecalculatingTier(false);
-    }
-  };
 
   // 회원 삭제
   const handleDelete = async (userId) => {
@@ -409,15 +334,7 @@ const UserManagementTab = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">회원 관리</Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<CalculateIcon />}
-                onClick={handleUpdateAllCreditTiers}
-                disabled={recalculatingTier}
-                color="secondary"
-              >
-                전체 등급 업데이트
-              </Button>
+
               <Button
                 variant="outlined"
                 startIcon={<RefreshIcon />}
@@ -475,22 +392,14 @@ const UserManagementTab = () => {
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <CreditTierDisplay memberId={user.memberId} showDetails={false} />
-                          <IconButton 
-                            size="small" 
-                            color="secondary"
-                            onClick={() => handleRecalculateTier(user.memberId)}
-                            disabled={recalculatingTier}
-                            title="신용도 등급 재계산"
-                          >
-                            <CalculateIcon />
-                          </IconButton>
+
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={getStatusText(user.status)} 
-                          color={getStatusColor(user.status)} 
-                          size="small" 
+                        <Chip
+                          label={getStatusText(user.status)}
+                          color={getStatusColor(user.status)}
+                          size="small"
                         />
                       </TableCell>
                       <TableCell>
@@ -503,8 +412,8 @@ const UserManagementTab = () => {
                         <IconButton size="small" color="primary" onClick={() => handleEdit(user)}>
                           <EditIcon />
                         </IconButton>
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           color={user.status === 'ACTIVE' ? 'warning' : 'success'}
                           onClick={() => {
                             setSelectedUser(user);
@@ -513,8 +422,8 @@ const UserManagementTab = () => {
                         >
                           <BlockIcon />
                         </IconButton>
-                        <IconButton 
-                          size="small" 
+                        <IconButton
+                          size="small"
                           color="error"
                           onClick={() => {
                             setSelectedUser(user);
@@ -581,28 +490,28 @@ const UserManagementTab = () => {
               fullWidth
               label="닉네임"
               value={editForm.nickname || ''}
-              onChange={(e) => setEditForm({...editForm, nickname: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
               margin="normal"
             />
             <TextField
               fullWidth
               label="이메일"
               value={editForm.email || ''}
-              onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
               margin="normal"
             />
             <TextField
               fullWidth
               label="전화번호"
               value={editForm.phone_number || ''}
-              onChange={(e) => setEditForm({...editForm, phone_number: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
               margin="normal"
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>등급</InputLabel>
               <Select
                 value={editForm.tier || ''}
-                onChange={(e) => setEditForm({...editForm, tier: e.target.value})}
+                onChange={(e) => setEditForm({ ...editForm, tier: e.target.value })}
                 label="등급"
               >
                 <MenuItem value="초보상인">초보상인</MenuItem>
@@ -640,8 +549,8 @@ const UserManagementTab = () => {
               />
             )}
             <Alert severity="warning" sx={{ mt: 2 }}>
-              {selectedUser?.status === 'ACTIVE' 
-                ? `'${selectedUser?.nickname}' 회원을 밴하시겠습니까?` 
+              {selectedUser?.status === 'ACTIVE'
+                ? `'${selectedUser?.nickname}' 회원을 밴하시겠습니까?`
                 : `'${selectedUser?.nickname}' 회원의 밴을 해제하시겠습니까?`
               }
             </Alert>
@@ -649,9 +558,9 @@ const UserManagementTab = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsBanOpen(false)}>취소</Button>
-          <Button 
+          <Button
             onClick={() => handleStatusChange(
-              selectedUser?.memberId, 
+              selectedUser?.memberId,
               selectedUser?.status === 'ACTIVE' ? 'BANNED' : 'ACTIVE'
             )}
             variant="contained"
@@ -667,13 +576,13 @@ const UserManagementTab = () => {
         <DialogTitle>회원 삭제 확인</DialogTitle>
         <DialogContent>
           <Alert severity="error" sx={{ mt: 2 }}>
-            <strong>'{selectedUser?.nickname}'</strong> 회원을 삭제하시겠습니까?<br/>
+            <strong>'{selectedUser?.nickname}'</strong> 회원을 삭제하시겠습니까?<br />
             이 작업은 되돌릴 수 없습니다.
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsDeleteOpen(false)}>취소</Button>
-          <Button 
+          <Button
             onClick={() => handleDelete(selectedUser?.memberId)}
             variant="contained"
             color="error"
@@ -687,9 +596,9 @@ const UserManagementTab = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar({...snackbar, open: false})}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({...snackbar, open: false})}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
           {snackbar.message}
         </Alert>
       </Snackbar>

@@ -33,4 +33,7 @@ public interface ContactMapper {
     
     // 문의 답변 완료된 문의 목록 조회 (알림용)
     List<ContactDto> getContactNotificationsByMemberId(@Param("memberId") Long memberId);
+
+    // 문의 답변 알림 읽음 처리
+    void markContactAsRead(@Param("contactId") Long contactId);
 }

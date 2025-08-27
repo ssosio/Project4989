@@ -99,12 +99,20 @@
             admin_reply as adminReply,
             member_id as memberId,
             created_at as createdAt,
-            updated_at as updatedAt
+            updated_at as updatedAt,
+            is_read as isRead
         FROM contacts
         WHERE member_id = #{memberId} 
         AND status = 'COMPLETED' 
         AND admin_reply IS NOT NULL
         ORDER BY updated_at DESC
     </select>
+
+    <!-- 문의 답변 알림 읽음 처리 -->
+    <update id="markContactAsRead">
+        UPDATE contacts 
+        SET is_read = 1, updated_at = NOW()
+        WHERE contact_id = #{contactId}
+    </update>
 
 </mapper>

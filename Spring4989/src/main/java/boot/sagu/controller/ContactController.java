@@ -198,4 +198,35 @@ public class ContactController {
             ));
         }
     }
+
+    // 문의 답변 알림 읽음 처리
+    @PutMapping("/{contactId}/read")
+    public ResponseEntity<?> markContactAsRead(@PathVariable Long contactId) {
+        try {
+            System.out.println("=== Mark Contact as Read Request ===");
+            System.out.println("Requested contactId: " + contactId);
+            
+            if (contactId == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "문의 ID가 필요합니다."
+                ));
+            }
+            
+            contactService.markContactAsRead(contactId);
+            System.out.println("Contact marked as read successfully");
+            
+            return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "message", "문의가 읽음 처리되었습니다."
+            ));
+        } catch (Exception e) {
+            System.out.println("ERROR: Failed to mark contact as read - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "message", "읽음 처리 중 오류가 발생했습니다: " + e.getMessage()
+            ));
+        }
+    }
 }

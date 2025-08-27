@@ -524,11 +524,394 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
     );
 };
 
+// 문의 답변 상세 정보 모달 컴포넌트
+const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) => {
+    if (!notification) return null;
+
+    const handleMarkAsRead = () => {
+        onMarkAsRead(notification.contactId);
+        onClose();
+    };
+
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: 3,
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                    overflow: 'hidden'
+                }
+            }}
+        >
+            <DialogTitle sx={{
+                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                color: 'white',
+                borderBottom: 'none',
+                padding: '24px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+            }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '24px',
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        💬
+                    </Box>
+                    <Box>
+                        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                            문의 답변 상세 정보
+                        </Typography>
+                        <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 400 }}>
+                            문의에 대한 답변을 확인하세요
+                        </Typography>
+                    </Box>
+                </Box>
+                <IconButton
+                    onClick={onClose}
+                    size="large"
+                    sx={{
+                        color: 'white',
+                        '&:hover': {
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            transform: 'rotate(90deg)',
+                            transition: 'all 0.3s ease'
+                        }
+                    }}
+                >
+                    <CloseRoundedIcon />
+                </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: 0 }}>
+                <Box sx={{ p: 4 }}>
+                    <Grid container spacing={3}>
+                        {/* 문의 기본 정보 */}
+                        <Grid item xs={12}>
+                            <Box sx={{
+                                background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                                borderRadius: 3,
+                                p: 3,
+                                border: '1px solid #e9ecef',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                    <Box sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: '50%',
+                                        background: '#007bff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        mr: 2
+                                    }}>
+                                        <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>ℹ️</span>
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#495057' }}>
+                                        문의 기본 정보
+                                    </Typography>
+                                </Box>
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{
+                                            background: 'white',
+                                            p: 2.5,
+                                            borderRadius: 2,
+                                            border: '1px solid #e9ecef',
+                                            height: '100%'
+                                        }}>
+                                            <Typography variant="body2" sx={{
+                                                color: '#6c757d',
+                                                fontSize: '13px',
+                                                fontWeight: 500,
+                                                textTransform: 'uppercase',
+                                                mb: 1
+                                            }}>
+                                                문의 유형
+                                            </Typography>
+                                            <Typography variant="body1" sx={{
+                                                color: '#495057',
+                                                fontWeight: 600,
+                                                fontSize: '15px'
+                                            }}>
+                                                {notification.contactType || '일반 문의'}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{
+                                            background: 'white',
+                                            p: 2.5,
+                                            borderRadius: 2,
+                                            border: '1px solid #e9ecef',
+                                            height: '100%'
+                                        }}>
+                                            <Typography variant="body2" sx={{
+                                                color: '#6c757d',
+                                                fontSize: '13px',
+                                                fontWeight: 500,
+                                                textTransform: 'uppercase',
+                                                mb: 1
+                                            }}>
+                                                문의 일시
+                                            </Typography>
+                                            <Typography variant="body1" sx={{
+                                                color: '#495057',
+                                                fontWeight: 600,
+                                                fontSize: '15px'
+                                            }}>
+                                                {notification.createdAt ? new Date(notification.createdAt).toLocaleString('ko-KR') : '알 수 없음'}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                        </Grid>
+
+                        {/* 문의 내용 */}
+                        <Grid item xs={12}>
+                            <Box sx={{
+                                background: 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)',
+                                borderRadius: 3,
+                                p: 3,
+                                border: '1px solid #ffeaa7',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                    <Box sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: '50%',
+                                        background: '#ffc107',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        mr: 2
+                                    }}>
+                                        <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>❓</span>
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#856404' }}>
+                                        문의 내용
+                                    </Typography>
+                                </Box>
+                                <Box sx={{
+                                    background: 'white',
+                                    p: 3,
+                                    borderRadius: 2,
+                                    border: '1px solid #ffeaa7',
+                                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)'
+                                }}>
+                                    <Typography variant="body1" sx={{
+                                        color: '#495057',
+                                        lineHeight: 1.6,
+                                        fontSize: '15px'
+                                    }}>
+                                        {notification.contactContent || '문의 내용이 없습니다.'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Grid>
+
+                        {/* 답변 내용 */}
+                        <Grid item xs={12}>
+                            <Box sx={{
+                                background: 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
+                                borderRadius: 3,
+                                p: 3,
+                                border: '1px solid #c3e6cb',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                    <Box sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: '50%',
+                                        background: '#28a745',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        mr: 2
+                                    }}>
+                                        <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>💬</span>
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, color: '#155724' }}>
+                                        답변 내용
+                                    </Typography>
+                                </Box>
+                                <Box sx={{
+                                    background: 'white',
+                                    p: 3,
+                                    borderRadius: 2,
+                                    border: '1px solid #c3e6cb',
+                                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)'
+                                }}>
+                                    <Typography variant="body1" sx={{
+                                        color: '#495057',
+                                        lineHeight: 1.6,
+                                        fontSize: '15px',
+                                        fontWeight: 500
+                                    }}>
+                                        {notification.adminReply || '답변 내용이 없습니다.'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Grid>
+
+                        {/* 읽음 상태 */}
+                        <Grid item xs={12}>
+                            <Box sx={{
+                                background: notification.isRead === 0
+                                    ? 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)'
+                                    : 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
+                                borderRadius: 3,
+                                p: 3,
+                                border: notification.isRead === 0 ? '1px solid #ffeaa7' : '1px solid #c3e6cb',
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                            }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                    <Box sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: '50%',
+                                        background: notification.isRead === 0 ? '#ffc107' : '#28a745',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        mr: 2
+                                    }}>
+                                        <span style={{
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {notification.isRead === 0 ? '📬' : '📭'}
+                                        </span>
+                                    </Box>
+                                    <Typography variant="h6" sx={{
+                                        fontWeight: 600,
+                                        color: notification.isRead === 0 ? '#856404' : '#155724'
+                                    }}>
+                                        읽음 상태
+                                    </Typography>
+                                </Box>
+                                <Box sx={{
+                                    background: 'white',
+                                    p: 3,
+                                    borderRadius: 2,
+                                    border: notification.isRead === 0 ? '1px solid #ffeaa7' : '1px solid #c3e6cb',
+                                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)'
+                                }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Chip
+                                                label={notification.isRead === 0 ? "읽지 않음" : "읽음"}
+                                                color={notification.isRead === 0 ? "warning" : "success"}
+                                                size="medium"
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    fontSize: '13px',
+                                                    height: '32px'
+                                                }}
+                                            />
+                                            {notification.isRead === 0 && (
+                                                <Typography variant="body2" sx={{
+                                                    color: '#6c757d',
+                                                    fontStyle: 'italic'
+                                                }}>
+                                                    클릭하여 읽음 처리할 수 있습니다.
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                        {notification.isRead === 0 && (
+                                            <Box sx={{
+                                                width: 12,
+                                                height: 12,
+                                                borderRadius: '50%',
+                                                background: '#dc3545',
+                                                animation: 'pulse 2s infinite'
+                                            }} />
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Box>
+            </DialogContent>
+
+            <DialogActions sx={{
+                p: 3,
+                background: '#f8f9fa',
+                borderTop: '1px solid #e9ecef',
+                gap: 2
+            }}>
+                <Button
+                    onClick={onClose}
+                    variant="outlined"
+                    sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        px: 3,
+                        py: 1.5,
+                        borderColor: '#6c757d',
+                        color: '#6c757d',
+                        '&:hover': {
+                            borderColor: '#495057',
+                            background: '#e9ecef'
+                        }
+                    }}
+                >
+                    닫기
+                </Button>
+                {notification.isRead === 0 && (
+                    <Button
+                        onClick={handleMarkAsRead}
+                        variant="contained"
+                        sx={{
+                            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1.5,
+                            boxShadow: '0 4px 12px rgba(40, 167, 69, 0.3)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #20c997 0%, #17a2b8 100%)',
+                                boxShadow: '0 6px 16px rgba(40, 167, 69, 0.4)',
+                                transform: 'translateY(-1px)'
+                            }
+                        }}
+                        startIcon={<span style={{ fontSize: '18px' }}>✓</span>}
+                    >
+                        읽음 처리
+                    </Button>
+                )}
+            </DialogActions>
+        </Dialog>
+    );
+};
+
 // 컴포넌트 이름을 NotificationMain으로 변경
 const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
     const [notifications, setNotifications] = useState([]);
-    const [selectedNotification, setSelectedNotification] = useState(null);
-    const [modalOpen, setModalOpen] = useState(false);
+    const [declarationDetailOpen, setDeclarationDetailOpen] = useState(false);
+    const [selectedDeclaration, setSelectedDeclaration] = useState(null);
+    const [contactReplyDetailOpen, setContactReplyDetailOpen] = useState(false);
+    const [selectedContactReply, setSelectedContactReply] = useState(null);
     const { userInfo, token } = useContext(AuthContext);
     const SERVER_IP = 'localhost';
     const SERVER_PORT = '4989';
@@ -659,20 +1042,45 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
         }
     }, [open, userInfo, token]);
 
-    // 신고 목록 클릭 시 모달 열기
+    // 알림 목록 클릭 시 모달 열기
     const handleNotificationClick = (notification) => {
-        setSelectedNotification(notification);
-        setModalOpen(true);
+        if (notification.type === 'CONTACT_REPLY') {
+            // 문의 답변 알림인 경우
+            handleContactReplyDetailOpen(notification);
+        } else {
+            // 채팅 신고 알림인 경우
+            handleDeclarationDetailOpen(notification);
+        }
     };
 
-    // 모달 닫기
-    const handleModalClose = () => {
-        setModalOpen(false);
-        setSelectedNotification(null);
+
+
+    // 신고 상세 모달 열기
+    const handleDeclarationDetailOpen = (notification) => {
+        setSelectedDeclaration(notification);
+        setDeclarationDetailOpen(true);
     };
 
-    // 신고 결과 알림을 읽음 처리하는 함수
-    const handleMarkAsRead = (chatdeclarationresultId) => {
+    // 신고 상세 모달 닫기
+    const handleDeclarationDetailClose = () => {
+        setDeclarationDetailOpen(false);
+        setSelectedDeclaration(null);
+    };
+
+    // 문의 답변 상세 모달 열기
+    const handleContactReplyDetailOpen = (notification) => {
+        setSelectedContactReply(notification);
+        setContactReplyDetailOpen(true);
+    };
+
+    // 문의 답변 상세 모달 닫기
+    const handleContactReplyDetailClose = () => {
+        setContactReplyDetailOpen(false);
+        setSelectedContactReply(null);
+    };
+
+    // 신고 알림 읽음 처리
+    const handleDeclarationMarkAsRead = (chatdeclarationresultId) => {
         const url = `http://${SERVER_IP}:${SERVER_PORT}/api/chat-declarations/result-notifications/${chatdeclarationresultId}/read`;
 
         axios.put(url, {}, {
@@ -691,9 +1099,36 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                 fetchNotifications();
             })
             .catch(error => {
-                console.error("알림 읽음 처리 실패:", error);
+                console.error("신고 알림 읽음 처리 실패:", error);
             });
     };
+
+    // 문의 답변 알림 읽음 처리
+    const handleContactReplyMarkAsRead = (contactId) => {
+        // 문의 답변 알림 읽음 처리 API 호출
+        const url = `http://${SERVER_IP}:${SERVER_PORT}/api/contact/${contactId}/read`;
+
+        axios.put(url, {}, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+            .then(() => {
+                // 성공적으로 읽음 처리되면 상태 업데이트
+                setNotifications(prevNoti =>
+                    prevNoti.map(noti =>
+                        noti.contactId === contactId ? { ...noti, isRead: 1 } : noti
+                    )
+                );
+                // 읽음 처리 후 전체 목록 다시 불러오기
+                fetchNotifications();
+            })
+            .catch(error => {
+                console.error("문의 답변 알림 읽음 처리 실패:", error);
+            });
+    };
+
+
 
     return (
         <>
@@ -988,10 +1423,18 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
 
             {/* 신고 상세 정보 모달 */}
             <DeclarationDetailModal
-                open={modalOpen}
-                onClose={handleModalClose}
-                notification={selectedNotification}
-                onMarkAsRead={handleMarkAsRead}
+                open={declarationDetailOpen}
+                onClose={handleDeclarationDetailClose}
+                notification={selectedDeclaration}
+                onMarkAsRead={handleDeclarationMarkAsRead}
+            />
+
+            {/* 문의 답변 상세 정보 모달 */}
+            <ContactReplyDetailModal
+                open={contactReplyDetailOpen}
+                onClose={handleContactReplyDetailClose}
+                notification={selectedContactReply}
+                onMarkAsRead={handleContactReplyMarkAsRead}
             />
         </>
     );

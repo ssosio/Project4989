@@ -56,4 +56,9 @@ public class ContactService {
     public List<ContactDto> getContactNotificationsByMemberId(Long memberId) {
         return contactMapper.getContactNotificationsByMemberId(memberId);
     }
+
+    // 문의 답변 알림 읽음 처리
+    public void markContactAsRead(Long contactId) {
+        contactMapper.markContactAsRead(contactId);
+    }
 }
