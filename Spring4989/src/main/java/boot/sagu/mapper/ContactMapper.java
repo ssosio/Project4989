@@ -30,4 +30,7 @@ public interface ContactMapper {
     
     // 처리 대기 중인 문의 개수
     int getPendingContactCount();
+    
+    // 문의 답변 완료된 문의 목록 조회 (알림용)
+    List<ContactDto> getContactNotificationsByMemberId(@Param("memberId") Long memberId);
 }

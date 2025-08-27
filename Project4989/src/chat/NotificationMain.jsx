@@ -94,8 +94,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
     };
 
     return (
-        <Dialog 
-            open={open} 
+        <Dialog
+            open={open}
             onClose={onClose}
             maxWidth="md"
             fullWidth
@@ -107,7 +107,7 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                 }
             }}
         >
-            <DialogTitle sx={{ 
+            <DialogTitle sx={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
                 borderBottom: 'none',
@@ -139,12 +139,12 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                         </Typography>
                     </Box>
                 </Box>
-                <IconButton 
-                    onClick={onClose} 
+                <IconButton
+                    onClick={onClose}
                     size="large"
-                    sx={{ 
+                    sx={{
                         color: 'white',
-                        '&:hover': { 
+                        '&:hover': {
                             background: 'rgba(255, 255, 255, 0.1)',
                             transform: 'rotate(90deg)',
                             transition: 'all 0.3s ease'
@@ -154,7 +154,7 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                     <CloseRoundedIcon />
                 </IconButton>
             </DialogTitle>
-            
+
             <DialogContent sx={{ p: 0 }}>
                 <Box sx={{ p: 4 }}>
                     <Grid container spacing={3}>
@@ -186,15 +186,15 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                 </Box>
                                 <Grid container spacing={3}>
                                     <Grid item xs={12} md={6}>
-                                        <Box sx={{ 
-                                            background: 'white', 
-                                            p: 2.5, 
+                                        <Box sx={{
+                                            background: 'white',
+                                            p: 2.5,
                                             borderRadius: 2,
                                             border: '1px solid #e9ecef',
                                             height: '100%'
                                         }}>
-                                            <Typography variant="body2" sx={{ 
-                                                color: '#6c757d', 
+                                            <Typography variant="body2" sx={{
+                                                color: '#6c757d',
                                                 fontSize: '13px',
                                                 fontWeight: 500,
                                                 textTransform: 'uppercase',
@@ -203,8 +203,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                             }}>
                                                 신고 ID
                                             </Typography>
-                                            <Typography variant="h6" sx={{ 
-                                                fontWeight: 700, 
+                                            <Typography variant="h6" sx={{
+                                                fontWeight: 700,
                                                 color: '#212529',
                                                 fontFamily: 'monospace'
                                             }}>
@@ -213,15 +213,15 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} md={6}>
-                                        <Box sx={{ 
-                                            background: 'white', 
-                                            p: 2.5, 
+                                        <Box sx={{
+                                            background: 'white',
+                                            p: 2.5,
                                             borderRadius: 2,
                                             border: '1px solid #e9ecef',
                                             height: '100%'
                                         }}>
-                                            <Typography variant="body2" sx={{ 
-                                                color: '#6c757d', 
+                                            <Typography variant="body2" sx={{
+                                                color: '#6c757d',
                                                 fontSize: '13px',
                                                 fontWeight: 500,
                                                 textTransform: 'uppercase',
@@ -230,8 +230,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                             }}>
                                                 신고 유형
                                             </Typography>
-                                            <Typography variant="h6" sx={{ 
-                                                fontWeight: 600, 
+                                            <Typography variant="h6" sx={{
+                                                fontWeight: 600,
                                                 color: '#495057'
                                             }}>
                                                 {notification.declarationType || '미분류'}
@@ -239,15 +239,15 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} md={6}>
-                                        <Box sx={{ 
-                                            background: 'white', 
-                                            p: 2.5, 
+                                        <Box sx={{
+                                            background: 'white',
+                                            p: 2.5,
                                             borderRadius: 2,
                                             border: '1px solid #e9ecef',
                                             height: '100%'
                                         }}>
-                                            <Typography variant="body2" sx={{ 
-                                                color: '#6c757d', 
+                                            <Typography variant="body2" sx={{
+                                                color: '#6c757d',
                                                 fontSize: '13px',
                                                 fontWeight: 500,
                                                 textTransform: 'uppercase',
@@ -256,8 +256,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                             }}>
                                                 신고한 사용자
                                             </Typography>
-                                            <Typography variant="h6" sx={{ 
-                                                fontWeight: 600, 
+                                            <Typography variant="h6" sx={{
+                                                fontWeight: 600,
                                                 color: '#495057'
                                             }}>
                                                 {notification.reportedMemberNickname || 'Unknown'}
@@ -265,15 +265,15 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                         </Box>
                                     </Grid>
                                     <Grid item xs={12} md={6}>
-                                        <Box sx={{ 
-                                            background: 'white', 
-                                            p: 2.5, 
+                                        <Box sx={{
+                                            background: 'white',
+                                            p: 2.5,
                                             borderRadius: 2,
                                             border: '1px solid #e9ecef',
                                             height: '100%'
                                         }}>
-                                            <Typography variant="body2" sx={{ 
-                                                color: '#6c757d', 
+                                            <Typography variant="body2" sx={{
+                                                color: '#6c757d',
                                                 fontSize: '13px',
                                                 fontWeight: 500,
                                                 textTransform: 'uppercase',
@@ -282,8 +282,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                             }}>
                                                 신고 시간
                                             </Typography>
-                                            <Typography variant="h6" sx={{ 
-                                                fontWeight: 600, 
+                                            <Typography variant="h6" sx={{
+                                                fontWeight: 600,
                                                 color: '#495057'
                                             }}>
                                                 {new Date(notification.createdAt).toLocaleString('ko-KR', {
@@ -333,7 +333,7 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                     border: '1px solid #ffeaa7',
                                     boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)'
                                 }}>
-                                    <Typography variant="body1" sx={{ 
+                                    <Typography variant="body1" sx={{
                                         color: '#495057',
                                         lineHeight: 1.6,
                                         fontSize: '15px'
@@ -377,7 +377,7 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                     border: '1px solid #c3e6cb',
                                     boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)'
                                 }}>
-                                    <Typography variant="body1" sx={{ 
+                                    <Typography variant="body1" sx={{
                                         color: '#495057',
                                         lineHeight: 1.6,
                                         fontSize: '15px',
@@ -392,7 +392,7 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                         {/* 읽음 상태 */}
                         <Grid item xs={12}>
                             <Box sx={{
-                                background: notification.isRead === 0 
+                                background: notification.isRead === 0
                                     ? 'linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)'
                                     : 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
                                 borderRadius: 3,
@@ -411,16 +411,16 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                         justifyContent: 'center',
                                         mr: 2
                                     }}>
-                                        <span style={{ 
-                                            color: 'white', 
-                                            fontSize: '16px', 
-                                            fontWeight: 'bold' 
+                                        <span style={{
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold'
                                         }}>
                                             {notification.isRead === 0 ? '📬' : '📭'}
                                         </span>
                                     </Box>
-                                    <Typography variant="h6" sx={{ 
-                                        fontWeight: 600, 
+                                    <Typography variant="h6" sx={{
+                                        fontWeight: 600,
                                         color: notification.isRead === 0 ? '#856404' : '#155724'
                                     }}>
                                         읽음 상태
@@ -435,18 +435,18 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                            <Chip 
+                                            <Chip
                                                 label={notification.isRead === 0 ? "읽지 않음" : "읽음"}
                                                 color={notification.isRead === 0 ? "warning" : "success"}
                                                 size="medium"
-                                                sx={{ 
+                                                sx={{
                                                     fontWeight: 600,
                                                     fontSize: '13px',
                                                     height: '32px'
                                                 }}
                                             />
                                             {notification.isRead === 0 && (
-                                                <Typography variant="body2" sx={{ 
+                                                <Typography variant="body2" sx={{
                                                     color: '#6c757d',
                                                     fontStyle: 'italic'
                                                 }}>
@@ -470,15 +470,15 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                     </Grid>
                 </Box>
             </DialogContent>
-            
-            <DialogActions sx={{ 
-                p: 3, 
+
+            <DialogActions sx={{
+                p: 3,
                 background: '#f8f9fa',
                 borderTop: '1px solid #e9ecef',
                 gap: 2
             }}>
-                <Button 
-                    onClick={onClose} 
+                <Button
+                    onClick={onClose}
                     variant="outlined"
                     sx={{
                         borderRadius: 2,
@@ -497,9 +497,9 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                     닫기
                 </Button>
                 {notification.isRead === 0 && (
-                    <Button 
-                        onClick={handleMarkAsRead} 
-                        variant="contained" 
+                    <Button
+                        onClick={handleMarkAsRead}
+                        variant="contained"
                         sx={{
                             background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
                             borderRadius: 2,
@@ -561,35 +561,81 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
         }
     };
 
-    // 신고 결과 알림 목록을 가져오는 함수
+    // 알림 목록을 가져오는 함수 (채팅 신고 + 문의 답변)
     const fetchNotifications = () => {
+        console.log("=== fetchNotifications 호출 ===");
+        console.log("userInfo:", userInfo);
+        console.log("token:", token);
+
         if (!userInfo || !userInfo.memberId) {
+            console.log("userInfo 또는 memberId가 없습니다.");
             setNotifications([]);
             return;
         }
 
-        const url = `http://${SERVER_IP}:${SERVER_PORT}/api/chat-declarations/result-notifications?resultMemberId=${userInfo.memberId}`;
+        if (!token) {
+            console.error("토큰이 없습니다.");
+            setNotifications([]);
+            calculateAndNotifyUnreadCount([]);
+            return;
+        }
 
-        axios.get(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-            .then(res => {
-                if (Array.isArray(res.data)) {
-                    // null 데이터 필터링 후 정렬
-                    const filteredNotifications = res.data.filter(n => n && n.createdAt);
-                    const sortedNotifications = filteredNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log("토큰 검증 통과, API 호출 시작...");
 
-                    setNotifications(sortedNotifications);
-                    calculateAndNotifyUnreadCount(sortedNotifications);
-                } else {
-                    setNotifications([]);
-                    calculateAndNotifyUnreadCount([]);
+        // 채팅 신고 알림과 문의 답변 알림을 모두 가져오기
+        const promises = [
+            // 채팅 신고 알림
+            axios.get(`http://${SERVER_IP}:${SERVER_PORT}/api/chat-declarations/result-notifications?resultMemberId=${userInfo.memberId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            // 문의 답변 알림 (새로 추가)
+            axios.get(`http://${SERVER_IP}:${SERVER_PORT}/api/contact/notifications?memberId=${userInfo.memberId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+        ];
+
+        Promise.all(promises)
+            .then(([chatDeclarationsRes, contactRes]) => {
+                console.log("API 호출 성공!");
+                let allNotifications = [];
+
+                // 채팅 신고 알림 처리
+                if (Array.isArray(chatDeclarationsRes.data)) {
+                    const chatNotifications = chatDeclarationsRes.data
+                        .filter(n => n && n.createdAt)
+                        .map(n => ({ ...n, type: 'CHAT_DECLARATION' }));
+                    allNotifications.push(...chatNotifications);
+                    console.log("채팅 신고 알림 개수:", chatNotifications.length);
                 }
+
+                // 문의 답변 알림 처리
+                if (Array.isArray(contactRes.data)) {
+                    const contactNotifications = contactRes.data
+                        .filter(n => n && n.createdAt)
+                        .map(n => ({ ...n, type: 'CONTACT_REPLY' }));
+                    allNotifications.push(...contactNotifications);
+                    console.log("문의 답변 알림 개수:", contactNotifications.length);
+                }
+
+                // 모든 알림을 시간순으로 정렬
+                const sortedNotifications = allNotifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                console.log("전체 알림 개수:", sortedNotifications.length);
+
+                setNotifications(sortedNotifications);
+                calculateAndNotifyUnreadCount(sortedNotifications);
             })
             .catch(error => {
-                console.error("신고 결과 알림 목록 가져오기 실패:", error);
+                console.error("알림 목록 가져오기 실패:", error);
+
+                // 401 오류 시 토큰 만료로 간주
+                if (error.response && error.response.status === 401) {
+                    console.error("토큰이 만료되었거나 유효하지 않습니다.");
+                    // 부모 컴포넌트에 토큰 만료 알림
+                    if (onUnreadCountChange) {
+                        onUnreadCountChange(-1); // -1은 토큰 만료를 의미
+                    }
+                }
+
                 setNotifications([]);
                 calculateAndNotifyUnreadCount([]);
             });
@@ -597,10 +643,21 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
 
     // 신고 결과 알림 목록 창이 열릴 때마다 목록을 다시 불러오도록 설정
     useEffect(() => {
-        if (open && userInfo) {
+        console.log("=== useEffect 실행 ===");
+        console.log("open:", open);
+        console.log("userInfo:", userInfo);
+        console.log("token:", token);
+
+        if (open && userInfo && token) {
+            console.log("fetchNotifications 호출 조건 충족");
             fetchNotifications();
+        } else {
+            console.log("fetchNotifications 호출 조건 미충족:");
+            console.log("- open:", open);
+            console.log("- userInfo:", !!userInfo);
+            console.log("- token:", !!token);
         }
-    }, [open, userInfo]);
+    }, [open, userInfo, token]);
 
     // 신고 목록 클릭 시 모달 열기
     const handleNotificationClick = (notification) => {
@@ -663,9 +720,90 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                             notifications.map((noti, index) => {
                                 if (!noti) return null;
 
+                                // 문의 답변 알림인지 확인
+                                if (noti.type === 'CONTACT_REPLY') {
+                                    // 문의 답변 알림 표시
+                                    return (
+                                        <React.Fragment key={`contact-${noti.contactId}`}>
+                                            <NotificationItem onClick={() => handleNotificationClick(noti)}>
+                                                <ListItemAvatar>
+                                                    <Box sx={{ position: 'relative' }}>
+                                                        <Avatar sx={{
+                                                            width: 48,
+                                                            height: 48,
+                                                            bgcolor: '#d4edda',
+                                                            fontSize: '20px'
+                                                        }}>
+                                                            💬
+                                                        </Avatar>
+                                                    </Box>
+                                                </ListItemAvatar>
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#222' }}>
+                                                            문의 답변 완료
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ color: '#666', fontSize: '12px' }}>
+                                                            {formatTime(noti.updatedAt)}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            color: '#155724',
+                                                            fontSize: '13px',
+                                                            fontWeight: 500,
+                                                            mb: 0.5,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap',
+                                                            maxWidth: 200
+                                                        }}
+                                                    >
+                                                        💬 문의 답변 완료
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                color: '#666',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap',
+                                                                maxWidth: 180,
+                                                                fontSize: '14px',
+                                                                fontWeight: noti.isRead === 0 ? 'bold' : 'normal',
+                                                            }}
+                                                        >
+                                                            문의 "{noti.subject}"에 대한 답변이 등록되었습니다.
+                                                        </Typography>
+                                                        {noti.isRead === 0 && (
+                                                            <Chip
+                                                                label="N"
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 20,
+                                                                    minWidth: 20,
+                                                                    fontSize: '11px',
+                                                                    fontWeight: 600,
+                                                                    backgroundColor: '#28a745',
+                                                                    color: '#fff'
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                </Box>
+                                            </NotificationItem>
+                                            {index < notifications.length - 1 && (
+                                                <Divider sx={{ mx: 3 }} />
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                }
+
                                 // 후기 알림인지 신고 알림인지 구분
                                 const isReviewNotification = noti.notificationType === 'REVIEW_REQUEST';
-                                
+
                                 if (isReviewNotification) {
                                     // 후기 알림 표시
                                     return (
@@ -720,8 +858,8 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                                                 fontWeight: noti.isRead === 0 ? 'bold' : 'normal',
                                                             }}
                                                         >
-                                                            {noti.reviewerNickname || 'Unknown'}님이 후기를 작성했습니다. 
-                                                            {noti.postTitle ? ` (${noti.postTitle})` : ''} 
+                                                            {noti.reviewerNickname || 'Unknown'}님이 후기를 작성했습니다.
+                                                            {noti.postTitle ? ` (${noti.postTitle})` : ''}
                                                             후기를 작성해주세요.
                                                         </Typography>
                                                         {noti.isRead === 0 && (
@@ -749,7 +887,6 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                 } else {
                                     // 신고 알림 표시 (기존 로직)
                                     const displayMessage = noti.resultContent || '신고 조치가 완료되었습니다.';
-                                    const reportedContent = noti.reportedChatContent || noti.declarationContent || '신고된 내용';
 
                                     return (
                                         <React.Fragment key={noti.chatdeclarationresultId}>

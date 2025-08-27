@@ -170,4 +170,32 @@ public class ContactController {
             "completedCount", totalCount - pendingCount
         ));
     }
+
+    // 문의 답변 완료된 문의 목록 조회 (알림용)
+    @GetMapping("/notifications")
+    public ResponseEntity<?> getContactNotifications(@RequestParam("memberId") Long memberId) {
+        try {
+            System.out.println("=== Contact Notifications Request ===");
+            System.out.println("Requested memberId: " + memberId);
+            
+            if (memberId == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "멤버 ID가 필요합니다."
+                ));
+            }
+            
+            List<ContactDto> notifications = contactService.getContactNotificationsByMemberId(memberId);
+            System.out.println("Found " + notifications.size() + " contact notifications");
+            
+            return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            System.out.println("ERROR: Failed to get contact notifications - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "message", "문의 알림 목록 조회 중 오류가 발생했습니다: " + e.getMessage()
+            ));
+        }
+    }
 }

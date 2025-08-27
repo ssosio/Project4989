@@ -733,18 +733,18 @@ const GoodsDetail = () => {
                     }}>
                       ✅ 후기를 작성했습니다
                     </div >
-                    
+
                   ) : <div style={{
-                      padding: '12px 24px',
-                      backgroundColor: '#f8f9fa',
-                      border: '1px solid #dee2e6',
-                      borderRadius: '8px',
-                      color: '#28a745',
-                      fontWeight: '500',
-                      textAlign: 'center'
-                    }}>
-                      ✅ 판매 완료된 제품입니다
-                    </div >}
+                    padding: '12px 24px',
+                    backgroundColor: '#f8f9fa',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '8px',
+                    color: '#28a745',
+                    fontWeight: '500',
+                    textAlign: 'center'
+                  }}>
+                    ✅ 판매 완료된 제품입니다
+                  </div >}
                 </div>
               )}
             </div>
