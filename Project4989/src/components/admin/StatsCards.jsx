@@ -19,6 +19,7 @@ const StatsCards = ({ stats }) => {
   const [chatReports, setChatReports] = useState(0);
   const [totalPosts, setTotalPosts] = useState(0);
   const [countMember, setCountMember] = useState(0);
+  const [contact, setContact] = useState(0);
   useEffect(() => {
     const list = () => {
       const url = "http://localhost:4989/api/chat-declarations/count";
@@ -40,6 +41,20 @@ const StatsCards = ({ stats }) => {
       axios.get(url)
         .then(async (res) => {
           setCountMember(res.data);
+        })
+        .catch(err => {
+          console.error("에러 발생:", err);
+        });
+    };
+    list()
+  }, [])
+
+  useEffect(() => {
+    const list = () => {
+      const url = "http://localhost:4989/api/contact/count";
+      axios.get(url)
+        .then(async (res) => {
+          setContact(res.data);
         })
         .catch(err => {
           console.error("에러 발생:", err);
@@ -143,6 +158,22 @@ const StatsCards = ({ stats }) => {
               {chatReports}
             </Typography>
             <Typography variant="body2">채팅 신고 건수</Typography>
+          </CardContent>
+
+        </Card>
+      </Grid>
+      <Grid item xs={12} sm={6} md={2.4}>
+        <Card sx={{
+          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+          color: 'white',
+          textAlign: 'center'
+        }}>
+          <CardContent>
+            <FeedbackIcon sx={{ fontSize: 40, mb: 1 }} />
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+              {contact}
+            </Typography>
+            <Typography variant="body2">문의 건수</Typography>
           </CardContent>
 
         </Card>

@@ -114,5 +114,9 @@
         SET is_read = 1, updated_at = NOW()
         WHERE contact_id = #{contactId}
     </update>
+    
+    <select id="countContact" resultType="int">
+    	select count(*) from contacts where status='PENDING'
+    </select>
 
 </mapper>

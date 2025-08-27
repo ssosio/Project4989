@@ -229,4 +229,12 @@ public class ContactController {
             ));
         }
     }
+    
+    @GetMapping("/count")
+    public int counContact()
+    {
+    	int cnt=contactService.countContact();
+    	
+    	return cnt;
+    }
 }

@@ -36,4 +36,6 @@ public interface ContactMapper {
 
     // 문의 답변 알림 읽음 처리
     void markContactAsRead(@Param("contactId") Long contactId);
+    
+    public int countContact();
 }
