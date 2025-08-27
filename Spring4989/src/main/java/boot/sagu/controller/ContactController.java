@@ -90,20 +90,44 @@ public class ContactController {
     }
     
     // 관리자 답변 추가
-    @PostMapping("/admin/{contactId}/reply")
+    @PostMapping("/admin/reply")
     public ResponseEntity<?> replyToContact(
-        @PathVariable Long contactId,
-        @RequestBody Map<String, String> request
+        @RequestParam("contactId") Long contactId,
+        @RequestParam("adminReply") String adminReply
     ) {
         try {
-            String adminReply = request.get("adminReply");
+            // 디버깅을 위한 로그 추가
+            System.out.println("=== Contact Reply Request Debug ===");
+            System.out.println("Received contactId: " + contactId + " (type: " + (contactId != null ? contactId.getClass().getSimpleName() : "null") + ")");
+            System.out.println("Received adminReply: " + adminReply + " (type: " + (adminReply != null ? adminReply.getClass().getSimpleName() : "null") + ")");
+            
+            if (contactId == null || adminReply == null) {
+                System.out.println("ERROR: Required parameters are null");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "필수 파라미터가 누락되었습니다. contactId: " + contactId + ", adminReply: " + adminReply
+                ));
+            }
+            
+            if (adminReply.trim().isEmpty()) {
+                System.out.println("ERROR: adminReply is empty");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "답변 내용이 비어있습니다."
+                ));
+            }
+            
+            System.out.println("Calling contactService.replyToContact with: contactId=" + contactId + ", adminReply=" + adminReply);
             contactService.replyToContact(contactId, adminReply);
+            System.out.println("contactService.replyToContact completed successfully");
             
             return ResponseEntity.ok(Map.of(
                 "status", "SUCCESS",
                 "message", "답변이 등록되었습니다."
             ));
         } catch (Exception e) {
+            System.out.println("ERROR: Exception occurred - " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace(); // 서버 콘솔에 스택 트레이스 출력
             return ResponseEntity.badRequest().body(Map.of(
                 "status", "ERROR",
                 "message", "답변 등록 중 오류가 발생했습니다: " + e.getMessage()
@@ -145,5 +169,64 @@ public class ContactController {
             "pendingCount", pendingCount,
             "completedCount", totalCount - pendingCount
         ));
+    }
+
+    // 문의 답변 완료된 문의 목록 조회 (알림용)
+    @GetMapping("/notifications")
+    public ResponseEntity<?> getContactNotifications(@RequestParam("memberId") Long memberId) {
+        try {
+            System.out.println("=== Contact Notifications Request ===");
+            System.out.println("Requested memberId: " + memberId);
+            
+            if (memberId == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "멤버 ID가 필요합니다."
+                ));
+            }
+            
+            List<ContactDto> notifications = contactService.getContactNotificationsByMemberId(memberId);
+            System.out.println("Found " + notifications.size() + " contact notifications");
+            
+            return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            System.out.println("ERROR: Failed to get contact notifications - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "message", "문의 알림 목록 조회 중 오류가 발생했습니다: " + e.getMessage()
+            ));
+        }
+    }
+
+    // 문의 답변 알림 읽음 처리
+    @PutMapping("/read")
+    public ResponseEntity<?> markContactAsRead(@RequestParam("contactId") Long contactId) {
+        try {
+            System.out.println("=== Mark Contact as Read Request ===");
+            System.out.println("Requested contactId: " + contactId);
+            
+            if (contactId == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "문의 ID가 필요합니다."
+                ));
+            }
+            
+            contactService.markContactAsRead(contactId);
+            System.out.println("Contact marked as read successfully");
+            
+            return ResponseEntity.ok(Map.of(
+                "status", "SUCCESS",
+                "message", "문의가 읽음 처리되었습니다."
+            ));
+        } catch (Exception e) {
+            System.out.println("ERROR: Failed to mark contact as read - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "ERROR",
+                "message", "읽음 처리 중 오류가 발생했습니다: " + e.getMessage()
+            ));
+        }
     }
 }

@@ -86,5 +86,33 @@
     <select id="getPendingContactCount" resultType="int">
         SELECT COUNT(*) FROM contacts WHERE status = 'PENDING'
     </select>
+    
+    <!-- 문의 답변 완료된 문의 목록 조회 (알림용) -->
+    <select id="getContactNotificationsByMemberId" parameterType="long" resultType="boot.sagu.dto.ContactDto">
+        SELECT 
+            contact_id as contactId,
+            name,
+            email,
+            subject,
+            message,
+            status,
+            admin_reply as adminReply,
+            member_id as memberId,
+            created_at as createdAt,
+            updated_at as updatedAt,
+            is_read as isRead
+        FROM contacts
+        WHERE member_id = #{memberId} 
+        AND status = 'COMPLETED' 
+        AND admin_reply IS NOT NULL
+        ORDER BY updated_at DESC
+    </select>
+
+    <!-- 문의 답변 알림 읽음 처리 -->
+    <update id="markContactAsRead">
+        UPDATE contacts 
+        SET is_read = 1, updated_at = NOW()
+        WHERE contact_id = #{contactId}
+    </update>
 
 </mapper>

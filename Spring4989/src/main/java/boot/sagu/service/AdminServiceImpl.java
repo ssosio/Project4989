@@ -25,16 +25,16 @@ public class AdminServiceImpl implements AdminServiceInter {
 
     @Override
     public Page<MemberDto> getMembersWithPaging(Pageable pageable, String search) {
-        // °Ë»ö Á¶°Ç¿¡ µû¸¥ È¸¿ø ¸ñ·Ï Á¶È¸
+        // ê²€ìƒ‰ ì¡°ê±´ê³¼ í˜ì´ì§• íšŒì› ëª©ë¡ ì¡°íšŒ
         List<MemberDto> members;
         int totalCount;
         
         if (search != null && !search.trim().isEmpty()) {
-            // °Ë»ö¾î°¡ ÀÖ´Â °æ¿ì
+            // ê²€ìƒ‰ì–´ê°€ ìˆëŠ” ê²½ìš°
             members = memberMapper.searchMembers(search, pageable.getPageSize(), (int) pageable.getOffset());
             totalCount = memberMapper.countSearchMembers(search);
         } else {
-            // °Ë»ö¾î°¡ ¾ø´Â °æ¿ì
+            // ê²€ìƒ‰ì–´ê°€ ì—†ëŠ” ê²½ìš°
             members = memberMapper.getAllMembersWithPaging(pageable.getPageSize(), (int) pageable.getOffset());
             totalCount = memberMapper.countAllMembers();
         }
@@ -44,15 +44,15 @@ public class AdminServiceImpl implements AdminServiceInter {
 
     @Override
     public AdminActionLogDto createActionLog(AdminActionLogDto logData) {
-        // ÇöÀç ½Ã°£ ¼³Á¤
+        // ìƒì„± ì‹œê°„ ì„¤ì •
         logData.setCreatedAt(LocalDateTime.now());
         
-        // IP ÁÖ¼Ò ¼³Á¤ (½ÇÁ¦·Î´Â HttpServletRequest¿¡¼­ °¡Á®¿Í¾ß ÇÔ)
+        // IP ì£¼ì†Œ ì„¤ì • (ì‹¤ì œë¡œëŠ” HttpServletRequestì—ì„œ ê°€ì ¸ì™€ì•¼ í•¨)
         if (logData.getIpAddress() == null) {
             logData.setIpAddress("127.0.0.1");
         }
         
-        // ·Î±× ÀúÀå
+        // ë¡œê·¸ ì €ì¥
         adminMapper.insertActionLog(logData);
         
         return logData;

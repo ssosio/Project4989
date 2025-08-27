@@ -51,13 +51,26 @@ const ContactManagementTab = () => {
     }
 
     try {
-      await api.post(`/api/contact/admin/${contactId}/reply`, { adminReply: replyText });
+      const params = new URLSearchParams();
+      params.append('contactId', contactId);
+      params.append('adminReply', replyText);
+
+      console.log('Sending URLSearchParams - contactId:', contactId, 'adminReply:', replyText);
+      console.log('contactId type:', typeof contactId);
+      console.log('contactId value:', contactId);
+
+      await api.post('/api/contact/admin/reply', params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
       setReplyText('');
       setSelectedContact(null);
       fetchContacts();
       alert('답변이 등록되었습니다.');
     } catch (error) {
       console.error('답변 등록 실패:', error);
+      console.error('Error response:', error.response?.data);
       alert('답변 등록에 실패했습니다.');
     }
   };
@@ -68,7 +81,7 @@ const ContactManagementTab = () => {
       'PROCESSING': { text: '처리중', className: 'status-processing' },
       'COMPLETED': { text: '완료', className: 'status-completed' }
     };
-    
+
     const statusInfo = statusMap[status] || { text: status, className: 'status-unknown' };
     return <span className={`status-badge ${statusInfo.className}`}>{statusInfo.text}</span>;
   };

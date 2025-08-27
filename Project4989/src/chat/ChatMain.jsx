@@ -55,7 +55,7 @@ const ChatMain = ({ open, onClose, onUnreadCountChange }) => {
     const [chatList, setChatList] = useState([]);
     const { userInfo } = useContext(AuthContext);
     const [stompClient, setStompClient] = useState(null);
-    const SERVER_IP = '175.212.203.114';
+    const SERVER_IP = '192.168.10.136';
     const SERVER_PORT = '4989';
 
     const formatTime = (dateString) => {
