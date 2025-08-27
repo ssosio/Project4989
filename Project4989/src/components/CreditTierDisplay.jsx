@@ -40,28 +40,15 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
       const response = await api.get(`/api/credit-tier/${memberId}`);
       console.log('신용도 등급 API 응답:', response.data);
 
-      if (response.data.success) {
-        // 백엔드 데이터가 0점인 경우 테스트용 더미 데이터 사용
-        let testData = response.data.data;
-        if (testData.totalScore === 0) {
-          console.log('백엔드에서 0점 반환, 테스트용 더미 데이터 사용');
-          testData = {
-            ...testData,
-            totalScore: 363, // 테스트용 점수 (거래꾼)
-            transactionScore: 9,
-            ratingScore: 354,
-            penaltyScore: 0,
-            tier: '거래꾼'
-          };
-        }
-
-        setCreditTier(testData);
-        console.log('신용도 등급 데이터 설정됨:', testData);
-
+            if (response.data.success) {
+        const creditData = response.data.data;
+        setCreditTier(creditData);
+        console.log('신용도 등급 데이터 설정됨:', creditData);
+        
         // 부모 컴포넌트에 신용도 데이터 전달
         if (onCreditDataLoaded) {
-          console.log('부모 컴포넌트에 데이터 전달:', testData);
-          onCreditDataLoaded(testData);
+          console.log('부모 컴포넌트에 데이터 전달:', creditData);
+          onCreditDataLoaded(creditData);
         } else {
           console.log('onCreditDataLoaded 콜백이 없음');
         }
