@@ -64,7 +64,9 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
           status: post.status || 'ON_SALE',
           reports: 0, // 신고 수는 별도 API로 가져와야 함
           postId: post.postId,
-          postType: post.postType
+          postType: post.postType,
+          tradeType: post.tradeType, // 원본 값 저장
+          tradeTypeText: getTradeTypeText(post.tradeType) // 한글 텍스트 저장
         }));
         
         setPosts(formattedPosts);
@@ -87,6 +89,16 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
       case 'ITEMS': return '중고물품';
       case 'AUCTION': return '경매';
       default: return postType || '기타';
+    }
+  };
+
+  // 판매 타입 텍스트 변환
+  const getTradeTypeText = (tradeType) => {
+    switch (tradeType) {
+      case 'SALE': return '판매';
+      case 'AUCTION': return '경매';
+      case 'SHARE': return '나눔';
+      default: return tradeType || '기타';
     }
   };
 
@@ -126,6 +138,8 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
   const handleDeleteDialogClose = () => {
     setDeleteDialogOpen(false);
     setPostToDelete(null);
+
+    
   };
 
   // 게시물 삭제 실행
@@ -159,7 +173,7 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
       
     } catch (err) {
       console.error('게시물 삭제 실패:', err);
-      alert('게시물 삭제에 실패했습니다: ' + (err.response?.data?.message || err.message));
+      alert('게시물 삭제에 실패했습니다: ' + '경매시간이 종료되지 않은 상품은 삭제할 수 없습니다.');
     } finally {
       setDeleteLoading(false);
     }
@@ -215,6 +229,7 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>제목</TableCell>
+                  <TableCell>판매타입</TableCell>
                   <TableCell>카테고리</TableCell>
                   <TableCell>작성자</TableCell>
                   <TableCell>상태</TableCell>
@@ -241,6 +256,8 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                         {post.title}
                       </Typography>
                     </TableCell>
+                    
+                    <TableCell>{post.tradeTypeText}</TableCell>
                     <TableCell>{post.type}</TableCell>
                     <TableCell>{post.author}</TableCell>
                     <TableCell>
