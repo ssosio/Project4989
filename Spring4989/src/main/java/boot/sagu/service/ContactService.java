@@ -51,4 +51,14 @@ public class ContactService {
     public int getPendingContactCount() {
         return contactMapper.getPendingContactCount();
     }
+    
+    // 문의 답변 완료된 문의 목록 조회 (알림용)
+    public List<ContactDto> getContactNotificationsByMemberId(Long memberId) {
+        return contactMapper.getContactNotificationsByMemberId(memberId);
+    }
+
+    // 문의 답변 알림 읽음 처리
+    public void markContactAsRead(Long contactId) {
+        contactMapper.markContactAsRead(contactId);
+    }
 }

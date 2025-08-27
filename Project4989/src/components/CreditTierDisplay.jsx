@@ -36,10 +36,10 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
     try {
       setLoading(true);
       console.log('신용도 등급 조회 시작, memberId:', memberId);
-      
+
       const response = await api.get(`/api/credit-tier/${memberId}`);
       console.log('신용도 등급 API 응답:', response.data);
-      
+
       if (response.data.success) {
         // 백엔드 데이터가 0점인 경우 테스트용 더미 데이터 사용
         let testData = response.data.data;
@@ -54,10 +54,10 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
             tier: '거래꾼'
           };
         }
-        
+
         setCreditTier(testData);
         console.log('신용도 등급 데이터 설정됨:', testData);
-        
+
         // 부모 컴포넌트에 신용도 데이터 전달
         if (onCreditDataLoaded) {
           console.log('부모 컴포넌트에 데이터 전달:', testData);
@@ -140,7 +140,7 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
           }}
         />
       </Box>
-      
+
       {showDetails && (
         <Box className="credit-tier-details">
           <div className="credit-tier-score">
@@ -161,7 +161,7 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
               <span className="breakdown-detail">({creditTier.reportCount}건)</span>
             </div>
           </div>
-          
+
           {/* 등급 정보 버튼 */}
           <Box sx={{ mt: 2 }}>
             <Tooltip title="등급 정보 보기" arrow>
@@ -185,17 +185,17 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
           </Box>
         </Box>
       )}
-      
+
       {/* 등급 정보 다이얼로그 */}
-      <Dialog 
-        open={showTierInfo} 
+      <Dialog
+        open={showTierInfo}
         onClose={() => setShowTierInfo(false)}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <DialogTitle sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           backgroundColor: '#f5f5f5'
         }}>
@@ -207,11 +207,11 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {getTierInfo().map((tierInfo, index) => (
-              <Box 
+              <Box
                 key={index}
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 2,
                   p: 2,
                   borderRadius: 1,

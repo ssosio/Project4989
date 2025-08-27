@@ -98,7 +98,7 @@ export const Header = () => {
       const { data } = await axios.get('http://localhost:4989/post/search-simple', {
         params: { keyword: query.trim(), page: 1, size: 5 }
       });
-      
+
       // 데이터 정규화 및 디버깅
       const normalizedResults = (data.content || []).map(post => {
         console.log('원본 post 데이터:', post); // 디버깅용
@@ -111,7 +111,7 @@ export const Header = () => {
           createdAt: post.createdAt ?? post.created_at
         };
       });
-      
+
       console.log('정규화된 검색 결과:', normalizedResults); // 디버깅용
       setSearchResults(normalizedResults);
     } catch (error) {
@@ -156,6 +156,12 @@ export const Header = () => {
 
   const handleUnreadCountChange = useCallback((count) => {
     setUnreadMessageCount((prev) => (prev !== count ? count : prev));
+  }, []);
+
+  // NotificationMain에서 전달받은 알림 개수를 처리하는 함수
+  const handleNotificationCountChange = useCallback((count) => {
+    console.log("Header: NotificationMain에서 전달받은 알림 개수:", count);
+    setUnreadNotificationCount(count);
   }, []);
 
   const fetchUnreadNotificationCount = useCallback(async () => {
@@ -256,20 +262,20 @@ export const Header = () => {
             <ClickAwayListener onClickAway={handleSearchClose}>
               <Paper
                 elevation={8}
-                sx={{ 
-                  mt: 1, 
-                  maxHeight: 400, 
-                  overflow: 'auto', 
-                  borderRadius: 2, 
+                sx={{
+                  mt: 1,
+                  maxHeight: 400,
+                  overflow: 'auto',
+                  borderRadius: 2,
                   border: '1px solid #E0E0E0',
                   backgroundColor: '#FFFFFF',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                 }}
               >
                 {searchLoading && (
-                  <Box sx={{ 
-                    p: 3, 
-                    textAlign: 'center', 
+                  <Box sx={{
+                    p: 3,
+                    textAlign: 'center',
                     color: '#666',
                     display: 'flex',
                     alignItems: 'center',
@@ -289,9 +295,9 @@ export const Header = () => {
                 )}
 
                 {searchError && (
-                  <Box sx={{ 
-                    p: 3, 
-                    textAlign: 'center', 
+                  <Box sx={{
+                    p: 3,
+                    textAlign: 'center',
                     color: '#d32f2f',
                     backgroundColor: '#ffebee',
                     borderRadius: 1,
@@ -309,10 +315,10 @@ export const Header = () => {
                       const key = post.postId ?? post.post_id ?? post.id ?? idx;
                       // postType 정규화 (snake_case -> camelCase 변환)
                       const normalizedPostType = post.postType ?? post.post_type;
-                      
+
                       // postType에 따른 아이콘과 라벨 매핑
                       const getTypeInfo = (type) => {
-                        switch(type?.toUpperCase()) {
+                        switch (type?.toUpperCase()) {
                           case 'CARS':
                             return { icon: '🚗', label: '자동차' };
                           case 'REAL_ESTATES':
@@ -323,16 +329,16 @@ export const Header = () => {
                             return { icon: '📋', label: '기타' };
                         }
                       };
-                      
+
                       const typeInfo = getTypeInfo(normalizedPostType);
-                      
+
                       return (
                         <ListItem key={key} disablePadding>
                           <ListItemButton
                             onClick={() => handleSearchResultClick(post)}
                             sx={{
                               borderBottom: '1px solid #f0f0f0',
-                              '&:hover': { 
+                              '&:hover': {
                                 backgroundColor: '#f8f9fa',
                                 transform: 'translateY(-1px)',
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
@@ -345,11 +351,11 @@ export const Header = () => {
                             <ListItemText
                               primary={
                                 <Box>
-                                  <Typography 
-                                    variant="subtitle2" 
-                                    sx={{ 
-                                      fontWeight: 700, 
-                                      color: '#2E3C2E', 
+                                  <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                      fontWeight: 700,
+                                      color: '#2E3C2E',
                                       mb: 0.5,
                                       fontSize: '14px',
                                       lineHeight: 1.3
@@ -357,10 +363,10 @@ export const Header = () => {
                                   >
                                     {typeInfo.icon} [{typeInfo.label}] {post.title}
                                   </Typography>
-                                  <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                      color: '#4A90E2', 
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      color: '#4A90E2',
                                       mb: 0.5,
                                       fontWeight: 600,
                                       fontSize: '13px'
@@ -370,11 +376,11 @@ export const Header = () => {
                                   </Typography>
 
                                   {post.content && (
-                                    <Typography 
-                                      variant="caption" 
-                                      sx={{ 
-                                        color: '#666', 
-                                        display: 'block', 
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: '#666',
+                                        display: 'block',
                                         mb: 0.5,
                                         fontSize: '12px',
                                         lineHeight: 1.4
@@ -386,10 +392,10 @@ export const Header = () => {
 
                                   {/* 타입별 상세 정보 */}
                                   {normalizedPostType?.toUpperCase() === "CARS" && post.car && (
-                                    <Typography 
-                                      variant="caption" 
-                                      sx={{ 
-                                        color: '#555', 
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: '#555',
                                         fontSize: '11px',
                                         backgroundColor: '#f8f9fa',
                                         px: 1,
@@ -402,10 +408,10 @@ export const Header = () => {
                                     </Typography>
                                   )}
                                   {normalizedPostType?.toUpperCase() === "REAL_ESTATES" && post.estate && (
-                                    <Typography 
-                                      variant="caption" 
-                                      sx={{ 
-                                        color: '#555', 
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: '#555',
                                         fontSize: '11px',
                                         backgroundColor: '#f8f9fa',
                                         px: 1,
@@ -415,16 +421,16 @@ export const Header = () => {
                                       }}
                                     >
                                       🏠 {post.estate.propertyType === 'apt' ? '아파트' :
-                                          post.estate.propertyType === 'studio' ? '오피스텔' :
+                                        post.estate.propertyType === 'studio' ? '오피스텔' :
                                           post.estate.propertyType === 'oneroom' ? '원룸' :
-                                          post.estate.propertyType === 'tworoom' ? '투룸' : post.estate.propertyType} · {post.estate.area}㎡
+                                            post.estate.propertyType === 'tworoom' ? '투룸' : post.estate.propertyType} · {post.estate.area}㎡
                                     </Typography>
                                   )}
                                   {normalizedPostType?.toUpperCase() === "ITEMS" && post.item && (
-                                    <Typography 
-                                      variant="caption" 
-                                      sx={{ 
-                                        color: '#555', 
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: '#555',
                                         fontSize: '11px',
                                         backgroundColor: '#f8f9fa',
                                         px: 1,
@@ -434,9 +440,9 @@ export const Header = () => {
                                       }}
                                     >
                                       📦 {post.item.categoryId === 1 ? '전자제품' :
-                                          post.item.categoryId === 2 ? '의류' :
+                                        post.item.categoryId === 2 ? '의류' :
                                           post.item.categoryId === 3 ? '가구' :
-                                          post.item.categoryName || `카테고리 ${post.item.categoryId}`}
+                                            post.item.categoryName || `카테고리 ${post.item.categoryId}`}
                                     </Typography>
                                   )}
                                 </Box>
@@ -460,9 +466,9 @@ export const Header = () => {
                           navi(`/board/search?keyword=${encodeURIComponent(searchQuery.trim())}`);
                           handleSearchClose();
                         }}
-                        sx={{ 
-                          backgroundColor: '#4A90E2', 
-                          '&:hover': { 
+                        sx={{
+                          backgroundColor: '#4A90E2',
+                          '&:hover': {
                             backgroundColor: '#357ABD',
                             transform: 'translateY(-1px)',
                             boxShadow: '0 2px 8px rgba(74, 144, 226, 0.3)'
@@ -475,11 +481,11 @@ export const Header = () => {
                       >
                         <ListItemText
                           primary={
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                textAlign: 'center', 
-                                color: '#FFFFFF', 
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                textAlign: 'center',
+                                color: '#FFFFFF',
                                 fontWeight: 700,
                                 fontSize: '13px'
                               }}
@@ -494,9 +500,9 @@ export const Header = () => {
                 )}
 
                 {!searchLoading && !searchError && searchResults.length === 0 && searchQuery.trim() && (
-                  <Box sx={{ 
-                    p: 3, 
-                    textAlign: 'center', 
+                  <Box sx={{
+                    p: 3,
+                    textAlign: 'center',
                     color: '#666',
                     display: 'flex',
                     flexDirection: 'column',
@@ -630,7 +636,7 @@ export const Header = () => {
 
       {/* 채팅 드로어 */}
       <ChatMain open={chatDrawerOpen} onClose={handleChatClose} onUnreadCountChange={handleUnreadCountChange} />
-      <NotificationMain open={notificationDrawerOpen} onClose={handleNotificationClose} onUnreadCountChange={fetchUnreadNotificationCount} />
+      <NotificationMain open={notificationDrawerOpen} onClose={handleNotificationClose} onUnreadCountChange={handleNotificationCountChange} />
     </AppBar>
   );
 };

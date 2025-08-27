@@ -15,4 +15,5 @@ public class ContactDto {
     private Timestamp createdAt;
     private Timestamp updatedAt;
     private Long memberId; // 로그인한 사용자의 경우
+    private Integer isRead; // 읽음 여부 (0: 읽지 않음, 1: 읽음)
 }

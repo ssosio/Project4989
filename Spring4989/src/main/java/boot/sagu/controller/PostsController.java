@@ -319,7 +319,7 @@ public class PostsController {
     }
    
    @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable("postId") Long postId,
+    public ResponseEntity<Void> deletePost(@PathVariable(name = "postId") Long postId,
                                            @RequestHeader("Authorization") String authorization,
                                            @ModelAttribute PostsDto dto) {
         // JWT 검증 로직 넣을 수 있음 (작성자 본인인지 확인)
@@ -559,7 +559,7 @@ public class PostsController {
        // 신고 상태 업데이트 API
     @PutMapping("/reports/{reportId}/status")
     public ResponseEntity<Map<String, Object>> updateReportStatus(
-          @PathVariable("reportId") Long reportId,
+          @PathVariable(name = "reportId") Long reportId,
           @RequestParam("status") String status,
           @RequestHeader("Authorization") String authorization) {
       try {
