@@ -156,7 +156,7 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
             </DialogTitle>
 
             <DialogContent sx={{ p: 0 }}>
-                <Box sx={{ p: 4 }}>
+                <Box sx={{ p: 4 }} style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '800px' }}>
                     <Grid container spacing={3}>
                         {/* 신고 기본 정보 */}
                         <Grid item xs={12}>
@@ -165,7 +165,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                 borderRadius: 3,
                                 p: 3,
                                 border: '1px solid #e9ecef',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '800px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -307,7 +308,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                 borderRadius: 3,
                                 p: 3,
                                 border: '1px solid #ffeaa7',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '600px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -351,7 +353,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                 borderRadius: 3,
                                 p: 3,
                                 border: '1px solid #c3e6cb',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '600px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -398,7 +401,8 @@ const DeclarationDetailModal = ({ open, onClose, notification, onMarkAsRead }) =
                                 borderRadius: 3,
                                 p: 3,
                                 border: notification.isRead === 0 ? '1px solid #ffeaa7' : '1px solid #c3e6cb',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '600px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -598,7 +602,7 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
             </DialogTitle>
 
             <DialogContent sx={{ p: 0 }}>
-                <Box sx={{ p: 4 }}>
+                <Box sx={{ p: 4 }} style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '800px' }}>
                     <Grid container spacing={3}>
                         {/* 문의 기본 정보 */}
                         <Grid item xs={12}>
@@ -607,7 +611,8 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
                                 borderRadius: 3,
                                 p: 3,
                                 border: '1px solid #e9ecef',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '800px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -690,7 +695,8 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
                                 borderRadius: 3,
                                 p: 3,
                                 border: '1px solid #ffeaa7',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '600px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -734,7 +740,8 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
                                 borderRadius: 3,
                                 p: 3,
                                 border: '1px solid #c3e6cb',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                                width: '600px'
                             }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                                     <Box sx={{
@@ -745,7 +752,7 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        mr: 2
+                                        mr: 2,
                                     }}>
                                         <span style={{ color: 'white', fontSize: '16px', fontWeight: 'bold' }}>💬</span>
                                     </Box>
@@ -814,7 +821,8 @@ const ContactReplyDetailModal = ({ open, onClose, notification, onMarkAsRead }) 
                                     p: 3,
                                     borderRadius: 2,
                                     border: notification.isRead === 0 ? '1px solid #ffeaa7' : '1px solid #c3e6cb',
-                                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)'
+                                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.05)',
+                                    width: '550px'
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
