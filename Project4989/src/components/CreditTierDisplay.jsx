@@ -126,16 +126,17 @@ const CreditTierDisplay = ({ memberId, showDetails = false, onCreditDataLoaded }
       {/* 신용도 등급 뱃지 - 상단 중앙 배치 */}
       <Box sx={{ mb: 2 }}>
         <Chip
-          icon={<span style={{ fontSize: '20px' }}>{getTierIcon(creditTier.tier)}</span>}
+          icon={<span style={{ fontSize: '12px' }}>{getTierIcon(creditTier.tier)}</span>}
           label={creditTier.tier}
           sx={{
             backgroundColor: getTierColor(creditTier.tier),
             color: 'white',
-            fontSize: '16px',
+            fontSize: '10px',
             fontWeight: 'bold',
-            padding: '8px 16px',
+            padding: '2px 6px',
+            height: '24px',
             '& .MuiChip-label': {
-              paddingLeft: '8px'
+              paddingLeft: '3px'
             }
           }}
         />

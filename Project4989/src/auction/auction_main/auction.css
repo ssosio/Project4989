@@ -6,6 +6,12 @@
   font-style: normal;
 }
 
+/* Auction Detail 페이지에서만 CreditTierDisplay 높이 조정 */
+.auction-detail-container .MuiChip-root {
+  height: 20px !important;
+  margin-top: 3px;
+}
+
 /* AuctionMain 스타일 */
 .auction-main-container {
   padding: 20px;
