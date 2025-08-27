@@ -90,20 +90,44 @@ public class ContactController {
     }
     
     // 관리자 답변 추가
-    @PostMapping("/admin/{contactId}/reply")
+    @PostMapping("/admin/reply")
     public ResponseEntity<?> replyToContact(
-        @PathVariable Long contactId,
-        @RequestBody Map<String, String> request
+        @RequestParam("contactId") Long contactId,
+        @RequestParam("adminReply") String adminReply
     ) {
         try {
-            String adminReply = request.get("adminReply");
+            // 디버깅을 위한 로그 추가
+            System.out.println("=== Contact Reply Request Debug ===");
+            System.out.println("Received contactId: " + contactId + " (type: " + (contactId != null ? contactId.getClass().getSimpleName() : "null") + ")");
+            System.out.println("Received adminReply: " + adminReply + " (type: " + (adminReply != null ? adminReply.getClass().getSimpleName() : "null") + ")");
+            
+            if (contactId == null || adminReply == null) {
+                System.out.println("ERROR: Required parameters are null");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "필수 파라미터가 누락되었습니다. contactId: " + contactId + ", adminReply: " + adminReply
+                ));
+            }
+            
+            if (adminReply.trim().isEmpty()) {
+                System.out.println("ERROR: adminReply is empty");
+                return ResponseEntity.badRequest().body(Map.of(
+                    "status", "ERROR",
+                    "message", "답변 내용이 비어있습니다."
+                ));
+            }
+            
+            System.out.println("Calling contactService.replyToContact with: contactId=" + contactId + ", adminReply=" + adminReply);
             contactService.replyToContact(contactId, adminReply);
+            System.out.println("contactService.replyToContact completed successfully");
             
             return ResponseEntity.ok(Map.of(
                 "status", "SUCCESS",
                 "message", "답변이 등록되었습니다."
             ));
         } catch (Exception e) {
+            System.out.println("ERROR: Exception occurred - " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace(); // 서버 콘솔에 스택 트레이스 출력
             return ResponseEntity.badRequest().body(Map.of(
                 "status", "ERROR",
                 "message", "답변 등록 중 오류가 발생했습니다: " + e.getMessage()

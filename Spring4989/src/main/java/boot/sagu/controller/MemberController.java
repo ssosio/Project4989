@@ -303,7 +303,7 @@ public class MemberController {
 
     // 단일 사용자 정보 조회 (관리자용)
     @GetMapping("/api/users/{memberId}")
-    public ResponseEntity<?> getUserInfo(@PathVariable("memberId") Long memberId) {
+    public ResponseEntity<?> getUserInfo(@PathVariable(name = "memberId") Long memberId) {
         try {
             MemberDto member = memberService.getMemberById(memberId);
             if (member != null) {

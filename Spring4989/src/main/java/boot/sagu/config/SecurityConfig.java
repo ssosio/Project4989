@@ -103,6 +103,9 @@ public class SecurityConfig {
                 // 알림 API 공개(기존 유지)
                 .requestMatchers("/api/notifications/**").permitAll()
 
+                // Contact API 인증 필요
+                .requestMatchers("/api/contact/**").authenticated()
+
                 // 제출/입찰/삭제는 인증
                 .requestMatchers("/submit").authenticated()
                 .requestMatchers("/auction/*/bids", "/auction/delete/**").authenticated()
