@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import SockJS from 'sockjs-client';
+import { Stomp } from '@stomp/stompjs';
 import './auction.css';
 
 const AuctionMain = () => {
@@ -15,10 +17,68 @@ const AuctionMain = () => {
     ended: false    // 경매종료 (기본값: false)
   });
   const navigate = useNavigate();
+  const wsClientRef = useRef(null);
 
   useEffect(() => {
     fetchAuctionList();
+    
+    return () => {
+      if (wsClientRef.current && wsClientRef.current.connected) {
+        wsClientRef.current.deactivate();
+      }
+    };
   }, []);
+
+  // 경매 목록이 로드된 후 WebSocket 연결
+  useEffect(() => {
+    if (auctionList.length > 0) {
+      setupWebSocket();
+    }
+  }, [auctionList]);
+
+  // WebSocket 연결 설정
+  const setupWebSocket = () => {
+    const client = Stomp.over(new SockJS(`${import.meta.env.VITE_API_BASE}/ws`));
+    
+    client.onConnect = () => {
+      console.log('✅ 경매 목록 WebSocket 연결됨');
+      
+      // 경매 목록이 로드된 후 구독 설정
+      if (auctionList.length > 0) {
+        auctionList.forEach(auction => {
+          client.subscribe(`/topic/auction/${auction.postId}`, (message) => {
+            const data = JSON.parse(message.body);
+            handleSocketMessage(data);
+          });
+        });
+      }
+    };
+    
+    client.onDisconnect = () => {
+      console.log('❌ 경매 목록 WebSocket 연결 끊어짐');
+    };
+    
+    client.onStompError = (error) => {
+      console.error('❌ 경매 목록 WebSocket 에러:', error);
+    };
+    
+    wsClientRef.current = client;
+    client.activate();
+  };
+
+  // WebSocket 메시지 처리
+  const handleSocketMessage = (data) => {
+    switch (data.type) {
+      case 'AUCTION_END': {
+        console.log('📡 경매 목록에서 AUCTION_END 수신:', data);
+        // 경매 목록 새로고침
+        fetchAuctionList();
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   const fetchAuctionList = async () => {
     try {
@@ -192,14 +252,14 @@ const AuctionMain = () => {
 
               {/* 상태 배지 */}
               <div className="status-badge">
-                {post.winnerId ? (
-                  <span className="status-completed">낙찰완료</span>
-                ) : (
-                  new Date(post.auctionEndTime) < new Date() ? (
-                    <span className="status-failed">유찰</span>
+                {post.status === 'SOLD' ? (
+                  post.winnerId ? (
+                    <span className="status-completed">낙찰완료</span>
                   ) : (
-                    <span className="status-ongoing">경매중</span>
+                    <span className="status-failed">유찰</span>
                   )
+                ) : (
+                  <span className="status-ongoing">경매중</span>
                 )}
               </div>
             </div>
@@ -214,7 +274,7 @@ const AuctionMain = () => {
                   <span className="price-value">{formatPrice(post.price)}</span>
                 </div>
                 <div className="price-row">
-                  <span className="price-label">현재 경매가:</span>
+                  <span className="price-label">{post.status === 'SOLD' ? '낙찰가:' : '현재 경매가:'}</span>
                   <span className="price-value current-bid">
                     {highestBids[post.postId] ? formatPrice(highestBids[post.postId]) : formatPrice(post.price)}
                   </span>
@@ -223,7 +283,7 @@ const AuctionMain = () => {
 
               <div className="card-bottom">
                 <div className="time-info">
-                  ⏰ {getTimeRemaining(post.auctionEndTime)}
+                  ⏰ {post.status === 'SOLD' ? '경매 종료' : getTimeRemaining(post.auctionEndTime)}
                 </div>
                 <div className="view-count">
                   👁️ {post.viewCount || 0}
