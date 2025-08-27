@@ -55,7 +55,6 @@ function LoginForm({ onLoginSuccess }) {
     };
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     onLoginSuccess(userInfo);
-    alert("로그인 성공!");
     navi("/");
   } catch (err) {
     console.error("로그인 중 오류 발생:", err);

@@ -359,17 +359,46 @@ const AuctionDetail = () => {
         break;
       }
      case 'AUCTION_END': {
+        console.log('📡 WebSocket AUCTION_END 수신:', data);
         setTimeRemaining('경매 종료');
-        setAuctionDetail((prev) => ({ ...prev, status: 'SOLD', winnerId: data.winnerId }));
-        if (data.winner) setWinnerNickname(data.winner.nickname || `ID: ${data.winner.memberId || data.winner.id}`);
+        
+        // 경매 상태 업데이트
+        setAuctionDetail((prev) => ({ 
+          ...prev, 
+          status: 'SOLD', 
+          winnerId: data.winnerId 
+        }));
+        
+        // 낙찰자 정보 설정
+        if (data.winner) {
+          setWinnerNickname(data.winner.nickname || `ID: ${data.winner.memberId || data.winner.id}`);
+        }
+        
         setBidMessage('경매가 종료되었습니다!');
         setBidMessageType('success');
 
-        // ⬇️ 내가 낙찰자면 에스크로 결제 안내 토스트
+        // 낙찰자에게 에스크로 결제 안내
         if (String(data.winnerId) === String(userInfo?.memberId)) {
           setBidMessage('축하합니다! 낙찰자입니다. 아래 "잔금(에스크로) 결제" 버튼으로 결제 진행해주세요.');
           setBidMessageType('info');
         }
+        
+        // 입찰 기록 새로고침
+        setTimeout(async () => {
+          try {
+            const bidHistoryRes = await api.get(`/auction/bid-history/${postId}`);
+            const formattedHistory = bidHistoryRes.data.map((bid, index) => ({
+              id: `bid-${index}-${bid.bidTime}-${bid.bidderName}`,
+              bidderName: bid.bidderName || `ID: ${bid.bidderId}`,
+              bidAmount: bid.bidAmount || bid.bid_amount,
+              bidTime: bid.bidTime
+            }));
+            setBidHistory(formattedHistory);
+          } catch (error) {
+            console.error('입찰 기록 새로고침 실패:', error);
+          }
+        }, 1000);
+        
         break;
       }
 
@@ -518,16 +547,18 @@ const AuctionDetail = () => {
       setBidMessage(res.data);
       setBidMessageType('success');
 
+      // 경매 종료 후 데이터 새로고침
       const [detail, hb] = await Promise.all([
         api.get(`/auction/detail/${postId}`),
         api.get(`/auction/highest-bid/${postId}`)
       ]);
+      
       setAuctionDetail(detail.data);
       setHighestBid(hb.data);
-
       setTimeRemaining('경매 종료');
 
-      if (hb.data) {
+      // 낙찰자가 있으면 낙찰자 정보 조회
+      if (hb.data && hb.data.bidderId) {
         try {
           const w = await api.get(`/auction/member/${hb.data.bidderId}`);
           setWinnerNickname(w.data.nickname || `ID: ${hb.data.bidderId}`);
@@ -536,7 +567,19 @@ const AuctionDetail = () => {
         }
       }
 
-      window.location.reload();
+      // 입찰 기록도 새로고침
+      try {
+        const bidHistoryRes = await api.get(`/auction/bid-history/${postId}`);
+        const formattedHistory = bidHistoryRes.data.map((bid, index) => ({
+          id: `bid-${index}-${bid.bidTime}-${bid.bidderName}`,
+          bidderName: bid.bidderName || `ID: ${bid.bidderId}`,
+          bidAmount: bid.bidAmount || bid.bid_amount,
+          bidTime: bid.bidTime
+        }));
+        setBidHistory(formattedHistory);
+      } catch (error) {
+        console.error('입찰 기록 새로고침 실패:', error);
+      }
     } catch (error) {
       if (error.response?.data) setBidMessage(error.response.data);
       else setBidMessage('경매 종료에 실패했습니다.');

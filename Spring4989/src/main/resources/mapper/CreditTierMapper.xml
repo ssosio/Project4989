@@ -19,26 +19,29 @@
         WHERE member_id = #{memberId}
     </select>
     
-    <!-- 회원의 완료된 거래 수 조회 (판매자 기준) -->
+    <!-- 회원의 완료된 거래 수 조회 (trade_reviews 기준, 거래 완료 후 후기 작성) -->
     <select id="getCompletedTransactionCount" parameterType="int" resultType="int">
         SELECT COUNT(*) 
-        FROM posts 
-        WHERE member_id = #{memberId} 
-        AND status = 'SOLD'
+        FROM trade_reviews 
+        WHERE review_opposite_id = #{memberId}
     </select>
     
-    <!-- 회원의 평균 평점 조회 (1~10 스케일) -->
+    <!-- 회원의 평균 평점 조회 (1~10 스케일, NULL 값 처리) -->
     <select id="getAverageRating" parameterType="int" resultType="java.lang.Double">
         SELECT AVG(rating) 
         FROM trade_reviews 
         WHERE review_opposite_id = #{memberId}
+        AND rating IS NOT NULL
+        AND rating > 0
     </select>
     
-    <!-- 회원의 리뷰 개수 조회 -->
+    <!-- 회원의 리뷰 개수 조회 (NULL 값 처리) -->
     <select id="getReviewCount" parameterType="int" resultType="int">
         SELECT COUNT(*) 
         FROM trade_reviews 
         WHERE review_opposite_id = #{memberId}
+        AND rating IS NOT NULL
+        AND rating > 0
     </select>
     
     <!-- 회원의 신고 횟수 조회 (가중치 적용) -->

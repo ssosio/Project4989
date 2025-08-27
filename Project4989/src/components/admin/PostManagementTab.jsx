@@ -21,7 +21,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -36,12 +42,19 @@ const PostManagementTab = ({ getStatusText, getStatusColor }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-
+  
+  // 검색 관련 상태
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [searchType, setSearchType] = useState('title');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  
   const { userInfo } = useContext(AuthContext);
   const token = userInfo?.token ?? localStorage.getItem('jwtToken');
 
@@ -195,16 +208,49 @@ const PostManagementTab = ({ getStatusText, getStatusColor }) => {
     }
   };
 
+  // 검색 및 필터링 함수
+  const filteredPosts = posts.filter(post => {
+    // 검색어 필터링 (디바운싱된 검색어 사용)
+    let matchesSearch = false;
+    if (searchType === 'id') {
+      matchesSearch = post.id.toString().includes(debouncedSearchTerm);
+    } else if (searchType === 'title') {
+      matchesSearch = post.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+    }
+    
+    // 상태 필터링
+    const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
+    
+    // 타입 필터링
+    const matchesType = typeFilter === 'all' || post.postType === typeFilter;
+    
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
   // 페이지 변경 핸들러
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
   };
 
+  // 검색어 디바운싱 (500ms 후에 적용)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // 디바운싱된 검색어나 필터 변경 시 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, searchType, statusFilter, typeFilter]);
+
   // 현재 페이지의 게시물만 필터링
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPosts = posts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(posts.length / itemsPerPage);
+  const currentPosts = filteredPosts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPosts.length / itemsPerPage);
 
   // 로딩 중일 때
   if (loading) {
@@ -237,8 +283,66 @@ const PostManagementTab = ({ getStatusText, getStatusColor }) => {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            게시글 목록 ({posts.length}개) - 페이지 {currentPage} / {totalPages}
+            게시글 목록 ({filteredPosts.length}개) - 페이지 {currentPage} / {totalPages}
           </Typography>
+          
+          {/* 검색 및 필터 섹션 */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>검색 타입</InputLabel>
+                <Select
+                  value={searchType}
+                  onChange={(e) => setSearchType(e.target.value)}
+                  label="검색 타입"
+                >
+                  <MenuItem value="title">제목</MenuItem>
+                  <MenuItem value="id">ID</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                size="small"
+                label="검색어"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="검색어를 입력하세요"
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>상태</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  label="상태"
+                >
+                  <MenuItem value="all">전체</MenuItem>
+                  <MenuItem value="ON_SALE">판매중</MenuItem>
+                  <MenuItem value="SOLD">판매완료</MenuItem>
+                  <MenuItem value="RESERVED">예약중</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel>카테고리</InputLabel>
+                <Select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  label="카테고리"
+                >
+                  <MenuItem value="all">전체</MenuItem>
+                  <MenuItem value="CARS">자동차</MenuItem>
+                  <MenuItem value="REAL_ESTATES">부동산</MenuItem>
+                  <MenuItem value="ITEMS">중고물품</MenuItem>
+                  <MenuItem value="AUCTION">경매</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
           <TableContainer>
             <Table>
               <TableHead>
