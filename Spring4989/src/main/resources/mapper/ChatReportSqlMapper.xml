@@ -5,13 +5,13 @@
 
     <!-- ResultMap 정의 -->
     <resultMap id="ChatDeclarationResultMap" type="boot.sagu.dto.ChatDeclarationDto">
-        <id column="declaration_id" property="declarationId"/>
-        <result column="declaration_chat_room_id" property="declarationChatRoomId"/>
-        <result column="declaration_memberid" property="declarationMemberId"/>
-        <result column="declaration_opposite_memberid" property="declarationOppositeMemberId"/>
-        <result column="declaration_type" property="declarationType"/>
-        <result column="declaration_content" property="declarationContent"/>
-        <result column="declaration_time" property="declarationTime"/>
+        <id column="declaration_id" property="declaration_id"/>
+        <result column="declaration_chat_room_id" property="declaration_chat_room_id"/>
+        <result column="declaration_memberid" property="declaration_memberid"/>
+        <result column="declaration_opposite_memberid" property="declaration_opposite_memberid"/>
+        <result column="declaration_type" property="declaration_type"/>
+        <result column="declaration_content" property="declaration_content"/>
+        <result column="declaration_time" property="declaration_time"/>
         <result column="status" property="status"/>
         <result column="result" property="result"/>
     </resultMap>
@@ -101,7 +101,8 @@
         FROM chatdeclarationresult cdr
         INNER JOIN chatdeclaration cd ON cdr.chatdeclaration_id = cd.declaration_id
         INNER JOIN members m ON cd.declaration_memberid = m.member_id
-        WHERE cdr.result_member_id = #{resultMemberId} and cd.result='SANCTION'
+        WHERE cdr.result_member_id = #{resultMemberId} 
+        AND (cd.result='SANCTION' OR cdr.notification_type='REVIEW_REQUEST')
         ORDER BY cdr.created_at DESC
     </select>
     
@@ -124,7 +125,7 @@
 		select count(*) from chatdeclaration where status='RECEIVED'
 	</select>
 	
-	<insert id="insertDeclaration" parameterType="boot.sagu.dto.ChatDeclarationDto" useGeneratedKeys="true" keyProperty="declarationId">
+	<insert id="insertDeclaration" parameterType="boot.sagu.dto.ChatDeclarationDto" useGeneratedKeys="true" keyProperty="declaration_id">
 		insert into chatdeclaration (
 			declaration_chat_room_id,
 			declaration_memberid,
@@ -133,11 +134,11 @@
 			declaration_content,
 			declaration_time
 		) values (
-			#{declarationChatRoomId},
-			#{declarationMemberId},
-			#{declarationOppositeMemberId},
-			#{declarationType},
-			#{declarationContent},
+			#{declaration_chat_room_id},
+			#{declaration_memberid},
+			#{declaration_opposite_memberid},
+			#{declaration_type},
+			#{declaration_content},
 			now()
 		)
 	</insert>
@@ -158,4 +159,29 @@
 		WHERE declaration_opposite_memberid = #{memberId}
 		ORDER BY declaration_time DESC
 	</select>
+	
+	<!-- 후기 작성 알림 삽입 -->
+	<insert id="insertReviewNotification">
+		INSERT INTO chatdeclarationresult (
+			chatdeclaration_id,
+			result_member_id,
+			result_content,
+			created_at,
+			notification_type,
+			post_id,
+			review_id,
+			reviewer_nickname,
+			post_title
+		) VALUES (
+			NULL,
+			#{reviewOppositeId},
+			'후기를 작성해주세요',
+			NOW(),
+			'REVIEW_REQUEST',
+			#{postId},
+			#{reviewId},
+			(SELECT nickname FROM members WHERE member_id = #{reviewerId}),
+			(SELECT title FROM posts WHERE post_id = #{postId})
+		)
+	</insert>
 </mapper>

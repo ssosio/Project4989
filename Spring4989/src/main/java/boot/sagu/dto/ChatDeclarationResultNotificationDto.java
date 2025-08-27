@@ -16,6 +16,13 @@ public class ChatDeclarationResultNotificationDto {
     private String reportedMemberNickname;
     private String reportedChatContent;
     
+    // 후기 알림을 위한 추가 필드
+    private String notificationType;
+    private Integer postId;
+    private Integer reviewId;
+    private String reviewerNickname;
+    private String postTitle;
+    
     // 기본 생성자
     public ChatDeclarationResultNotificationDto() {}
     
@@ -100,6 +107,46 @@ public class ChatDeclarationResultNotificationDto {
         this.reportedChatContent = reportedChatContent;
     }
     
+    public String getNotificationType() {
+        return notificationType;
+    }
+    
+    public void setNotificationType(String notificationType) {
+        this.notificationType = notificationType;
+    }
+    
+    public Integer getPostId() {
+        return postId;
+    }
+    
+    public void setPostId(Integer postId) {
+        this.postId = postId;
+    }
+    
+    public Integer getReviewId() {
+        return reviewId;
+    }
+    
+    public void setReviewId(Integer reviewId) {
+        this.reviewId = reviewId;
+    }
+    
+    public String getReviewerNickname() {
+        return reviewerNickname;
+    }
+    
+    public void setReviewerNickname(String reviewerNickname) {
+        this.reviewerNickname = reviewerNickname;
+    }
+    
+    public String getPostTitle() {
+        return postTitle;
+    }
+    
+    public void setPostTitle(String postTitle) {
+        this.postTitle = postTitle;
+    }
+    
     @Override
     public String toString() {
         return "ChatDeclarationResultNotificationDto{" +
@@ -113,6 +160,11 @@ public class ChatDeclarationResultNotificationDto {
                 ", declarationContent='" + declarationContent + '\'' +
                 ", reportedMemberNickname='" + reportedMemberNickname + '\'' +
                 ", reportedChatContent='" + reportedChatContent + '\'' +
+                ", notificationType='" + notificationType + '\'' +
+                ", postId=" + postId +
+                ", reviewId=" + reviewId +
+                ", reviewerNickname='" + reviewerNickname + '\'' +
+                ", postTitle='" + postTitle + '\'' +
                 '}';
     }
 }

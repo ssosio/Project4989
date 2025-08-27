@@ -21,12 +21,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
-  Report as ReportIcon
+  Report as ReportIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import api from '../../lib/api';
 import { AuthContext } from '../../context/AuthContext';
@@ -42,18 +49,58 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
   const [postToDelete, setPostToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // 검색 관련 상태 추가
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchType, setSearchType] = useState('TITLE'); // 검색 타입: TITLE, ID
+  const [searchPostType, setSearchPostType] = useState('ALL');
+  const [searchStatus, setSearchStatus] = useState('ALL');
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   const { userInfo } = useContext(AuthContext);
   const token = userInfo?.token ?? localStorage.getItem('jwtToken');
 
-  // 게시물 목록 가져오기
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // 게시물 목록 가져오기 (검색 포함)
+  const fetchPosts = async (page = 1, searchParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // 항상 전체 목록을 가져온 후 프론트엔드에서 필터링
+      console.log('전체 목록 API 호출');
+      const response = await api.get('/post/list');
+      console.log('전체 목록 응답:', response.data);
+      
+      let formattedPosts = response.data.map(post => ({
+        id: post.postId,
+        title: post.title,
+        type: getPostTypeText(post.postType),
+        author: post.nickname || '알 수 없음',
+        status: post.status || 'ON_SALE',
+        reports: 0,
+        postId: post.postId,
+        postType: post.postType
+      }));
+      
+      // 검색 조건이 있으면 필터링 적용
+      if (Object.keys(searchParams).length > 0) {
+        console.log('검색 파라미터:', searchParams);
         
-        const response = await api.get('/post/list');
-        console.log('게시물 목록 응답:', response.data);
+        // 키워드 검색
+        if (searchParams.keyword && searchParams.keyword.trim()) {
+          const keyword = searchParams.keyword.trim().toLowerCase();
+          if (searchParams.searchType === 'ID') {
+            // ID 검색
+            formattedPosts = formattedPosts.filter(post => 
+              post.id.toString().includes(keyword)
+            );
+          } else {
+            // 제목 검색
+            formattedPosts = formattedPosts.filter(post => 
+              post.title.toLowerCase().includes(keyword)
+            );
+          }
+        }
         
         // 응답 데이터를 테이블 형식에 맞게 변환
         const formattedPosts = response.data.map(post => ({
@@ -69,17 +116,80 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
           tradeTypeText: getTradeTypeText(post.tradeType) // 한글 텍스트 저장
         }));
         
-        setPosts(formattedPosts);
-      } catch (err) {
-        console.error('게시물 목록 가져오기 실패:', err);
-        setError('게시물 목록을 불러오는데 실패했습니다.');
-      } finally {
-        setLoading(false);
+        // 상태 필터
+        if (searchParams.status && searchParams.status !== 'ALL') {
+          formattedPosts = formattedPosts.filter(post => 
+            post.status === searchParams.status
+          );
+        }
+        
+        console.log('필터링 후 결과:', formattedPosts.length, '개');
       }
-    };
+      
+      // 페이지네이션 적용
+      const totalItems = formattedPosts.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const currentPagePosts = formattedPosts.slice(startIndex, endIndex);
+      
+      setPosts(currentPagePosts);
+      setTotalPosts(totalItems);
+      setTotalPages(totalPages);
+      setCurrentPage(page);
+      
+    } catch (err) {
+      console.error('게시물 목록 가져오기 실패:', err);
+      setError('게시물 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // 초기 로딩
+  useEffect(() => {
     fetchPosts();
   }, []);
+
+  // 검색 실행
+  const handleSearch = () => {
+    const searchParams = {};
+    
+    if (searchKeyword.trim()) {
+      searchParams.keyword = searchKeyword.trim();
+      searchParams.searchType = searchType; // 검색 타입 추가
+    }
+    
+    if (searchPostType !== 'ALL') {
+      searchParams.postType = searchPostType;
+    }
+    
+    if (searchStatus !== 'ALL') {
+      searchParams.status = searchStatus;
+    }
+    
+    console.log('검색 파라미터:', searchParams);
+    fetchPosts(1, searchParams);
+  };
+
+  // 검색 초기화
+  const handleResetSearch = () => {
+    setSearchKeyword('');
+    setSearchType('TITLE');
+    setSearchPostType('ALL');
+    setSearchStatus('ALL');
+    fetchPosts(1, {}); // 빈 객체로 호출하여 전체 목록 가져오기
+  };
+
+  // 페이지 변경
+  const handlePageChange = (event, newPage) => {
+    fetchPosts(newPage, {
+      keyword: searchKeyword.trim() || undefined,
+      searchType: searchKeyword.trim() ? searchType : undefined,
+      postType: searchPostType !== 'ALL' ? searchPostType : undefined,
+      status: searchStatus !== 'ALL' ? searchStatus : undefined
+    });
+  };
 
   // 게시물 타입 텍스트 변환
   const getPostTypeText = (postType) => {
@@ -179,17 +289,6 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
     }
   };
 
-  // 페이지 변경 핸들러
-  const handlePageChange = (event, value) => {
-    setCurrentPage(value);
-  };
-
-  // 현재 페이지의 게시물만 필터링
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPosts = posts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(posts.length / itemsPerPage);
-
   // 로딩 중일 때
   if (loading) {
     return (
@@ -221,8 +320,90 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            게시글 목록 ({posts.length}개) - 페이지 {currentPage} / {totalPages}
+            게시글 목록 ({totalPosts}개) - 페이지 {currentPage} / {totalPages}
           </Typography>
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} sm={2}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>검색 타입</InputLabel>
+                <Select
+                  value={searchType}
+                  onChange={(e) => setSearchType(e.target.value)}
+                  label="검색 타입"
+                >
+                  <MenuItem value="TITLE">제목</MenuItem>
+                  <MenuItem value="ID">ID</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <TextField
+                label="검색어"
+                variant="outlined"
+                fullWidth
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1 }} />,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>게시글 타입</InputLabel>
+                <Select
+                  value={searchPostType}
+                  onChange={(e) => setSearchPostType(e.target.value)}
+                  label="게시글 타입"
+                >
+                  <MenuItem value="ALL">전체</MenuItem>
+                  <MenuItem value="CARS">자동차</MenuItem>
+                  <MenuItem value="REAL_ESTATES">부동산</MenuItem>
+                  <MenuItem value="ITEMS">중고물품</MenuItem>
+                  <MenuItem value="AUCTION">경매</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>상태</InputLabel>
+                <Select
+                  value={searchStatus}
+                  onChange={(e) => setSearchStatus(e.target.value)}
+                  label="상태"
+                >
+                  <MenuItem value="ALL">전체</MenuItem>
+                  <MenuItem value="ON_SALE">판매중</MenuItem>
+                  <MenuItem value="SOLD_OUT">판매완료</MenuItem>
+                  <MenuItem value="DELETED">삭제됨</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                startIcon={<SearchIcon />}
+                fullWidth
+              >
+                검색
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={2}>
+              <Button
+                variant="outlined"
+                onClick={handleResetSearch}
+                fullWidth
+              >
+                검색 초기화
+              </Button>
+            </Grid>
+          </Grid>
           <TableContainer>
             <Table>
               <TableHead>
@@ -238,26 +419,26 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {currentPosts.map((post) => (
-                  <TableRow key={post.id}>
-                    <TableCell>{post.id}</TableCell>
-                    <TableCell>
-                      <Typography
-                        component="span"
-                        sx={{
-                          cursor: 'pointer',
-                          color: '#000',
-                          '&:hover': {
-                            color: 'primary.dark'
-                          }
-                        }}
-                        onClick={() => handleTitleClick(post)}
-                      >
-                        {post.title}
-                      </Typography>
-                    </TableCell>
-                    
-                    <TableCell>{post.tradeTypeText}</TableCell>
+                {posts.length > 0 ? (
+                  posts.map((post) => (
+                    <TableRow key={post.id}>
+                      <TableCell>{post.id}</TableCell>
+                      <TableCell>
+                        <Typography
+                          component="span"
+                          sx={{
+                            cursor: 'pointer',
+                            color: '#000',
+                            '&:hover': {
+                              color: 'primary.dark'
+                            }
+                          }}
+                          onClick={() => handleTitleClick(post)}
+                        >
+                          {post.title}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{post.tradeTypeText}</TableCell>
                     <TableCell>{post.type}</TableCell>
                     <TableCell>{post.author}</TableCell>
                     <TableCell>
@@ -289,7 +470,7 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
