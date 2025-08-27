@@ -329,6 +329,16 @@ public class PostsService implements PostsServiceInter {
 		}
 		postMapper.deletePost(postId);
 	}
+	
+	// 어드민 권한으로 게시글 삭제 (memberId=1인 경우 모든 게시글 삭제 가능)
+	@Transactional
+	public void deletePostByAdmin(Long postId, Long adminId) {
+		// 어드민 권한 확인 (memberId=1)
+		if (adminId == null || adminId != 1) {
+			throw new AccessDeniedException("관리자 권한이 필요합니다");
+		}
+		postMapper.deletePostByAdmin(postId, adminId);
+	}
 
 
 	// 신고

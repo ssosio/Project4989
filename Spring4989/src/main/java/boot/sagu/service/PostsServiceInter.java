@@ -42,6 +42,9 @@ public interface PostsServiceInter {
 	
 	//삭제
     void deletePost(@Param("postId") Long postId,PostsDto post,Long actorId);
+    
+    // 어드민 권한으로 게시글 삭제 (memberId=1인 경우 모든 게시글 삭제 가능)
+    void deletePostByAdmin(Long postId, Long adminId);
 
 	//신고
 	public int insertReport(ReportsDto dto);

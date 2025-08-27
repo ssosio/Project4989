@@ -31,7 +31,7 @@ import {
 import api from '../../lib/api';
 import { AuthContext } from '../../context/AuthContext';
 
-const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
+const PostManagementTab = ({ getStatusText, getStatusColor }) => {
   // const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -155,15 +155,30 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
         return;
       }
 
-      // 삭제 API 호출
-      await api.delete(`/post/${postToDelete.postId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // 어드민 권한 확인 (memberId=1)
+      const isAdmin = userInfo?.memberId === 1;
+      
+      if (isAdmin) {
+        // 어드민 권한으로 삭제 API 호출
+        await api.delete(`/post/admin/${postToDelete.postId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } else {
+        // 일반 사용자 삭제 API 호출
+        await api.delete(`/post/${postToDelete.postId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
 
       // 성공 메시지
-      alert('게시물이 성공적으로 삭제되었습니다.');
+      const successMessage = isAdmin 
+        ? '관리자 권한으로 게시물이 성공적으로 삭제되었습니다.'
+        : '게시물이 성공적으로 삭제되었습니다.';
+      alert(successMessage);
       
       // 목록에서 삭제된 게시물 제거
       setPosts(prevPosts => prevPosts.filter(post => post.postId !== postToDelete.postId));
@@ -173,8 +188,8 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
       
     } catch (err) {
       console.error('게시물 삭제 실패:', err);
-      alert('게시물 삭제에 실패했습니다: ' + (err.response?.data?.message || err.message));
-      alert('게시물 삭제에 실패했습니다: ' + '경매시간이 종료되지 않은 상품은 삭제할 수 없습니다.');
+      const errorMessage = err.response?.data?.message || err.message;
+      alert('게시물 삭제에 실패했습니다: ' + errorMessage);
     } finally {
       setDeleteLoading(false);
     }
@@ -329,6 +344,11 @@ const PostManagementTab = ({ getStatusText, getStatusColor, onPostDetail }) => {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             이 작업은 되돌릴 수 없습니다.
           </Typography>
+          {userInfo?.memberId === 1 && (
+            <Typography variant="body2" color="primary" sx={{ mt: 1, fontWeight: 'bold' }}>
+              ⚠️ 관리자 권한으로 삭제합니다 (모든 게시글 삭제 가능)
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteDialogClose} disabled={deleteLoading}>
