@@ -103,20 +103,22 @@ public class CreditTierService implements CreditTierServiceInter {
         }
     }
     
-    // 거래량 점수 계산 (0~450) - 비선형 증가 + 거래 횟수 제한
+    // 거래량 점수 계산 (0~600) - 거래량 비중 확대
     private int calculateTransactionScore(int completedTransactions) {
-        // 최소 거래 완료 횟수 제한
-        if (completedTransactions < 3) {
-            return 0;  // 3건 미만은 0점
+        // 최소 거래 완료 횟수 제한 완화
+        if (completedTransactions < 1) {
+            return 0;  // 1건 미만은 0점
         }
         
-        // 비선형 증가: 초기에는 천천히, 나중에는 빠르게
-        if (completedTransactions <= 10) {
-            return (int) (completedTransactions * 2.0);  // 2점씩
+        // 거래량 증가에 따른 점수 증가 강화 (단순화)
+        if (completedTransactions <= 5) {
+            return completedTransactions * 8;  // 1건=8점, 2건=16점, 3건=24점...
+        } else if (completedTransactions <= 15) {
+            return 40 + (completedTransactions - 5) * 12;  // 12점씩
         } else if (completedTransactions <= 30) {
-            return 20 + (int) ((completedTransactions - 10) * 3.0);  // 3점씩
+            return 160 + (completedTransactions - 15) * 16;  // 16점씩
         } else {
-            return 80 + (int) ((completedTransactions - 30) * 4.5);  // 4.5점씩
+            return 400 + (completedTransactions - 30) * 20;  // 20점씩
         }
     }
     
@@ -128,17 +130,15 @@ public class CreditTierService implements CreditTierServiceInter {
         
         // 베이지안 보정 강화
         double m = 15;  // 보정 강도 증가 (10 → 15)
-        double C = 7.5; // 플랫폼 기본 기대치 하향 (8.0 → 7.5)
+        double C = 6.5; // 플랫폼 기본 기대치 하향 (7.0 → 6.5)
         double R = averageRating;
         int v = reviewCount;
         
         double B = (v / (v + m)) * R + (m / (v + m)) * C;
         
-        // 7.5~10.0 → 0~450 
-        if (B < 7.5) {
-            return 0;  // 7.5 미만은 0점
-        }
-        return (int) (((B - 7.5) / 2.5) * 450);
+        // 0~10.0 → 0~300 (평점 점수 축소, 거래량 점수와 균형)
+        // 0점 = 0점, 10점 = 300점
+        return (int) ((B / 10.0) * 300);
     }
     
     // 신고 패널티 계산 (0 ~ -200) 

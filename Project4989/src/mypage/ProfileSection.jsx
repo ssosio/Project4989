@@ -85,10 +85,29 @@ const ProfileSection = ({ userInfo }) => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [passwordError, setPasswordError] = useState('');
 
+  // 신용도 등급 재계산
+  const recalculateCreditTier = async () => {
+    try {
+      console.log('신용도 등급 재계산 시작...');
+      
+      // 백엔드에서 신용도 등급을 다시 계산하도록 요청
+      const response = await api.get(`/api/credit-tier/${userInfo.memberId}`);
+      
+      if (response.data.success) {
+        console.log('신용도 등급 재계산 성공:', response.data.data);
+      } else {
+        console.log('신용도 등급 재계산 실패:', response.data);
+      }
+    } catch (error) {
+      console.error('신용도 등급 재계산 오류:', error);
+    }
+  };
+
   // 컴포넌트 마운트 시 사용자 정보 가져오기
   useEffect(() => {
     fetchUserProfile();
     fetchMemberAddresses(); // 컴포넌트 마운트 시 주소 목록 로드
+    recalculateCreditTier(); // 신용도 등급 재계산
   }, []);
 
   // 토큰 유효성 검사 및 자동 로그아웃 처리
@@ -153,13 +172,7 @@ const ProfileSection = ({ userInfo }) => {
         // 재계산된 데이터로 그래프 업데이트
         handleCreditDataLoaded(response.data.data);
         
-        // 성공 메시지 표시
-        setMessage({ type: 'success', text: '신용도 등급이 재계산되었습니다! 페이지를 새로고침해주세요.' });
-        
-        // 3초 후 자동 새로고침
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
+
         
       } else {
         setMessage({ type: 'error', text: '신용도 등급 재계산에 실패했습니다.' });
@@ -868,24 +881,7 @@ const ProfileSection = ({ userInfo }) => {
                   <span>1000</span>
                 </Box>
                 
-                {/* 신용도 재계산 버튼 */}
-                <Box sx={{ mt: 2, textAlign: 'center' }}>
-                  <Button 
-                    size="small" 
-                    variant="outlined" 
-                    onClick={handleRecalculateCreditTier}
-                    sx={{
-                      borderColor: '#666',
-                      color: '#666',
-                      '&:hover': {
-                        borderColor: '#333',
-                        backgroundColor: '#f5f5f5'
-                      }
-                    }}
-                  >
-                    신용도 재계산
-                  </Button>
-                </Box>
+
                 
 
                 
