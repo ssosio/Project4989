@@ -17,11 +17,16 @@ import {
     DialogActions,
     Button,
     Grid,
-    Paper
+    Paper,
+    Menu,
+    MenuItem,
+    ListItemIcon
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import CircleIcon from '@mui/icons-material/Circle';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
@@ -922,6 +927,11 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
     const [selectedDeclaration, setSelectedDeclaration] = useState(null);
     const [contactReplyDetailOpen, setContactReplyDetailOpen] = useState(false);
     const [selectedContactReply, setSelectedContactReply] = useState(null);
+
+    // 우클릭 메뉴 상태
+    const [contextMenu, setContextMenu] = useState(null);
+    const [selectedNotification, setSelectedNotification] = useState(null);
+
     const { userInfo, token } = useContext(AuthContext);
     const SERVER_IP = 'localhost';
     const SERVER_PORT = '4989';
@@ -1086,6 +1096,20 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
         }
     }, [open, userInfo, token]);
 
+    // 우클릭 메뉴가 열려있을 때 다른 곳을 클릭하면 닫히도록 설정
+    useEffect(() => {
+        const handleClickOutside = () => {
+            if (contextMenu !== null) {
+                handleCloseContextMenu();
+            }
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [contextMenu]);
+
     // 알림 목록 클릭 시 모달 열기
     const handleNotificationClick = (notification) => {
         if (notification.type === 'CONTACT_REPLY') {
@@ -1194,6 +1218,43 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
             });
     };
 
+    // 우클릭 메뉴 열기
+    const handleContextMenu = (event, notification) => {
+        event.preventDefault();
+        setSelectedNotification(notification);
+        setContextMenu(
+            contextMenu === null
+                ? { mouseX: event.clientX + 2, mouseY: event.clientY - 6 }
+                : null
+        );
+    };
+
+    // 우클릭 메뉴 닫기
+    const handleCloseContextMenu = () => {
+        setContextMenu(null);
+        setSelectedNotification(null);
+    };
+
+    // 알림 삭제 (화면에서만 제거)
+    const handleDeleteNotification = () => {
+        if (selectedNotification) {
+            setNotifications(prevNoti => {
+                const updated = prevNoti.filter(noti => {
+                    if (noti.type === 'CONTACT_REPLY') {
+                        return noti.contactId !== selectedNotification.contactId;
+                    } else {
+                        return noti.chatdeclarationresultId !== selectedNotification.chatdeclarationresultId;
+                    }
+                });
+
+                // 삭제 후 읽지 않은 알림 개수 다시 계산
+                calculateAndNotifyUnreadCount(updated);
+                return updated;
+            });
+        }
+        handleCloseContextMenu();
+    };
+
 
 
     return (
@@ -1226,7 +1287,11 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                     // 문의 답변 알림 표시
                                     return (
                                         <React.Fragment key={`contact-${noti.contactId}`}>
-                                            <NotificationItem onClick={() => handleNotificationClick(noti)}>
+                                            <NotificationItem
+                                                onClick={() => handleNotificationClick(noti)}
+                                                onContextMenu={(e) => handleContextMenu(e, noti)}
+                                                sx={{ position: 'relative' }}
+                                            >
                                                 <ListItemAvatar>
                                                     <Box sx={{ position: 'relative' }}>
                                                         <Avatar sx={{
@@ -1312,7 +1377,11 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                                     // 후기 알림 표시
                                     return (
                                         <React.Fragment key={noti.chatdeclarationresultId}>
-                                            <NotificationItem onClick={() => handleNotificationClick(noti)}>
+                                            <NotificationItem
+                                                onClick={() => handleNotificationClick(noti)}
+                                                onContextMenu={(e) => handleContextMenu(e, noti)}
+                                                sx={{ position: 'relative' }}
+                                            >
                                                 <ListItemAvatar>
                                                     <Box sx={{ position: 'relative' }}>
                                                         <Avatar sx={{
@@ -1394,7 +1463,11 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
 
                                     return (
                                         <React.Fragment key={noti.chatdeclarationresultId}>
-                                            <NotificationItem onClick={() => handleNotificationClick(noti)}>
+                                            <NotificationItem
+                                                onClick={() => handleNotificationClick(noti)}
+                                                onContextMenu={(e) => handleContextMenu(e, noti)}
+                                                sx={{ position: 'relative' }}
+                                            >
                                                 <ListItemAvatar>
                                                     <Box sx={{ position: 'relative' }}>
                                                         <Avatar sx={{
@@ -1505,6 +1578,34 @@ const NotificationMain = ({ open, onClose, onUnreadCountChange }) => {
                 notification={selectedContactReply}
                 onMarkAsRead={handleContactReplyMarkAsRead}
             />
+
+            {/* 우클릭 컨텍스트 메뉴 */}
+            <Menu
+                open={contextMenu !== null}
+                onClose={handleCloseContextMenu}
+                anchorReference="anchorPosition"
+                anchorPosition={
+                    contextMenu !== null
+                        ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+                        : undefined
+                }
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                        minWidth: 150
+                    }
+                }}
+            >
+                <MenuItem onClick={handleDeleteNotification} sx={{ py: 1.5 }}>
+                    <ListItemIcon>
+                        <DeleteOutlineIcon fontSize="small" sx={{ color: '#dc3545' }} />
+                    </ListItemIcon>
+                    <Typography sx={{ color: '#dc3545', fontWeight: 500 }}>
+                        삭제
+                    </Typography>
+                </MenuItem>
+            </Menu>
         </>
     );
 };
