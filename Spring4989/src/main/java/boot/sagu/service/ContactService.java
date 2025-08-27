@@ -61,4 +61,8 @@ public class ContactService {
     public void markContactAsRead(Long contactId) {
         contactMapper.markContactAsRead(contactId);
     }
+    
+    public int countContact() {
+    	return contactMapper.countContact();
+    }
 }
