@@ -32,7 +32,8 @@
 			FROM auction_bids
 			GROUP BY post_id
 		) bid_count ON p.post_id = bid_count.post_id
-		WHERE p.trade_type = 'AUCTION' AND p.status = 'ON_SALE' AND p.auction_end_time > NOW()
+		WHERE p.trade_type = 'AUCTION' 
+		AND (p.status = 'ON_SALE' OR p.status = 'SOLD')
 		<choose>
 			<when test="sortType == 'time'">
 				ORDER BY p.auction_end_time ASC
