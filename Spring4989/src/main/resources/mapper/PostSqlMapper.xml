@@ -212,6 +212,17 @@
       DELETE FROM posts
       WHERE post_id = #{postId}
    </delete>
+   
+   <!-- 어드민 권한으로 게시글 삭제 (memberId=1인 경우 모든 게시글 삭제 가능) -->
+   <delete id="deletePostByAdmin">
+      DELETE FROM posts
+      WHERE post_id = #{postId}
+      AND EXISTS (
+         SELECT 1 FROM members 
+         WHERE member_id = #{adminId} 
+         AND member_id = 1
+      )
+   </delete>
 
 
    <!-- 신고 -->

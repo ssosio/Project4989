@@ -327,6 +327,42 @@ public class PostsController {
         postService.deletePost(postId, dto, actorId);
         return ResponseEntity.ok().build();
     }
+    
+    // 어드민 권한으로 게시글 삭제 (memberId=1인 경우 모든 게시글 삭제 가능)
+    @DeleteMapping("/admin/{postId}")
+    public ResponseEntity<Map<String, Object>> deletePostByAdmin(
+            @PathVariable(name = "postId") Long postId,
+            @RequestHeader("Authorization") String authorization) {
+        try {
+            // JWT 토큰 검증
+            if (authorization == null || !authorization.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "인증 토큰이 필요합니다."));
+            }
+            
+            String token = authorization.substring(7);
+            long adminId = jwtUtil.extractMemberId(token);
+            
+            // 관리자 권한 확인 (memberId가 1인 경우 관리자로 가정)
+            if (adminId != 1) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "관리자 권한이 필요합니다."));
+            }
+            
+            // 어드민 권한으로 게시글 삭제
+            postService.deletePostByAdmin(postId, adminId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "게시글이 성공적으로 삭제되었습니다."
+            ));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", "게시글 삭제 중 오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
    
    //신고
    @PostMapping("report")
