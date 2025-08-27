@@ -341,6 +341,17 @@ const UpdatePost = () => {
               </tr>
             )
             }
+            {postType === 'REAL_ESTATES' && (
+                            <tr>
+                            <td>
+                                <label>가격
+                                    <input type="text" name='price' value={price} onChange={(e) => {
+                                        setPrice(e.target.value);
+                                    }} />
+                                </label>
+                            </td>
+                        </tr>
+                        )}
             {
               postType === 'CARS' && (
                 <tr className="">
@@ -498,15 +509,18 @@ const UpdatePost = () => {
                 </label>
               </td>
             </tr>
-            <tr>
-              <td>
-                <label>가격
-                  <input type="text" name='price' value={price} onChange={(e) => {
-                    setPrice(e.target.value);
-                  }} />
-                </label>
-              </td>
-            </tr>
+            {
+                            (tradeType === 'SALE' || tradeType === 'AUCTION') && (
+                        <tr>
+                            <td>
+                                <label>가격
+                                    <input type="text" name='price' value={price} onChange={(e) => {
+                                        setPrice(e.target.value);
+                                    }} />
+                                </label>
+                            </td>
+                        </tr>
+                            )}
             <tr>
               <td colSpan='4'>
                 <textarea name="content" id="" value={content} onChange={(e) => {

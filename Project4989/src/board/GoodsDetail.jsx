@@ -360,7 +360,18 @@ const GoodsDetail = () => {
     try {
       await axios.delete(`http://localhost:4989/post/${postId}`);
       alert('삭제되었습니다.');
-      navi('/goods');
+     
+
+      // postType별로 분기
+    if (post.postType === "ITEMS") {
+        navi("/goods");   // 중고물품 탭
+    } else if (post.postType === "CARS") {
+        navi("/cars");    // 자동차 탭
+    } else if (post.postType === "REAL_ESTATES") {
+        navi("/real-estate"); // 부동산 탭
+    } else {
+        navi("/goods"); // 기본 이동
+    }
     } catch (e) {
       if (!e.response) {
         console.log('navigator.onLine =', navigator.onLine, 'message =', e.message, 'code =', e.code);

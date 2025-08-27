@@ -262,8 +262,19 @@ const Post = () => {
         axios.post("http://localhost:4989/post/insert", formData, {
             headers: headers
         }).then(() => {
+
             alert("성공");
-            navi("/goods");
+
+            // postType별로 분기
+    if (postType === "ITEMS") {
+        navi("/goods");   // 중고물품 탭
+    } else if (postType === "CARS") {
+        navi("/cars");    // 자동차 탭
+    } else if (postType === "REAL_ESTATES") {
+        navi("/real-estate"); // 부동산 탭
+    } else {
+        navi("/goods"); // 기본 이동
+    }
         }).catch(err => {
             console.error("에러 상세:", err.response?.data);
             alert("에러" + err);
@@ -355,6 +366,17 @@ const Post = () => {
                             </tr>
                         )
                         }
+                        {postType === 'REAL_ESTATES' && (
+                            <tr>
+                            <td>
+                                <label>가격
+                                    <input type="text" name='price' onChange={(e) => {
+                                        setPrice(e.target.value);
+                                    }} />
+                                </label>
+                            </td>
+                        </tr>
+                        )}
                         {
                             postType === 'CARS' && (
                                 <tr className="">
